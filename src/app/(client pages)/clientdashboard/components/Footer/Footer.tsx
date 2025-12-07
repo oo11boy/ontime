@@ -19,8 +19,8 @@ export default function Footer() {
   const navItems = [
     { href: "/clientdashboard", icon: Home, label: "خانه" },
     { href: "/clientdashboard/clients", icon: User, label: "مشتریان" },
-    { href: "/clientdashboard/clients", icon: Calendar, label: "تقویم" },
-    { href: "/clientdashboard/clients", icon: Settings, label: "تنظیمات" },
+    { href: "/clientdashboard/calendar", icon: Calendar, label: "تقویم" },
+    { href: "/clientdashboard/settings", icon: Settings, label: "تنظیمات" },
   ];
 
   const triggerRipple = (
