@@ -1,0 +1,23 @@
+@keyframes ripple-pro {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.7;   /* روشن‌تر */
+  }
+  60% {
+    transform: scale(1.4);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+
+
+.animate-ripple-pro {
+  animation: ripple-pro 0.45s ease-out forwards;
+}
+
+
+
