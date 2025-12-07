@@ -1,5 +1,5 @@
 // src/app/api/plans/purchase/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query, dbPool, QueryResult } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
 import { PoolConnection } from 'mysql2/promise';
@@ -8,7 +8,9 @@ import { PoolConnection } from 'mysql2/promise';
  * @method POST
  * ثبت پلن/خرید پیامک برای کاربر
  */
-const purchasePlan = withAuth(async (req: Request, userId: number) => {
+const purchasePlan = withAuth(async (req: NextRequest, context) => {
+      const { userId } = context; // userId از withAuth تزریق شده
+
     let connection: PoolConnection | null = null;
     try {
         const { plan_id, purchase_type, amount_paid, sms_amount, valid_from, valid_until } = await req.json();

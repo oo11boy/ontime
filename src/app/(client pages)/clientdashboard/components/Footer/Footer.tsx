@@ -65,7 +65,8 @@ export default function Footer() {
   };
 
   return (
-    <footer  className="fixed max-w-md  mx-auto  bottom-0 inset-x-0 h-20 bg-[#1B1F28] border-t border-t-blue-400/20 shadow-2xl">
+    <>
+ <footer  className="fixed max-w-md z-999 mx-auto  bottom-0 inset-x-0 h-[10%] bg-[#1B1F28] border-t border-t-blue-400/20 shadow-2xl">
       <nav className="h-full flex">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -111,5 +112,7 @@ export default function Footer() {
         })}
       </nav>
     </footer>
+    
+    </>
   );
 }

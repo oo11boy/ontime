@@ -1,5 +1,5 @@
 // src/app/api/smstemplates/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
 
@@ -7,7 +7,9 @@ import { withAuth } from '@/lib/auth';
  * @method GET
  * دریافت لیست قالب‌های پیامکی سفارشی کاربر و عمومی
  */
-const getSmsTemplates = withAuth(async (req: Request, userId: number) => {
+const getSmsTemplates = withAuth(async (req: NextRequest, context) => {
+      const { userId } = context; // userId از withAuth تزریق شده
+
     try {
         // دریافت قالب‌هایی که توسط کاربر ایجاد شده یا عمومی هستند (user_id IS NULL)
         const sql = `

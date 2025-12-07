@@ -2,12 +2,15 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
+import type { NextRequest } from 'next/server';
 
 /**
  * @method GET
- * نمایش اطلاعات یوزر (نام، شغل، پیامک‌های باقیمانده، پلن و...)
+ * دریافت اطلاعات داشبورد کاربر (نام، شغل، موجودی پیامک، پلن و...)
  */
-const getDashboardData = withAuth(async (req: Request, userId: number) => {
+const handler = withAuth(async (req: NextRequest, context) => {
+    const { userId } = context; // userId از withAuth تزریق شده
+
     try {
         const sql = `
             SELECT 
@@ -22,24 +25,29 @@ const getDashboardData = withAuth(async (req: Request, userId: number) => {
             LEFT JOIN jobs j ON u.job_id = j.id
             LEFT JOIN plans p ON u.plan_key = p.plan_key
             WHERE u.id = ?
+            LIMIT 1
         `;
-        
+
         const users = await query<any>(sql, [userId]);
-        
+
         if (users.length === 0) {
             return NextResponse.json({ message: 'User not found' }, { status: 404 });
         }
-        
-        const userData = users[0];
-        
-        return NextResponse.json({ 
-            message: 'User data fetched successfully', 
-            user: userData 
-        });
 
+        const user = users[0];
+
+        return NextResponse.json({
+            message: 'Dashboard data fetched successfully',
+            user
+        });
     } catch (error) {
-        return NextResponse.json({ message: 'Failed to fetch dashboard data' }, { status: 500 });
+        console.error('Dashboard data error:', error);
+        return NextResponse.json(
+            { message: 'Failed to fetch dashboard data' },
+            { status: 500 }
+        );
     }
 });
 
-export { getDashboardData as GET };
+// Export صحیح برای Next.js 15 App Router
+export { handler as GET };

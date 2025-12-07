@@ -1,5 +1,5 @@
 // src/app/api/plans/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query, QueryResult } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
 
@@ -25,8 +25,9 @@ export async function GET() {
  * @method POST
  * ثبت پلن جدید (نیاز به دسترسی ادمین/مدیریت)
  */
-const createPlan = withAuth(async (req: Request, userId: number) => {
-    // نکته: در یک سیستم واقعی، اینجا باید بررسی شود که آیا کاربر 'userId' اجازه ادمین دارد یا خیر.
+const createPlan = withAuth(async (req: NextRequest, context) => {
+    const { userId } = context; // userId از withAuth تزریق شده
+
     try {
         const { plan_key, title, monthly_fee, free_sms_month, price_per_100_sms } = await req.json();
 
