@@ -6,12 +6,15 @@ import Link from "next/link";
 
 export default function AddAppointmentButton() {
   return (
+    
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.5, ease: "backOut" }}
       className="w-full mt-4"
     >
+      
+  <Link href="../clientdashboard/bookingsubmit" passHref>
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -55,8 +58,6 @@ export default function AddAppointmentButton() {
   
         </motion.div>
 
-        {/* متن با افکت تایپ و رنگ زنده */}
-  <Link href="../clientdashboard/bookingsubmit" passHref>
   <motion.a
     className="relative z-10 bg-clip-text text-transparent bg-linear-to-r from-black via-black/90 to-gray-800"
     initial={{ y: 20, opacity: 0 }}
@@ -66,7 +67,7 @@ export default function AddAppointmentButton() {
   >
     افزودن نوبت جدید
   </motion.a>
-</Link>
+
         {/* آیکون اسپارکل سمت راست */}
         <motion.div
           animate={{ rotate: [0, -15, 15, 0] }}
@@ -86,6 +87,8 @@ export default function AddAppointmentButton() {
           transition={{ duration: 1.2 }}
         />
       </motion.button>
+         </Link>
     </motion.div>
+ 
   );
 }
