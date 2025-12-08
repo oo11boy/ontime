@@ -102,6 +102,8 @@ export default function CalendarPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
   return (
+             <div className="h-screen text-white overflow-auto max-w-md m-auto">
+  
     <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-32">
       {/* فیلترها */}
       <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
@@ -270,7 +272,7 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
-
+</div>
       <Footer />
     </div>
   );
