@@ -11,8 +11,10 @@ import {
   Send,
   Phone,
   User,
+  ArrowLeft,
 } from "lucide-react";
 import Footer from "../components/Footer/Footer";
+import { useRouter } from "next/navigation";
 
 const customerData = {
   id: "123",
@@ -30,6 +32,8 @@ const customerData = {
 };
 
 export default function CustomerProfile() {
+    const router = useRouter();
+  
   const [customer, setCustomer] = useState(customerData);
   const [showGeneralSmsModal, setShowGeneralSmsModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
@@ -71,9 +75,20 @@ export default function CustomerProfile() {
   };
 
   return (
+              <div className="h-screen text-white overflow-auto max-w-md m-auto">
+   
     <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-32">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-
+      <div className="max-w-2xl mx-auto ">
+      <header className="sticky top-0 z-50 bg-[#0f1117]/90 backdrop-blur-xl border-b border-white/10 px-5 py-3 flex justify-between items-center">
+         <button
+           onClick={() => router.back()}
+           className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center active:scale-90"
+         >
+           <ArrowLeft className="w-6 h-6" />
+         </button>
+         <h1 className="text-lg font-bold">پروفایل مشتری</h1>
+    
+       </header>
         {/* کارت اصلی پروفایل */}
         <div className={`relative bg-white/5 backdrop-blur-sm rounded-2xl border ${customer.isBlocked ? "border-red-500/50" : "border-emerald-500/20"} overflow-hidden shadow-2xl`}>
           
@@ -322,7 +337,9 @@ export default function CustomerProfile() {
         </div>
       )}
 
-      <Footer />
     </div>
+    
+      <Footer />
+      </div>
   );
 }

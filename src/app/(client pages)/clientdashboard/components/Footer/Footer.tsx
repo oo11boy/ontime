@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Home, Settings, User } from "lucide-react";
+import { Calendar, Home, List, Settings, User } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -20,7 +20,7 @@ export default function Footer() {
     { href: "/clientdashboard", icon: Home, label: "خانه" },
     { href: "/clientdashboard/clients", icon: User, label: "مشتریان" },
     { href: "/clientdashboard/calendar", icon: Calendar, label: "تقویم" },
-    { href: "/clientdashboard/settings", icon: Settings, label: "تنظیمات" },
+    { href: "/clientdashboard/services", icon:List , label: "خدمات" },
   ];
 
   const triggerRipple = (

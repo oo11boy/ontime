@@ -2,6 +2,7 @@
 import React from "react";
 import { Plus, Sparkles, CalendarPlus } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function AddAppointmentButton() {
   return (
@@ -55,15 +56,19 @@ export default function AddAppointmentButton() {
         </motion.div>
 
         {/* متن با افکت تایپ و رنگ زنده */}
-        <motion.span
-          className="relative z-10 bg-clip-text text-transparent bg-linear-to-r from-black via-black/90 to-gray-800"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          افزودن نوبت جدید
-        </motion.span>
-
+  <Link href="../clientdashboard/bookingsubmit" passHref>
+  <motion.a
+    // برای متن با گرادیانتِ قابل کلیپ (bg-clip-text) باید متن transparent باشه
+    // و اسم درست کلاس گرادیانت tailwind: bg-gradient-to-r
+    className="relative z-10 bg-clip-text text-transparent bg-linear-to-r from-black via-black/90 to-gray-800"
+    initial={{ y: 20, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
+    aria-label="افزودن نوبت جدید"
+  >
+    افزودن نوبت جدید
+  </motion.a>
+</Link>
         {/* آیکون اسپارکل سمت راست */}
         <motion.div
           animate={{ rotate: [0, -15, 15, 0] }}
