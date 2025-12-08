@@ -335,28 +335,26 @@ export default function NewAppointmentPage() {
             <div className="flex items-end gap-4">
               <div className="flex-1 space-y-4">
                 <div>
-                  <label className="text-sm text-gray-300 mb-2 block px-1">نام مشتری</label>
                   <div className="relative">
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="نام و نام خانوادگی"
-                      className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 text-right placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm"
+                      className="w-full bg-white/10 border border-white/10 rounded-xl pr-12 px-4 py-3.5 text-right placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm"
                     />
-                    <User className="absolute left-4 top-4 w-5 h-5 text-emerald-400" />
+                    <User className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-300 mb-2 block px-1">موبایل مشتری</label>
                   <div className="relative">
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="۰۹۱۲ ۳۴۵ ۶۷۸۹"
+                      placeholder="شماره موبایل"
                       dir="ltr"
-                      className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 text-left placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm font-mono"
+                      className="w-full bg-white/10 border border-white/10 rounded-xl text-right px-4 py-3.5 pr-12 placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm font-mono"
                     />
                     <Phone className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
                   </div>
