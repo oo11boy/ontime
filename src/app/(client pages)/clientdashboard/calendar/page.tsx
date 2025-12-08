@@ -108,15 +108,12 @@ export default function CalendarPage() {
       {/* فیلترها */}
       <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
         <div className="max-w-2xl mx-auto p-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <button className="flex items-center justify-between bg-[#242933]/80 rounded-xl px-4 py-3.5 border border-emerald-500/40 hover:border-emerald-400 transition-all">
               <span className="text-sm font-medium">{selectedService}</span>
               <ChevronDown className="w-5 h-5 text-emerald-400" />
             </button>
-            <button className="flex items-center justify-between bg-[#242933]/80 rounded-xl px-4 py-3.5 border border-emerald-500/40 hover:border-emerald-400 transition-all">
-              <span className="text-sm font-medium">{selectedStaff}</span>
-              <ChevronDown className="w-5 h-5 text-emerald-400" />
-            </button>
+        
           </div>
         </div>
       </div>
