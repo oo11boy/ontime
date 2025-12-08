@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 const BookingCard = () => {
@@ -51,9 +52,9 @@ const BookingCard = () => {
         </button>
         
         {/* دکمه مشاهده - فقط رنگ رو سبز تم کردیم */}
-        <button className="bg-linear-to-r from-emerald-500 to-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-emerald-600 hover:to-emerald-700 transition-colors">
+        <Link href={"../clientdashboard/profile"} className="bg-linear-to-r from-emerald-500 to-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-emerald-600 hover:to-emerald-700 transition-colors">
           مشاهده پروفایل
-        </button>
+        </Link>
       </div>
     </div>
   );
