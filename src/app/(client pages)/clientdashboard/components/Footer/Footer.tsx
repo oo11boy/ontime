@@ -29,7 +29,6 @@ export default function Footer() {
   ) => {
     const btn = e.currentTarget;
     const rect = btn.getBoundingClientRect();
-
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
@@ -57,16 +56,13 @@ export default function Footer() {
 
   const isActive = (href: string) => {
     if (href === "/clientdashboard") {
-      return (
-        pathname === "/clientdashboard" || pathname === "/clientdashboard/"
-      );
+      return pathname === "/clientdashboard" || pathname === "/clientdashboard/";
     }
     return pathname.startsWith(href);
   };
 
   return (
-    <>
- <footer  className="fixed max-w-md z-999 mx-auto  bottom-0 inset-x-0 h-[10%] bg-[#1B1F28] border-t border-t-blue-400/20 shadow-2xl">
+    <footer className="fixed max-w-md z-50 mx-auto bottom-0 inset-x-0 h-[10%] bg-[#1B1F28] border-t border-t-emerald-500/30 shadow-2xl">
       <nav className="h-full flex">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -80,10 +76,11 @@ export default function Footer() {
               onClick={(e) => triggerRipple(e, item.href)}
               className="relative flex-1 flex flex-col items-center justify-center gap-1 overflow-hidden"
             >
+     
               {itemRipples.map((ripple) => (
                 <span
                   key={ripple.id}
-                  className="absolute pointer-events-none rounded-full bg-white/30 animate-ripple-pro"
+                  className="absolute pointer-events-none rounded-full bg-emerald-400/40 animate-ripple-pro"
                   style={{
                     left: ripple.x - 36,
                     top: ripple.y - 36,
@@ -96,13 +93,13 @@ export default function Footer() {
               <Icon
                 size={26}
                 strokeWidth={active ? 0 : 2}
-                fill={active ? "#75ABEB" : "none"}
-                color={active ? "#75ABEB" : "#9EABBE"}
+                fill={active ? "#34D399" : "none"}       
+                color={active ? "#34D399" : "#9EABBE"}
                 className="relative z-10 transition-all duration-300"
               />
               <span
                 className={`text-xs transition-all duration-300 ${
-                  active ? "text-[#75ABEB] font-medium" : "text-gray-500"
+                  active ? "text-emerald-400 font-semibold" : "text-gray-500"
                 }`}
               >
                 {item.label}
@@ -112,7 +109,5 @@ export default function Footer() {
         })}
       </nav>
     </footer>
-    
-    </>
   );
 }

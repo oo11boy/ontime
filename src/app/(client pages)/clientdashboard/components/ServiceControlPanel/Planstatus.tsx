@@ -1,6 +1,6 @@
 // PlanStatus.tsx
 import React from "react";
-import { Star } from "lucide-react";
+import { Sparkles, Star } from "lucide-react";
 
 export default function PlanStatus() {
   return (
@@ -21,7 +21,8 @@ export default function PlanStatus() {
           </div>
         </div>
 
-        <button className="mt-2 bg-[#34D399] text-black px-3 py-3 rounded-2xl font-semibold max-sm:text-sm text-md shadow-md hover:shadow-lg hover:scale-105 transition-all">
+        <button className="mt-2  bg-linear-to-r from-emerald-500 to-teal-600 text-white flex items-center gap-2   px-3 py-3 rounded-2xl font-semibold max-sm:text-sm text-md shadow-md hover:shadow-lg hover:scale-105 transition-all">
+    <Sparkles className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
        ارتقا پلن
         </button>
       </div>
