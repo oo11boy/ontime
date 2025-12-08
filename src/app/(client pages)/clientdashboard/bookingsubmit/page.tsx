@@ -1,4 +1,4 @@
-// NewAppointmentPage.jsx
+// NewAppointmentPage.jsx (نسخه به‌روز شده)
 "use client";
 import React, { useState, useMemo } from "react";
 import moment from "moment-jalaali";
@@ -16,16 +16,16 @@ import {
   X,
 } from "lucide-react";
 
-// فرض بر این است که این فایل‌ها در مسیرهای مشخص شده قرار دارند
 import Footer from "../components/Footer/Footer"; 
 import JalaliCalendarModal from "./JalaliCalendarModal";
+import TimePickerModal from "./TimePickerModal";
 
-// 🚀 تابع واقعی برای دریافت تاریخ شمسی امروز (برای تنظیم حالت پیش‌فرض)
+// 🚀 تابع واقعی برای دریافت تاریخ شمسی امروز
 const getTodayJalaliDate = () => {
   const today = moment();
   return {
     year: today.jYear(),
-    month: today.jMonth(), // ماه شمسی در moment-jalaali از 0 تا 11 است
+    month: today.jMonth(), 
     day: today.jDate(),
   };
 };
@@ -33,7 +33,6 @@ const getTodayJalaliDate = () => {
 // تابع فرمت تاریخ به صورت ۱۴۰۴/۰۹/۱۸
 const formatJalaliDate = (year: number, month: number, day: number | null): string => {
   if (!day) return "انتخاب تاریخ";
-  // month در selectedDate از 0 تا 11 است، در پارس jYYYY/jMM/jDD ماه از 1 تا 12 است.
   return moment(`${year}/${month + 1}/${day}`, 'jYYYY/jMM/jDD').format('jYYYY/jMM/jDD');
 };
 
@@ -51,13 +50,18 @@ export default function NewAppointmentPage() {
     month: todayJalali.month, 
     day: todayJalali.day 
   }); 
-  const [selectedTime, setSelectedTime] = useState("انتخاب ساعت");
+  
+  // 💡 حالت زمان (با ساعت و دقیقه پیش فرض)
+  const [selectedTime, setSelectedTime] = useState("10:00"); 
+  
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
-  // 💡 حالت‌های مربوط به سوئیچ‌ها
   const [sendReservationSms, setSendReservationSms] = useState(true);
   const [sendReminderSms, setSendReminderSms] = useState(true);
+  
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // 💡 حالت جدید برای Time Picker
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false); 
 
   const services = [
     "کوتاهی مو", "اصلاح ریش", "رنگ مو", "هایلایت", 
@@ -82,7 +86,7 @@ export default function NewAppointmentPage() {
           </h1>
 
           <div className="space-y-5">
-            {/* نام و موبایل */}
+            {/* ... (نام، موبایل، خدمات) ... */}
             <div className="flex items-end gap-4">
               <div className="flex-1 space-y-4">
                 {/* نام مشتری */}
@@ -142,11 +146,15 @@ export default function NewAppointmentPage() {
                 </button>
               </div>
 
-              {/* ساعت */}
+              {/* دکمه ساعت */}
               <div>
                 <label className="text-sm text-gray-300 mb-2 block">ساعت</label>
-                <button className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm">
-                  <span className="text-gray-400">{selectedTime}</span>
+                <button 
+                  // 💡 باز کردن Time Picker
+                  onClick={() => setIsTimePickerOpen(true)}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm"
+                >
+                  <span className="text-white">{selectedTime}</span>
                   <Clock className="w-5 h-5 text-emerald-400" />
                 </button>
               </div>
@@ -185,7 +193,6 @@ export default function NewAppointmentPage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <label className="text-sm text-gray-300">توضیحات (اختیاری)</label>
-                {/* 💡 این سوئیچ فقط نمایشی است و نیاز به onChange ندارد، پس readOnly می‌شود. */}
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" checked readOnly /> 
                   <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
@@ -206,7 +213,6 @@ export default function NewAppointmentPage() {
                   <MessageSquare className="w-5 h-5 text-emerald-400" />
                   <span className="font-medium">ارسال پیامک تأیید رزرو به مشتری</span>
                 </div>
-                {/* ✅ رفع هشدار: اضافه شدن onChange */}
                 <input
                   type="checkbox"
                   checked={sendReservationSms}
@@ -223,7 +229,6 @@ export default function NewAppointmentPage() {
                   <Bell className="w-5 h-5 text-emerald-400" />
                   <span className="font-medium">ارسال پیامک یادآوری ۱ ساعت قبل از نوبت</span>
                 </div>
-                {/* ✅ رفع هشدار: اضافه شدن onChange */}
                 <input
                   type="checkbox"
                   checked={sendReminderSms}
@@ -259,12 +264,20 @@ export default function NewAppointmentPage() {
         <Footer />
       </div>
 
-      {/* 💡 استفاده از کامپوننت تقویم جدا شده */}
       <JalaliCalendarModal
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         isCalendarOpen={isCalendarOpen}
         setIsCalendarOpen={setIsCalendarOpen}
+      />
+      
+      {/* 💡 استفاده از Time Picker جدید */}
+      <TimePickerModal
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        setSelectedTime={setSelectedTime}
+        isTimePickerOpen={isTimePickerOpen}
+        setIsTimePickerOpen={setIsTimePickerOpen}
       />
       
     </div>
