@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import moment from "moment-jalaali";
 import Picker from "react-mobile-picker";
-import { Clock, X, Check } from "lucide-react";
+import { Clock, Check } from "lucide-react";
 
 interface TimePickerModalProps {
   selectedDate: { year: number; month: number; day: number | null };
@@ -22,8 +22,6 @@ export default function TimePickerModal({
   isTimePickerOpen,
   setIsTimePickerOpen,
 }: TimePickerModalProps) {
-  if (!isTimePickerOpen) return null;
-
   const now = useMemo(() => moment(), []);
   const selectedJalaliDate = useMemo(() => {
     const { year, month, day } = selectedDate;
@@ -38,6 +36,7 @@ export default function TimePickerModal({
 
     const selectedMoment = selectedJalaliDate!.clone().hour(+h).minute(+m || 0);
     if (selectedMoment.isBefore(now, "minute")) {
+      // Logic to snap to the next 15-minute interval
       const next = now.clone().add(15 - (now.minute() % 15), "minutes");
       next.minute(Math.ceil(next.minute() / 15) * 15);
       if (next.minute() === 60) {
@@ -85,6 +84,11 @@ export default function TimePickerModal({
     setIsTimePickerOpen(false);
   };
 
+  // ----------------------------------------------------------------
+  // 3. Conditional Return is placed AFTER all Hooks
+  // ----------------------------------------------------------------
+  if (!isTimePickerOpen) return null;
+
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center px-4 pb-8 sm:pb-0">
@@ -110,8 +114,6 @@ export default function TimePickerModal({
           {/* Picker با افکت درخشان */}
           <div className="relative px-6 pb-10">
            
-
-
             <Picker
               value={valueGroups}
               onChange={handleChange}

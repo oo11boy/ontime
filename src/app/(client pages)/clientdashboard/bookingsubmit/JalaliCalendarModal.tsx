@@ -2,7 +2,6 @@
 "use client";
 import React, { useMemo } from "react";
 import {
-  Calendar,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";

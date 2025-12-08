@@ -58,8 +58,6 @@ export default function AddAppointmentButton() {
         {/* متن با افکت تایپ و رنگ زنده */}
   <Link href="../clientdashboard/bookingsubmit" passHref>
   <motion.a
-    // برای متن با گرادیانتِ قابل کلیپ (bg-clip-text) باید متن transparent باشه
-    // و اسم درست کلاس گرادیانت tailwind: bg-gradient-to-r
     className="relative z-10 bg-clip-text text-transparent bg-linear-to-r from-black via-black/90 to-gray-800"
     initial={{ y: 20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
