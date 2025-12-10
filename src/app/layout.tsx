@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
 
 
 export const metadata: Metadata = {
@@ -19,7 +20,35 @@ export default function RootLayout({
         className={`antialiased`}
       >
         {children}
+        <Toaster
+          position="top-center"  
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#1a1e26',
+              color: '#fff',
+              border: '1px solid #333',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              style: {
+                background: '#ef4444',
+              },
+            },
+          }}
+        />
       </body>
     </html>
   );
 }
+
+
+
+

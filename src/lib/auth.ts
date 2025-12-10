@@ -1,7 +1,8 @@
 // src/lib/auth.ts
 import jwt from 'jsonwebtoken';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server'; // برای تایپ بهتر
+import type { NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'YOUR_SUPER_SECURE_NEXTJS_SECRET_KEY';
 
@@ -24,30 +25,34 @@ export function verifyToken(token: string): number | null {
 
 // تایپ RouteContext در Next.js 15
 export type RouteContext = {
-    params: Promise<{ [key: string]: string | string[] }>; // async params
+    params: Promise<{ [key: string]: string | string[] }>;
 };
 
 /**
  * withAuth HOC – سازگار با Next.js 15
- * handler حالا context رو با userId inject‌شده می‌گیره
+ * کوکی HTTP-Only 'authToken' را چک می‌کند.
  */
 export function withAuth(
     handler: (req: NextRequest, context: RouteContext & { userId: number }) => Promise<NextResponse>
 ) {
     return async (req: NextRequest, context: RouteContext) => {
-        const authHeader = req.headers.get('Authorization');
-        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+        
+        const token = (await cookies()).get('authToken')?.value;
 
         if (!token) {
-            return NextResponse.json({ message: 'Authorization token required' }, { status: 401 });
+            return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
         }
 
         const userId = verifyToken(token);
         if (!userId) {
+            // توکن نامعتبر یا منقضی است، کوکی را پاک کن
+            (await
+                // توکن نامعتبر یا منقضی است، کوکی را پاک کن
+                cookies()).delete('authToken');
             return NextResponse.json({ message: 'Invalid or expired token' }, { status: 403 });
         }
 
-        // context رو با userId extend کن (بدون any زیاد)
+        // context رو با userId extend کن
         const extendedContext = { ...context, userId } as RouteContext & { userId: number };
         return handler(req, extendedContext);
     };
