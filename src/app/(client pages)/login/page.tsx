@@ -1,4 +1,3 @@
-// src/app/(client pages)/login/page.tsx
 "use client";
 import React, { JSX, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,7 +15,6 @@ import { toast } from "react-hot-toast";
 
 export default function LoginPage(): JSX.Element {
   const router = useRouter();
-  // ⭐️⭐️ تغییر برای مدیریت پارامترهای URL ⭐️⭐️
   const [step, setStep] = useState<"phone" | "otp" | "signup">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -28,18 +26,15 @@ export default function LoginPage(): JSX.Element {
   const otpContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // ⭐️⭐️ چک کردن URL هنگام لود شدن برای تکمیل ثبت‌نام ⭐️⭐️
     if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const initialStep = urlParams.get('step');
         if (initialStep === 'signup') {
-            // اگر از AuthGuard ریدایرکت شده، مستقیم به مرحله ثبت‌نام برو.
             setStep('signup');
         }
     }
     if (step === "otp") inputRefs.current[0]?.focus();
   }, [step]);
-
 
   useEffect(() => {
     let t: NodeJS.Timeout | undefined;
@@ -49,7 +44,6 @@ export default function LoginPage(): JSX.Element {
     return () => clearTimeout(t);
   }, [resendCooldown]);
 
-  // اجازه پیست کردن کل OTP
   useEffect(() => {
     const node = otpContainerRef.current;
     if (!node) return;
@@ -81,7 +75,7 @@ export default function LoginPage(): JSX.Element {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
-        credentials: "include", // برای ارسال کوکی در صورت وجود
+        credentials: "include",
       });
       const data = await res.json();
       if (res.ok) {
@@ -132,18 +126,16 @@ export default function LoginPage(): JSX.Element {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),
-        credentials: "include", // برای ارسال کوکی
+        credentials: "include",
       });
       const data = await res.json();
+
       if (res.ok) {
-        // توکن اکنون در کوکی HTTP-Only ذخیره شده است.
-        
         if (data.signup_complete) {
-          toast.success("ورود موفقیت‌آمیز بود!");
+          toast.success("با موفقیت وارد شدید!");
           router.push("/clientdashboard");
         } else {
           setStep("signup");
-          // ریدایرکت برای پاک کردن پارامترهای URL
           router.replace("/login?step=signup");
           toast("لطفاً اطلاعات سالن خود را تکمیل کنید", { icon: "✏️" });
         }
@@ -179,12 +171,16 @@ export default function LoginPage(): JSX.Element {
         headers: {
           "Content-Type": "application/json",
         },
-        // ⭐️⭐️ تغییر کلیدی: اطمینان از ارسال کوکی به سرور ⭐️⭐️
         credentials: "include",
         body: JSON.stringify({ name: name.trim(), job_id: job }),
       });
       const data = await res.json();
       if (res.ok) {
+        // اگر اولین بار باشد، فلگ مودال را در sessionStorage ذخیره کن
+        if (data.show_welcome_modal) {
+          sessionStorage.setItem("show_welcome_modal", "true");
+        }
+
         toast.success("ثبت‌نام با موفقیت تکمیل شد!");
         router.push("/clientdashboard");
       } else {
@@ -205,7 +201,7 @@ export default function LoginPage(): JSX.Element {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, resend: true }),
-        credentials: "include", // برای ارسال کوکی
+        credentials: "include",
       });
       if (res.ok) {
         toast.success("کد مجدداً ارسال شد");
@@ -228,7 +224,7 @@ export default function LoginPage(): JSX.Element {
     }
     if (step === "signup") {
         setStep("otp");
-        router.replace("/login"); // پاک کردن پارامتر ?step=signup
+        router.replace("/login");
     }
   };
 
@@ -243,7 +239,6 @@ export default function LoginPage(): JSX.Element {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        {/* هدر */}
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-xl">
@@ -266,7 +261,6 @@ export default function LoginPage(): JSX.Element {
           )}
         </div>
 
-        {/* کارت اصلی */}
         <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
           <div className="p-8">
             <motion.div
@@ -276,7 +270,6 @@ export default function LoginPage(): JSX.Element {
               exit={{ opacity: 0, x: 100 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
-              {/* مرحله شماره موبایل */}
               {step === "phone" && (
                 <form onSubmit={handlePhoneSubmit} className="space-y-6">
                   <div className="relative">
@@ -307,7 +300,6 @@ export default function LoginPage(): JSX.Element {
                 </form>
               )}
 
-              {/* مرحله OTP */}
               {step === "otp" && (
                 <form onSubmit={handleOtpSubmit} className="space-y-8">
                   <div
@@ -327,7 +319,7 @@ export default function LoginPage(): JSX.Element {
                           inputMode="numeric"
                           onChange={(e) => handleOtpChange(i, e.target.value)}
                           onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                          className="w-14 h-14 text-2xl font-bold text-center bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
+                          className="w-8 h-10  text-xl font-bold text-center bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
                         />
                       ))}
                   </div>
@@ -337,7 +329,7 @@ export default function LoginPage(): JSX.Element {
                       type="button"
                       onClick={resendCode}
                       disabled={resendCooldown > 0 || loading}
-                      className="text-sm text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2"
+                      className="text-xs text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2"
                     >
                       {resendCooldown > 0 ? (
                         <>
@@ -363,7 +355,6 @@ export default function LoginPage(): JSX.Element {
                 </form>
               )}
 
-              {/* مرحله تکمیل اطلاعات */}
               {step === "signup" && (
                 <form onSubmit={handleSignupSubmit} className="space-y-6">
                   <div>
@@ -388,7 +379,7 @@ export default function LoginPage(): JSX.Element {
                     <select
                       value={job}
                       onChange={(e) => setJob(e.target.value)}
-                      className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all appearance-none"
+                      className="w-full px-5 py-4 bg-[#40444B] border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all appearance-none"
                       style={{ backgroundImage: "none" }}
                     >
                       <option value="">انتخاب کنید...</option>

@@ -1,50 +1,78 @@
 // src/app/api/auth/signup-complete/route.ts
+
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db'; 
+import { query } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
 import type { NextRequest } from 'next/server';
-import type { RouteContext } from '@/lib/auth'; 
 
-/**
- * @method POST
- * تکمیل ثبت نام کاربر (انتخاب نام و دسته شغلی)
- * این تابع توسط withAuth محافظت می‌شود و userId را از توکن کوکی دریافت می‌کند.
- */
-const POST = withAuth(async (req: NextRequest, context: RouteContext & { userId: number }) => {
+const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
     const { userId } = context;
 
     try {
         const { name, job_id } = await req.json();
-        
+
         if (!name || !job_id) {
-            return NextResponse.json({ message: 'Name and Job ID are required' }, { status: 400 });
-        }
-        
-        // اطمینان از اینکه job_id یک عدد صحیح است
-        const jobIdNumber = parseInt(job_id, 10);
-        if (isNaN(jobIdNumber)) {
-            return NextResponse.json({ message: 'Invalid Job ID format' }, { status: 400 });
+            return NextResponse.json({ message: 'نام و شاخه کاری الزامی است' }, { status: 400 });
         }
 
-        // به‌روزرسانی اطلاعات کاربر
-        const sql = `
-            UPDATE users
-            SET name = ?, job_id = ?
-            WHERE id = ?
-        `;
-        const result = await query<any>(sql, [name.trim(), jobIdNumber, userId]);
-        
-        if (result[0]?.affectedRows === 0) {
-            console.warn(`No rows updated for user ${userId}. Data might be the same.`);
+        const jobIdNumber = parseInt(job_id, 10);
+        if (isNaN(jobIdNumber)) {
+            return NextResponse.json({ message: 'شاخه کاری نامعتبر است' }, { status: 400 });
+        }
+
+        // بررسی اینکه آیا قبلاً تریال فعال شده یا نه
+        const userResult = await query<{ trial_starts_at: string | null }>(
+            'SELECT trial_starts_at FROM users WHERE id = ?',
+            [userId]
+        );
+
+        const user = userResult[0];
+        const isFirstTimeCompletingSignup = !user?.trial_starts_at;
+
+        let showWelcomeModal = false;
+
+        if (isFirstTimeCompletingSignup) {
+            // اولین بار که ثبت‌نام کامل می‌شود → فعال‌سازی تریال و تنظیم فلگ مودال
+            const today = new Date().toISOString().split('T')[0];
+            const oneMonthLater = new Date();
+            oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+            const quotaEndsAt = oneMonthLater.toISOString().split('T')[0];
+            const threeMonthsLater = new Date();
+            threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+            const trialEndsAt = threeMonthsLater.toISOString().split('T')[0];
+
+            await query(
+                `UPDATE users 
+                 SET name = ?, 
+                     job_id = ?,
+                     sms_monthly_quota = 150, 
+                     sms_balance = 150, 
+                     trial_starts_at = ?, 
+                     trial_ends_at = ?, 
+                     quota_starts_at = ?, 
+                     quota_ends_at = ?
+                 WHERE id = ?`,
+                [name.trim(), jobIdNumber, today, trialEndsAt, today, quotaEndsAt, userId]
+            );
+
+            showWelcomeModal = true;
+        } else {
+            // اگر قبلاً تکمیل شده بود، فقط نام و شغل را به‌روزرسانی کن
+            await query(
+                'UPDATE users SET name = ?, job_id = ? WHERE id = ?',
+                [name.trim(), jobIdNumber, userId]
+            );
         }
 
         return NextResponse.json({
-            message: 'Signup completed successfully. You can now access your dashboard.'
+            message: 'ثبت‌نام با موفقیت تکمیل شد.',
+            show_welcome_modal: showWelcomeModal
         });
+
     } catch (error) {
         console.error('Signup complete error:', error);
-        return NextResponse.json({ message: 'Failed to complete signup due to server error.' }, { status: 500 });
+        return NextResponse.json({ message: 'خطا در سرور.' }, { status: 500 });
     }
 });
 
-export { POST }; // صادرات مستقیم تابع با نام POST
+export { POST };

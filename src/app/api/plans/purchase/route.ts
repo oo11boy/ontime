@@ -32,7 +32,7 @@ const purchasePlan = withAuth(async (req: NextRequest, context) => {
 
         let totalSmsToAdd = sms_amount || 0;
         let planKey = null;
-        let isPlanPurchase = purchase_type === 'monthly_subscription' && plan_id;
+        const isPlanPurchase = purchase_type === 'monthly_subscription' && plan_id;
 
         if (isPlanPurchase) {
             // دریافت اطلاعات پلن
@@ -69,7 +69,7 @@ const purchasePlan = withAuth(async (req: NextRequest, context) => {
         // 3. به‌روزرسانی موجودی پیامک کاربر (و به‌روزرسانی پلن در صورت لزوم)
         let updateSql = 'UPDATE users SET';
         const updateParams: (string | number | null)[] = [];
-        let updateFields: string[] = [];
+        const updateFields: string[] = [];
         
         // ⭐️⭐️ منطق تفکیک موجودی پلن و پیامک خریداری شده ⭐️⭐️
         

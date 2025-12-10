@@ -42,7 +42,9 @@ export default function BuySMSPage() {
             setPricePer100(userPrice);
           }
         } else {
-          console.warn("خطا در دریافت اطلاعات پلن، از قیمت پیش‌فرض استفاده می‌شود");
+          console.warn(
+            "خطا در دریافت اطلاعات پلن، از قیمت پیش‌فرض استفاده می‌شود"
+          );
         }
       } catch (error) {
         console.error("خطا در دریافت قیمت پلن:", error);
@@ -75,16 +77,22 @@ export default function BuySMSPage() {
 
       if (response.ok) {
         toast.success(
-          `${selected} پیامک با موفقیت خریداری شد!\nقیمت هر ۱۰۰ پیامک: ${formatPrice(pricePer100)} تومان`,
+          `${selected} پیامک با موفقیت خریداری شد!\nقیمت هر ۱۰۰ پیامک: ${formatPrice(
+            pricePer100
+          )} تومان`,
           { duration: 7000 }
         );
         setSelected(null);
       } else {
-        toast.error(data.message || "خطا در خرید پیامک. لطفاً دوباره تلاش کنید.");
+        toast.error(
+          data.message || "خطا در خرید پیامک. لطفاً دوباره تلاش کنید."
+        );
       }
     } catch (error) {
       console.error("خطا در ارتباط با سرور:", error);
-      toast.error("خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.");
+      toast.error(
+        "خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید."
+      );
     } finally {
       setLoading(false);
     }
@@ -108,7 +116,9 @@ export default function BuySMSPage() {
 
         {/* نمایش قیمت بر اساس پلن */}
         <div className="mb-8 text-center">
-          <p className="text-sm text-gray-400">قیمت هر ۱۰۰ پیامک بر اساس پلن شما:</p>
+          <p className="text-sm text-gray-400">
+            قیمت هر ۱۰۰ پیامک بر اساس پلن شما:
+          </p>
           <p className="text-2xl font-bold text-emerald-400">
             {formatPrice(pricePer100)} تومان
           </p>
@@ -149,8 +159,18 @@ export default function BuySMSPage() {
                 {/* علامت تیک انتخاب */}
                 {isSelected && (
                   <div className="absolute top-4 right-4 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   </div>
                 )}
@@ -167,7 +187,8 @@ export default function BuySMSPage() {
 
                 {pricePer100 < 45000 && (
                   <div className="text-xs text-emerald-400 mt-1">
-                    تخفیف‌دار ({Math.round(((45000 - pricePer100) / 45000) * 100)}%)
+                    تخفیف‌دار (
+                    {Math.round(((45000 - pricePer100) / 45000) * 100)}%)
                   </div>
                 )}
 
