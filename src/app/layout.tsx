@@ -17,7 +17,8 @@ export default function RootLayout({
     <html lang="fa" dir="rtl">
 
       <body
-        className={`antialiased`}
+        className={`antialiased `}
+        style={{backgroundColor:"#1B1F28"}}
       >
         {children}
         <Toaster

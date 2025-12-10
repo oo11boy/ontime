@@ -10,7 +10,7 @@ export default function AddAppointmentButton() {
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.5, ease: "backOut" }}
-      className="w-full mt-4"
+      className="w-full "
     >
         <Link href="../clientdashboard/bookingsubmit">
         <motion.button

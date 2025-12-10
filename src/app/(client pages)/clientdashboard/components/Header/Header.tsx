@@ -42,7 +42,7 @@ export default function Header() {
   };
 
   return (
-    <div className="w-[95%] m-auto mb-4 shadow-2xl flex justify-start items-center flex-col">
+    <div className="w-[95%] sticky top-0 m-auto mb-4 shadow-2xl flex justify-start items-center flex-col">
       <div className="bg-[#1B1F28] font-semibold text-2xl h-full rounded-xl p-4 flex justify-between items-center shadow-sm w-full mx-auto">
         
         {/* عنوان */}
