@@ -5,9 +5,6 @@ import { Zap, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Footer from "../components/Footer/Footer";
 
-interface UserPlanInfo {
-  price_per_100_sms: number;
-}
 
 const smsOptions = [
   { count: 100 },
@@ -22,7 +19,7 @@ export default function BuySMSPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchingPlan, setFetchingPlan] = useState(true);
-  const [pricePer100, setPricePer100] = useState<number>(45000); // پیش‌فرض
+  const [pricePer100, setPricePer100] = useState<number>(45000);
 
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
