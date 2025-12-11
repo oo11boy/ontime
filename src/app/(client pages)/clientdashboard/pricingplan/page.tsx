@@ -64,7 +64,7 @@ export default function PricingPlans() {
     const fetchPlans = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/plans");
+        const response = await fetch("/api/client/plans/list");
         if (!response.ok) throw new Error("Failed to fetch plans list.");
 
         const data = await response.json();
@@ -112,7 +112,7 @@ export default function PricingPlans() {
     const wasOnFreeTrial = activePlanKey === "free_trial";
 
     try {
-      const response = await fetch("/api/plans/purchase", {
+      const response = await fetch("/api/client/plans/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -17,7 +17,7 @@ export default function AuthGuard({ children }: { children: ReactNode }): ReactN
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch("/api/auth/check");
+        const res = await fetch("/api/client/auth/check");
         
         if (res.status === 401) {
             // توکن وجود ندارد یا نامعتبر است

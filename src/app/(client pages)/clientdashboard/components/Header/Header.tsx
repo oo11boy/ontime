@@ -18,7 +18,7 @@ export default function Header() {
     setLoading(true);
     
     try {
-      const res = await fetch("/api/auth/logout", {
+      const res = await fetch("/api/client/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // ⭐️⭐️ credentials: 'include' برای ارسال کوکی در درخواست POST لازم است ⭐️⭐️

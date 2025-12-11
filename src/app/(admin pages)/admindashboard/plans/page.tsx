@@ -38,7 +38,7 @@ export default function PlansManagement() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/plans");
+      const response = await fetch("/api/admin/plans");
       if (!response.ok) {
         throw new Error("Failed to fetch plans");
       }
@@ -84,7 +84,7 @@ export default function PlansManagement() {
       let response;
       if (currentPlan) {
         // ویرایش (PUT)
-        response = await fetch(`/api/plans/${currentPlan.id}`, {
+        response = await fetch(`/api/admin/plans/${currentPlan.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(apiPayload),
@@ -92,7 +92,7 @@ export default function PlansManagement() {
       } else {
         // افزودن (POST)
         const plan_key = formData.get("plan_key") as string;
-        response = await fetch("/api/plans", {
+        response = await fetch("/api/admin/plans", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...apiPayload, plan_key }), 
@@ -121,7 +121,7 @@ export default function PlansManagement() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/plans/${planToDelete}`, {
+      const response = await fetch(`/api/admin/plans/${planToDelete}`, {
         method: "DELETE",
       });
 

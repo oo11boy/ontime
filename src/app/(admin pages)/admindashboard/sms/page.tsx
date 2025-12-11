@@ -20,7 +20,7 @@ interface SmsPackage {
 }
 
 // URL API Route
-const API_URL = '/api/sms-packs'; 
+const API_URL = '/api/admin/sms-packs'; 
 
 export default function SmsPlansPage() {
   const [packages, setPackages] = useState<SmsPackage[]>([]);

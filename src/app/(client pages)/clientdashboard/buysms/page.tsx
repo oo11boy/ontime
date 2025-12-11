@@ -30,7 +30,7 @@ export default function BuySMSPage() {
 useEffect(() => {
   const fetchSMSPacks = async () => {
     try {
-      const res = await fetch("/api/sms-packs");
+      const res = await fetch("/api/client/sms-packs-list");
 
       if (res.ok) {
         const data = await res.json();
@@ -68,7 +68,7 @@ useEffect(() => {
     const fetchUserPlanPrice = async () => {
       try {
         // فرض می‌کنیم /api/dashboard اطلاعات کاربر از جمله قیمت پلن را برمی‌گرداند
-        const res = await fetch("/api/dashboard", {
+        const res = await fetch("/api/client/dashboard", {
           credentials: "include", // برای ارسال کوکی‌های احراز هویت
         });
 
@@ -102,7 +102,7 @@ useEffect(() => {
 
     try {
       // ارسال درخواست خرید به API با تعداد پیامک انتخابی
-      const response = await fetch("/api/buy-sms", {
+      const response = await fetch("/api/client/buy-sms", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

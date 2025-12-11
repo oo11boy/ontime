@@ -20,14 +20,15 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
             return NextResponse.json({ message: 'شاخه کاری نامعتبر است' }, { status: 400 });
         }
 
-        // بررسی اینکه آیا قبلاً تریال فعال شده یا نه
-        const userResult = await query<{ trial_starts_at: string | null }>(
-            'SELECT trial_starts_at FROM users WHERE id = ?',
+        // بررسی اینکه آیا قبلاً تریال فعال شده یا نه و شغل قبلی کاربر را دریافت می‌کنیم
+        const userResult = await query<{ trial_starts_at: string | null, job_id: number | null }>(
+            'SELECT trial_starts_at, job_id FROM users WHERE id = ?',
             [userId]
         );
 
         const user = userResult[0];
         const isFirstTimeCompletingSignup = !user?.trial_starts_at;
+        const prevJobId = user?.job_id; // شغل قبلی کاربر
 
         let showWelcomeModal = false;
 
@@ -41,6 +42,7 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
             threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
             const trialEndsAt = threeMonthsLater.toISOString().split('T')[0];
 
+            // 1. به‌روزرسانی اطلاعات کاربر و فعال‌سازی تریال
             await query(
                 `UPDATE users 
                  SET name = ?, 
@@ -55,13 +57,39 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
                 [name.trim(), jobIdNumber, today, trialEndsAt, today, quotaEndsAt, userId]
             );
 
+            // 2. افزایش businessCount برای شغل انتخاب شده (جدید)
+            await query(
+                'UPDATE jobs SET businessCount = businessCount + 1 WHERE id = ?',
+                [jobIdNumber]
+            );
+            
             showWelcomeModal = true;
         } else {
             // اگر قبلاً تکمیل شده بود، فقط نام و شغل را به‌روزرسانی کن
+
+            // 1. به‌روزرسانی اطلاعات کاربر
             await query(
                 'UPDATE users SET name = ?, job_id = ? WHERE id = ?',
                 [name.trim(), jobIdNumber, userId]
             );
+
+            // 2. مدیریت تغییر businessCount
+            if (prevJobId !== jobIdNumber) {
+                // اگر شغل قبلی موجود بود و تغییر کرده است
+                if (prevJobId) {
+                    // کاهش businessCount شغل قبلی
+                    await query(
+                        // شرط businessCount > 0 برای اطمینان از عدم منفی شدن ناخواسته
+                        'UPDATE jobs SET businessCount = businessCount - 1 WHERE id = ? AND businessCount > 0',
+                        [prevJobId]
+                    );
+                }
+                // افزایش businessCount شغل جدید
+                await query(
+                    'UPDATE jobs SET businessCount = businessCount + 1 WHERE id = ?',
+                    [jobIdNumber]
+                );
+            }
         }
 
         return NextResponse.json({

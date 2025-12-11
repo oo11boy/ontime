@@ -41,7 +41,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        const res = await fetch("/api/dashboard", { 
+        const res = await fetch("/api/client/dashboard", { 
           method: "GET", 
           credentials: "include" 
         });

@@ -1,53 +1,60 @@
+// app/api/sms-packs/route.ts
 import { NextResponse } from 'next/server';
-// فرض بر این است که این مسیر و تابع query صحیح هستند و منطق دیتابیس را هندل می‌کنند.
 import { query } from '@/lib/db'; 
+import { withAdminAuth } from '@/lib/auth';
+import { NextRequest } from 'next/server';
 
 // --- تعریف نوع داده مورد انتظار از دیتابیس ---
 interface DbSmsPackage {
     id: number;
-   
-    sms_amount: number; // تعداد پیامک
-    is_active: number | boolean; // 0/1 برای دیتابیس
+    sms_amount: number;
+    is_active: number | boolean; 
     created_at: Date;
 }
 
 // --- ابزار کمکی برای فرمت خروجی به فرانت‌اند ---
 const formatPackage = (pack: DbSmsPackage) => ({
     id: pack.id,
-
     count: pack.sms_amount,
     isActive: Boolean(pack.is_active),
 });
 
-/**
- * @method GET (دریافت لیست همه بسته‌ها)
- */
+// ------------------------------------
+// GET: فقط نمایش لیست برای ادمین‌ها
+// ------------------------------------
 export async function GET() {
-    try {
-        const smsPacks = await query<DbSmsPackage>(
-            `SELECT id, sms_amount, is_active, created_at FROM sms_packs ORDER BY sms_amount ASC`
-        );
-        
-        const formattedPacks = smsPacks.map(formatPackage);
+    const adminProtectedGET = withAdminAuth(async () => {
+        try {
+            const smsPacks = await query<DbSmsPackage>(
+                `SELECT id, sms_amount, is_active, created_at FROM sms_packs ORDER BY sms_amount ASC`
+            );
+            
+            const formattedPacks = smsPacks.map(formatPackage);
 
-        return NextResponse.json({ 
-            message: 'SMS packs list fetched successfully', 
-            sms_packs: formattedPacks
-        });
+            return NextResponse.json({ 
+                message: 'SMS packs list fetched successfully', 
+                sms_packs: formattedPacks
+            });
 
-    } catch (error) {
-        console.error('Error fetching SMS packs:', error);
-        return NextResponse.json({ 
-            message: 'Failed to fetch SMS packs' 
-        }, { status: 500 });
-    }
+        } catch (error) {
+            console.error('Error fetching SMS packs:', error);
+            return NextResponse.json({ 
+                message: 'Failed to fetch SMS packs' 
+            }, { status: 500 });
+        }
+    }, ['super_admin', 'editor', 'viewer']); // همه ادمین‌ها می‌توانند ببینند
+
+    return adminProtectedGET(new NextRequest('http://dummy'));
 }
 
-/**
- * @method POST (ایجاد بسته جدید)
- */
-export async function POST(request: Request) {
-    try {
+
+// ------------------------------------
+// POST, PUT, DELETE: عملیات‌های حساس، نیاز به 'super_admin' یا 'editor' دارند.
+// ------------------------------------
+
+const smsPackAdminHandler = withAdminAuth(async (request, context) => {
+    // POST: ایجاد بسته جدید
+    if (request.method === 'POST') {
         const { count, isActive } = await request.json();
 
         if ( typeof count !== 'number' || typeof isActive === 'undefined') {
@@ -56,7 +63,6 @@ export async function POST(request: Request) {
 
         const is_active = isActive ? 1 : 0;
         
-        // این تابع باید نتیجه‌ای برگرداند که شامل insertId باشد
         const result: any = await query(
             `INSERT INTO sms_packs ( sms_amount, is_active) VALUES ( ?, ?)`,
             [ count, is_active]
@@ -68,21 +74,10 @@ export async function POST(request: Request) {
             message: 'SMS pack created successfully', 
             sms_pack: newPackage 
         }, { status: 201 });
-
-    } catch (error) {
-        console.error('Error creating SMS pack:', error);
-        return NextResponse.json({ 
-            message: 'Failed to create SMS pack' 
-        }, { status: 500 });
     }
-}
 
-/**
- * @method PUT (بروزرسانی بسته موجود)
- * مسیر: /api/sms-packs?id=123
- */
-export async function PUT(request: Request) {
-    try {
+    // PUT: بروزرسانی بسته موجود
+    else if (request.method === 'PUT') {
         const url = new URL(request.url);
         const id = url.searchParams.get('id');
 
@@ -90,7 +85,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ message: 'Missing ID' }, { status: 400 });
         }
 
-        const {  count, isActive } = await request.json();
+        const { count, isActive } = await request.json();
         
         if ( typeof count !== 'number' || typeof isActive === 'undefined') {
             return NextResponse.json({ message: 'Invalid data' }, { status: 400 });
@@ -99,11 +94,10 @@ export async function PUT(request: Request) {
         const is_active = isActive ? 1 : 0;
         
         const result: any = await query(
-            `UPDATE sms_packs SET  sms_amount = ?, is_active = ? WHERE id = ?`,
+            `UPDATE sms_packs SET sms_amount = ?, is_active = ? WHERE id = ?`,
             [count, is_active, id]
         );
         
-        // چک می‌کنیم که آیا رکوردی واقعاً آپدیت شده است یا خیر (اختیاری)
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: 'Package not found or no change applied' }, { status: 404 });
         }
@@ -114,21 +108,10 @@ export async function PUT(request: Request) {
             message: 'SMS pack updated successfully', 
             sms_pack: updatedPackage 
         });
-
-    } catch (error) {
-        console.error('Error updating SMS pack:', error);
-        return NextResponse.json({ 
-            message: 'Failed to update SMS pack' 
-        }, { status: 500 });
     }
-}
 
-/**
- * @method DELETE (حذف بسته)
- * مسیر: /api/sms-packs?id=123
- */
-export async function DELETE(request: Request) {
-    try {
+    // DELETE: حذف بسته
+    else if (request.method === 'DELETE') {
         const url = new URL(request.url);
         const id = url.searchParams.get('id');
 
@@ -148,11 +131,13 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ 
             message: `SMS pack with ID ${id} deleted successfully` 
         });
-
-    } catch (error) {
-        console.error('Error deleting SMS pack:', error);
-        return NextResponse.json({ 
-            message: 'Failed to delete SMS pack' 
-        }, { status: 500 });
     }
-}
+    
+    return NextResponse.json({ message: 'Method not allowed' }, { status: 405 });
+    
+}, ['super_admin', 'editor']); // اجازه به نقش‌های super_admin و editor برای تغییرات
+
+
+export async function POST(request: NextRequest) { return smsPackAdminHandler(request); }
+export async function PUT(request: NextRequest) { return smsPackAdminHandler(request); }
+export async function DELETE(request: NextRequest) { return smsPackAdminHandler(request); }

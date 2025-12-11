@@ -1,40 +1,22 @@
 "use client";
 import React, { JSX, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Phone,
-  User,
-  CheckCircle,
-  ArrowLeft,
-  Loader2,
-  RefreshCw,
-  SaladIcon,
-} from "lucide-react";
+import { Phone, ArrowLeft, Loader2, RefreshCw, LockKeyhole } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
 
-export default function LoginPage(): JSX.Element {
+export default function AdminLoginPage(): JSX.Element {
   const router = useRouter();
-  const [step, setStep] = useState<"phone" | "otp" | "signup">("phone");
+  // فقط دو مرحله phone و otp مورد نیاز است، بدون signup
+  const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [name, setName] = useState("");
-  const [job, setJob] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const otpContainerRef = useRef<HTMLDivElement | null>(null);
-  const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
-  const [loadingJobs, setLoadingJobs] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const initialStep = urlParams.get('step');
-        if (initialStep === 'signup') {
-            setStep('signup');
-        }
-    }
     if (step === "otp") inputRefs.current[0]?.focus();
   }, [step]);
 
@@ -65,31 +47,6 @@ export default function LoginPage(): JSX.Element {
     return () => node.removeEventListener("paste", onPaste as EventListener);
   }, []);
 
-  useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        const res = await fetch("/api/client/jobs/list");
-        const data = await res.json();
-        setJobs(data.jobs || []);
-      } catch (err) {
-        console.error("Failed to load jobs");
-        // fallback به داده‌های پیش‌فرض در صورت خطا
-        setJobs([
-          { id: 1, name: "آرایشگر" },
-          { id: 2, name: "وکیل" },
-          { id: 3, name: "دندان‌پزشک" },
-          { id: 4, name: "میکاپ آرتیست" },
-        ]);
-      } finally {
-        setLoadingJobs(false);
-      }
-    };
-
-    if (step === "signup") {
-      loadJobs();
-    }
-  }, [step]);
-
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^\d{11}$/.test(phone)) {
@@ -98,7 +55,7 @@ export default function LoginPage(): JSX.Element {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/client/auth/login", {
+      const res = await fetch("/api/admin/admin-auth/login", { // *** Admin API Endpoint ***
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
@@ -149,7 +106,7 @@ export default function LoginPage(): JSX.Element {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/client/auth/login", {
+      const res = await fetch("/api/admin/admin-auth/login", { // *** Admin API Endpoint ***
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),
@@ -158,14 +115,8 @@ export default function LoginPage(): JSX.Element {
       const data = await res.json();
 
       if (res.ok) {
-        if (data.signup_complete) {
-          toast.success("با موفقیت وارد شدید!");
-          router.push("/clientdashboard");
-        } else {
-          setStep("signup");
-          router.replace("/login?step=signup");
-          toast("لطفاً اطلاعات سالن خود را تکمیل کنید", { icon: "✏️" });
-        }
+        toast.success("با موفقیت وارد شدید!");
+        router.push("/admindashboard"); // *** Admin Redirect Path ***
       } else {
         toast.error(data.message || "کد تأیید اشتباه است");
         setOtp("");
@@ -179,52 +130,11 @@ export default function LoginPage(): JSX.Element {
     }
   };
 
-  const handleSignupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!name.trim()) {
-      toast.error("نام سالن یا نام خود را وارد کنید");
-      return;
-    }
-    if (!job || job === "") {
-      toast.error("لطفاً شاخه کاری خود را انتخاب کنید");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/client/auth/signup-complete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ name: name.trim(), job_id: job }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        // اگر اولین بار باشد، فلگ مودال را در sessionStorage ذخیره کن
-        if (data.show_welcome_modal) {
-          sessionStorage.setItem("show_welcome_modal", "true");
-        }
-
-        toast.success("ثبت‌نام با موفقیت تکمیل شد!");
-        router.push("/clientdashboard");
-      } else {
-        toast.error(data.message || "خطا در تکمیل ثبت‌نام");
-      }
-    } catch {
-      toast.error("خطا در ارتباط با سرور");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const resendCode = async () => {
     if (resendCooldown > 0 || loading) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/client/auth/login", {
+      const res = await fetch("/api/admin-auth/login", { // *** Admin API Endpoint ***
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, resend: true }),
@@ -249,10 +159,6 @@ export default function LoginPage(): JSX.Element {
       setStep("phone");
       setOtp("");
     }
-    if (step === "signup") {
-        setStep("otp");
-        router.replace("/login");
-    }
   };
 
   return (
@@ -268,13 +174,13 @@ export default function LoginPage(): JSX.Element {
       >
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-xl">
-              <SaladIcon className="w-8 h-8 text-black" />
+            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-red-400 to-red-600 flex items-center justify-center shadow-xl">
+              <LockKeyhole className="w-8 h-8 text-black" /> {/* Icon Changed */}
             </div>
             <div>
-              <h1 className="text-xl font-bold">خوش آمدید</h1>
+              <h1 className="text-xl font-bold">ورود مدیران</h1>
               <p className="text-sm text-gray-400">
-                ورود یا ثبت‌نام در چند ثانیه
+                با شماره موبایل ادمین وارد شوید
               </p>
             </div>
           </div>
@@ -300,7 +206,7 @@ export default function LoginPage(): JSX.Element {
               {step === "phone" && (
                 <form onSubmit={handlePhoneSubmit} className="space-y-6">
                   <div className="relative">
-                    <Phone className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
+                    <Phone className="absolute right-4 top-4 w-5 h-5 text-red-400" /> {/* Color Changed */}
                     <input
                       type="tel"
                       value={phone}
@@ -308,7 +214,7 @@ export default function LoginPage(): JSX.Element {
                         setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))
                       }
                       placeholder="۰۹۱۲۳۴۵۶۷۸۹"
-                      className="w-full pr-12 pl-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
+                      className="w-full pr-12 pl-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all" // Color Changed
                       dir="ltr"
                       inputMode="numeric"
                     />
@@ -316,7 +222,7 @@ export default function LoginPage(): JSX.Element {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 rounded-2xl bg-linear-to-r from-emerald-500 to-emerald-600 font-bold text-lg shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    className="w-full py-4 rounded-2xl bg-linear-to-r from-red-500 to-red-600 font-bold text-lg shadow-lg hover:shadow-red-500/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3" // Color Changed
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -346,7 +252,7 @@ export default function LoginPage(): JSX.Element {
                           inputMode="numeric"
                           onChange={(e) => handleOtpChange(i, e.target.value)}
                           onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                          className="w-8 h-10  text-xl font-bold text-center bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
+                          className="w-8 h-10  text-xl font-bold text-center bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 transition-all" // Color Changed
                         />
                       ))}
                   </div>
@@ -356,7 +262,7 @@ export default function LoginPage(): JSX.Element {
                       type="button"
                       onClick={resendCode}
                       disabled={resendCooldown > 0 || loading}
-                      className="text-xs text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2"
+                      className="text-xs text-gray-400 hover:text-red-400 transition-colors flex items-center gap-2" // Color Changed
                     >
                       {resendCooldown > 0 ? (
                         <>
@@ -370,7 +276,7 @@ export default function LoginPage(): JSX.Element {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="px-8 py-3 rounded-xl bg-emerald-500 font-bold hover:bg-emerald-600 transition-all disabled:opacity-70 flex items-center gap-2"
+                      className="px-8 py-3 rounded-xl bg-red-500 font-bold hover:bg-red-600 transition-all disabled:opacity-70 flex items-center gap-2" // Color Changed
                     >
                       {loading ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -381,69 +287,12 @@ export default function LoginPage(): JSX.Element {
                   </div>
                 </form>
               )}
-
-              {step === "signup" && (
-                <form onSubmit={handleSignupSubmit} className="space-y-6">
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-2">
-                      نام سالن یا نام شما
-                    </label>
-                    <div className="relative">
-                      <User className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
-                      <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="مثال: سالن زیبایی آرمان"
-                        className="w-full pr-12 pl-5 py-4 bg-white/10 border border-white/20 rounded-2xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-2">
-                      شاخه کاری
-                    </label>
-                    <select
-                      value={job}
-                      onChange={(e) => setJob(e.target.value)}
-                      disabled={loadingJobs}
-                      className="w-full px-5 py-4 bg-[#40444B] border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-all appearance-none"
-                      style={{ backgroundImage: "none" }}
-                    >
-                      <option value="">
-                        {loadingJobs ? "در حال بارگذاری..." : "انتخاب کنید..."}
-                      </option>
-                      {jobs.map((j) => (
-                        <option key={j.id} value={j.id}>
-                          {j.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-4 rounded-2xl bg-linear-to-r from-emerald-500 to-emerald-600 font-bold text-lg shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-70 flex items-center justify-center gap-3"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        تکمیل ثبت‌نام و ورود
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
             </motion.div>
           </div>
         </div>
 
         <div className="mt-6 text-center text-xs text-gray-500">
-          با ادامه، <span className="text-emerald-400">قوانین و شرایط</span> و{" "}
-          <span className="text-emerald-400">حریم خصوصی</span> را می‌پذیرید.
+          توجه: این پنل مخصوص مدیریت و ادمین‌های سیستم است.
         </div>
       </motion.div>
     </div>
