@@ -3,37 +3,78 @@
 import React, { useState, useEffect } from "react";
 import { Zap, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import Footer from "../components/Footer/Footer";
+import Footer from "../components/Footer/Footer"; // فرض بر وجود کامپوننت Footer است
 
-
-const smsOptions = [
-  { count: 100 },
-  { count: 200 },
-  { count: 300 },
-  { count: 500 },
-  { count: 1000 },
-  { count: 2000 },
-];
+// تعریف تایپ برای بسته پیامکی
+interface SMSOption {
+  count: number; // تعداد پیامک
+}
 
 export default function BuySMSPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [fetchingPlan, setFetchingPlan] = useState(true);
-  const [pricePer100, setPricePer100] = useState<number>(45000);
 
+  // استیت‌های مربوط به پلن کاربر
+  const [fetchingPlan, setFetchingPlan] = useState(true);
+  // قیمت پیش‌فرض: 45000 تومان برای هر 100 پیامک (بر اساس کد اولیه شما)
+  const [pricePer100, setPricePer100] = useState<number>(45000); 
+
+  // استیت‌های جدید برای بسته‌های پیامکی
+  const [smsOptions, setSmsOptions] = useState<SMSOption[]>([]);
+  const [fetchingPacks, setFetchingPacks] = useState(true);
+
+  // تابع فرمت‌دهی قیمت (اضافه کردن ویرگول)
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  // دریافت قیمت پلن فعلی کاربر
+useEffect(() => {
+  const fetchSMSPacks = async () => {
+    try {
+      const res = await fetch("/api/sms-packs");
+
+      if (res.ok) {
+        const data = await res.json();
+
+        // اصلاح: فیلد count را مستقیماً از pack.count بگیریم (نه sms_amount)
+        const packs: SMSOption[] = data.sms_packs
+          .filter((pack: any) => pack.isActive === true) // فقط بسته‌های فعال
+          .map((pack: any) => ({
+            count: pack.count, // <--- درست همین!
+          }))
+          .sort((a: SMSOption, b: SMSOption) => a.count - b.count); // مرتب‌سازی صعودی (اختیاری اما قشنگ‌تره)
+
+        setSmsOptions(packs);
+
+        // اگر هیچ بسته‌ای نبود، حداقل یک پیام بده
+        if (packs.length === 0) {
+          toast("هیچ بسته پیامکی فعالی یافت نشد.", { icon: "Info" });
+        }
+      } else {
+        throw new Error("Failed to fetch SMS packs");
+      }
+    } catch (error) {
+      console.error("خطا در دریافت بسته‌های پیامکی:", error);
+      toast.error("خطا در بارگذاری بسته‌های پیامکی.");
+    } finally {
+      setFetchingPacks(false);
+    }
+  };
+
+  fetchSMSPacks();
+}, []);
+
+  // --- ** 2. دریافت قیمت پلن فعلی کاربر از API ** ---
   useEffect(() => {
     const fetchUserPlanPrice = async () => {
       try {
+        // فرض می‌کنیم /api/dashboard اطلاعات کاربر از جمله قیمت پلن را برمی‌گرداند
         const res = await fetch("/api/dashboard", {
-          credentials: "include",
+          credentials: "include", // برای ارسال کوکی‌های احراز هویت
         });
 
         if (res.ok) {
           const data = await res.json();
+          // فرض: قیمت در فیلدی به نام price_per_100_sms در آبجکت user قرار دارد
           const userPrice = data.user?.price_per_100_sms;
           if (userPrice !== undefined && userPrice > 0) {
             setPricePer100(userPrice);
@@ -53,12 +94,14 @@ export default function BuySMSPage() {
     fetchUserPlanPrice();
   }, []);
 
+  // تابع هندل خرید
   const handlePurchase = async () => {
     if (!selected || loading) return;
 
     setLoading(true);
 
     try {
+      // ارسال درخواست خرید به API با تعداد پیامک انتخابی
       const response = await fetch("/api/buy-sms", {
         method: "POST",
         headers: {
@@ -66,20 +109,30 @@ export default function BuySMSPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          sms_count: selected,
+          sms_count: selected, // ارسال تعداد پیامک انتخابی
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // فرض: API پس از خرید موفق، کاربر را به درگاه بانکی هدایت می‌کند
+        // یا اگر پرداخت درون‌برنامه‌ای است، پیغام موفقیت نمایش می‌دهد.
+        // اینجا فقط پیغام نمایش داده شده و بسته به منطق بک‌اند شما ممکن است نیاز به ریدایرکت باشد.
+
+        // این پیام با توجه به قیمت پلن کاربر نمایش داده می‌شود
         toast.success(
-          `${selected} پیامک با موفقیت خریداری شد!\nقیمت هر ۱۰۰ پیامک: ${formatPrice(
-            pricePer100
-          )} تومان`,
+          `درخواست خرید ${selected.toLocaleString("fa-IR")} پیامک ثبت شد. در حال انتقال به صفحه پرداخت...`,
           { duration: 7000 }
-        );
-        setSelected(null);
+        ); 
+        
+        // اگر API یک URL برای درگاه پرداخت برگرداند، باید ریدایرکت انجام شود
+        // if (data.payment_url) {
+        //   window.location.href = data.payment_url;
+        // }
+
+
+        setSelected(null); // پاک کردن انتخاب
       } else {
         toast.error(
           data.message || "خطا در خرید پیامک. لطفاً دوباره تلاش کنید."
@@ -95,7 +148,8 @@ export default function BuySMSPage() {
     }
   };
 
-  if (fetchingPlan) {
+  // --- ** 3. شرط لودینگ اولیه (تا زمانی که بسته‌ها و قیمت پلن دریافت شوند) ** ---
+  if (fetchingPlan || fetchingPacks) {
     return (
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
@@ -103,6 +157,7 @@ export default function BuySMSPage() {
     );
   }
 
+  // --- ** 4. رابط کاربری اصلی (بعد از دریافت داده‌ها) ** ---
   return (
     <div className="h-screen text-white overflow-auto max-w-md mx-auto">
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white py-10 px-4 flex flex-col">
@@ -122,7 +177,7 @@ export default function BuySMSPage() {
         </div>
 
         {/* خلاصه بسته انتخاب‌شده */}
-        {selected && (
+        {selected !== null && ( // استفاده از !== null
           <div className="mb-8 text-center bg-white/5 rounded-2xl py-4 px-6">
             <p className="text-lg">
               بسته انتخاب‌شده:{" "}
@@ -131,6 +186,7 @@ export default function BuySMSPage() {
               </span>
               {" — "}
               <span className="font-bold text-emerald-400">
+                {/* محاسبه قیمت نهایی با توجه به pricePer100 کاربر */}
                 {formatPrice(Math.round((selected / 100) * pricePer100))} تومان
               </span>
             </p>
@@ -138,63 +194,74 @@ export default function BuySMSPage() {
         )}
 
         {/* لیست بسته‌ها */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg mb-12">
-          {smsOptions.map((option) => {
-            const totalPrice = Math.round((option.count / 100) * pricePer100);
-            const isSelected = selected === option.count;
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg mx-auto mb-12">
+          {smsOptions.length > 0 ? (
+            smsOptions.map((option) => {
+              const totalPrice = Math.round((option.count / 100) * pricePer100);
+              const isSelected = selected === option.count;
+              const defaultPrice = 45000; // قیمت پیش‌فرض اولیه (برای محاسبه تخفیف)
 
-            return (
-              <div
-                key={option.count}
-                onClick={() => !loading && setSelected(option.count)}
-                className={`relative cursor-pointer rounded-3xl p-6 flex flex-col items-center gap-4 text-center transition-all border-2 ${
-                  isSelected
-                    ? "border-emerald-500 shadow-2xl shadow-emerald-500/30 bg-white/10 scale-105"
-                    : "border-white/10 hover:border-emerald-500/60 hover:shadow-xl hover:bg-white/5"
-                } ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
-              >
-                {/* علامت تیک انتخاب */}
-                {isSelected && (
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={3}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+              return (
+                <div
+                  key={option.count}
+                  onClick={() => !loading && setSelected(option.count)}
+                  className={`relative cursor-pointer rounded-3xl p-6 flex flex-col items-center gap-4 text-center transition-all border-2 ${
+                    isSelected
+                      ? "border-emerald-500 shadow-2xl shadow-emerald-500/30 bg-white/10 scale-105"
+                      : "border-white/10 hover:border-emerald-500/60 hover:shadow-xl hover:bg-white/5"
+                  } ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+                >
+                  {/* علامت تیک انتخاب */}
+                  {isSelected && (
+                    <div className="absolute top-4 right-4 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  )}
+
+                  <div className="text-2xl font-bold">
+                    {option.count.toLocaleString("fa-IR")} پیامک
                   </div>
-                )}
 
-                <div className="text-2xl font-bold">
-                  {option.count.toLocaleString("fa-IR")} پیامک
-                </div>
-
-                <div className="text-3xl font-bold text-white">
-                  {formatPrice(totalPrice)}
-                </div>
-
-                <div className="text-sm text-gray-400">تومان</div>
-
-                {pricePer100 < 45000 && (
-                  <div className="text-xs text-emerald-400 mt-1">
-                    تخفیف‌دار (
-                    {Math.round(((45000 - pricePer100) / 45000) * 100)}%)
+                  <div className="text-3xl font-bold text-white">
+                    {formatPrice(totalPrice)}
                   </div>
-                )}
 
-                <div className="text-xs text-gray-500 mt-6">
-                  اعتبار: ۳۰ روز از تاریخ خرید
+                  <div className="text-sm text-gray-400">تومان</div>
+
+                  {/* نمایش تخفیف اگر قیمت پلن کمتر از قیمت پایه باشد */}
+                  {pricePer100 < defaultPrice && (
+                    <div className="text-xs text-emerald-400 mt-1">
+                      تخفیف‌دار (
+                      {Math.round(
+                        ((defaultPrice - pricePer100) / defaultPrice) * 100
+                      )}
+                      %)
+                    </div>
+                  )}
+
+                  <div className="text-xs text-gray-500 mt-6">
+                    اعتبار: ۳۰ روز از تاریخ خرید
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="col-span-1 sm:col-span-2 text-center text-gray-500 p-8">
+              بسته پیامکی فعالی برای خرید در دسترس نیست.
+            </div>
+          )}
         </div>
 
         {/* دکمه خرید ثابت در پایین */}
@@ -216,7 +283,7 @@ export default function BuySMSPage() {
             ) : (
               <>
                 <span>تأیید و پرداخت</span>
-                {selected && <Zap className="w-7 h-7" />}
+                {selected !== null && <Zap className="w-7 h-7" />}
               </>
             )}
           </button>
