@@ -68,7 +68,7 @@ export default function PlanStatus({ planTitle, trialEndsAt }: PlanStatusProps) 
                 </div>
 
             <button  className="mt-2  bg-linear-to-r from-emerald-500 to-teal-600 text-white flex items-center gap-2   px-3 py-3 rounded-2xl font-semibold max-sm:text-sm text-md shadow-md hover:shadow-lg hover:scale-105 transition-all">
-   <Link href="../clientdashboard/pricingplan" >
+   <Link href="../clientdashboard/pricingplan"  className="flex gap-2 items-center">
     <Sparkles className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
        ارتقا پلن
        </Link>

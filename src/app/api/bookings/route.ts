@@ -126,7 +126,6 @@ const handler = withAuth(async (req: NextRequest, context) => {
             ? templateRow[0].content.replace(/{client_name}/g, client_name)
             : `نوبت شما برای ${booking_date} ساعت ${booking_time} ثبت شد.`;
 
-          // کاهش موجودی و ثبت لاگ
           await query(
             "UPDATE users SET sms_balance = sms_balance - 1 WHERE id = ?",
             [userId]

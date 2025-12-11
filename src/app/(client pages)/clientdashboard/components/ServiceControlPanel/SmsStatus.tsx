@@ -83,7 +83,7 @@ export default function SmsStatus({
   return (
     <>
       {/* کارت اصلی */}
-      <div className="px-4">
+      <div className="w-full">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
