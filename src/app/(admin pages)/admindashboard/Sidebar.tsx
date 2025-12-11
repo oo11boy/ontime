@@ -65,7 +65,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="flex items-center gap-3">
             <CalendarCheck className="w-8 h-8 text-emerald-400" />
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-white">نوبت دات‌کام</h1>
+              <h1 className="text-xl font-bold tracking-tight text-white">آن‌تایم</h1>
               <p className="text-xs text-gray-400">پنل مدیریت سیستم</p>
             </div>
           </div>
