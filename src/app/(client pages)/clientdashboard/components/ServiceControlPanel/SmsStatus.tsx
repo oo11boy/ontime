@@ -16,8 +16,8 @@ interface PurchasedPackage {
 }
 
 interface SmsStatusProps {
-  planInitialSms: number;       // مقدار اولیه سهمیه ماهانه پلن
-  planSmsBalance: number;       // باقیمانده فعلی از پلن
+  planInitialSms: number;
+  planSmsBalance: number;
   purchasedSmsBalance: number;
   purchasedPackages?: PurchasedPackage[];
 }
@@ -39,38 +39,29 @@ export default function SmsStatus({
 }: SmsStatusProps) {
   const [showDetails, setShowDetails] = useState(false);
 
-  // مجموع مقدار اولیه بسته‌های خریداری‌شده
+  // محاسبات
   const totalAllocatedFromPackages = purchasedPackages.reduce(
     (sum, pkg) => sum + pkg.sms_amount,
     0
   );
 
-  // مجموع باقیمانده بسته‌ها
   const remainingFromPackages = purchasedPackages.reduce(
     (sum, pkg) => sum + pkg.remaining_sms,
     0
   );
 
-  // کل مقدار اولیه (پلن اولیه + بسته‌ها)
   const totalAllocatedSms = planInitialSms + totalAllocatedFromPackages;
-
-  // کل باقیمانده (باقیمانده پلن + باقیمانده بسته‌ها)
   const totalRemainingSms = planSmsBalance + remainingFromPackages;
 
-  // درصد باقیمانده (برای پر کردن دایره)
   const remainingPercentage = totalAllocatedSms > 0
     ? (totalRemainingSms / totalAllocatedSms) * 100
     : 0;
 
   const finalPercentage = Math.min(100, Math.max(0, remainingPercentage));
-
-  // محاسبه محیط دایره
   const CIRCUMFERENCE = 2 * Math.PI * 54;
-
-  // محاسبه dashOffset
+  
   let dashOffset = CIRCUMFERENCE - (finalPercentage / 100) * CIRCUMFERENCE;
-
-  // رفع مشکل خط نازک در حالت ۱۰۰% و ۰%
+  
   if (finalPercentage === 100) {
     dashOffset = -1;
   } else if (finalPercentage === 0) {
@@ -182,7 +173,7 @@ export default function SmsStatus({
               )}
             </div>
 
-            {/* دکمه‌ها */}
+            {/* دکمه‌ها - اصلاح شده */}
             <div className="flex gap-2.5 mt-5">
               <motion.button
                 whileHover={{ scale: 1.06 }}
@@ -194,11 +185,13 @@ export default function SmsStatus({
                 <ChevronDown className="w-3 h-3" />
               </motion.button>
 
-              <Link href="/clientdashboard/buysms" passHref legacyBehavior>
-                <motion.a
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 cursor-pointer ${
+              <motion.div
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
+              >
+                <Link
+                  href="/clientdashboard/buysms"
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
                     isLowSms
                       ? "bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-red-200 border-red-500/40"
                       : "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border-amber-500/40"
@@ -206,14 +199,14 @@ export default function SmsStatus({
                 >
                   <Plus className="w-3.5 h-3.5" strokeWidth={2.8} />
                   خرید بسته پیامک اضافه
-                </motion.a>
-              </Link>
+                </Link>
+              </motion.div>
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* مودال جزئیات - بدون تغییر */}
+      {/* مودال جزئیات */}
       <AnimatePresence>
         {showDetails && (
           <motion.div
@@ -233,7 +226,11 @@ export default function SmsStatus({
             >
               <div className="flex items-center justify-between p-4 border-b border-slate-700">
                 <h3 className="text-lg font-bold text-white">جزئیات اعتبار پیامک</h3>
-                <button onClick={() => setShowDetails(false)} className="text-gray-400 hover:text-white transition">
+                <button
+                  onClick={() => setShowDetails(false)}
+                  className="text-gray-400 hover:text-white transition"
+                  aria-label="بستن"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
