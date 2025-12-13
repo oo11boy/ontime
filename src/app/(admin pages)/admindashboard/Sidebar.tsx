@@ -82,17 +82,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <aside 
         className={`
           fixed md:static top-0 right-0 z-50 h-full w-72 
-          bg-[#242933] border-l border-red-500/20 shadow-2xl 
+          bg-[#242933] border-l border-emerald-500/20 shadow-2xl 
           flex flex-col transition-transform duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"}
         `}
       >
         
         {/* هدر سایدبار */}
-        <div className="p-6 flex items-center justify-between border-b border-red-500/20 bg-[#242933]">
+        <div className="p-6 flex items-center justify-between border-b border-emerald-500/20 bg-[#242933]">
           <div className="flex items-center gap-3">
-            {/* آیکون با تم قرمز */}
-            <CalendarCheck className="w-8 h-8 text-red-400" />
+            {/* آیکون با تم اصلی (سبز) */}
+            <CalendarCheck className="w-8 h-8 text-emerald-400" />
             <div>
               <h1 className="text-xl font-bold tracking-tight text-white">آن‌تایم</h1>
               <p className="text-xs text-gray-400">پنل مدیریت سیستم</p>
@@ -105,7 +105,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* منوها */}
-        <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-red-500/20">
+        <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-emerald-500/20">
           {menuItems.map((item, index) => {
             if (item.title) {
               return (
@@ -122,23 +122,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Link
                 key={index}
                 href={item.href || "#"}
-                onClick={onClose} // وقتی روی لینک کلیک شد در موبایل منو بسته شود
+                onClick={onClose}
                 className={`
                   w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group
                   ${isActive 
-                    // تغییر رنگ‌های فعال به تم ادمین (قرمز)
-                    ? "bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_15px_-3px_rgba(239,68,68,0.2)]" 
+                    // بازگشت به تم سبز زمردی
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]" 
                     : "text-gray-400 hover:bg-white/5 hover:text-gray-200"}
                 `}
               >
                 <div className="flex items-center gap-3">
-                  {/* تغییر رنگ آیکون‌ها به تم ادمین (قرمز) */}
-                  <Icon className={`w-5 h-5 ${isActive ? "text-red-400" : "group-hover:text-red-300 transition"}`} />
+                  <Icon className={`w-5 h-5 ${isActive ? "text-emerald-400" : "group-hover:text-emerald-300 transition"}`} />
                   <span className="font-medium text-sm">{item.label}</span>
                 </div>
                 {item.badge && (
-                  // تغییر رنگ بج به تم ادمین (قرمز)
-                  <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-lg shadow-red-500/40">
+                  <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/40">
                     {item.badge}
                   </span>
                 )}
@@ -147,10 +145,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* دکمه خروج (با استفاده از تابع handleLogout) */}
-        <div className="p-4 border-t border-red-500/20 bg-[#242933]">
+        {/* دکمه خروج (معمولاً قرمز می‌ماند اما اگر بخواهید سبز شود بگویید) */}
+        <div className="p-4 border-t border-emerald-500/20 bg-[#242933]">
           <button 
-            onClick={handleLogout} // فراخوانی تابع خروج
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-400 transition"
           >
             <LogOut className="w-5 h-5" />
