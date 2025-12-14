@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
+import { deductSms, getSmsBalanceDetails } from '@/lib/sms-utils';
 
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
@@ -9,7 +10,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
   try {
     const { appointmentIds, message } = await req.json();
 
-    console.log("Bulk SMS request:", { userId, appointmentIds, message });
+    console.log("📨 Bulk SMS request:", { userId, appointmentIds, message });
 
     if (!appointmentIds || !Array.isArray(appointmentIds) || appointmentIds.length === 0) {
       return NextResponse.json(
@@ -25,25 +26,28 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // بررسی موجودی پیامک کاربر
-    const [userRow]: any = await query(
-      "SELECT sms_balance FROM users WHERE id = ?",
-      [userId]
-    );
+    // بررسی موجودی کل پیامک (پلن + بسته‌ها)
+    const balanceDetails = await getSmsBalanceDetails(userId);
+    const smsNeeded = appointmentIds.length;
 
-    if (!userRow) {
-      return NextResponse.json(
-        { message: "کاربر یافت نشد" },
-        { status: 404 }
-      );
-    }
+    console.log("💰 Balance check:", {
+      needed: smsNeeded,
+      planBalance: balanceDetails.plan_balance,
+      purchasedBalance: balanceDetails.purchased_balance,
+      totalBalance: balanceDetails.total_balance
+    });
 
-    if (userRow.sms_balance < appointmentIds.length) {
+    if (balanceDetails.total_balance < smsNeeded) {
       return NextResponse.json(
         { 
-          message: `موجودی پیامک کافی نیست. نیاز: ${appointmentIds.length}، موجودی: ${userRow.sms_balance}`,
-          required: appointmentIds.length,
-          available: userRow.sms_balance
+          message: `موجودی پیامک کافی نیست. نیاز: ${smsNeeded}، موجودی کل: ${balanceDetails.total_balance}`,
+          details: {
+            needed: smsNeeded,
+            plan_balance: balanceDetails.plan_balance,
+            purchased_balance: balanceDetails.purchased_balance,
+            total_balance: balanceDetails.total_balance
+          },
+          success: false
         },
         { status: 402 }
       );
@@ -57,12 +61,28 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       [...appointmentIds, userId]
     );
 
-    console.log("Found appointments:", appointments);
+    console.log("✅ Found appointments:", appointments.length);
 
     if (!appointments || appointments.length === 0) {
       return NextResponse.json(
-        { message: "هیچ نوبت فعالی یافت نشد" },
+        { 
+          message: "هیچ نوبت فعالی یافت نشد",
+          success: false 
+        },
         { status: 404 }
+      );
+    }
+
+    // کسر پیامک‌ها از موجودی
+    const deductionResult = await deductSms(userId, smsNeeded);
+    
+    if (!deductionResult) {
+      return NextResponse.json(
+        { 
+          message: "خطا در کسر پیامک‌ها",
+          success: false 
+        },
+        { status: 500 }
       );
     }
 
@@ -70,11 +90,11 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     
     // ارسال پیام به هر مشتری
     for (const appointment of appointments) {
-      console.log("Processing appointment:", appointment);
+      console.log("📱 Processing appointment:", appointment.id);
       
       // اطمینان از وجود client_name
       if (!appointment.client_name) {
-        console.warn("No client_name for appointment:", appointment.id);
+        console.warn("⚠️ No client_name for appointment:", appointment.id);
         continue;
       }
       
@@ -83,7 +103,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       
       // ثبت در لاگ SMS
       await query(
-        "INSERT INTO smslog (user_id, booking_id, to_phone, content, cost, sms_type) VALUES (?, ?, ?, ?, 1, 'other')",
+        "INSERT INTO smslog (user_id, booking_id, to_phone, content, cost, sms_type) VALUES (?, ?, ?, ?, 1, 'bulk')",
         [userId, appointment.id, appointment.client_phone, personalizedMessage]
       );
       
@@ -95,33 +115,26 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       });
     }
 
-    // کسر پیامک‌ها از موجودی کاربر
-    await query(
-      "UPDATE users SET sms_balance = sms_balance - ? WHERE id = ?",
-      [appointments.length, userId]
-    );
-
     // دریافت موجودی جدید
-    const [updatedUser]: any = await query(
-      "SELECT sms_balance FROM users WHERE id = ?",
-      [userId]
-    );
+    const newBalanceDetails = await getSmsBalanceDetails(userId);
 
-    console.log("Bulk SMS completed:", {
-      sentCount: appointments.length,
-      newBalance: updatedUser?.sms_balance || 0
+    console.log("✅ Bulk SMS completed:", {
+      sentCount: results.length,
+      smsNeeded,
+      newBalance: newBalanceDetails.total_balance
     });
 
     return NextResponse.json({
       success: true,
-      message: `پیام با موفقیت برای ${appointments.length} نفر ارسال شد`,
-      count: appointments.length,
+      message: `پیام با موفقیت برای ${results.length} نفر ارسال شد`,
+      count: results.length,
       results,
-      newBalance: updatedUser?.sms_balance || 0
+      newBalance: newBalanceDetails.total_balance,
+      balanceDetails: newBalanceDetails
     });
 
   } catch (error: any) {
-    console.error("Error sending bulk SMS:", error);
+    console.error("❌ Error sending bulk SMS:", error);
     console.error("Error details:", {
       message: error.message,
       stack: error.stack
@@ -130,7 +143,8 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     return NextResponse.json(
       { 
         message: "خطا در ارسال پیام همگانی",
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        success: false
       },
       { status: 500 }
     );

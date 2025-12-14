@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { query, QueryResult } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
-
+import { deductSms, getTotalSmsBalance } from '@/lib/sms-utils';
 // یک handler مشترک برای GET، POST، DELETE و PATCH
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId } = context; // userId از withAuth تزریق شده
@@ -138,24 +138,41 @@ const handler = withAuth(async (req: NextRequest, context) => {
       const totalSmsNeeded =
         (sms_reserve_enabled ? 1 : 0) + (sms_reminder_enabled ? 1 : 0);
 
-      // بررسی موجودی SMS در صورت نیاز
-      if (totalSmsNeeded > 0) {
-        const [userRow]: any = await query(
-          "SELECT sms_balance FROM users WHERE id = ?",
-          [userId]
-        );
+      // 
+// بررسی موجودی SMS در صورت نیاز
+if (totalSmsNeeded > 0) {
+  // دریافت موجودی کل (پلن + بسته‌ها)
+  const totalBalance = await getTotalSmsBalance(userId);
+  
+  if (totalBalance < totalSmsNeeded) {
+    // برای نمایش دقیق‌تر موجودی‌ها
+    const [balanceDetails]: any = await query(`
+      SELECT 
+        COALESCE(u.sms_balance, 0) AS plan_balance,
+        COALESCE(SUM(sp.remaining_sms), 0) AS purchased_balance
+      FROM users u
+      LEFT JOIN smspurchase sp ON sp.user_id = u.id 
+        AND sp.type = 'one_time_sms' 
+        AND sp.status = 'active'
+        AND (sp.expires_at IS NULL OR expires_at >= CURDATE())
+      WHERE u.id = ?
+      GROUP BY u.id
+    `, [userId]);
 
-        if (!userRow || userRow.sms_balance < totalSmsNeeded) {
-          return NextResponse.json(
-            {
-              message: `موجودی پیامک کافی نیست. برای ${totalSmsNeeded} پیامک نیاز دارید. موجودی فعلی: ${
-                userRow?.sms_balance || 0
-              }`,
-            },
-            { status: 402 }
-          );
+    return NextResponse.json(
+      {
+        message: `موجودی پیامک کافی نیست. برای ${totalSmsNeeded} پیامک نیاز دارید.`,
+        details: {
+          needed: totalSmsNeeded,
+          plan_balance: balanceDetails?.plan_balance || 0,
+          purchased_balance: balanceDetails?.purchased_balance || 0,
+          total_balance: totalBalance
         }
-      }
+      },
+      { status: 402 }
+    );
+  }
+}
 
       // 1. ثبت نوبت در دیتابیس
       const insertSql = `
@@ -315,13 +332,15 @@ const handler = withAuth(async (req: NextRequest, context) => {
       }
 
       // 6. کسر پیامک‌ها از موجودی کاربر (فقط یک بار)
-      if (totalSmsNeeded > 0) {
-        await query(
-          "UPDATE users SET sms_balance = sms_balance - ? WHERE id = ?",
-          [totalSmsNeeded, userId]
-        );
-        console.log("💰 پیامک‌ها از موجودی کسر شد:", totalSmsNeeded);
-      }
+if (totalSmsNeeded > 0) {
+  const deductionResult = await deductSms(userId, totalSmsNeeded);
+  if (!deductionResult) {
+    console.error("❌ خطا در کسر پیامک‌ها");
+    // در صورت خطا می‌توانید نوبت را کنسل کنید
+  } else {
+    console.log("✅ پیامک‌ها با موفقیت کسر شدند:", totalSmsNeeded);
+  }
+}
 
       return NextResponse.json(
         {

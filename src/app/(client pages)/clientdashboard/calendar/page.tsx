@@ -354,7 +354,7 @@ const BulkSmsModal = ({
           </div>
 
           <div>
-            <label className="text-sm text-gray-300 mb-3 block flex items-center justify-between">
+            <label className="text-sm text-gray-300 mb-3 block items-center justify-between">
               <span>متن پیام</span>
               <span className="text-xs text-gray-500">می‌توانید از متغیر {`{client_name}`} استفاده کنید</span>
             </label>
@@ -598,30 +598,41 @@ export default function CalendarPage() {
     }
   }, []);
 
-  const fetchUserSmsBalance = useCallback(async () => {
-    try {
-      setIsLoadingBalance(true);
-      const response = await fetch('/api/client/dashboard');
-      if (response.ok) {
-        const data = await response.json();
-        setUserSmsBalance(data.user?.sms_balance || 0);
-      }
-    } catch (error) {
-      console.error("خطا در دریافت موجودی پیامک:", error);
-    } finally {
-      setIsLoadingBalance(false);
+const fetchUserSmsBalance = useCallback(async () => {
+  try {
+    setIsLoadingBalance(true);
+    const response = await fetch('/api/client/dashboard');
+    if (response.ok) {
+      const data = await response.json();
+      // اولویت‌ها: total_sms_balance -> مجموع پلن و بسته‌ها
+      const totalBalance = data.user?.total_sms_balance || 
+                          (data.user?.sms_balance || 0) + 
+                          (data.user?.purchased_sms_credit || 0);
+      setUserSmsBalance(totalBalance);
+      console.log("💰 موجودی پیامک دریافت شد:", {
+        totalBalance,
+        planBalance: data.user?.sms_balance,
+        purchasedCredit: data.user?.purchased_sms_credit,
+        totalSmsBalance: data.user?.total_sms_balance
+      });
+    } else {
+      console.error("خطا در دریافت موجودی از API");
+      // مقدار پیش‌فرض
+      setUserSmsBalance(0);
     }
-  }, []);
-// در قسمت fetchAppointments (خطوط 334-360)
+  } catch (error) {
+    console.error("خطا در دریافت موجودی پیامک:", error);
+    setUserSmsBalance(0);
+  } finally {
+    setIsLoadingBalance(false);
+  }
+}, []);
+
 
 const fetchAppointments = useCallback(async () => {
   setIsLoading(true);
   try {
-    // 🚫 حذف این خط:
-    // await updatePastBookingsToDone();
-    
-    // ✅ به جای آن از API استفاده کنید:
-    // 1. ابتدا نوبت‌های گذشته را آپدیت کنید
+
     const updateResponse = await fetch('/api/bookings/update-bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
@@ -832,18 +843,22 @@ const fetchAppointments = useCallback(async () => {
                 تقویم نوبت‌ها
               </h1>
               
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-gray-400 bg-white/10 px-3 py-1.5 rounded-lg">
-                  موجودی: {isLoadingBalance ? '...' : userSmsBalance} پیامک
-                </div>
-                <button
-                  onClick={() => fetchAppointments()}
-                  disabled={isLoading}
-                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
+      <div className="flex items-center gap-2">
+  <div className="text-xs text-gray-400 bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2">
+    <MessageSquare className="w-3 h-3" />
+    موجودی: {isLoadingBalance ? '...' : `${userSmsBalance} پیامک`}
+  </div>
+  <button
+    onClick={() => {
+      fetchAppointments();
+      fetchUserSmsBalance(); // موجودی را هم رفرش کن
+    }}
+    disabled={isLoading}
+    className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition disabled:opacity-50"
+  >
+    <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+  </button>
+</div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

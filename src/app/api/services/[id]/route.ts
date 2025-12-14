@@ -8,14 +8,12 @@ export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const authHandler = withAuth(async (req: NextRequest, authContext) => {
+    const { userId } = authContext;
     const params = await context.params;
     const id = params.id;
     
-    // دسترسی به auth
-    const authResponse = await withAuth(async (req: NextRequest, context: any) => {
-      const { userId } = context;
-      
+    try {
       const { name, price, duration_minutes } = await req.json();
 
       if (!name || !name.trim()) {
@@ -73,17 +71,16 @@ export async function PUT(
         message: "خدمت با موفقیت ویرایش شد",
         service: updatedService
       });
-    })(req, { params: { id } });
+    } catch (error: any) {
+      console.error("Error updating service:", error);
+      return NextResponse.json(
+        { success: false, message: "خطا در ویرایش خدمت" },
+        { status: 500 }
+      );
+    }
+  });
 
-    return authResponse;
-    
-  } catch (error: any) {
-    console.error("Error updating service:", error);
-    return NextResponse.json(
-      { success: false, message: "خطا در ویرایش خدمت" },
-      { status: 500 }
-    );
-  }
+  return authHandler(req, context);
 }
 
 // DELETE - حذف سرویس
@@ -91,13 +88,12 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const authHandler = withAuth(async (req: NextRequest, authContext) => {
+    const { userId } = authContext;
     const params = await context.params;
     const id = params.id;
-    
-    const authResponse = await withAuth(async (req: NextRequest, context: any) => {
-      const { userId } = context;
 
+    try {
       // بررسی مالکیت سرویس
       const [service]: any = await query(
         "SELECT id FROM user_services WHERE id = ? AND user_id = ?",
@@ -112,10 +108,9 @@ export async function DELETE(
       }
 
       // بررسی استفاده در booking
-      // اول باید مطمئن شویم که سرویس در booking استفاده نشده باشد
       const [bookings]: any = await query(
         "SELECT id FROM booking WHERE user_id = ? AND services LIKE ?",
-        [userId, `%${parseInt(id)}%`]
+        [userId, `%${id}%`] // تغییر: از parseInt استفاده نکن چون services رشته است
       );
 
       if (bookings && bookings.length > 0) {
@@ -138,17 +133,16 @@ export async function DELETE(
         success: true,
         message: "خدمت با موفقیت حذف شد"
       });
-    })(req, { params: { id } });
+    } catch (error: any) {
+      console.error("Error deleting service:", error);
+      return NextResponse.json(
+        { success: false, message: "خطا در حذف خدمت" },
+        { status: 500 }
+      );
+    }
+  });
 
-    return authResponse;
-    
-  } catch (error: any) {
-    console.error("Error deleting service:", error);
-    return NextResponse.json(
-      { success: false, message: "خطا در حذف خدمت" },
-      { status: 500 }
-    );
-  }
+  return authHandler(req, context);
 }
 
 // PATCH - تغییر وضعیت سرویس
@@ -156,12 +150,12 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const authHandler = withAuth(async (req: NextRequest, authContext) => {
+    const { userId } = authContext;
     const params = await context.params;
     const id = params.id;
-    
-    const authResponse = await withAuth(async (req: NextRequest, context: any) => {
-      const { userId } = context;
+
+    try {
       const { is_active } = await req.json();
 
       // بررسی مالکیت سرویس
@@ -186,15 +180,14 @@ export async function PATCH(
         success: true,
         message: `خدمت ${is_active ? 'فعال' : 'غیرفعال'} شد`
       });
-    })(req, { params: { id } });
+    } catch (error: any) {
+      console.error("Error toggling service:", error);
+      return NextResponse.json(
+        { success: false, message: "خطا در تغییر وضعیت خدمت" },
+        { status: 500 }
+      );
+    }
+  });
 
-    return authResponse;
-    
-  } catch (error: any) {
-    console.error("Error toggling service:", error);
-    return NextResponse.json(
-      { success: false, message: "خطا در تغییر وضعیت خدمت" },
-      { status: 500 }
-    );
-  }
+  return authHandler(req, context);
 }

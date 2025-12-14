@@ -518,20 +518,26 @@ export default function NewAppointmentPage() {
   }, []);
 
   // تابع برای دریافت موجودی پیامک کاربر
-  const fetchUserSmsBalance = useCallback(async () => {
-    try {
-      setIsLoadingBalance(true);
-      const response = await fetch('/api/client/dashboard');
-      if (response.ok) {
-        const data = await response.json();
-        setUserSmsBalance(data.user?.sms_balance || 0);
-      }
-    } catch (error) {
-      console.error("خطا در دریافت موجودی پیامک:", error);
-    } finally {
-      setIsLoadingBalance(false);
+// تابع برای دریافت موجودی پیامک کاربر
+const fetchUserSmsBalance = useCallback(async () => {
+  try {
+    setIsLoadingBalance(true);
+    const response = await fetch('/api/client/dashboard');
+    if (response.ok) {
+      const data = await response.json();
+      // اولویت‌ها: total_sms_balance -> sms_balance -> purchased_sms_credit
+      const totalBalance = data.user?.total_sms_balance || 
+                          (data.user?.sms_balance || 0) + 
+                          (data.user?.purchased_sms_credit || 0);
+      setUserSmsBalance(totalBalance);
+      console.log("💰 موجودی دریافت شد:", totalBalance, data.user);
     }
-  }, []);
+  } catch (error) {
+    console.error("خطا در دریافت موجودی پیامک:", error);
+  } finally {
+    setIsLoadingBalance(false);
+  }
+}, []);
 
   useEffect(() => {
     fetchUserServices();
@@ -611,7 +617,7 @@ export default function NewAppointmentPage() {
     }
     setShowNameChangeModal(false);
     setPendingNameChange(null);
-    toast.info("از نام قبلی مشتری استفاده شد");
+    toast.success("از نام قبلی مشتری استفاده شد");
   };
 
   // اعتبارسنجی متن پیام‌ها
@@ -809,12 +815,7 @@ export default function NewAppointmentPage() {
               color: '#fff',
             },
           },
-          info: {
-            style: {
-              background: '#3b82f6',
-              color: '#fff',
-            },
-          },
+        
         }}
       />
       
