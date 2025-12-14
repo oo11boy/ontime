@@ -1,235 +1,237 @@
-// components/JalaliCalendarModal.jsx
+// src\app\clientdashboard\bookingsubmit\JalaliCalendarModal.tsx
 "use client";
-import React, { useMemo } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
 import moment from "moment-jalaali";
-
-// 🚀 تابع واقعی برای دریافت تاریخ شمسی امروز
-const getTodayJalaliDate = () => {
-  const today = moment();
-  return {
-    year: today.jYear(),
-    month: today.jMonth(), // ماه شمسی در moment-jalaali از 0 تا 11 است
-    day: today.jDate(),
-  };
-};
-
-// تابع کمکی برای دریافت نام ماه
-const getJalaliMonthName = (month: number): string => {
-  const names = [
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", 
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-  ];
-  return names[month];
-};
-
-interface DateState {
-  year: number;
-  month: number;
-  day: number | null;
-}
+import { ChevronLeft, ChevronRight, X, Calendar } from "lucide-react";
+import { persianMonths, getTodayJalali, isPastDate } from "@/lib/date-utils";
 
 interface JalaliCalendarModalProps {
-  selectedDate: DateState;
-  setSelectedDate: React.Dispatch<React.SetStateAction<DateState>>;
+  selectedDate: { year: number; month: number; day: number | null };
+  setSelectedDate: (date: { year: number; month: number; day: number | null }) => void;
   isCalendarOpen: boolean;
   setIsCalendarOpen: (isOpen: boolean) => void;
 }
 
-export default function JalaliCalendarModal({
+const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
   selectedDate,
   setSelectedDate,
   isCalendarOpen,
   setIsCalendarOpen,
-}: JalaliCalendarModalProps) {
+}) => {
+  const todayJalali = useMemo(() => getTodayJalali(), []);
   
-  const todayJalali = useMemo(() => getTodayJalaliDate(), []);
-  const { year, month, day: selectedDay } = selectedDate;
+  const [viewYear, setViewYear] = useState(selectedDate.year);
+  const [viewMonth, setViewMonth] = useState(selectedDate.month);
 
-  // --- ناوبری ماه‌ها ---
+  // وقتی مودال باز می‌شود، تاریخ انتخابی را نمایش بده
+  useEffect(() => {
+    if (isCalendarOpen) {
+      setViewYear(selectedDate.year);
+      setViewMonth(selectedDate.month);
+    }
+  }, [isCalendarOpen, selectedDate.year, selectedDate.month]);
+
+  const generateCalendar = (year: number, month: number) => {
+    const m = moment(`${year}/${month + 1}/1`, "jYYYY/jMM/jDD");
+    const daysInMonth = m.daysInMonth();
+    const firstDayOfWeek = m.day(); // 0 = شنبه, 6 = جمعه
+
+    const days = [];
+    
+    // روزهای خالی قبل از ماه
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // روزهای ماه
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(day);
+    }
+    
+    return days;
+  };
+
   const handlePrevMonth = () => {
-    setSelectedDate((prev) => {
-      if (prev.year === todayJalali.year && prev.month === todayJalali.month) {
-        return prev;
-      }
-      
-      let newMonth = prev.month - 1;
-      let newYear = prev.year;
-      if (newMonth < 0) {
-        newMonth = 11;
-        newYear -= 1;
-      }
-      
-      if (newYear < todayJalali.year || (newYear === todayJalali.year && newMonth < todayJalali.month)) {
-         return prev;
-      }
-      
-      return { ...prev, month: newMonth, year: newYear, day: null };
-    });
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
   };
 
   const handleNextMonth = () => {
-    setSelectedDate((prev) => {
-      let newMonth = prev.month + 1;
-      let newYear = prev.year;
-      if (newMonth > 11) {
-        newMonth = 0;
-        newYear += 1;
-      }
-      return { ...prev, month: newMonth, year: newYear, day: null };
-    });
-  };
-
-  // --- انتخاب روز ---
-  const handleDaySelect = (day: number) => {
-    const isPastDay = year === todayJalali.year && 
-                       month === todayJalali.month && 
-                       day < todayJalali.day;
-                       
-    if (isPastDay) return; 
-
-    setSelectedDate((prev) => ({ ...prev, day }));
-    setIsCalendarOpen(false); 
-  };
-
-  // --- تولید روزهای ماه ---
-  const renderDays = () => {
-    // 💡 استفاده از moment-jalaali برای دریافت دقیق تعداد روزها و مدیریت کبیسه
-    const daysInMonth = moment.jDaysInMonth(year, month);
-    
-    const days = [];
-    
-    const isCurrentMonth = year === todayJalali.year && month === todayJalali.month;
-    
-    // محاسبه روز هفته برای شروع تقویم (برای تعیین تعداد خانه‌های خالی)
-    const firstDayOfMonth = moment(`${year}/${month + 1}/1`, 'jYYYY/jMM/jDD');
-    // jDay() روز هفته را از شنبه (0) تا جمعه (6) برمی‌گرداند.
-    const startOffset = firstDayOfMonth.day(); 
-
-    // بخش ۱: خانه‌های خالی ابتدای ماه
-    for (let i = 0; i < startOffset; i++) {
-        days.push(<div key={`empty-${i}`} />);
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
     }
-
-    // بخش ۲: روزهای ماه
-    for (let i = 1; i <= daysInMonth; i++) {
-      const isPastDay = isCurrentMonth && i < todayJalali.day;
-      const isToday = isCurrentMonth && i === todayJalali.day;
-
-      days.push(
-        <button
-          key={i}
-          onClick={() => handleDaySelect(i)}
-          disabled={isPastDay} 
-          className={`
-            p-3 rounded-full text-sm font-medium transition-all aspect-square 
-            ${
-              isPastDay
-                ? "bg-white/5 text-gray-600 cursor-not-allowed opacity-50"
-                : selectedDay === i
-                ? "bg-emerald-500 text-white shadow-emerald-500/30 shadow-lg"
-                : "bg-white/10 text-gray-200 hover:bg-emerald-500/20 hover:text-emerald-300"
-            }
-            ${isToday ? "border-2 border-emerald-400" : "" } 
-          `}
-        >
-          {i}
-        </button>
-      );
-    }
-    return days;
   };
+
+  const handleSelectDate = (day: number) => {
+    // بررسی آیا تاریخ گذشته است
+    const selectedMoment = moment(`${viewYear}/${viewMonth + 1}/${day}`, "jYYYY/jMM/jDD");
+    const todayMoment = moment();
+    
+    if (selectedMoment.isBefore(todayMoment, 'day')) {
+      // تاریخ گذشته - نمی‌توان انتخاب کرد
+      return;
+    }
+    
+    setSelectedDate({ year: viewYear, month: viewMonth, day });
+    setIsCalendarOpen(false);
+  };
+
+  const handleToday = () => {
+    const today = getTodayJalali();
+    setViewYear(today.year);
+    setViewMonth(today.month);
+    setSelectedDate({ ...today, day: today.day });
+  };
+
+  const isDateDisabled = (day: number): boolean => {
+    const selectedMoment = moment(`${viewYear}/${viewMonth + 1}/${day}`, "jYYYY/jMM/jDD");
+    const todayMoment = moment();
+    return selectedMoment.isBefore(todayMoment, 'day');
+  };
+
+  const isDateSelected = (day: number): boolean => {
+    return (
+      selectedDate.year === viewYear &&
+      selectedDate.month === viewMonth &&
+      selectedDate.day === day
+    );
+  };
+
+  const isToday = (day: number): boolean => {
+    return (
+      todayJalali.year === viewYear &&
+      todayJalali.month === viewMonth &&
+      todayJalali.day === day
+    );
+  };
+
+  const calendarDays = useMemo(
+    () => generateCalendar(viewYear, viewMonth),
+    [viewYear, viewMonth]
+  );
+
+  const weekDays = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
 
   if (!isCalendarOpen) return null;
 
   return (
-               <div className="h-screen text-white overflow-auto max-w-md m-auto">
-  
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* پس‌زمینه تیره با محو شدن */}
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
-        onClick={() => setIsCalendarOpen(false)}
-      />
-
-      {/* پنل تقویم با انیمیشن از پایین */}
-      <div className="relative w-full max-w-md bg-[#1e2530] rounded-t-3xl shadow-2xl overflow-hidden animate-slideUp">
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <button
-            onClick={handlePrevMonth}
-            className={`p-2 rounded-full transition ${year === todayJalali.year && month === todayJalali.month ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10"}`}
-            disabled={year === todayJalali.year && month === todayJalali.month}
-          >
-            <ChevronRight className="w-6 h-6 text-emerald-400" />
-          </button>
-          <h3 className="text-lg font-bold text-white">
-            {getJalaliMonthName(month)} {year}
-          </h3>
-          <button
-            onClick={handleNextMonth}
-            className="p-2 hover:bg-white/10 rounded-full transition"
-          >
-            <ChevronLeft className="w-6 h-6 text-emerald-400" />
-          </button>
-        </div>
-
-        <div className="p-6">
-          {/* روزهای هفته */}
-          <div className="grid grid-cols-7 gap-2 text-center mb-2">
-            {["ش", "ی", "د", "س", "چ", "پ", "ج"].map((day) => (
-              <div key={day} className="text-xs text-gray-400 font-bold">
-                {day}
-              </div>
-            ))}
-          </div>
-          
-          {/* روزهای ماه */}
-          <div className="grid grid-cols-7 gap-2">
-              {renderDays()}
-          </div>
-
-          {/* دکمه‌های فوتر */}
-          <div className="flex justify-center gap-4 mt-6">
-            <button
-              onClick={() => {
-                // هنگام بازگشت به امروز، تاریخ را به امروز برمی‌گردانیم
-                setSelectedDate({ year: todayJalali.year, month: todayJalali.month, day: todayJalali.day });
-                setIsCalendarOpen(false);
-              }}
-              className="px-6 py-3 bg-white/10 text-gray-300 rounded-xl hover:bg-white/20 transition text-sm font-medium"
-            >
-              بازگشت به امروز
-            </button>
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsCalendarOpen(false)} />
+      <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
+        <div className="bg-linear-to-b from-[#1a1e26] to-[#242933] backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+          {/* هدر */}
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h3 className="text-xl font-bold text-white">انتخاب تاریخ</h3>
             <button
               onClick={() => setIsCalendarOpen(false)}
-              className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition shadow-lg"
+              className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
             >
-              تأیید
+              <X className="w-6 h-6" />
             </button>
+          </div>
+
+          {/* انتخاب ماه و سال */}
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-8">
+              <button
+                onClick={handlePrevMonth}
+                className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+              
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-white">
+                  {persianMonths[viewMonth]}
+                </h2>
+                <p className="text-gray-400 mt-1">{viewYear}</p>
+              </div>
+              
+              <button
+                onClick={handleNextMonth}
+                className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* روزهای هفته */}
+            <div className="grid grid-cols-7 gap-2 mb-4">
+              {weekDays.map((day, index) => (
+                <div
+                  key={index}
+                  className="text-center py-2.5 text-sm font-medium text-gray-400"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* روزهای ماه */}
+            <div className="grid grid-cols-7 gap-2">
+              {calendarDays.map((day, index) => {
+                if (day === null) {
+                  return <div key={`empty-${index}`} className="h-12" />;
+                }
+                
+                const disabled = isDateDisabled(day);
+                const selected = isDateSelected(day);
+                const today = isToday(day);
+                
+                return (
+                  <button
+                    key={day}
+                    onClick={() => !disabled && handleSelectDate(day)}
+                    disabled={disabled}
+                    className={`
+                      h-12 rounded-xl flex items-center justify-center transition-all duration-200
+                      ${selected 
+                        ? 'bg-emerald-500 text-white shadow-lg scale-105' 
+                        : today 
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : disabled
+                            ? 'bg-gray-800/30 text-gray-500 cursor-not-allowed'
+                            : 'bg-white/5 text-white hover:bg-white/10 hover:scale-105 active:scale-95'
+                      }
+                    `}
+                  >
+                    <span className="font-medium">{day}</span>
+                    {today && !selected && (
+                      <span className="absolute bottom-1 w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* دکمه امروز */}
+            <button
+              onClick={handleToday}
+              className="w-full mt-8 py-3.5 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl font-bold text-white shadow-lg hover:from-emerald-600 hover:to-emerald-700 active:scale-95 transition-all"
+            >
+              انتخاب امروز ({todayJalali.day} {persianMonths[todayJalali.month]})
+            </button>
+
+            {/* پیام هشدار برای تاریخ‌های گذشته */}
+            {selectedDate.day && isDateDisabled(selectedDate.day) && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <p className="text-xs text-red-300 text-center">
+                  ⚠️ تاریخ انتخاب شده گذشته است. لطفا تاریخ آینده انتخاب کنید.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      
-      {/* انیمیشن و استایل‌های سفارشی */}
-      <style jsx>{`
-        @keyframes slideUp {
-          from {
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        .animate-slideUp {
-          animation: slideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
-    </div>
     </div>
   );
-}
+};
+
+export default JalaliCalendarModal;

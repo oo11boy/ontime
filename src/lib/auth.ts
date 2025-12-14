@@ -20,12 +20,14 @@ export function generateToken(userId: number): string {
  * @returns number (userId) یا null
  */
 export function verifyToken(token: string): number | null {
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-        return decoded.userId;
-    } catch (error) {
-        return null;
-    }
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as unknown as JwtPayload; 
+        return decoded.userId;
+    } catch (error) {
+        // 🌟 لاگ کردن خطا برای عیب‌یابی
+        console.error("JWT Verification Failed:", error); 
+        return null;
+    }
 }
 
 // تایپ RouteContext در Next.js 15
