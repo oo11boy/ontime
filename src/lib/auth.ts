@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { query } from './db'; // <--- لازم برای چک کردن نقش ادمین در دیتابیس
 
-const JWT_SECRET = process.env.JWT_SECRET || 'YOUR_SUPER_SECURE_NEXTJS_SECRET_KEY';
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 interface JwtPayload {
     userId: number;
