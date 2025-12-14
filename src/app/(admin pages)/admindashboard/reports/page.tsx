@@ -192,7 +192,7 @@ export default function ReportsPage() {
                   </div>
                   
                   <div 
-                    className={`w-full max-w-[50px] ${data.height} bg-gradient-to-t from-emerald-500/10 to-emerald-500 rounded-t-lg transition-all duration-700 ease-out group-hover:from-emerald-500/30 group-hover:to-emerald-400 relative overflow-hidden group-hover:scale-y-105 origin-bottom`}
+                    className={`w-full max-w-[50px] ${data.height} bg-linear-to-t from-emerald-500/10 to-emerald-500 rounded-t-lg transition-all duration-700 ease-out group-hover:from-emerald-500/30 group-hover:to-emerald-400 relative overflow-hidden group-hover:scale-y-105 origin-bottom`}
                   >
                       <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                   </div>
@@ -347,7 +347,7 @@ function GoalProgress({ label, percent, color, shadowColor }: any) {
           style={{ width: `${percent}%` }}
         >
           {/* افکت شاین متحرک روی نوار پیشرفت */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
+          <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
         </div>
       </div>
     </div>
