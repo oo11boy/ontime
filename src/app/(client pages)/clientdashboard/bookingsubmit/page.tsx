@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
-import moment from "moment-jalaali";
 import {
   User,
   Phone,

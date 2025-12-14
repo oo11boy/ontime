@@ -978,9 +978,10 @@ const fetchAppointments = useCallback(async () => {
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => handleAddAppointment(day.date)}
-                        disabled={day.isPast || day.isWeekend}
+                     disabled={day.isPast}
+
                         className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${
-                          day.isPast || day.isWeekend
+                          day.isPast
                             ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
                             : "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
                         }`}
@@ -1006,11 +1007,7 @@ const fetchAppointments = useCallback(async () => {
                       <p className="text-center text-gray-400 text-sm py-4">
                         ⚠️ تاریخ گذشته - امکان ثبت نوبت وجود ندارد
                       </p>
-                    ) : day.isWeekend ? (
-                      <p className="text-center text-gray-400 text-sm py-4">
-                        به دلیل تعطیلی، امکان رزرو وجود ندارد
-                      </p>
-                    ) : day.appointments.length > 0 ? (
+                    ): day.appointments.length > 0 ? (
                       <div className="space-y-2">
                         {day.appointments.map((app) => (
                           <div
