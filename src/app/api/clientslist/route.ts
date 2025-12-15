@@ -12,12 +12,24 @@ const handler = withAuth(async (req: NextRequest, context) => {
     try {
       const url = new URL(req.url);
       const search = url.searchParams.get("search") || "";
-      const page = parseInt(url.searchParams.get("page") || "1");
-      const limit = parseInt(url.searchParams.get("limit") || "20");
+      const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+      const limit = Math.max(1, Number(url.searchParams.get("limit")) || 20);
       const offset = (page - 1) * limit;
 
+      // پارامترهای اصلی کوئری
+      const mainParams: any[] = [userId];
+      let searchCondition = "";
+
+      if (search.trim()) {
+        searchCondition = ` AND (
+          c.client_name LIKE ? OR 
+          c.client_phone LIKE ?
+        )`;
+        mainParams.push(`%${search}%`, `%${search}%`);
+      }
+
       // کوئری اصلی برای دریافت مشتریان
-      let sql = `
+      const sql = `
         SELECT 
           c.id,
           c.client_name as name,
@@ -30,43 +42,23 @@ const handler = withAuth(async (req: NextRequest, context) => {
           MAX(b.booking_time) as last_booking_time
         FROM clients c
         LEFT JOIN booking b ON c.client_phone = b.client_phone AND c.user_id = b.user_id
-        WHERE c.user_id = ?
-      `;
-
-      const params: any[] = [userId];
-
-      if (search.trim()) {
-        sql += ` AND (
-          c.client_name LIKE ? OR 
-          c.client_phone LIKE ?
-        )`;
-        params.push(`%${search}%`, `%${search}%`);
-      }
-
-      sql += `
+        WHERE c.user_id = ? ${searchCondition}
         GROUP BY c.id
         ORDER BY c.last_booking_date DESC, c.total_bookings DESC
         LIMIT ? OFFSET ?
       `;
 
-      params.push(limit, offset);
-
-      const clients = await query(sql, params);
+      const clients = await query(sql, [...mainParams, limit, offset]);
 
       // شمارش کل مشتریان برای pagination
-      let countSql = `SELECT COUNT(*) as total FROM clients WHERE user_id = ?`;
-      const countParams: any[] = [userId];
+      const countSql = `
+        SELECT COUNT(DISTINCT c.id) as total 
+        FROM clients c 
+        WHERE c.user_id = ? ${searchCondition}
+      `;
 
-      if (search.trim()) {
-        countSql += ` AND (
-          client_name LIKE ? OR 
-          client_phone LIKE ?
-        )`;
-        countParams.push(`%${search}%`, `%${search}%`);
-      }
-
-      const [countResult]: any = await query(countSql, countParams);
-      const total = countResult.total;
+      const [countResult]: any = await query(countSql, mainParams);
+      const total = countResult.total || 0;
 
       return NextResponse.json({
         success: true,
