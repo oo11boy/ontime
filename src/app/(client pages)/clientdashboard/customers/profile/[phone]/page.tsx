@@ -17,7 +17,7 @@ import {
 
 import { useRouter, useParams } from "next/navigation";
 // اطمینان حاصل کنید مسیر Footer صحیح است. معمولا @/components بهتر است.
-import Footer from "../../components/Footer/Footer"; 
+import Footer from "../../../components/Footer/Footer";
 import { formatPersianDate, formatPersianDateTime } from "@/lib/date-utils";
 
 interface Appointment {
@@ -52,7 +52,7 @@ export default function CustomerProfile() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modals State
   const [showGeneralSmsModal, setShowGeneralSmsModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
@@ -76,7 +76,7 @@ export default function CustomerProfile() {
   const fetchCustomerData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/clientslist/${phone}`);
+      const response = await fetch(`/api/Customers/${phone}`);
       const data = await response.json();
 
       if (data.success) {
@@ -102,7 +102,7 @@ export default function CustomerProfile() {
 
       if (response.ok) {
         if (sendCancellationSms && cancellationMessage.trim() && customer) {
-          await fetch(`/api/clientslist/${customer.phone}`, {
+          await fetch(`/api/Customers/${customer.phone}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: cancellationMessage.trim() }),
@@ -139,7 +139,7 @@ export default function CustomerProfile() {
     if (!customer || !generalSmsMessage.trim()) return;
     try {
       setSendingSms(true);
-      const response = await fetch(`/api/clientslist/${customer.phone}`, {
+      const response = await fetch(`/api/Customers/${customer.phone}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: generalSmsMessage.trim() }),
@@ -160,7 +160,7 @@ export default function CustomerProfile() {
     if (!customer) return;
     try {
       setBlocking(true);
-      const response = await fetch("/api/clientslist", {
+      const response = await fetch("/api/Customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -193,7 +193,7 @@ export default function CustomerProfile() {
     if (!customer) return;
     try {
       setBlocking(true);
-      const response = await fetch("/api/clientslist", {
+      const response = await fetch("/api/Customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -286,10 +286,12 @@ export default function CustomerProfile() {
                 : "border-emerald-500/20"
             } overflow-hidden shadow-2xl m-4`}
           >
-            {customer.is_blocked && (
+            {customer.is_blocked ? (
               <div className="bg-linear-to-r from-red-600 to-red-700 text-white text-center py-3.5 font-bold text-sm shadow-lg">
                 این مشتری بلاک شده است
               </div>
+            ) : (
+              ""
             )}
 
             <div className="p-6">
@@ -306,7 +308,10 @@ export default function CustomerProfile() {
                   </div>
                   <div className="text-right">
                     <h1 className="text-xl font-bold">{customer.name}</h1>
-                    <p className="text-sm text-gray-300 mt-1 flex items-center gap-2">
+                    <p
+                      dir="ltr"
+                      className="text-sm text-gray-300 mt-1 flex flex-row-reverse items-center gap-2"
+                    >
                       <Phone className="w-4 h-4 text-emerald-400" />
                       {formatPhoneStr(customer.phone)}
                     </p>

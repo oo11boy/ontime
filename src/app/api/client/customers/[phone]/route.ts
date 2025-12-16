@@ -1,6 +1,5 @@
-// File Path: src\app\api\clientslist\[phone]\route.ts
+// File Path: src\app\api\Customers\[phone]\route.ts
 
-// src/app/api/clients/[phone]/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";

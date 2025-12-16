@@ -20,7 +20,7 @@ export default function Footer() {
 
   const navItems = [
     { href: "/clientdashboard", icon: Home, label: "خانه" },
-    { href: "/clientdashboard/clients", icon: User, label: "مشتریان" },
+    { href: "/clientdashboard/customers", icon: User, label: "مشتریان" },
     { href: "/clientdashboard/calendar", icon: Calendar, label: "تقویم" },
     { href: "/clientdashboard/services", icon:List , label: "خدمات" },
   ];

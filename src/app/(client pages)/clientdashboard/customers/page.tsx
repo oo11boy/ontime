@@ -1,10 +1,9 @@
-// File Path: src/app/(client pages)/clientdashboard/clients/page.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { Search, User, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Footer from "../components/Footer/Footer"; // اطمینان حاصل کنید مسیر Footer درست است
+import Footer from "../components/Footer/Footer";
 
 interface Client {
   id: string;
@@ -47,7 +46,7 @@ export default function CustomersList() {
         ...(search && { search }),
       });
 
-      const response = await fetch(`/api/clientslist?${params}`);
+      const response = await fetch(`/api/Customers?${params}`);
       const data = await response.json();
 
       if (data.success) {
@@ -61,27 +60,29 @@ export default function CustomersList() {
     }
   };
 
+  // 💡 اصلاحیه: فقط یک useEffect برای مدیریت همزمان اولین بارگذاری و جستجو
   useEffect(() => {
-    fetchClients(1, searchQuery);
-  }, []);
-
-  useEffect(() => {
+    // پاک کردن تایم‌آوت قبلی برای جلوگیری از فراخوانی‌های متعدد
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
 
+    // تنظیم تایم‌آوت جدید (Debounce)
     const timeout = setTimeout(() => {
+      // این تابع هم برای اولین بارگذاری (searchQuery = "")
+      // و هم برای جستجوها اجرا می‌شود.
       fetchClients(1, searchQuery);
-    }, 500);
+    }, 500); // ۵۰۰ میلی‌ثانیه تأخیر برای جستجو
 
     setSearchTimeout(timeout);
 
+    // تابع cleanup برای پاک کردن تایم‌آوت هنگام Unmount شدن کامپوننت یا رندر مجدد
     return () => {
       if (searchTimeout) {
         clearTimeout(searchTimeout);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery]); // وابسته به تغییرات searchQuery
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -179,9 +180,10 @@ export default function CustomersList() {
                         </p>
                       </div>
 
-                      {/* اصلاح مهم: حذف button از داخل Link */}
                       <Link
-                        href={`/clientdashboard/profile/${encodeURIComponent(client.phone)}`}
+                        href={`/clientdashboard/customers/profile/${encodeURIComponent(
+                          client.phone
+                        )}`}
                         className="bg-linear-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 rounded-lg text-white text-sm font-medium flex items-center gap-1.5 hover:from-emerald-600 hover:to-emerald-700 transition shadow-md cursor-pointer"
                       >
                         <User className="w-4 h-4 group-hover:-translate-x-1 transition" />

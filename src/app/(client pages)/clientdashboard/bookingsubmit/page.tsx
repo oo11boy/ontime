@@ -559,7 +559,7 @@ const fetchUserSmsBalance = useCallback(async () => {
 
     setIsCheckingClient(true);
     try {
-      const response = await fetch(`/api/client/check?phone=${encodeURIComponent(cleanedPhone)}`);
+      const response = await fetch(`/api/client/customers/checkcustomerexist?phone=${encodeURIComponent(cleanedPhone)}`);
       const data = await response.json();
       
       if (data.exists && data.client) {

@@ -1,24 +1,33 @@
-// File Path: src\app\api\clientslist\route.ts
-
-// src/app/api/clients/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 
 const handler = withAuth(async (req: NextRequest, context) => {
-  const { userId } = context;
+  const { userId: rawUserId } = context; 
+  const userId = Number(rawUserId); // 1. اطمینان از عدد صحیح بودن userId
+
+  if (isNaN(userId) || userId <= 0) {
+      console.error("❌ Authentication Error: Invalid User ID received:", rawUserId);
+      return NextResponse.json({ success: false, message: "Authentication Error: Invalid User ID" }, { status: 401 });
+  }
 
   // GET: دریافت لیست مشتریان
   if (req.method === "GET") {
     try {
       const url = new URL(req.url);
       const search = url.searchParams.get("search") || "";
-      const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
-      const limit = Math.max(1, Number(url.searchParams.get("limit")) || 20);
+      
+      // 2. اعتبارسنجی و تبدیل پارامترهای pagination
+      const rawPage = Number(url.searchParams.get("page") || 1);
+      const rawLimit = Number(url.searchParams.get("limit") || 20);
+      
+      // مقادیر limit و offset کاملاً اعتبارسنجی شده و عدد صحیح هستند
+      const page = Math.max(1, Math.floor(rawPage));
+      const limit = Math.max(1, Math.floor(rawLimit));
       const offset = (page - 1) * limit;
 
-      // پارامترهای اصلی کوئری
+      // پارامترهای اصلی کوئری (فقط شامل userId و جستجو)
       const mainParams: any[] = [userId];
       let searchCondition = "";
 
@@ -31,28 +40,25 @@ const handler = withAuth(async (req: NextRequest, context) => {
       }
 
       // کوئری اصلی برای دریافت مشتریان
+      // 💥 اصلاح نهایی: LIMIT و OFFSET به صورت رشته به کوئری اضافه شدند، نه پارامتر Bound
       const sql = `
         SELECT 
-          c.id,
-          c.client_name as name,
-          c.client_phone as phone,
+          c.id, c.client_name as name, c.client_phone as phone,
           DATE_FORMAT(c.last_booking_date, '%Y/%m/%d') as lastVisit,
-          c.total_bookings,
-          c.cancelled_count,
-          c.is_blocked,
-          MAX(b.booking_date) as last_booking_date,
-          MAX(b.booking_time) as last_booking_time
+          c.total_bookings, c.cancelled_count, c.is_blocked,
+          MAX(b.booking_date) as last_booking_date, MAX(b.booking_time) as last_booking_time
         FROM clients c
         LEFT JOIN booking b ON c.client_phone = b.client_phone AND c.user_id = b.user_id
         WHERE c.user_id = ? ${searchCondition}
         GROUP BY c.id
         ORDER BY c.last_booking_date DESC, c.total_bookings DESC
-        LIMIT ? OFFSET ?
+        LIMIT ${limit} OFFSET ${offset}
       `;
 
-      const clients = await query(sql, [...mainParams, limit, offset]);
+      // آرگومان‌های ارسالی فقط شامل mainParams هستند
+      const clients = await query(sql, mainParams);
 
-      // شمارش کل مشتریان برای pagination
+      // کوئری شمارش (این کوئری نیاز به اصلاح LIMIT/OFFSET ندارد)
       const countSql = `
         SELECT COUNT(DISTINCT c.id) as total 
         FROM clients c 
@@ -73,7 +79,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
         },
       });
     } catch (error) {
-      console.error("❌ خطا در دریافت لیست مشتریان:", error);
+      console.error("❌ خطا در دریافت لیست مشتریان (بعد از اصلاح LIMIT):", error);
       return NextResponse.json(
         {
           success: false,
@@ -88,15 +94,14 @@ const handler = withAuth(async (req: NextRequest, context) => {
   if (req.method === "POST") {
     try {
       const { action, clientId, phone } = await req.json();
+      
+      const cleanClientId = Number(clientId);
 
       if (action === "block") {
-        // بلاک کردن مشتری
         await query(
           "UPDATE clients SET is_blocked = 1, updated_at = NOW() WHERE user_id = ? AND id = ?",
-          [userId, clientId]
+          [userId, cleanClientId]
         );
-
-        // لغو تمام نوبت‌های فعال این مشتری
         await query(
           "UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE user_id = ? AND client_phone = ? AND status = 'active'",
           [userId, phone]
@@ -109,10 +114,9 @@ const handler = withAuth(async (req: NextRequest, context) => {
       }
 
       if (action === "unblock") {
-        // رفع بلاک کردن مشتری
         await query(
           "UPDATE clients SET is_blocked = 0, updated_at = NOW() WHERE user_id = ? AND id = ?",
-          [userId, clientId]
+          [userId, cleanClientId]
         );
 
         return NextResponse.json({

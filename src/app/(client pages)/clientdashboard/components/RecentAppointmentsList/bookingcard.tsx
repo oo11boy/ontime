@@ -92,7 +92,7 @@ const BookingCard = ({ appointment }: BookingCardProps) => {
         
         {/* دکمه مشاهده پروفایل */}
         <Link 
-          href={`/clientdashboard/customers/${appointment.client_phone}`}
+          href={`/clientdashboard/customers/profile/${appointment.client_phone}`}
           className="bg-linear-to-r from-emerald-500 to-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-emerald-600 hover:to-emerald-700 transition-colors"
         >
           مشاهده پروفایل

@@ -1,6 +1,3 @@
-// File Path: src\lib\date-utils.ts
-
-// src\lib\date-utils.ts
 import moment from "moment-jalaali";
 
 // نام‌های فارسی کامل ماه‌ها
@@ -15,6 +12,18 @@ export const persianMonths = [
 export const persianWeekDays = [
   'شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'
 ];
+
+/**
+ * تعیین فرمت ورودی برای moment
+ * تاریخ‌های میلادی معمولاً YYYY-MM-DD (ISO) یا YYYY/MM/DD هستند.
+ */
+const getGregorianDateFormat = (dateString: string): string | undefined => {
+    if (typeof dateString === 'string') {
+        if (dateString.includes('-')) return 'YYYY-MM-DD';
+        if (dateString.includes('/')) return 'YYYY/MM/DD';
+    }
+    return undefined; // به moment اجازه می‌دهد تا به صورت هوشمند تشخیص دهد
+};
 
 /**
  * تبدیل تاریخ شمسی (سال، ماه، روز) به تاریخ میلادی YYYY-MM-DD
@@ -60,16 +69,26 @@ export const gregorianToPersian = (date: Date | string): {
   weekDay: string;
 } => {
   try {
-    const m = moment(date);
+    let m;
+    if (typeof date === 'string') {
+        // اعمال اصلاحیه: تعیین صریح فرمت ورودی برای جلوگیری از هشدار
+        const format = getGregorianDateFormat(date);
+        m = moment(date, format);
+    } else {
+        m = moment(date);
+    }
+
+    if (!m.isValid()) throw new Error("Invalid date input.");
+
     const monthIndex = m.jMonth();
-    const weekDayIndex = m.day(); // 0 = شنبه, 6 = جمعه
+    const weekDayIndex = m.day(); // 0 = یکشنبه (میلادی), moment-jalaali آن را به شنبه منطبق می‌کند
     
     return {
       year: m.jYear(),
       month: monthIndex + 1,
       monthName: persianMonths[monthIndex],
       day: m.jDate(),
-      weekDay: persianWeekDays[weekDayIndex],
+      weekDay: persianWeekDays[m.day() % 7], // 0: یکشنبه, 1: دوشنبه, ..., 6: شنبه. باید با آرایه persianWeekDays هماهنگ شود (که از شنبه شروع می‌شود)
       fullDate: `${m.jDate()} ${persianMonths[monthIndex]} ${m.jYear()}`
     };
   } catch (error) {
@@ -87,10 +106,16 @@ export const gregorianToPersian = (date: Date | string): {
 
 /**
  * برای نمایش تاریخ در جدول‌ها
+ * این تابع در خط 93 فایل date-utils.ts قرار دارد و هشدار از همین‌جا تولید می‌شد.
  */
 export const formatPersianDate = (dateString: string): string => {
   try {
-    const m = moment(dateString);
+    // اعمال اصلاحیه: تعیین صریح فرمت ورودی برای جلوگیری از هشدار
+    const format = getGregorianDateFormat(dateString);
+    const m = moment(dateString, format); // <--- خط 93 (خطایی که گزارش شده بود)
+
+    if (!m.isValid()) return dateString; // اگر پارس نشد، رشته اصلی را برگردان
+
     const monthIndex = m.jMonth();
     return `${m.jDate()} ${persianMonths[monthIndex]} ${m.jYear()}`;
   } catch {
@@ -115,7 +140,9 @@ export const formatPersianDateTime = (dateString: string, timeString: string): s
  */
 export const isPastDate = (dateString: string, timeString?: string): boolean => {
   try {
-    const m = moment(dateString);
+    // اعمال اصلاحیه: تعیین صریح فرمت ورودی
+    const format = getGregorianDateFormat(dateString);
+    const m = moment(dateString, format); 
     
     if (timeString) {
       // اگر زمان هم مشخص شده
