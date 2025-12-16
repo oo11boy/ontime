@@ -1,6 +1,5 @@
 // File Path: src\app\api\bookings\recent\route.ts
 
-// src/app/api/appointments/recent/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
