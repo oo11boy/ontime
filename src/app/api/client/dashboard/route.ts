@@ -11,33 +11,33 @@ const handler = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
   try {
-    // کوئری اول: اطلاعات اصلی کاربر + جمع پیامک‌های خریداری‌شده
-// کوئری اول: اطلاعات اصلی کاربر + جمع پیامک‌های خریداری‌شده
+
 const mainSql = `
   SELECT 
     u.name, 
     u.phone, 
     j.persian_name AS job_title,
-    u.sms_balance AS plan_sms_balance,
+    u.sms_balance,
+    u.purchased_sms_credit,
     u.sms_monthly_quota,
     p.title AS plan_title,
     u.plan_key,
-    p.price_per_100_sms,
     u.trial_ends_at,
-    COALESCE(SUM(sp.remaining_sms), 0) AS purchased_sms_credit,
-    (u.sms_balance + COALESCE(SUM(sp.remaining_sms), 0)) AS total_sms_balance
+    COALESCE(SUM(CASE 
+      WHEN sp.type = 'one_time_sms' 
+        AND sp.status = 'active'
+        AND (sp.expires_at IS NULL OR sp.expires_at >= CURDATE())
+      THEN sp.remaining_sms 
+      ELSE 0 
+    END), 0) AS purchased_packages_total
   FROM users u
   LEFT JOIN jobs j ON u.job_id = j.id
   LEFT JOIN plans p ON u.plan_key = p.plan_key
-  LEFT JOIN smspurchase sp ON sp.user_id = u.id 
-    AND sp.type = 'one_time_sms' 
-    AND sp.status = 'active'
-    AND (sp.expires_at IS NULL OR sp.expires_at >= CURDATE())
+  LEFT JOIN smspurchase sp ON sp.user_id = u.id
   WHERE u.id = ?
   GROUP BY u.id
   LIMIT 1
 `;
-
     const mainResult = await query<any>(mainSql, [userId]);
 
     if (mainResult.length === 0) {

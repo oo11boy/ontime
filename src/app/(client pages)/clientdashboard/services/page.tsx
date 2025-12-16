@@ -89,54 +89,52 @@ export default function ServicesListPage() {
     setModalOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!form.name.trim()) {
-      toast.error("نام خدمت الزامی است");
-      return;
+const handleSubmit = async () => {
+  if (!form.name.trim()) {
+    toast.error("نام خدمت الزامی است");
+    return;
+  }
+
+  if (!form.duration_minutes || parseInt(form.duration_minutes) <= 0) {
+    toast.error("مدت زمان باید بیشتر از صفر باشد");
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const url = editData 
+      ? `/api/client/services/${editData.id}`
+      : '/api/client/services';
+    
+    const method = editData ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name.trim(),
+        price: form.price ? parseFloat(form.price) : 0,
+        duration_minutes: parseInt(form.duration_minutes) || 30,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      toast.success(data.message);
+      setModalOpen(false);
+      fetchServices(); // رفرش لیست
+    } else {
+      toast.error(data.message || "خطا در ذخیره‌سازی");
     }
-
-    if (!form.duration_minutes || parseInt(form.duration_minutes) <= 0) {
-      toast.error("مدت زمان باید بیشتر از صفر باشد");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const url = editData 
-        ? `/api/client/services/${editData.id}`
-        : '/api/client/services';
-      
-      const method = editData ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: form.name,
-          price: form.price ? parseFloat(form.price) : 0,
-          duration_minutes: parseInt(form.duration_minutes),
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success(data.message);
-        setModalOpen(false);
-        fetchServices(); // رفرش لیست
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      console.error("Error saving service:", error);
-      toast.error("خطا در ذخیره‌سازی");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  } catch (error) {
+    console.error("Frontend error:", error);
+    toast.error("خطا در ارتباط با سرور");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   const handleDelete = async (id: number) => {
     if (!confirm("آیا از حذف این خدمت اطمینان دارید؟")) return;
 

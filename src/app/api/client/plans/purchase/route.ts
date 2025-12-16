@@ -75,38 +75,47 @@ const purchasePlan = withAuth(async (req: NextRequest, context) => {
         
         // ⭐️⭐️ منطق تفکیک موجودی پلن و پیامک خریداری شده ⭐️⭐️
         
-        if (isPlanPurchase) {
-            // خرید پلن اشتراکی: جایگزینی موجودی پلن
-            updateFields.push('sms_balance = ?'); // 👈 جایگزین موجودی پلن می‌شود (ریست ماهانه)
-            updateParams.push(totalSmsToAdd);
+  // File Path: src\app\api\client\plans\purchase\route.ts
+// بخشی از کد که نیاز به اصلاح دارد:
 
-            updateFields.push('sms_monthly_quota = ?'); // سهمیه ماهانه جدید
-            updateParams.push(totalSmsToAdd);
-
-            updateFields.push('plan_key = ?');
-            updateParams.push(planKey);
-            
-            // به‌روزرسانی تاریخ شروع/انقضای سهمیه ماهانه بر اساس خرید جدید
-            updateFields.push('quota_starts_at = ?');
-            updateParams.push(valid_from || today);
-            
-            updateFields.push('quota_ends_at = ?');
-            updateParams.push(finalValidUntil);
-
-            // صفر کردن وضعیت تریال در صورت انتقال به پلن پولی
-            if (planKey && planKey !== 'free_trial') {
-                updateFields.push('trial_starts_at = NULL, trial_ends_at = NULL');
-            }
-
-        } else if (purchase_type === 'one_time_sms') {
-            // خرید یک‌بار مصرف: اضافه کردن به purchased_sms_credit
-            updateFields.push('purchased_sms_credit = purchased_sms_credit + ?'); // 👈 اضافه کردن به موجودی خریداری شده
-            updateParams.push(totalSmsToAdd);
-        } else {
-            // اگر نوع خرید نامشخص یا 'trial_quota' است، آن را به موجودی پلن اضافه کن (رفتار پیش‌فرض)
-            updateFields.push('sms_balance = sms_balance + ?'); 
-            updateParams.push(totalSmsToAdd);
-        }
+// در بخش به‌روزرسانی موجودی کاربر:
+if (isPlanPurchase) {
+  // خرید پلن اشتراکی
+  updateFields.push('sms_balance = ?');
+  updateParams.push(totalSmsToAdd);
+  
+  updateFields.push('sms_monthly_quota = ?');
+  updateParams.push(totalSmsToAdd);
+  
+  updateFields.push('plan_key = ?');
+  updateParams.push(planKey);
+  
+  updateFields.push('quota_starts_at = ?');
+  updateParams.push(valid_from || today);
+  
+  updateFields.push('quota_ends_at = ?');
+  updateParams.push(finalValidUntil);
+  
+  // حفظ purchased_sms_credit فعلی
+  updateFields.push('purchased_sms_credit = purchased_sms_credit');
+  
+  // صفر کردن وضعیت تریال
+  if (planKey && planKey !== 'free_trial') {
+    updateFields.push('trial_starts_at = NULL, trial_ends_at = NULL');
+  }
+} else if (purchase_type === 'one_time_sms') {
+  // خرید یک‌بار مصرف: اضافه کردن به purchased_sms_credit
+  updateFields.push('purchased_sms_credit = purchased_sms_credit + ?');
+  updateParams.push(totalSmsToAdd);
+} else if (purchase_type === 'trial_quota') {
+  // تریال: تنظیم موجودی پلن
+  updateFields.push('sms_balance = ?');
+  updateParams.push(totalSmsToAdd);
+  updateFields.push('sms_monthly_quota = ?');
+  updateParams.push(totalSmsToAdd);
+  updateFields.push('plan_key = ?');
+  updateParams.push('free_trial');
+}
 
         updateSql += ' ' + updateFields.join(', ');
         updateSql += ' WHERE id = ?';

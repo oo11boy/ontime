@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId: rawUserId } = context; 
-  const userId = Number(rawUserId); // 1. اطمینان از عدد صحیح بودن userId
+  const userId = Number(rawUserId); 
 
   if (isNaN(userId) || userId <= 0) {
       console.error("❌ Authentication Error: Invalid User ID received:", rawUserId);
