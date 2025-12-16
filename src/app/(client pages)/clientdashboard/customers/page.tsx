@@ -87,7 +87,6 @@ const AddClientModal = ({
         onSuccess();
         onClose();
       } else if (res.status === 409) {
-        // به جای confirm، از toast سفارشی با دکمه‌های قبول/رد استفاده می‌کنیم
         toast.custom((t) => (
           <div className="bg-[#1a1e26]/95 backdrop-blur-md border border-white/20 text-white px-6 py-5 rounded-2xl shadow-2xl max-w-md">
             <p className="text-center mb-4">
@@ -180,7 +179,7 @@ const AddClientModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-linear-to-b from-[#1a1e26] to-[#242933] rounded-3xl border border-white/10 shadow-2xl p-6">
+      <div className="relative w-full max-w-md bg-gradient-to-b from-[#1a1e26] to-[#242933] rounded-3xl border border-white/10 shadow-2xl p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-white">افزودن مشتری جدید</h3>
           <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20">
@@ -240,7 +239,6 @@ const AddClientModal = ({
   );
 };
 
-// BulkSmsModal بدون تغییر (فقط toastها هماهنگ شده‌اند)
 const BulkSmsModal = ({
   isOpen,
   onClose,
@@ -336,7 +334,7 @@ const BulkSmsModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-linear-to-b from-[#1a1e26] to-[#242933] rounded-3xl border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4">
+      <div className="relative w-full max-w-md bg-gradient-to-b from-[#1a1e26] to-[#242933] rounded-3xl border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4">
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <MessageSquare className="w-6 h-6 text-emerald-400" />
@@ -416,7 +414,7 @@ const BulkSmsModal = ({
           <button
             onClick={handleSend}
             disabled={isSending || selectedClients.length === 0 || selectedClients.length > userSmsBalance}
-            className="flex-1 py-3.5 bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSending ? (
               <>
@@ -482,16 +480,21 @@ export default function CustomersList() {
   };
 
   useEffect(() => {
+    // بارگذاری اولیه لیست مشتریان و موجودی
+    fetchClients(1, searchQuery);
+    fetchUserSmsBalance();
+  }, []);
+
+  useEffect(() => {
+    // فقط وقتی searchQuery تغییر کرد، با debounce
+    if (searchQuery === "") return; 
     if (searchTimeout) clearTimeout(searchTimeout);
-    const timeout = setTimeout(() => fetchClients(1, searchQuery), 500);
+    const timeout = setTimeout(() => {
+      fetchClients(1, searchQuery);
+    }, 500);
     setSearchTimeout(timeout);
     return () => clearTimeout(timeout);
   }, [searchQuery]);
-
-  useEffect(() => {
-    fetchClients();
-    fetchUserSmsBalance();
-  }, []);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -547,7 +550,7 @@ export default function CustomersList() {
   return (
     <div className="h-screen text-white overflow-auto max-w-md mx-auto">
       <Toaster position="top-center" containerClassName="!top-0" />
-      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white">
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933] text-white">
         {/* هدر */}
         <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
           <div className="max-w-2xl mx-auto p-4">
@@ -562,10 +565,7 @@ export default function CustomersList() {
                   موجودی: {isLoadingBalance ? '...' : `${userSmsBalance} پیامک`}
                 </div>
                 <button
-                  onClick={() => {
-                    fetchClients();
-                    fetchUserSmsBalance();
-                  }}
+                  onClick={refreshClients}
                   className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20"
                 >
                   <RefreshCw className="w-5 h-5" />
@@ -584,7 +584,7 @@ export default function CustomersList() {
               <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400" />
             </div>
 
-            <div className="mt-4 flex  text-xs flex-row gap-3">
+            <div className="mt-4 flex text-xs flex-row gap-3">
               <button
                 onClick={() => setShowBulkSmsModal(true)}
                 disabled={clients.length === 0}
@@ -599,7 +599,7 @@ export default function CustomersList() {
                 className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2"
               >
                 <User className="w-5 h-5" />
-  افزودن مشتری
+                افزودن مشتری
               </button>
             </div>
           </div>
@@ -627,7 +627,7 @@ export default function CustomersList() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg ${
-                        client.is_blocked ? "bg-red-500/20 text-red-400" : "bg-linear-to-br from-emerald-400 to-emerald-600"
+                        client.is_blocked ? "bg-red-500/20 text-red-400" : "bg-gradient-to-br from-emerald-400 to-emerald-600"
                       }`}>
                         {client.name ? client.name[0] : "?"}
                       </div>
@@ -650,7 +650,7 @@ export default function CustomersList() {
                       </div>
                       <Link
                         href={`/clientdashboard/customers/profile/${encodeURIComponent(client.phone)}`}
-                        className="bg-linear-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 rounded-lg text-white text-sm font-medium flex items-center gap-1.5 hover:from-emerald-600 hover:to-emerald-700"
+                        className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 rounded-lg text-white text-sm font-medium flex items-center gap-1.5 hover:from-emerald-600 hover:to-emerald-700"
                       >
                         <User className="w-4 h-4" />
                       </Link>

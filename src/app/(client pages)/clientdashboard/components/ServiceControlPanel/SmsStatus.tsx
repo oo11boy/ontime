@@ -36,7 +36,6 @@ const formatDate = (dateStr: string): string => {
 export default function SmsStatus({
   planInitialSms = 0,
   planSmsBalance = 0,
-  purchasedSmsBalance = 0,
   purchasedPackages = [],
 }: SmsStatusProps) {
   const [showDetails, setShowDetails] = useState(false);
