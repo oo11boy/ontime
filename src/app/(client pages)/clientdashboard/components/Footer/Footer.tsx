@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\Footer\Footer.tsx
+
 "use client";
 
 import { Calendar, Home, List, Settings, User } from "lucide-react";

@@ -1,3 +1,5 @@
+// File Path: src\app\api\client\plans\purchase\route.ts
+
 // src/app/api/plans/route.ts - (فقط تابع POST اصلاح شد)
 
 import { NextRequest, NextResponse } from 'next/server';

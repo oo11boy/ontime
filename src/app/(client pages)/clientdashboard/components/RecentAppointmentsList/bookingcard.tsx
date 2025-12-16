@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\RecentAppointmentsList\bookingcard.tsx
+
 // src/components/BookingCard.tsx (یا در همان فایل)
 import Link from "next/link";
 import React from "react";

@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\ServiceControlPanel\Planstatus.tsx
+
 import React from "react";
 import { Sparkles, Star } from "lucide-react";
 import Link from "next/link";

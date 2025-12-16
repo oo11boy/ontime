@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\layout.tsx
+
 
 "use client"; 
 

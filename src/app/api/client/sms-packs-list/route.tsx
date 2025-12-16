@@ -1,3 +1,5 @@
+// File Path: src\app\api\client\sms-packs-list\route.tsx
+
 // app/api/sms-packs/client/route.ts (مسیر عمومی کلاینت)
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db'; 

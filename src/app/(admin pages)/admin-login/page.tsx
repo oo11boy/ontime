@@ -1,3 +1,5 @@
+// File Path: src\app\(admin pages)\admin-login\page.tsx
+
 "use client";
 import React, { JSX, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";

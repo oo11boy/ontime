@@ -1,3 +1,5 @@
+// File Path: src\app\api\bookings\update-bookings\route.ts
+
 import { query, QueryResult } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 

@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\AuthGuard.tsx
+
 // src/app/(client pages)/clientdashboard/AuthGuard.tsx
 "use client";
 import { useEffect, useState, ReactNode } from "react";

@@ -1,3 +1,5 @@
+// File Path: src\app\api\admin\admin-auth\logout\route.ts
+
 // src/app/api/admin-auth/logout/route.ts
 
 import { NextResponse } from 'next/server';

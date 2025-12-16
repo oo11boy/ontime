@@ -1,3 +1,5 @@
+// File Path: src\app\(admin pages)\admindashboard\page.tsx
+
 "use client";
 import React from "react";
 import {

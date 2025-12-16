@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\page.tsx
+
 "use client";
 
 import React, { useEffect, useState } from "react";

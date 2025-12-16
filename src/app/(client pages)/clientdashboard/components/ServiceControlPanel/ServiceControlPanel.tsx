@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\ServiceControlPanel\ServiceControlPanel.tsx
+
 import React from "react";
 import PlanStatus from "./Planstatus";
 import Buttons from "./Buttons";

@@ -1,3 +1,5 @@
+// File Path: src\lib\db.ts
+
 // src/lib/db.ts
 import mysql from 'mysql2/promise';
 

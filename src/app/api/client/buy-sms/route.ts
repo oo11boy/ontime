@@ -1,3 +1,5 @@
+// File Path: src\app\api\client\buy-sms\route.ts
+
 // src/app/api/buy-sms/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';

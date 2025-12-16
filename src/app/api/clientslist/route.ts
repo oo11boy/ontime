@@ -1,3 +1,5 @@
+// File Path: src\app\api\clientslist\route.ts
+
 // src/app/api/clients/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";

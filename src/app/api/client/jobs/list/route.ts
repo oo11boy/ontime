@@ -1,3 +1,5 @@
+// File Path: src\app\api\client\jobs\list\route.ts
+
 // app/api/jobs/list/route.ts  (یا /api/jobs?simple=true)
 
 import { NextResponse } from 'next/server';

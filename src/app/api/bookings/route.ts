@@ -1,4 +1,4 @@
-// src/app/api/bookings/route.ts
+// File Path: src\app\api\bookings\route.ts
 import { NextResponse } from "next/server";
 import { query, QueryResult } from "@/lib/db";
 import { withAuth } from "@/lib/auth";

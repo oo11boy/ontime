@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\ServiceControlPanel\SmsStatus.tsx
+
 "use client";
 
 import React, { useState } from "react";

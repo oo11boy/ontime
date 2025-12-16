@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\bookingsubmit\page.tsx
+
 "use client";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";

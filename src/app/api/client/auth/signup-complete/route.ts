@@ -1,3 +1,5 @@
+// File Path: src\app\api\client\auth\signup-complete\route.ts
+
 // src/app/api/auth/signup-complete/route.ts
 
 import { NextResponse } from 'next/server';

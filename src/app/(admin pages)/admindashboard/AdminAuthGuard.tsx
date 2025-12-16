@@ -1,3 +1,5 @@
+// File Path: src\app\(admin pages)\admindashboard\AdminAuthGuard.tsx
+
 // src/app/(admin pages)/admindashboard/AdminAuthGuard.tsx
 
 "use client";

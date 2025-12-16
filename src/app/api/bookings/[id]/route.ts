@@ -1,4 +1,5 @@
-// src/app/api/bookings/[id]/route.ts
+// File Path: src\app\api\bookings\[id]\route.ts
+
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
@@ -6,7 +7,7 @@ import type { NextRequest } from 'next/server';
 
 const handler = withAuth(async (req: NextRequest, context) => {
     const { userId, params: paramsPromise } = context;
-    const params = await paramsPromise; // مهم: await کن چون Promise هست
+    const params = await paramsPromise;
     const { id } = params;
 
     // === PUT: ویرایش نوبت ===

@@ -1,3 +1,5 @@
+// File Path: src\app\api\admin\plans\route.ts
+
 // src/app/api/plans/route.ts (مسیر مدیریت پلن‌ها - Admin Only)
 import { NextRequest, NextResponse } from 'next/server';
 import { query, QueryResult } from '@/lib/db';

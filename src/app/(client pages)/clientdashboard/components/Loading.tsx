@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\Loading.tsx
+
 import { Zap } from 'lucide-react'
 import React from 'react'
 

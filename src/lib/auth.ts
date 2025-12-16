@@ -1,3 +1,5 @@
+// File Path: src\lib\auth.ts
+
 // src/lib/auth.ts
 import jwt from 'jsonwebtoken';
 import { NextResponse } from 'next/server';

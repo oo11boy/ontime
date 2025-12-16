@@ -1,3 +1,5 @@
+// File Path: src\lib\types.ts
+
 // lib/types.ts
 export type User = {
   id: number;

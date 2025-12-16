@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\ServiceControlPanel\Buttons.tsx
+
 "use client";
 import React from "react";
 import { Plus, Sparkles, CalendarPlus } from "lucide-react";

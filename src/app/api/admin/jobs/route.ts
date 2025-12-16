@@ -1,3 +1,5 @@
+// File Path: src\app\api\admin\jobs\route.ts
+
 // app/api/jobs/route.ts
 
 import { NextResponse } from 'next/server';

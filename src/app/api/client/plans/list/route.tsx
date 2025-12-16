@@ -1,3 +1,5 @@
+// File Path: src\app\api\client\plans\list\route.tsx
+
 // src/app/api/plans/client/route.ts (مسیر عمومی کلاینت)
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';

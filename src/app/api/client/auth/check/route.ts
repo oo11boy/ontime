@@ -1,3 +1,5 @@
+// File Path: src\app\api\client\auth\check\route.ts
+
 // src/app/api/auth/check/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';

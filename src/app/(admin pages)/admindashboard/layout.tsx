@@ -1,3 +1,5 @@
+// File Path: src\app\(admin pages)\admindashboard\layout.tsx
+
 "use client";
 import React, { useState } from "react";
 // ایمپورت کامپوننت گارد احراز هویت ادمین

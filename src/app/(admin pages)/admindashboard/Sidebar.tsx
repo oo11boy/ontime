@@ -1,3 +1,5 @@
+// File Path: src\app\(admin pages)\admindashboard\Sidebar.tsx
+
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";

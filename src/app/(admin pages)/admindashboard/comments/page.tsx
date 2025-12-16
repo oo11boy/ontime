@@ -1,3 +1,5 @@
+// File Path: src\app\(admin pages)\admindashboard\comments\page.tsx
+
 "use client";
 import React, { useState } from "react";
 import {

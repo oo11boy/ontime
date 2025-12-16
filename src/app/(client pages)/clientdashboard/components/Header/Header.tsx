@@ -1,3 +1,5 @@
+// File Path: src\app\(client pages)\clientdashboard\components\Header\Header.tsx
+
 // src/app/(client pages)/clientdashboard/header.tsx
 "use client"; // 👈 این کامپوننت باید Client Component باشد
 
