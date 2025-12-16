@@ -4,12 +4,12 @@ import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 
 const handler = withAuth(async (req: NextRequest, context) => {
-  const { userId: rawUserId } = context; 
-  const userId = Number(rawUserId); 
+  const { userId: rawUserId } = context;
+  const userId = Number(rawUserId);
 
   if (isNaN(userId) || userId <= 0) {
-      console.error("❌ Authentication Error: Invalid User ID received:", rawUserId);
-      return NextResponse.json({ success: false, message: "Authentication Error: Invalid User ID" }, { status: 401 });
+    console.error("❌ Authentication Error: Invalid User ID received:", rawUserId);
+    return NextResponse.json({ success: false, message: "Authentication Error: Invalid User ID" }, { status: 401 });
   }
 
   // GET: دریافت لیست مشتریان
@@ -17,17 +17,14 @@ const handler = withAuth(async (req: NextRequest, context) => {
     try {
       const url = new URL(req.url);
       const search = url.searchParams.get("search") || "";
-      
-      // 2. اعتبارسنجی و تبدیل پارامترهای pagination
+
       const rawPage = Number(url.searchParams.get("page") || 1);
       const rawLimit = Number(url.searchParams.get("limit") || 20);
-      
-      // مقادیر limit و offset کاملاً اعتبارسنجی شده و عدد صحیح هستند
+
       const page = Math.max(1, Math.floor(rawPage));
       const limit = Math.max(1, Math.floor(rawLimit));
       const offset = (page - 1) * limit;
 
-      // پارامترهای اصلی کوئری (فقط شامل userId و جستجو)
       const mainParams: any[] = [userId];
       let searchCondition = "";
 
@@ -39,8 +36,6 @@ const handler = withAuth(async (req: NextRequest, context) => {
         mainParams.push(`%${search}%`, `%${search}%`);
       }
 
-      // کوئری اصلی برای دریافت مشتریان
-      // 💥 اصلاح نهایی: LIMIT و OFFSET به صورت رشته به کوئری اضافه شدند، نه پارامتر Bound
       const sql = `
         SELECT 
           c.id, c.client_name as name, c.client_phone as phone,
@@ -55,10 +50,8 @@ const handler = withAuth(async (req: NextRequest, context) => {
         LIMIT ${limit} OFFSET ${offset}
       `;
 
-      // آرگومان‌های ارسالی فقط شامل mainParams هستند
       const clients = await query(sql, mainParams);
 
-      // کوئری شمارش (این کوئری نیاز به اصلاح LIMIT/OFFSET ندارد)
       const countSql = `
         SELECT COUNT(DISTINCT c.id) as total 
         FROM clients c 
@@ -79,22 +72,121 @@ const handler = withAuth(async (req: NextRequest, context) => {
         },
       });
     } catch (error) {
-      console.error("❌ خطا در دریافت لیست مشتریان (بعد از اصلاح LIMIT):", error);
+      console.error("❌ خطا در دریافت لیست مشتریان:", error);
       return NextResponse.json(
-        {
-          success: false,
-          message: "خطا در دریافت لیست مشتریان",
-        },
+        { success: false, message: "خطا در دریافت لیست مشتریان" },
         { status: 500 }
       );
     }
   }
 
-  // POST: بلاک یا رفع بلاک کردن مشتری
+  // POST: افزودن مشتری جدید
+  if (req.method === "POST") {
+    try {
+      const { name, phone } = await req.json();
+
+      if (!name?.trim() || !phone?.trim()) {
+        return NextResponse.json(
+          { success: false, message: "نام و شماره تلفن الزامی است" },
+          { status: 400 }
+        );
+      }
+
+      if (phone.length !== 11 || !/^\d{11}$/.test(phone)) {
+        return NextResponse.json(
+          { success: false, message: "شماره تلفن باید 11 رقم باشد" },
+          { status: 400 }
+        );
+      }
+
+      // چک کردن تکراری بودن
+      const [existing]: any = await query(
+        "SELECT id, client_name FROM clients WHERE user_id = ? AND client_phone = ?",
+        [userId, phone]
+      );
+
+      if (existing) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "این شماره تلفن قبلاً ثبت شده است",
+            existingName: existing.client_name,
+            status: 409,
+          },
+          { status: 409 }
+        );
+      }
+
+      // ثبت مشتری جدید
+      await query(
+        `INSERT INTO clients 
+          (client_name, client_phone, user_id, created_at, updated_at) 
+        VALUES (?, ?, ?, NOW(), NOW())`,
+        [name.trim(), phone, userId]
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "مشتری با موفقیت اضافه شد",
+      });
+    } catch (error) {
+      console.error("❌ خطا در ثبت مشتری جدید:", error);
+      return NextResponse.json(
+        { success: false, message: "خطا در ثبت مشتری" },
+        { status: 500 }
+      );
+    }
+  }
+
+  // PATCH: به‌روزرسانی نام مشتری (فقط برای شماره تکراری)
+  if (req.method === "PATCH") {
+    try {
+      const { phone, newName } = await req.json();
+
+      if (!phone || !newName?.trim()) {
+        return NextResponse.json(
+          { success: false, message: "شماره تلفن و نام جدید الزامی است" },
+          { status: 400 }
+        );
+      }
+
+      // چک کردن وجود مشتری
+      const [client]: any = await query(
+        "SELECT id FROM clients WHERE user_id = ? AND client_phone = ?",
+        [userId, phone]
+      );
+
+      if (!client) {
+        return NextResponse.json(
+          { success: false, message: "مشتری یافت نشد" },
+          { status: 404 }
+        );
+      }
+
+      // به‌روزرسانی نام
+      await query(
+        "UPDATE clients SET client_name = ?, updated_at = NOW() WHERE user_id = ? AND client_phone = ?",
+        [newName.trim(), userId, phone]
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "نام مشتری با موفقیت به‌روزرسانی شد",
+      });
+    } catch (error) {
+      console.error("❌ خطا در به‌روزرسانی نام مشتری:", error);
+      return NextResponse.json(
+        { success: false, message: "خطا در به‌روزرسانی" },
+        { status: 500 }
+      );
+    }
+  }
+
+  // POST: بلاک یا رفع بلاک (کد قبلی شما)
   if (req.method === "POST") {
     try {
       const { action, clientId, phone } = await req.json();
-      
+
       const cleanClientId = Number(clientId);
 
       if (action === "block") {
@@ -150,4 +242,4 @@ const handler = withAuth(async (req: NextRequest, context) => {
   );
 });
 
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST, handler as PATCH };
