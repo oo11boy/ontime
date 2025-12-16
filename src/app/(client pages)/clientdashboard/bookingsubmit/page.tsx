@@ -499,7 +499,7 @@ export default function NewAppointmentPage() {
   const fetchUserServices = useCallback(async () => {
     try {
       setIsLoadingServices(true);
-      const response = await fetch('/api/services');
+      const response = await fetch('/api/client/services');
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -749,7 +749,7 @@ const fetchUserSmsBalance = useCallback(async () => {
 
       console.log("Submitting booking data:", bookingData);
 
-      const response = await fetch("/api/bookings", {
+      const response = await fetch("/api/client/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

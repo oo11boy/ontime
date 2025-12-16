@@ -53,7 +53,7 @@ export default function ServicesListPage() {
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/services');
+      const response = await fetch('/api/client/services');
       const data = await response.json();
       
       if (data.success) {
@@ -103,8 +103,8 @@ export default function ServicesListPage() {
     setIsSubmitting(true);
     try {
       const url = editData 
-        ? `/api/services/${editData.id}`
-        : '/api/services';
+        ? `/api/client/services/${editData.id}`
+        : '/api/client/services';
       
       const method = editData ? 'PUT' : 'POST';
       
@@ -141,7 +141,7 @@ export default function ServicesListPage() {
     if (!confirm("آیا از حذف این خدمت اطمینان دارید؟")) return;
 
     try {
-      const response = await fetch(`/api/services/${id}`, {
+      const response = await fetch(`/api/client/services/${id}`, {
         method: 'DELETE',
       });
 
@@ -161,7 +161,7 @@ export default function ServicesListPage() {
 
   const toggleServiceStatus = async (id: number, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/services/${id}`, {
+      const response = await fetch(`/api/client/services/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

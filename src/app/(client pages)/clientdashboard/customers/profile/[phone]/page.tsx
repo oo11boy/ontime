@@ -76,7 +76,7 @@ export default function CustomerProfile() {
   const fetchCustomerData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/Customers/${phone}`);
+      const response = await fetch(`/api/client/customers/${phone}`);
       const data = await response.json();
 
       if (data.success) {
@@ -94,7 +94,7 @@ export default function CustomerProfile() {
     try {
       setCanceling(true);
 
-      const response = await fetch("/api/bookings", {
+      const response = await fetch("/api/client/bookings", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: apptId }),
@@ -102,7 +102,7 @@ export default function CustomerProfile() {
 
       if (response.ok) {
         if (sendCancellationSms && cancellationMessage.trim() && customer) {
-          await fetch(`/api/Customers/${customer.phone}`, {
+          await fetch(`/api/client/customers/${customer.phone}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: cancellationMessage.trim() }),
@@ -139,7 +139,7 @@ export default function CustomerProfile() {
     if (!customer || !generalSmsMessage.trim()) return;
     try {
       setSendingSms(true);
-      const response = await fetch(`/api/Customers/${customer.phone}`, {
+      const response = await fetch(`/api/client/customers/${customer.phone}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: generalSmsMessage.trim() }),
@@ -160,7 +160,7 @@ export default function CustomerProfile() {
     if (!customer) return;
     try {
       setBlocking(true);
-      const response = await fetch("/api/Customers", {
+      const response = await fetch("/api/client/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -193,7 +193,7 @@ export default function CustomerProfile() {
     if (!customer) return;
     try {
       setBlocking(true);
-      const response = await fetch("/api/Customers", {
+      const response = await fetch("/api/client/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

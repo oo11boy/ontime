@@ -82,7 +82,7 @@ const AppointmentDetailModal = ({
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/bookings/${appointment.id}`, {
+      const response = await fetch(`/api/client/bookings/${appointment.id}`, {
         method: "DELETE",
       });
       
@@ -578,7 +578,7 @@ export default function CalendarPage() {
   const fetchUserServices = useCallback(async () => {
     try {
       setIsLoadingServices(true);
-      const response = await fetch('/api/services');
+      const response = await fetch('/api/client/services');
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -635,7 +635,7 @@ const fetchAppointments = useCallback(async () => {
   setIsLoading(true);
   try {
 
-    const updateResponse = await fetch('/api/bookings/update-bookings', {
+    const updateResponse = await fetch('/api/client/bookings/update-bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -646,7 +646,7 @@ const fetchAppointments = useCallback(async () => {
     }
     
     // 2. سپس نوبت‌ها را دریافت کنید
-    const response = await fetch("/api/bookings");
+    const response = await fetch("/api/client/bookings");
     if (response.ok) {
       const data = await response.json();
       setAppointments(data.bookings || []);

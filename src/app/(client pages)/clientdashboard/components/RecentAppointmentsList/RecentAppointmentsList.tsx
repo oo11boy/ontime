@@ -23,7 +23,7 @@ export default function RecentAppointmentsList() {
   const fetchRecentAppointments = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/bookings/recent");
+      const response = await fetch("/api/client/bookings/recent");
       const data = await response.json();
       
       if (data.success) {

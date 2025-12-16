@@ -46,7 +46,7 @@ export default function CustomersList() {
         ...(search && { search }),
       });
 
-      const response = await fetch(`/api/Customers?${params}`);
+      const response = await fetch(`/api/client/customers?${params}`);
       const data = await response.json();
 
       if (data.success) {
