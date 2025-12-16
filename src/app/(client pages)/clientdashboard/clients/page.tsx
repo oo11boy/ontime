@@ -1,13 +1,10 @@
-// File Path: src\app\(client pages)\clientdashboard\clients\page.tsx
-
-// src/app/clientdashboard/customers/page.tsx
+// File Path: src/app/(client pages)/clientdashboard/clients/page.tsx
 "use client";
 import React, { useState, useEffect } from "react";
-import { Search, ArrowLeft, User, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, User, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-
 import { useRouter } from "next/navigation";
-import Footer from "../components/Footer/Footer";
+import Footer from "../components/Footer/Footer"; // اطمینان حاصل کنید مسیر Footer درست است
 
 interface Client {
   id: string;
@@ -93,8 +90,8 @@ export default function CustomersList() {
   };
 
   const formatPhone = (phone: string) => {
-    if (phone.length === 11) {
-      return `${phone.slice(0,4)} ${phone.slice(4,7)} ${phone.slice(7)}`;
+    if (phone && phone.length === 11) {
+      return `${phone.slice(0, 4)} ${phone.slice(4, 7)} ${phone.slice(7)}`;
     }
     return phone;
   };
@@ -131,26 +128,25 @@ export default function CustomersList() {
           ) : (
             <>
               {clients.map((client) => (
-                
                 <div
                   key={client.id}
                   className={`bg-gray-50/5 backdrop-blur-sm rounded-xl border p-4 hover:bg-gray-50/10 transition-all duration-300 group ${
-                    client.is_blocked 
-                      ? "border-red-500/50" 
+                    client.is_blocked
+                      ? "border-red-500/50"
                       : "border-emerald-500/20 hover:border-emerald-400/60"
                   }`}
                 >
-                  
                   <div className="flex items-center justify-between">
                     {/* آواتار و اطلاعات */}
                     <div className="flex items-center gap-3">
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg ${
-                        client.is_blocked
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-linear-to-br from-emerald-400 to-emerald-600"
-                      }`}>
-                        {client.name[0]}
-
+                      <div
+                        className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg ${
+                          client.is_blocked
+                            ? "bg-red-500/20 text-red-400"
+                            : "bg-linear-to-br from-emerald-400 to-emerald-600"
+                        }`}
+                      >
+                        {client.name ? client.name[0] : "?"}
                       </div>
                       <div className="text-right">
                         <h3 className="font-bold text-white group-hover:text-emerald-300 transition">
@@ -158,10 +154,14 @@ export default function CustomersList() {
                           {client.is_blocked ? (
                             <span className="text-xs text-red-400 mr-2">
                               بلاک شده
-                              </span>
-                          ): ""}
+                            </span>
+                          ) : (
+                            ""
+                          )}
                         </h3>
-                        <p className="text-xs text-gray-400">{formatPhone(client.phone)}</p>
+                        <p className="text-xs text-gray-400">
+                          {formatPhone(client.phone)}
+                        </p>
                         {client.last_booking_date && (
                           <p className="text-xs text-emerald-400 mt-1">
                             {client.total_bookings} نوبت
@@ -179,10 +179,12 @@ export default function CustomersList() {
                         </p>
                       </div>
 
-                      <Link href={`/clientdashboard/profile/${client.phone}`}>
-                        <button className="bg-linear-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 rounded-lg text-white text-sm font-medium flex items-center gap-1.5 hover:from-emerald-600 hover:to-emerald-700 transition shadow-md">
-                          <User className="w-4 h-4 group-hover:-translate-x-1 transition" />
-                        </button>
+                      {/* اصلاح مهم: حذف button از داخل Link */}
+                      <Link
+                        href={`/clientdashboard/profile/${encodeURIComponent(client.phone)}`}
+                        className="bg-linear-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 rounded-lg text-white text-sm font-medium flex items-center gap-1.5 hover:from-emerald-600 hover:to-emerald-700 transition shadow-md cursor-pointer"
+                      >
+                        <User className="w-4 h-4 group-hover:-translate-x-1 transition" />
                       </Link>
                     </div>
                   </div>
@@ -199,11 +201,11 @@ export default function CustomersList() {
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
-                  
+
                   <span className="text-sm text-gray-300">
                     صفحه {pagination.page} از {pagination.totalPages}
                   </span>
-                  
+
                   <button
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={pagination.page === pagination.totalPages}

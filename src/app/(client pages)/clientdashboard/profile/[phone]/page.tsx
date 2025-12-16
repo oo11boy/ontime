@@ -1,11 +1,10 @@
-// File Path: src\app\(client pages)\clientdashboard\profile\[phone]\page.tsx
-
+// File Path: src/app/(client pages)/clientdashboard/profile/[phone]/page.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import {
   MessageCircle,
   X,
-  CheckCircle,  // این را اضافه کنید
+  CheckCircle,
   Calendar,
   Ban,
   AlertCircle,
@@ -17,7 +16,8 @@ import {
 } from "lucide-react";
 
 import { useRouter, useParams } from "next/navigation";
-import Footer from "../../components/Footer/Footer";
+// اطمینان حاصل کنید مسیر Footer صحیح است. معمولا @/components بهتر است.
+import Footer from "../../components/Footer/Footer"; 
 import { formatPersianDate, formatPersianDateTime } from "@/lib/date-utils";
 
 interface Appointment {
@@ -28,7 +28,7 @@ interface Appointment {
   note: string;
   services: string;
   status: string;
-  displayStatus: 'pending' | 'completed' | 'canceled';
+  displayStatus: "pending" | "completed" | "canceled";
 }
 
 interface Customer {
@@ -47,23 +47,30 @@ interface Customer {
 export default function CustomerProfile() {
   const router = useRouter();
   const params = useParams();
-  const phone = params.phone as string;
+  const phone = params?.phone as string; // اضافه کردن Safe check
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modals State
   const [showGeneralSmsModal, setShowGeneralSmsModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showUnblockModal, setShowUnblockModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState<number | null>(null);
+
+  // Actions State
   const [sendCancellationSms, setSendCancellationSms] = useState(false);
   const [cancellationMessage, setCancellationMessage] = useState("");
   const [generalSmsMessage, setGeneralSmsMessage] = useState("");
   const [sendingSms, setSendingSms] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [blocking, setBlocking] = useState(false);
-const [showUnblockModal, setShowUnblockModal] = useState(false);
+
   useEffect(() => {
-    fetchCustomerData();
+    if (phone) {
+      fetchCustomerData();
+    }
   }, [phone]);
 
   const fetchCustomerData = async () => {
@@ -86,37 +93,26 @@ const [showUnblockModal, setShowUnblockModal] = useState(false);
   const handleCancelAppointment = async (apptId: number) => {
     try {
       setCanceling(true);
-      
-      // ارسال درخواست کنسلی به API
+
       const response = await fetch("/api/bookings", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: apptId }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        // ارسال پیامک کنسلی اگر کاربر خواسته
         if (sendCancellationSms && cancellationMessage.trim() && customer) {
           await fetch(`/api/clientslist/${customer.phone}`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: cancellationMessage.trim(),
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: cancellationMessage.trim() }),
           });
         }
 
-        // به‌روزرسانی local state
         setAppointments(
           appointments.map((appt) =>
-            appt.id === apptId 
-              ? { ...appt, displayStatus: 'canceled' as const } 
+            appt.id === apptId
+              ? { ...appt, displayStatus: "canceled" as const }
               : appt
           )
         );
@@ -141,24 +137,15 @@ const [showUnblockModal, setShowUnblockModal] = useState(false);
 
   const handleSendGeneralSms = async () => {
     if (!customer || !generalSmsMessage.trim()) return;
-
     try {
       setSendingSms(true);
-      
       const response = await fetch(`/api/clientslist/${customer.phone}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: generalSmsMessage.trim(),
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: generalSmsMessage.trim() }),
       });
-
       const data = await response.json();
-
       if (data.success) {
-        // TODO: نمایش پیام موفقیت
         setShowGeneralSmsModal(false);
         setGeneralSmsMessage("");
       }
@@ -171,15 +158,11 @@ const [showUnblockModal, setShowUnblockModal] = useState(false);
 
   const handleBlockCustomer = async () => {
     if (!customer) return;
-
     try {
       setBlocking(true);
-      
       const response = await fetch("/api/clientslist", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "block",
           clientId: customer.id,
@@ -188,14 +171,12 @@ const [showUnblockModal, setShowUnblockModal] = useState(false);
       });
 
       const data = await response.json();
-
       if (data.success) {
         setCustomer({ ...customer, is_blocked: true });
-        // به‌روزرسانی لیست نوبت‌ها
         setAppointments(
-          appointments.map(appt => 
-            appt.displayStatus === 'pending'
-              ? { ...appt, displayStatus: 'canceled' as const }
+          appointments.map((appt) =>
+            appt.displayStatus === "pending"
+              ? { ...appt, displayStatus: "canceled" as const }
               : appt
           )
         );
@@ -207,46 +188,40 @@ const [showUnblockModal, setShowUnblockModal] = useState(false);
       setShowBlockModal(false);
     }
   };
-// بعد از تابع handleBlockCustomer اضافه کنید:
-const handleUnblockCustomer = async () => {
-  if (!customer) return;
 
-  try {
-    setBlocking(true);
-    
-    const response = await fetch("/api/clientslist", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "unblock",  // تغییر action به unblock
-        clientId: customer.id,
-        phone: customer.phone,
-      }),
-    });
+  const handleUnblockCustomer = async () => {
+    if (!customer) return;
+    try {
+      setBlocking(true);
+      const response = await fetch("/api/clientslist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "unblock",
+          clientId: customer.id,
+          phone: customer.phone,
+        }),
+      });
 
-    const data = await response.json();
-
-    if (data.success) {
-      setCustomer({ ...customer, is_blocked: false });
-      // TODO: نمایش پیام موفقیت
+      const data = await response.json();
+      if (data.success) {
+        setCustomer({ ...customer, is_blocked: false });
+      }
+    } catch (error) {
+      console.error("Error unblocking customer:", error);
+    } finally {
+      setBlocking(false);
+      setShowUnblockModal(false);
     }
-  } catch (error) {
-    console.error("خطا در رفع بلاک کردن مشتری:", error);
-  } finally {
-    setBlocking(false);
-    setShowUnblockModal(false);
-  }
-};
-  const formatPhone = (phone: string) => {
-    if (phone.length === 11) {
-      return `${phone.slice(0,4)} ${phone.slice(4,7)} ${phone.slice(7)}`;
-    }
-    return phone;
   };
 
-  // تابع برای تبدیل تاریخ به فارسی
+  const formatPhoneStr = (p: string) => {
+    if (p && p.length === 11) {
+      return `${p.slice(0, 4)} ${p.slice(4, 7)} ${p.slice(7)}`;
+    }
+    return p;
+  };
+
   const getPersianDate = (dateStr: string) => {
     try {
       return formatPersianDate(dateStr);
@@ -255,7 +230,6 @@ const handleUnblockCustomer = async () => {
     }
   };
 
-  // تابع برای تبدیل تاریخ و زمان به فارسی
   const getPersianDateTime = (dateStr: string, timeStr: string) => {
     try {
       return formatPersianDateTime(dateStr, timeStr);
@@ -302,36 +276,39 @@ const handleUnblockCustomer = async () => {
               <ArrowLeft className="w-6 h-6" />
             </button>
             <h1 className="text-lg font-bold">پروفایل مشتری</h1>
-            <div className="w-10"></div> {/* برای بالانس */}
+            <div className="w-10"></div>
           </header>
 
-          {/* کارت اصلی پروفایل */}
-          <div className={`relative bg-white/5 backdrop-blur-sm rounded-2xl border ${
-            customer.is_blocked ? "border-red-500/50" : "border-emerald-500/20"
-          } overflow-hidden shadow-2xl m-4`}>
-            
-            {customer.is_blocked ? (
+          <div
+            className={`relative bg-white/5 backdrop-blur-sm rounded-2xl border ${
+              customer.is_blocked
+                ? "border-red-500/50"
+                : "border-emerald-500/20"
+            } overflow-hidden shadow-2xl m-4`}
+          >
+            {customer.is_blocked && (
               <div className="bg-linear-to-r from-red-600 to-red-700 text-white text-center py-3.5 font-bold text-sm shadow-lg">
                 این مشتری بلاک شده است
               </div>
-            ):""}
+            )}
 
             <div className="p-6">
-              {/* هدر پروفایل */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-xl ${
-                    customer.is_blocked 
-                      ? "bg-red-500/20 text-red-400" 
-                      : "bg-linear-to-br from-emerald-500 to-emerald-600"
-                  }`}>
+                  <div
+                    className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-xl ${
+                      customer.is_blocked
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-linear-to-br from-emerald-500 to-emerald-600"
+                    }`}
+                  >
                     {customer.name[0]}
                   </div>
                   <div className="text-right">
                     <h1 className="text-xl font-bold">{customer.name}</h1>
                     <p className="text-sm text-gray-300 mt-1 flex items-center gap-2">
                       <Phone className="w-4 h-4 text-emerald-400" />
-                      {formatPhone(customer.phone)}
+                      {formatPhoneStr(customer.phone)}
                     </p>
                     <p className="text-emerald-400 text-sm font-medium mt-2">
                       {customer.category || "بدون دسته‌بندی"}
@@ -343,66 +320,72 @@ const handleUnblockCustomer = async () => {
                 </div>
               </div>
 
-              {/* دکمه‌های عملیاتی */}
-     
-<div className="flex gap-3 mb-8">
-  <button
-    onClick={() => setShowGeneralSmsModal(true)}
-    disabled={customer.is_blocked}
-    className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
-      customer.is_blocked
-        ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
-        : "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
-    }`}
-  >
-    <MessageCircle className="w-5 h-5" />
-    ارسال پیامک
-  </button>
+              <div className="flex gap-3 mb-8">
+                <button
+                  onClick={() => setShowGeneralSmsModal(true)}
+                  disabled={customer.is_blocked}
+                  className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+                    customer.is_blocked
+                      ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                      : "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
+                  }`}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  ارسال پیامک
+                </button>
 
-  {customer.is_blocked ? (
-    <button
-      onClick={() => setShowUnblockModal(true)}
-      className="flex-1 py-3.5 bg-linear-to-r from-green-500 to-green-600 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:from-green-600 hover:to-green-700 active:scale-95 shadow-lg"
-    >
-      <CheckCircle className="w-5 h-5" />
-      رفع بلاک
-    </button>
-  ) : (
-    <button
-      onClick={() => setShowBlockModal(true)}
-      className="flex-1 py-3.5 bg-linear-to-r from-red-500 to-red-600 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:from-red-600 hover:to-red-700 active:scale-95 shadow-lg"
-    >
-      <Ban className="w-5 h-5" />
-      بلاک کردن
-    </button>
-  )}
-</div>
+                {customer.is_blocked ? (
+                  <button
+                    onClick={() => setShowUnblockModal(true)}
+                    className="flex-1 py-3.5 bg-linear-to-r from-green-500 to-green-600 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:from-green-600 hover:to-green-700 active:scale-95 shadow-lg"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    رفع بلاک
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowBlockModal(true)}
+                    className="flex-1 py-3.5 bg-linear-to-r from-red-500 to-red-600 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:from-red-600 hover:to-red-700 active:scale-95 shadow-lg"
+                  >
+                    <Ban className="w-5 h-5" />
+                    بلاک کردن
+                  </button>
+                )}
+              </div>
 
-              {/* آمار */}
+              {/* Statistics Grid */}
               <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="bg-white/5 rounded-xl p-5 border border-emerald-500/20 text-center">
                   <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-400">کل نوبت‌ها</p>
-                  <p className="text-2xl font-bold mt-1">{customer.totalAppointments}</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {customer.totalAppointments}
+                  </p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-5 border border-red-500/20 text-center">
                   <X className="w-10 h-10 text-red-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-400">کنسلی‌ها</p>
-                  <p className="text-2xl font-bold mt-1 text-red-400">{customer.canceledAppointments}</p>
+                  <p className="text-2xl font-bold mt-1 text-red-400">
+                    {customer.canceledAppointments}
+                  </p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-5 border border-blue-500/20 text-center">
                   <Calendar className="w-10 h-10 text-blue-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-400">انجام شده</p>
-                  <p className="text-2xl font-bold mt-1 text-blue-400">{customer.completedAppointments}</p>
+                  <p className="text-2xl font-bold mt-1 text-blue-400">
+                    {customer.completedAppointments}
+                  </p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-5 border border-yellow-500/20 text-center">
                   <AlertCircle className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-400">در انتظار</p>
-                  <p className="text-2xl font-bold mt-1 text-yellow-400">{customer.activeAppointments}</p>
+                  <p className="text-2xl font-bold mt-1 text-yellow-400">
+                    {customer.activeAppointments}
+                  </p>
                 </div>
               </div>
 
-              {/* لیست نوبت‌ها */}
+              {/* Appointments List */}
               <div>
                 <h3 className="text-lg font-bold mb-5 flex items-center gap-3">
                   <Calendar className="w-6 h-6 text-emerald-400" />
@@ -432,15 +415,17 @@ const handleUnblockCustomer = async () => {
                               <span className="font-bold text-white">
                                 {getPersianDateTime(appt.date, appt.time)}
                               </span>
-                              <span className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                                appt.displayStatus === "canceled"
-                                  ? "bg-red-500/20 text-red-400"
-                                  : appt.displayStatus === "completed"
-                                  ? "bg-blue-500/20 text-blue-400"
-                                  : "bg-emerald-500/20 text-emerald-400"
-                              }`}>
-                                {appt.displayStatus === "canceled" 
-                                  ? "کنسل شده" 
+                              <span
+                                className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                                  appt.displayStatus === "canceled"
+                                    ? "bg-red-500/20 text-red-400"
+                                    : appt.displayStatus === "completed"
+                                    ? "bg-blue-500/20 text-blue-400"
+                                    : "bg-emerald-500/20 text-emerald-400"
+                                }`}
+                              >
+                                {appt.displayStatus === "canceled"
+                                  ? "کنسل شده"
                                   : appt.displayStatus === "completed"
                                   ? "انجام شده"
                                   : "در انتظار"}
@@ -452,18 +437,21 @@ const handleUnblockCustomer = async () => {
                               </p>
                             )}
                             {appt.note && (
-                              <p className="text-sm text-gray-300">{appt.note}</p>
+                              <p className="text-sm text-gray-300">
+                                {appt.note}
+                              </p>
                             )}
                           </div>
 
-                          {appt.displayStatus === "pending" && !customer.is_blocked && (
-                            <button
-                              onClick={() => setShowCancelModal(appt.id)}
-                              className="p-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition-all"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          )}
+                          {appt.displayStatus === "pending" &&
+                            !customer.is_blocked && (
+                              <button
+                                onClick={() => setShowCancelModal(appt.id)}
+                                className="p-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition-all"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            )}
                         </div>
                       </div>
                     ))
@@ -474,16 +462,27 @@ const handleUnblockCustomer = async () => {
           </div>
         </div>
 
-        {/* مودال ارسال پیامک عمومی */}
+        {/* MODALS */}
+
+        {/* SMS Modal */}
         {showGeneralSmsModal && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowGeneralSmsModal(false)}>
-            <div className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-emerald-500/30" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowGeneralSmsModal(false)}
+          >
+            <div
+              className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-emerald-500/30"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-xl font-bold flex items-center gap-3">
                   <MessageCircle className="w-6 h-6 text-emerald-400" />
                   ارسال پیامک به {customer?.name}
                 </h3>
-                <button onClick={() => setShowGeneralSmsModal(false)} className="text-gray-400 hover:text-white">
+                <button
+                  onClick={() => setShowGeneralSmsModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -522,15 +521,23 @@ const handleUnblockCustomer = async () => {
           </div>
         )}
 
-        {/* مودال کنسل نوبت */}
+        {/* Cancel Modal */}
         {showCancelModal !== null && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowCancelModal(null)}>
-            <div className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-red-500/30" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowCancelModal(null)}
+          >
+            <div
+              className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-red-500/30"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center gap-3 text-red-400 mb-5">
                 <AlertCircle className="w-8 h-8" />
                 <h3 className="text-xl font-bold">کنسل کردن نوبت</h3>
               </div>
-              <p className="text-gray-300 mb-6">آیا از کنسل کردن این نوبت مطمئن هستید؟</p>
+              <p className="text-gray-300 mb-6">
+                آیا از کنسل کردن این نوبت مطمئن هستید؟
+              </p>
 
               <label className="flex items-center gap-3 mb-5 cursor-pointer">
                 <input
@@ -558,9 +565,13 @@ const handleUnblockCustomer = async () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => handleCancelAppointment(showCancelModal)}
-                  disabled={(sendCancellationSms && !cancellationMessage.trim()) || canceling}
+                  disabled={
+                    (sendCancellationSms && !cancellationMessage.trim()) ||
+                    canceling
+                  }
                   className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 ${
-                    (sendCancellationSms && !cancellationMessage.trim()) || canceling
+                    (sendCancellationSms && !cancellationMessage.trim()) ||
+                    canceling
                       ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                       : "bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                   }`}
@@ -586,30 +597,31 @@ const handleUnblockCustomer = async () => {
           </div>
         )}
 
-        {/* مودال بلاک کردن */}
+        {/* Block Modal */}
         {showBlockModal && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowBlockModal(false)}>
-            <div className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-red-500/30" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowBlockModal(false)}
+          >
+            <div
+              className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-red-500/50"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center gap-3 text-red-400 mb-5">
                 <Ban className="w-8 h-8" />
-                <h3 className="text-xl font-bold">بلاک کردن مشتری</h3>
+                <h3 className="text-xl font-bold">مسدود کردن مشتری</h3>
               </div>
-              <p className="text-gray-300 mb-6">
-                آیا از بلاک کردن <strong>{customer?.name}</strong> مطمئن هستید؟
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                با مسدود کردن این مشتری، تمام نوبت‌های آینده او کنسل شده و امکان
+                دریافت نوبت جدید نخواهد داشت.
                 <br />
-                <span className="text-sm text-red-400">
-                  تمام نوبت‌های فعال این مشتری نیز کنسل خواهند شد.
-                </span>
+                آیا مطمئن هستید؟
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={handleBlockCustomer}
                   disabled={blocking}
-                  className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 ${
-                    blocking
-                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                      : "bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                  }`}
+                  className="flex-1 py-3.5 bg-linear-to-r from-red-600 to-red-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-red-700 hover:to-red-800 transition"
                 >
                   {blocking ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -621,56 +633,55 @@ const handleUnblockCustomer = async () => {
                   onClick={() => setShowBlockModal(false)}
                   className="flex-1 py-3.5 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition"
                 >
-                  لغو
+                  انصراف
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Unblock Modal */}
+        {showUnblockModal && (
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowUnblockModal(false)}
+          >
+            <div
+              className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-green-500/50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 text-green-400 mb-5">
+                <CheckCircle className="w-8 h-8" />
+                <h3 className="text-xl font-bold">رفع مسدودیت مشتری</h3>
+              </div>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                آیا از رفع مسدودیت این مشتری اطمینان دارید؟ او مجدداً قادر به
+                رزرو نوبت خواهد بود.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleUnblockCustomer}
+                  disabled={blocking}
+                  className="flex-1 py-3.5 bg-linear-to-r from-green-500 to-green-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-green-600 hover:to-green-700 transition"
+                >
+                  {blocking ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "بله، رفع بلاک کن"
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowUnblockModal(false)}
+                  className="flex-1 py-3.5 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition"
+                >
+                  انصراف
                 </button>
               </div>
             </div>
           </div>
         )}
       </div>
-
-
-{showUnblockModal && (
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowUnblockModal(false)}>
-    <div className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-green-500/30" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-3 text-green-400 mb-5">
-        <CheckCircle className="w-8 h-8" />
-        <h3 className="text-xl font-bold">رفع بلاک مشتری</h3>
-      </div>
-      <p className="text-gray-300 mb-6">
-        آیا از رفع بلاک کردن <strong>{customer?.name}</strong> مطمئن هستید؟
-        <br />
-        <span className="text-sm text-green-400">
-          پس از رفع بلاک، این مشتری می‌تواند دوباره نوبت رزرو کند.
-        </span>
-      </p>
-      <div className="flex gap-3">
-        <button
-          onClick={handleUnblockCustomer}
-          disabled={blocking}
-          className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 ${
-            blocking
-              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-              : "bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-          }`}
-        >
-          {blocking ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            "بله، رفع بلاک کن"
-          )}
-        </button>
-        <button
-          onClick={() => setShowUnblockModal(false)}
-          className="flex-1 py-3.5 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition"
-        >
-          لغو
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-      <Footer/>
+      <Footer />
     </div>
   );
 }
