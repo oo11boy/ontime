@@ -17,7 +17,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
 
     return NextResponse.json({
       success: true,
-      services: services || []
+      services: services || [],
     });
   } catch (error: any) {
     console.error("Error fetching services:", error);
@@ -28,7 +28,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
   }
 });
 
-
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
@@ -38,7 +37,10 @@ export const POST = withAuth(async (req: NextRequest, context) => {
 
     // اعتبارسنجی‌ها (همان قبلی)
     if (!name || !name.trim()) {
-      return NextResponse.json({ success: false, message: "نام خدمت الزامی است" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "نام خدمت الزامی است" },
+        { status: 400 }
+      );
     }
 
     const existing = await query(
@@ -47,14 +49,21 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     );
 
     if (Array.isArray(existing) && existing.length > 0) {
-      return NextResponse.json({ success: false, message: "این خدمت قبلاً ثبت شده است" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "این خدمت قبلاً ثبت شده است" },
+        { status: 400 }
+      );
     }
 
-    const safePrice = price != null ? parseFloat(price) : 0.00;
-    const safeDuration = duration_minutes != null ? parseInt(duration_minutes) : 30;
+    const safePrice = price != null ? parseFloat(price) : 0.0;
+    const safeDuration =
+      duration_minutes != null ? parseInt(duration_minutes) : 30;
 
     if (isNaN(safePrice) || isNaN(safeDuration)) {
-      return NextResponse.json({ success: false, message: "قیمت یا مدت زمان نامعتبر" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "قیمت یا مدت زمان نامعتبر" },
+        { status: 400 }
+      );
     }
 
     // INSERT بدون انتظار insertId در مرحله اول
@@ -66,7 +75,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     );
 
     // حالا آخرین ID ثبت‌شده توسط این کاربر را بگیریم
-    const [lastInsert] = await query(
+    const [lastInsert] = await query<{ id: number }>(
       `SELECT id FROM user_services 
        WHERE user_id = ? 
        ORDER BY id DESC 
@@ -86,18 +95,20 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       [insertId]
     );
 
-    return NextResponse.json({
-      success: true,
-      message: "خدمت با موفقیت اضافه شد",
-      service: newService
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        message: "خدمت با موفقیت اضافه شد",
+        service: newService,
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error("Error in POST service:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: "خطا در ایجاد خدمت: " + (error.message || "خطای ناشناخته") 
+      {
+        success: false,
+        message: "خطا در ایجاد خدمت: " + (error.message || "خطای ناشناخته"),
       },
       { status: 500 }
     );
