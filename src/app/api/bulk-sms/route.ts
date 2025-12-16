@@ -1,4 +1,4 @@
-// File Path: src\app\api\bulk-sms\route.ts
+// File Path: src/app/api/bulk-sms/route.ts
 
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
@@ -10,145 +10,100 @@ export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
   try {
-    const { appointmentIds, message } = await req.json();
+    const { appointmentIds, clientIds, message } = await req.json();
 
-    console.log("📨 Bulk SMS request:", { userId, appointmentIds, message });
-
-    if (!appointmentIds || !Array.isArray(appointmentIds) || appointmentIds.length === 0) {
-      return NextResponse.json(
-        { message: "لیست نوبت‌ها الزامی است" },
-        { status: 400 }
-      );
+    // حداقل یکی از لیست‌ها باید باشد
+    if ((!appointmentIds?.length && !clientIds?.length) || !message?.trim()) {
+      return NextResponse.json({ message: "داده‌های ورودی نامعتبر", success: false }, { status: 400 });
     }
 
-    if (!message || !message.trim()) {
-      return NextResponse.json(
-        { message: "متن پیام الزامی است" },
-        { status: 400 }
-      );
-    }
+    const smsNeeded = (appointmentIds?.length || 0) + (clientIds?.length || 0);
 
-    // بررسی موجودی کل پیامک (پلن + بسته‌ها)
+    // چک موجودی
     const balanceDetails = await getSmsBalanceDetails(userId);
-    const smsNeeded = appointmentIds.length;
-
-    console.log("💰 Balance check:", {
-      needed: smsNeeded,
-      planBalance: balanceDetails.plan_balance,
-      purchasedBalance: balanceDetails.purchased_balance,
-      totalBalance: balanceDetails.total_balance
-    });
-
     if (balanceDetails.total_balance < smsNeeded) {
-      return NextResponse.json(
-        { 
-          message: `موجودی پیامک کافی نیست. نیاز: ${smsNeeded}، موجودی کل: ${balanceDetails.total_balance}`,
-          details: {
-            needed: smsNeeded,
-            plan_balance: balanceDetails.plan_balance,
-            purchased_balance: balanceDetails.purchased_balance,
-            total_balance: balanceDetails.total_balance
-          },
-          success: false
-        },
-        { status: 402 }
-      );
+      return NextResponse.json({ message: "موجودی کافی نیست", success: false }, { status: 402 });
     }
 
-    // دریافت اطلاعات نوبت‌ها
-    const placeholders = appointmentIds.map(() => '?').join(',');
-    const appointments: any[] = await query(
-      `SELECT id, client_name, client_phone FROM booking 
-       WHERE id IN (${placeholders}) AND user_id = ? AND status = 'active'`,
-      [...appointmentIds, userId]
-    );
+    let targets: any[] = [];
+    let smsType = 'bulk';
 
-    console.log("✅ Found appointments:", appointments.length);
-
-    if (!appointments || appointments.length === 0) {
-      return NextResponse.json(
-        { 
-          message: "هیچ نوبت فعالی یافت نشد",
-          success: false 
-        },
-        { status: 404 }
+    // حالت ۱: ارسال به نوبت‌ها (booking)
+    if (appointmentIds?.length) {
+      const placeholders = appointmentIds.map(() => '?').join(',');
+      targets = await query(
+        `SELECT id AS targetId, client_name AS name, client_phone AS phone 
+         FROM booking 
+         WHERE id IN (${placeholders}) AND user_id = ? AND status = 'active'`,
+        [...appointmentIds, userId]
       );
+      smsType = 'bulk_appointments';
+    } 
+    // حالت ۲: ارسال به مشتریان مستقیم (clients)
+    else if (clientIds?.length) {
+      const placeholders = clientIds.map(() => '?').join(',');
+      targets = await query(
+        `SELECT id AS targetId, client_name AS name, client_phone AS phone 
+         FROM clients 
+         WHERE id IN (${placeholders}) AND user_id = ? AND is_blocked = 0`,
+        [...clientIds, userId]
+      );
+      smsType = 'bulk_customers';
     }
 
-    // کسر پیامک‌ها از موجودی
+    if (!targets.length) {
+      return NextResponse.json({ message: "هیچ مشتری/نوبت فعالی یافت نشد", success: false }, { status: 404 });
+    }
+
+    // کسر پیامک‌ها
     const deductionResult = await deductSms(userId, smsNeeded);
-    
     if (!deductionResult) {
-      return NextResponse.json(
-        { 
-          message: "خطا در کسر پیامک‌ها",
-          success: false 
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ message: "خطا در کسر موجودی پیامک", success: false }, { status: 500 });
     }
 
-    const results = [];
-    
-    // ارسال پیام به هر مشتری
-    for (const appointment of appointments) {
-      console.log("📱 Processing appointment:", appointment.id);
-      
-      // اطمینان از وجود client_name
-      if (!appointment.client_name) {
-        console.warn("⚠️ No client_name for appointment:", appointment.id);
-        continue;
-      }
-      
-      // جایگزینی متغیر {client_name} با نام واقعی مشتری
-      const personalizedMessage = message.replace(/{client_name}/g, appointment.client_name);
-      
-      // ثبت در لاگ SMS
+    const results: any[] = [];
+
+    for (const target of targets) {
+      // جایگزینی {client_name}
+      const name = target.name || "مشتری عزیز";
+      const personalizedMessage = message.replace(/{client_name}/g, name);
+
+      // booking_id فقط برای نوبت‌ها
+      const bookingId = smsType === 'bulk_appointments' ? target.targetId : null;
+
+      // ثبت در smslog (ستون‌ها دقیقاً با دیتابیس تو مطابقت داره)
       await query(
-        "INSERT INTO smslog (user_id, booking_id, to_phone, content, cost, sms_type) VALUES (?, ?, ?, ?, 1, 'bulk')",
-        [userId, appointment.id, appointment.client_phone, personalizedMessage]
+        `INSERT INTO smslog (user_id, booking_id, to_phone, content, cost, sms_type) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, bookingId, target.phone, personalizedMessage, 1, smsType]
       );
-      
+
       results.push({
-        appointmentId: appointment.id,
-        phone: appointment.client_phone,
-        clientName: appointment.client_name,
+        targetId: target.targetId,
+        phone: target.phone,
+        name: name,
         sent: true
       });
     }
 
-    // دریافت موجودی جدید
+    // موجودی جدید
     const newBalanceDetails = await getSmsBalanceDetails(userId);
-
-    console.log("✅ Bulk SMS completed:", {
-      sentCount: results.length,
-      smsNeeded,
-      newBalance: newBalanceDetails.total_balance
-    });
 
     return NextResponse.json({
       success: true,
       message: `پیام با موفقیت برای ${results.length} نفر ارسال شد`,
       count: results.length,
       results,
-      newBalance: newBalanceDetails.total_balance,
-      balanceDetails: newBalanceDetails
+      newBalance: newBalanceDetails.total_balance
     });
 
   } catch (error: any) {
-    console.error("❌ Error sending bulk SMS:", error);
-    console.error("Error details:", {
-      message: error.message,
-      stack: error.stack
-    });
-    
-    return NextResponse.json(
-      { 
-        message: "خطا در ارسال پیام همگانی",
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-        success: false
-      },
-      { status: 500 }
-    );
+    console.error("❌ Bulk SMS Error:", error.message);
+    console.error("Error details:", error);
+    return NextResponse.json({ 
+      message: "خطای سرور در ارسال پیام",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      success: false 
+    }, { status: 500 });
   }
 });

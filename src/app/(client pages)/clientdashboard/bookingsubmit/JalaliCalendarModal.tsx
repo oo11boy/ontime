@@ -36,8 +36,10 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
   const generateCalendar = (year: number, month: number) => {
     const m = moment(`${year}/${month + 1}/1`, "jYYYY/jMM/jDD");
     const daysInMonth = m.daysInMonth();
-    const firstDayOfWeek = m.day(); // 0 = شنبه, 6 = جمعه
 
+const gregorianDayOfWeek = m.day(); 
+
+const firstDayOfWeek = (gregorianDayOfWeek + 1) % 7; 
     const days = [];
     
     // روزهای خالی قبل از ماه

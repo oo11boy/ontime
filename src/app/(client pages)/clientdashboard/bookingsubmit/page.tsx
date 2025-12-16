@@ -455,7 +455,7 @@ export default function NewAppointmentPage() {
     month: number;
     day: number | null;
   }>(getInitialDate());
-  const [selectedTime, setSelectedTime] = useState("10:00");
+  const [selectedTime, setSelectedTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [notes, setNotes] = useState("");
 

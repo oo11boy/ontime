@@ -1,4 +1,4 @@
-// File Path: src\app\(client pages)\clientdashboard\bookingsubmit\TimePickerModal.tsx
+// File Path: src/app/(client pages)/clientdashboard/bookingsubmit/TimePickerModal.tsx
 
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
@@ -32,49 +32,64 @@ export default function TimePickerModal({
 
   const isToday = selectedJalaliDate?.isSame(now, "day") ?? false;
 
+  // مقدار اولیه: اگر زمان قبلی انتخاب شده و هنوز معتبره، همون رو نگه دار، وگرنه نزدیک‌ترین زمان آینده
   const getInitialTime = () => {
-    const [h = "10", m = "00"] = selectedTime.split(":").map(s => s?.trim().padStart(2, "0"));
-    if (!isToday) return { hour: h, minute: m };
-
-    const selectedMoment = selectedJalaliDate!.clone().hour(+h).minute(+m || 0);
-    if (selectedMoment.isBefore(now, "minute")) {
-      // Logic to snap to the next 15-minute interval
+    if (!selectedTime) {
+      // اگر هیچ زمانی انتخاب نشده بود، نزدیک‌ترین ۱۵ دقیقه‌ای آینده رو بده
       const next = now.clone().add(15 - (now.minute() % 15), "minutes");
-      next.minute(Math.ceil(next.minute() / 15) * 15);
       if (next.minute() === 60) {
         next.minute(0).add(1, "hour");
       }
       return { hour: next.format("HH"), minute: next.format("mm") };
     }
+
+    const [h, m] = selectedTime.split(":").map(s => s.trim().padStart(2, "0"));
+    const selectedMoment = selectedJalaliDate!.clone().hour(+h).minute(+m);
+
+    // اگر زمان انتخاب‌شده گذشته بود، به نزدیک‌ترین آینده بپر
+    if (selectedMoment.isBefore(now, "minute")) {
+      const next = now.clone().add(15 - (now.minute() % 15), "minutes");
+      if (next.minute() === 60) {
+        next.minute(0).add(1, "hour");
+      }
+      return { hour: next.format("HH"), minute: next.format("mm") };
+    }
+
+    // در غیر این صورت همون زمان قبلی
     return { hour: h, minute: m };
   };
 
   const [valueGroups, setValueGroups] = useState<{ hour: string; minute: string }>(getInitialTime());
 
-  // ریست مقدار در هر بار باز شدن
+  // هر بار که مودال باز می‌شه، مقدار رو ریست کن
   useEffect(() => {
     if (isTimePickerOpen) {
       setValueGroups(getInitialTime());
     }
-  }, [isTimePickerOpen, selectedTime, isToday]);
+  }, [isTimePickerOpen, selectedTime, isToday, selectedJalaliDate]);
 
-  // فیلتر زمان‌های گذشته
+  // فیلتر دقیقه‌ها: فقط دقیقه‌هایی که هنوز نگذشته‌اند
   const availableMinutes = useMemo(() => {
-    if (!isToday) return MINUTES;
+    if (!isToday) return MINUTES; // روز آینده → همه دقیقه‌ها
+
+    // امروز: فقط دقیقه‌هایی که از الان به بعد هستن
     return MINUTES.filter(m => {
       const time = selectedJalaliDate!.clone().hour(+valueGroups.hour).minute(+m);
       return !time.isBefore(now, "minute");
     });
   }, [valueGroups.hour, isToday, selectedJalaliDate, now]);
 
+  // فیلتر ساعت‌ها: فقط ساعت‌هایی که حداقل یک دقیقه معتبر دارن
   const availableHours = useMemo(() => {
-    if (!isToday) return HOURS;
-    return HOURS.filter(h =>
-      MINUTES.some(m => {
+    if (!isToday) return HOURS; // روز آینده → همه ساعت‌ها
+
+    // امروز: فقط ساعت‌هایی که حداقل یک دقیقه آینده دارن
+    return HOURS.filter(h => {
+      return MINUTES.some(m => {
         const time = selectedJalaliDate!.clone().hour(+h).minute(+m);
         return !time.isBefore(now, "minute");
-      })
-    );
+      });
+    });
   }, [isToday, selectedJalaliDate, now]);
 
   const handleChange = (newValue: { hour: string; minute: string }) => {
@@ -86,9 +101,6 @@ export default function TimePickerModal({
     setIsTimePickerOpen(false);
   };
 
-  // ----------------------------------------------------------------
-  // 3. Conditional Return is placed AFTER all Hooks
-  // ----------------------------------------------------------------
   if (!isTimePickerOpen) return null;
 
   return (
@@ -101,7 +113,7 @@ export default function TimePickerModal({
 
         <div className="relative w-full max-w-md rounded-3xl overflow-hidden bg-linear-to-br from-gray-950 via-slate-900 to-black shadow-2xl border border-white/10 ring-1 ring-white/5 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-10 duration-500">
 
-          {/* هدر لوکس */}
+          {/* هدر */}
           <div className="relative px-6 pt-8 pb-6 text-center">
             <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-b from-emerald-500/10 to-transparent pointer-events-none" />
             <div className="relative">
@@ -109,13 +121,11 @@ export default function TimePickerModal({
                 <Clock className="w-8 h-8 text-emerald-400" />
               </div>
               <h2 className="text-2xl font-bold text-white">انتخاب زمان رزرو</h2>
-             
             </div>
           </div>
 
-          {/* Picker با افکت درخشان */}
+          {/* Picker */}
           <div className="relative px-6 pb-10">
-           
             <Picker
               value={valueGroups}
               onChange={handleChange}
@@ -123,30 +133,30 @@ export default function TimePickerModal({
               itemHeight={56}
               height={240}
             >
-                  <Picker.Column name="minute">
+    
+              <Picker.Column name="minute">
                 {availableMinutes.map(m => (
                   <Picker.Item key={m} value={m}>
                     {({ selected }) => (
-                      <div className={`text-5xl h-10 font-bold ${selected ? "text-emerald-400  drop-shadow-2xl" : "text-gray-500"}`}>
+                      <div className={`text-5xl h-10 font-bold ${selected ? "text-emerald-400 drop-shadow-2xl" : "text-gray-500"}`}>
                         {m}
                       </div>
                     )}
                   </Picker.Item>
                 ))}
               </Picker.Column>
-            
-        
-                <Picker.Column name="hour">
+                        <Picker.Column name="hour">
                 {availableHours.map(h => (
                   <Picker.Item key={h} value={h}>
                     {({ selected }) => (
-                      <div className={`text-5xl h-10   font-bold ${selected ? "text-emerald-400  drop-shadow-2xl" : "text-gray-500"}`}>
+                      <div className={`text-5xl h-10 font-bold ${selected ? "text-emerald-400 drop-shadow-2xl" : "text-gray-500"}`}>
                         {h}
                       </div>
                     )}
                   </Picker.Item>
                 ))}
               </Picker.Column>
+
             </Picker>
 
             <div className="absolute inset-x-0 top-0 h-20 bg-linear-to-b from-gray-950 to-transparent pointer-events-none" />
@@ -171,8 +181,6 @@ export default function TimePickerModal({
           </div>
         </div>
       </div>
-
-      
     </>
   );
 }
