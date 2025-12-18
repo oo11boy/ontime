@@ -1,20 +1,19 @@
-// File Path: src\app\(client pages)\clientdashboard\components\ServiceControlPanel\Buttons.tsx
-
+// src/app/(client pages)/clientdashboard/components/DashboardAddAppointmentButton.tsx
 "use client";
 import React from "react";
-import { Plus, Sparkles, CalendarPlus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-export default function AddAppointmentButton() {
+export const DashboardAddAppointmentButton: React.FC = () => {
   return (
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.5, ease: "backOut" }}
-      className="w-full "
+      className="w-full"
     >
-        <Link href="../clientdashboard/bookingsubmit">
+      <Link href="../clientdashboard/bookingsubmit">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -56,9 +55,7 @@ export default function AddAppointmentButton() {
             />
           </motion.div>
 
-          {/* ⭐️⭐️ تغییر کلیدی: تبدیل motion.a به motion.span ⭐️⭐️
-             این امر ساختار تودرتوی <a> را از بین می‌برد.
-             از آنجایی که button در Link پیچیده شده، کلیک کار می‌کند. */}
+          {/* متن */}
           <motion.span
             className="relative z-10 bg-clip-text text-transparent bg-linear-to-r from-black via-black/90 to-gray-800"
             initial={{ y: 20, opacity: 0 }}
@@ -94,4 +91,4 @@ export default function AddAppointmentButton() {
       </Link>
     </motion.div>
   );
-}
+};

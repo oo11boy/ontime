@@ -1,35 +1,52 @@
-// File Path: src\app\(client pages)\clientdashboard\components\RecentAppointmentsList\RecentAppointmentsList.tsx
-
-// src/components/RecentAppointmentsList.tsx
+// src/app/(client pages)/clientdashboard/components/DashboardRecentAppointments.tsx
 "use client";
 import React, { useState, useEffect } from "react";
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay, A11y } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import { Loader2 } from "lucide-react";
-import BookingCard from "./bookingcard";
+import { DashboardBookingCard } from "./DashboardBookingCard";
 
-export default function RecentAppointmentsList() {
-  const [appointments, setAppointments] = useState<any[]>([]);
+interface Appointment {
+  id: number;
+  client_name: string;
+  client_phone: string;
+  booking_date: string;
+  booking_time: string;
+  booking_description: string;
+  services?: string;
+  status: string;
+}
+
+interface DashboardRecentAppointmentsProps {
+  onFetchAppointments?: () => Promise<Appointment[]>;
+}
+
+export const DashboardRecentAppointments: React.FC<DashboardRecentAppointmentsProps> = ({
+  onFetchAppointments,
+}) => {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchRecentAppointments();
-  }, []);
 
   const fetchRecentAppointments = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/client/bookings/recent");
-      const data = await response.json();
+      setError(null);
       
-      if (data.success) {
-        setAppointments(data.appointments);
+      if (onFetchAppointments) {
+        const data = await onFetchAppointments();
+        setAppointments(data);
       } else {
-        setError(data.message || "خطا در دریافت نوبت‌ها");
+        const response = await fetch("/api/client/bookings/recent");
+        const data = await response.json();
+        
+        if (data.success) {
+          setAppointments(data.appointments);
+        } else {
+          setError(data.message || "خطا در دریافت نوبت‌ها");
+        }
       }
     } catch (error) {
       console.error("Error fetching recent appointments:", error);
@@ -39,7 +56,9 @@ export default function RecentAppointmentsList() {
     }
   };
 
-
+  useEffect(() => {
+    fetchRecentAppointments();
+  }, []);
 
   if (loading) {
     return (
@@ -84,14 +103,12 @@ export default function RecentAppointmentsList() {
 
           {appointments.length > 1 && (
             <div className="flex space-x-2 space-x-reverse">
-              {/* دکمه قبلی */}
               <button className="custom-prev bg-emerald-500/20 hover:bg-emerald-500/40 backdrop-blur-sm text-white p-2 rounded-full transition-all duration-300 w-8 h-8 flex items-center justify-center border border-emerald-400/30">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>
               </button>
               
-              {/* دکمه بعدی */}
               <button className="custom-next bg-emerald-500/20 hover:bg-emerald-500/40 backdrop-blur-sm text-white p-2 rounded-full transition-all duration-300 w-8 h-8 flex items-center justify-center border border-emerald-400/30">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -124,16 +141,13 @@ export default function RecentAppointmentsList() {
             >
               {appointments.map((appointment) => (
                 <SwiperSlide key={appointment.id} className="h-full">
-                  <BookingCard
-                    appointment={appointment} 
-                  />
+                  <DashboardBookingCard appointment={appointment} />
                 </SwiperSlide>
               ))}
             </Swiper>
           </div>
         )}
-        
       </div>
     </div>
   );
-}
+};
