@@ -1,53 +1,47 @@
-// File Path: src\app\(client pages)\clientdashboard\buysms\page.tsx
-
+// src/app/(client pages)/clientdashboard/buysms/page.tsx (کامپوننت اصلی)
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Zap, Loader2 } from "lucide-react";
+import  { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import Footer from "../components/Footer/Footer"; // فرض بر وجود کامپوننت Footer است
+import Footer from "../components/Footer/Footer";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { HeaderSection } from "./components/HeaderSection";
+import { SelectedPackage } from "./components/SelectedPackage";
+import { PackagesGrid } from "./components/PackagesGrid";
+import { PurchaseButton } from "./components/PurchaseButton";
 
-// تعریف تایپ برای بسته پیامکی
 interface SMSOption {
-  count: number; // تعداد پیامک
+  count: number;
 }
 
 export default function BuySMSPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // استیت‌های مربوط به پلن کاربر
   const [fetchingPlan, setFetchingPlan] = useState(true);
-  // قیمت پیش‌فرض: 45000 تومان برای هر 100 پیامک (بر اساس کد اولیه شما)
-  const [pricePer100, setPricePer100] = useState<number>(45000); 
-
-  // استیت‌های جدید برای بسته‌های پیامکی
+  const [pricePer100, setPricePer100] = useState<number>(45000);
   const [smsOptions, setSmsOptions] = useState<SMSOption[]>([]);
   const [fetchingPacks, setFetchingPacks] = useState(true);
+  const defaultPrice = 45000;
 
-  // تابع فرمت‌دهی قیمت (اضافه کردن ویرگول)
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-useEffect(() => {
+  // تابع دریافت بسته‌های پیامکی
   const fetchSMSPacks = async () => {
     try {
       const res = await fetch("/api/client/sms-packs-list");
 
       if (res.ok) {
         const data = await res.json();
-
-        // اصلاح: فیلد count را مستقیماً از pack.count بگیریم (نه sms_amount)
         const packs: SMSOption[] = data.sms_packs
-          .filter((pack: any) => pack.isActive === true) // فقط بسته‌های فعال
+          .filter((pack: any) => pack.isActive === true)
           .map((pack: any) => ({
-            count: pack.count, // <--- درست همین!
+            count: pack.count,
           }))
-          .sort((a: SMSOption, b: SMSOption) => a.count - b.count); // مرتب‌سازی صعودی (اختیاری اما قشنگ‌تره)
+          .sort((a: SMSOption, b: SMSOption) => a.count - b.count);
 
         setSmsOptions(packs);
 
-        // اگر هیچ بسته‌ای نبود، حداقل یک پیام بده
         if (packs.length === 0) {
           toast("هیچ بسته پیامکی فعالی یافت نشد.", { icon: "Info" });
         }
@@ -62,37 +56,33 @@ useEffect(() => {
     }
   };
 
-  fetchSMSPacks();
-}, []);
+  // تابع دریافت قیمت پلن کاربر
+  const fetchUserPlanPrice = async () => {
+    try {
+      const res = await fetch("/api/client/dashboard", {
+        credentials: "include",
+      });
 
-  // --- ** 2. دریافت قیمت پلن فعلی کاربر از API ** ---
-  useEffect(() => {
-    const fetchUserPlanPrice = async () => {
-      try {
-        // فرض می‌کنیم /api/dashboard اطلاعات کاربر از جمله قیمت پلن را برمی‌گرداند
-        const res = await fetch("/api/client/dashboard", {
-          credentials: "include", // برای ارسال کوکی‌های احراز هویت
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          // فرض: قیمت در فیلدی به نام price_per_100_sms در آبجکت user قرار دارد
-          const userPrice = data.user?.price_per_100_sms;
-          if (userPrice !== undefined && userPrice > 0) {
-            setPricePer100(userPrice);
-          }
-        } else {
-          console.warn(
-            "خطا در دریافت اطلاعات پلن، از قیمت پیش‌فرض استفاده می‌شود"
-          );
+      if (res.ok) {
+        const data = await res.json();
+        const userPrice = data.user?.price_per_100_sms;
+        if (userPrice !== undefined && userPrice > 0) {
+          setPricePer100(userPrice);
         }
-      } catch (error) {
-        console.error("خطا در دریافت قیمت پلن:", error);
-      } finally {
-        setFetchingPlan(false);
+      } else {
+        console.warn(
+          "خطا در دریافت اطلاعات پلن، از قیمت پیش‌فرض استفاده می‌شود"
+        );
       }
-    };
+    } catch (error) {
+      console.error("خطا در دریافت قیمت پلن:", error);
+    } finally {
+      setFetchingPlan(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchSMSPacks();
     fetchUserPlanPrice();
   }, []);
 
@@ -103,7 +93,6 @@ useEffect(() => {
     setLoading(true);
 
     try {
-      // ارسال درخواست خرید به API با تعداد پیامک انتخابی
       const response = await fetch("/api/client/buy-sms", {
         method: "POST",
         headers: {
@@ -111,30 +100,18 @@ useEffect(() => {
         },
         credentials: "include",
         body: JSON.stringify({
-          sms_count: selected, // ارسال تعداد پیامک انتخابی
+          sms_count: selected,
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // فرض: API پس از خرید موفق، کاربر را به درگاه بانکی هدایت می‌کند
-        // یا اگر پرداخت درون‌برنامه‌ای است، پیغام موفقیت نمایش می‌دهد.
-        // اینجا فقط پیغام نمایش داده شده و بسته به منطق بک‌اند شما ممکن است نیاز به ریدایرکت باشد.
-
-        // این پیام با توجه به قیمت پلن کاربر نمایش داده می‌شود
         toast.success(
           `درخواست خرید ${selected.toLocaleString("fa-IR")} پیامک ثبت شد. در حال انتقال به صفحه پرداخت...`,
           { duration: 7000 }
-        ); 
-        
-        // اگر API یک URL برای درگاه پرداخت برگرداند، باید ریدایرکت انجام شود
-        // if (data.payment_url) {
-        //   window.location.href = data.payment_url;
-        // }
-
-
-        setSelected(null); // پاک کردن انتخاب
+        );
+        setSelected(null);
       } else {
         toast.error(
           data.message || "خطا در خرید پیامک. لطفاً دوباره تلاش کنید."
@@ -150,149 +127,44 @@ useEffect(() => {
     }
   };
 
-  // --- ** 3. شرط لودینگ اولیه (تا زمانی که بسته‌ها و قیمت پلن دریافت شوند) ** ---
+  // تابع انتخاب بسته
+  const handleSelectPackage = (count: number) => {
+    setSelected(count);
+  };
+
   if (fetchingPlan || fetchingPacks) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
-  // --- ** 4. رابط کاربری اصلی (بعد از دریافت داده‌ها) ** ---
   return (
     <div className="h-screen text-white overflow-auto max-w-md mx-auto">
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white py-10 px-4 flex flex-col">
-        {/* عنوان */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-center">
-          خرید پیامک اضافه
-        </h1>
+        <HeaderSection pricePer100={pricePer100} formatPrice={formatPrice} />
 
-        {/* نمایش قیمت بر اساس پلن */}
-        <div className="mb-8 text-center">
-          <p className="text-sm text-gray-400">
-            قیمت هر ۱۰۰ پیامک بر اساس پلن شما:
-          </p>
-          <p className="text-2xl font-bold text-emerald-400">
-            {formatPrice(pricePer100)} تومان
-          </p>
-        </div>
+        <SelectedPackage
+          selected={selected}
+          pricePer100={pricePer100}
+          formatPrice={formatPrice}
+        />
 
-        {/* خلاصه بسته انتخاب‌شده */}
-        {selected !== null && ( // استفاده از !== null
-          <div className="mb-8 text-center bg-white/5 rounded-2xl py-4 px-6">
-            <p className="text-lg">
-              بسته انتخاب‌شده:{" "}
-              <span className="font-bold text-emerald-400">
-                {selected.toLocaleString("fa-IR")} پیامک
-              </span>
-              {" — "}
-              <span className="font-bold text-emerald-400">
-                {/* محاسبه قیمت نهایی با توجه به pricePer100 کاربر */}
-                {formatPrice(Math.round((selected / 100) * pricePer100))} تومان
-              </span>
-            </p>
-          </div>
-        )}
-
-        {/* لیست بسته‌ها */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg mx-auto mb-12">
-          {smsOptions.length > 0 ? (
-            smsOptions.map((option) => {
-              const totalPrice = Math.round((option.count / 100) * pricePer100);
-              const isSelected = selected === option.count;
-              const defaultPrice = 45000; // قیمت پیش‌فرض اولیه (برای محاسبه تخفیف)
-
-              return (
-                <div
-                  key={option.count}
-                  onClick={() => !loading && setSelected(option.count)}
-                  className={`relative cursor-pointer rounded-3xl p-6 flex flex-col items-center gap-4 text-center transition-all border-2 ${
-                    isSelected
-                      ? "border-emerald-500 shadow-2xl shadow-emerald-500/30 bg-white/10 scale-105"
-                      : "border-white/10 hover:border-emerald-500/60 hover:shadow-xl hover:bg-white/5"
-                  } ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
-                >
-                  {/* علامت تیک انتخاب */}
-                  {isSelected && (
-                    <div className="absolute top-4 right-4 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-5 h-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  )}
-
-                  <div className="text-2xl font-bold">
-                    {option.count.toLocaleString("fa-IR")} پیامک
-                  </div>
-
-                  <div className="text-3xl font-bold text-white">
-                    {formatPrice(totalPrice)}
-                  </div>
-
-                  <div className="text-sm text-gray-400">تومان</div>
-
-                  {/* نمایش تخفیف اگر قیمت پلن کمتر از قیمت پایه باشد */}
-                  {pricePer100 < defaultPrice && (
-                    <div className="text-xs text-emerald-400 mt-1">
-                      تخفیف‌دار (
-                      {Math.round(
-                        ((defaultPrice - pricePer100) / defaultPrice) * 100
-                      )}
-                      %)
-                    </div>
-                  )}
-
-                  <div className="text-xs text-gray-500 mt-6">
-                    اعتبار: ۳۰ روز از تاریخ خرید
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="col-span-1 sm:col-span-2 text-center text-gray-500 p-8">
-              بسته پیامکی فعالی برای خرید در دسترس نیست.
-            </div>
-          )}
+          <PackagesGrid
+            smsOptions={smsOptions}
+            selected={selected}
+            pricePer100={pricePer100}
+            defaultPrice={defaultPrice}
+            loading={loading}
+            formatPrice={formatPrice}
+            onSelectPackage={handleSelectPackage}
+          />
         </div>
 
-        {/* دکمه خرید ثابت در پایین */}
         <div className="mt-auto px-4 pb-6">
-          <button
-            onClick={handlePurchase}
-            disabled={!selected || loading}
-            className={`w-full h-16 rounded-2xl flex items-center justify-center gap-3 font-bold text-white text-lg transition-all active:scale-95 shadow-2xl ${
-              selected && !loading
-                ? "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
-                : "bg-white/10 opacity-60 cursor-not-allowed"
-            }`}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-7 h-7 animate-spin" />
-                <span>در حال پردازش...</span>
-              </>
-            ) : (
-              <>
-                <span>تأیید و پرداخت</span>
-                {selected !== null && <Zap className="w-7 h-7" />}
-              </>
-            )}
-          </button>
-
-          <div className="mt-4 text-center text-sm text-gray-400">
-            <p>پرداخت امن از طریق درگاه بانکی</p>
-          </div>
+          <PurchaseButton
+            selected={selected}
+            loading={loading}
+            onPurchase={handlePurchase}
+          />
         </div>
       </div>
 

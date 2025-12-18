@@ -1,432 +1,36 @@
-// File Path: src\app\(client pages)\clientdashboard\bookingsubmit\page.tsx
-
 "use client";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
-import {
-  User,
-  Phone,
-  Calendar,
-  Clock,
-  Scissors,
-  MessageSquare,
-  Bell,
-  Check,
-  ChevronLeft,
-  Contact,
-  X,
-  Plus,
-  MessageCircle,
-  PhoneCall,
-  AlertCircle,
-} from "lucide-react";
+import { Calendar, Check, ChevronLeft, PhoneCall, X } from "lucide-react";
 
 import Footer from "../components/Footer/Footer";
-import JalaliCalendarModal from "./JalaliCalendarModal";
-import TimePickerModal from "./TimePickerModal";
-import { persianMonths, getTodayJalali, jalaliToGregorian, formatPersianDate } from "@/lib/date-utils";
+import { getTodayJalali, jalaliToGregorian } from "@/lib/date-utils";
 
-// تابع تاریخ امروز شمسی
-const getTodayJalaliDate = () => {
-  return getTodayJalali();
-};
+import { reservationTemplates, reminderTemplates } from "./data/messageTemplates";
+import ClientInfoSection from "./components/ClientInfoSection";
+import DateTimeSection from "./components/DateTimeSection";
+import ServicesSection from "./components/ServicesSection";
+import NotesSection from "./components/NotesSection";
+import SmsReservationSection from "./components/SmsReservationSection";
+import SmsReminderSection from "./components/SmsReminderSection";
+import SmsBalanceSection from "./components/SmsBalanceSection";
+import JalaliCalendarModal from "./components/JalaliCalendarModal";
+import TimePickerModal from "./components/TimePickerModal";
+import { Service } from "./types";
+import MessageTemplateModal from "./components/MessageTemplateModal";
+import NameChangeConfirmationModal from "./components/NameChangeConfirmationModal";
+import ServicesModal from "./components/ServicesModal";
 
 const formatJalaliDate = (year: number, month: number, day: number | null): string => {
   if (!day) return "انتخاب تاریخ";
-  return `${day} ${persianMonths[month]} ${year}`;
+  return `${day} ${month + 1} ${year}`;
 };
-
-// رابط سرویس
-interface Service {
-  id: number;
-  name: string;
-  price: number;
-  duration_minutes: number;
-  is_active: boolean;
-}
-
-// مودال تأیید تغییر نام
-const NameChangeConfirmationModal = ({
-  isOpen,
-  onClose,
-  oldName,
-  newName,
-  onConfirm,
-  onCancel,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  oldName: string;
-  newName: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-linear-to-b from-[#1a1e26] to-[#242933] backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-6 h-6 text-amber-500" />
-              <h3 className="text-xl font-bold text-white">تغییر نام مشتری</h3>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          
-          <div className="p-6 space-y-6">
-            <div className="text-center">
-              <p className="text-gray-300 mb-4">این شماره موبایل قبلاً در سیستم ثبت شده است:</p>
-              
-              <div className="space-y-4">
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                  <p className="text-sm text-gray-400 mb-2">نام فعلی در سیستم:</p>
-                  <p className="text-lg font-bold text-amber-400">{oldName}</p>
-                </div>
-                
-                <div className="flex items-center justify-center">
-                  <ChevronLeft className="w-8 h-8 text-gray-500 rotate-90" />
-                </div>
-                
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                  <p className="text-sm text-gray-400 mb-2">نام جدید وارد شده:</p>
-                  <p className="text-lg font-bold text-emerald-400">{newName}</p>
-                </div>
-              </div>
-              
-              <p className="text-gray-400 mt-6 text-sm">
-                آیا می‌خواهید نام مشتری را از "{oldName}" به "{newName}" تغییر دهید؟
-              </p>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={onCancel}
-                className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 rounded-xl font-medium transition text-gray-300"
-              >
-                خیر، همان نام قبلی استفاده شود
-              </button>
-              <button
-                onClick={onConfirm}
-                className="flex-1 py-3.5 bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-xl font-bold text-white shadow-lg transition"
-              >
-                بله، تغییر نام
-              </button>
-            </div>
-            
-            <p className="text-xs text-gray-500 text-center">
-              توجه: این تغییر در تمام نوبت‌های آینده این مشتری اعمال خواهد شد.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// مودال پیام‌های آماده
-const MessageTemplateModal = ({
-  isOpen,
-  onClose,
-  templates,
-  onSelect,
-  title,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  templates: Array<{ title: string; text: string; length: number }>;
-  onSelect: (text: string) => void;
-  title: string;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-linear-to-b from-[#1a1e26] to-[#242933] backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl max-h-[90vh] overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h3 className="text-xl font-bold text-white">{title}</h3>
-            <button
-              onClick={onClose}
-              className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="px-6 pb-10 max-h-96 overflow-y-auto custom-scrollbar">
-            <p className="text-xs text-gray-500 text-center mb-6 py-2">
-              — یا یکی از پیام‌های آماده را انتخاب کنید —
-            </p>
-            <div className="space-y-4">
-              {templates.map((msg, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    onSelect(msg.text);
-                    onClose();
-                  }}
-                  className="w-full group"
-                >
-                  <div className="bg-white/5 hover:bg-white/10 rounded-2xl p-6 border border-white/10 transition-all hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98]">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold text-emerald-300 text-lg">{msg.title}</h4>
-                      <span className="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-medium rounded-full border border-emerald-500/30">
-                        آماده
-                      </span>
-                    </div>
-                    <div className="bg-linear-to-r from-emerald-600/15 to-emerald-500/10 rounded-2xl rounded-tl-none p-5 mb-4 border-l-4 border-emerald-400/50 text-right">
-                      <p className="text-sm leading-relaxed text-gray-100 whitespace-pre-line">
-                        {msg.text.replace(/{[^}]+}/g, "---")}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="text-xs text-gray-500">
-                        این متن <span className="text-emerald-400 font-bold">{msg.length}</span> پیامک
-                      </span>
-                      <div className="w-8 h-8 bg-emerald-500/20 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/30">
-                        <MessageCircle className="w-4 h-4 text-emerald-400" />
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 2px;
-        }
-      `}</style>
-    </div>
-  );
-};
-
-// مودال انتخاب خدمات
-const ServicesModal = ({
-  isOpen,
-  onClose,
-  selectedServices,
-  setSelectedServices,
-  allServices,
-  isLoading,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedServices: Service[];
-  setSelectedServices: React.Dispatch<React.SetStateAction<Service[]>>;
-  allServices: Service[];
-  isLoading: boolean;
-}) => {
-  const router = useRouter();
-
-  const toggleService = (service: Service) => {
-    setSelectedServices((prev) =>
-      prev.some(s => s.id === service.id) 
-        ? prev.filter((s) => s.id !== service.id) 
-        : [...prev, service]
-    );
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-linear-to-b from-[#1a1e26] to-[#242933] rounded-3xl border border-white/10 shadow-2xl overflow-hidden max-h-[85vh]">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h3 className="text-xl font-bold text-white">انتخاب خدمات</h3>
-            <button
-              onClick={onClose}
-              className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <div className="px-6 pt-4">
-            <button
-              onClick={() => {
-                onClose();
-                router.push("/clientdashboard/services"); 
-              }}
-              className="w-full bg-linear-to-r from-purple-600 to-pink-600 rounded-2xl py-4 font-bold text-white shadow-lg hover:shadow-purple-500/50 active:scale-98 transition-all flex items-center justify-center gap-3"
-            >
-              <Plus className="w-6 h-6" />
-              مدیریت خدمات
-            </button>
-          </div>
-
-          <div className="px-6 py-6 max-h-96 overflow-y-auto custom-scrollbar space-y-3">
-            {isLoading ? (
-              // Loading state
-              Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="w-full rounded-2xl p-5 bg-white/5 animate-pulse">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-6 h-6 bg-white/10 rounded"></div>
-                      <div className="h-4 bg-white/10 rounded w-32"></div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : allServices.length === 0 ? (
-              // Empty state
-              <div className="text-center py-8">
-                <Scissors className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                <p className="text-gray-400">هنوز خدمتی اضافه نکرده‌اید</p>
-                <button
-                  onClick={() => {
-                    onClose();
-                    router.push("/clientdashboard/services");
-                  }}
-                  className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm"
-                >
-                  افزودن خدمت
-                </button>
-              </div>
-            ) : (
-              // Services list
-              allServices.map((service) => {
-                const isSelected = selectedServices.some(s => s.id === service.id);
-                return (
-                  <button
-                    key={service.id}
-                    onClick={() => toggleService(service)}
-                    className={`w-full rounded-2xl p-5 text-right transition-all border ${
-                      isSelected
-                        ? "bg-linear-to-r from-emerald-500/30 to-emerald-600/30 border-emerald-400/60 shadow-lg shadow-emerald-500/30"
-                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-emerald-500/40"
-                    }`}
-                    disabled={!service.is_active}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Scissors className={`w-6 h-6 ${
-                          isSelected ? "text-emerald-300" : 
-                          service.is_active ? "text-gray-400" : "text-gray-600"
-                        }`} />
-                        <div className="text-right">
-                          <span className={`font-medium block ${
-                            isSelected ? "text-white" : 
-                            service.is_active ? "text-gray-200" : "text-gray-500"
-                          }`}>
-                            {service.name}
-                          </span>
-                          {!service.is_active && (
-                            <span className="text-xs text-gray-500 mt-1">(غیرفعال)</span>
-                          )}
-                        </div>
-                      </div>
-                      {isSelected && <Check className="w-6 h-6 text-emerald-400" />}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          <div className="p-6 border-t border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-emerald-300 font-bold block">
-                  {selectedServices.length} خدمت انتخاب شد
-                </span>
-                {selectedServices.length > 0 && (
-                  <span className="text-xs text-gray-400 mt-1 block">
-                    مدت زمان تخمینی: {selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0)} دقیقه
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={onClose}
-                className="px-8 py-3 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition"
-              >
-                تأیید و بستن
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 2px;
-        }
-      `}</style>
-    </div>
-  );
-};
-
-// پیام‌های آماده رزرو و یادآوری
-const reservationTemplates = [
-  {
-    title: "رسمی و حرفه‌ای",
-    text: "سلام {client_name} عزیز\nنوبت شما با موفقیت ثبت شد!\nتاریخ: {date}\nساعت: {time}\nخدمات: {services}\n\nممنون از اعتمادتون",
-    length: 3,
-  },
-  {
-    title: "دوستانه و گرم",
-    text: "سلام {client_name} جان\nنوبتت ثبت شد عزیزم!\n{date} ساعت {time} منتظرتیم\nخدمات: {services}\n\nبه موقع بیا که دلمون برات تنگ میشه",
-    length: 3,
-  },
-  {
-    title: "کوتاه و مفید",
-    text: "نوبت شما ثبت شد!\n{date} - {time}\nخدمات: {services}\n\nمنتظر حضورتون هستیم",
-    length: 2,
-  },
-  {
-    title: "خوش‌آمدگویی گرم",
-    text: "خوش اومدی {client_name} عزیز\nنوبتت ثبت شد:\n{date} ساعت {time}\nخدمات: {services}\n\nمنتظرت هستیم",
-    length: 2,
-  },
-];
-
-const reminderTemplates = [
-  {
-    title: "یادآوری مودبانه",
-    text: "سلام {client_name} عزیز\nیادآوری نوبت:\nامروز ساعت {time} منتظر شما هستیم\nلطفاً سر وقت تشریف بیاورید",
-    length: 2,
-  },
-  {
-    title: "یادآوری دوستانه",
-    text: "سلام {client_name} جان\nامروز ساعت {time} نوبتته!\nاگه نمی‌تونی بیای حتما خبر بده\nدلمون برات تنگ شده",
-    length: 2,
-  },
-  {
-    title: "یادآوری عاشقانه",
-    text: "عزیزم {client_name}\nامروز ساعت {time} می‌بینمت\nدلم برات تنگ شده بود\nمنتظرم",
-    length: 2,
-  },
-  {
-    title: "یادآوری با طنز",
-    text: "سلام {client_name}!\nساعت {time} نوبتته\nاگه نیای آرایشگرمون دلش می‌گیره\nبیا که منتظرتیم",
-    length: 2,
-  },
-];
 
 export default function NewAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const todayJalali = useMemo(() => getTodayJalaliDate(), []);
+  const todayJalali = useMemo(() => getTodayJalali(), []);
 
   // دریافت تاریخ از URL
   const getInitialDate = () => {
@@ -437,7 +41,7 @@ export default function NewAppointmentPage() {
         if (parts.length === 3) {
           return {
             year: parts[0],
-            month: parts[1] - 1, // تبدیل به ایندکس 0-11
+            month: parts[1] - 1,
             day: parts[2]
           };
         }
@@ -448,31 +52,28 @@ export default function NewAppointmentPage() {
     return { year: todayJalali.year, month: todayJalali.month, day: todayJalali.day };
   };
 
+  // State ها
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedDate, setSelectedDate] = useState<{
-    year: number;
-    month: number;
-    day: number | null;
-  }>(getInitialDate());
+const [selectedDate, setSelectedDate] = useState<{ 
+  year: number; 
+  month: number; 
+  day: number | null 
+}>(getInitialDate());
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [notes, setNotes] = useState("");
-
   const [sendReservationSms, setSendReservationSms] = useState(true);
   const [sendReminderSms, setSendReminderSms] = useState(true);
   const [reservationMessage, setReservationMessage] = useState("");
   const [reminderMessage, setReminderMessage] = useState("");
   const [reminderTime, setReminderTime] = useState<number>(24);
-
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [isServicesModalOpen, setIsServicesModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // حالت‌های جدید برای بررسی مشتری
   const [isCheckingClient, setIsCheckingClient] = useState(false);
   const [existingClient, setExistingClient] = useState<{
     exists: boolean;
@@ -486,14 +87,17 @@ export default function NewAppointmentPage() {
     oldName: string;
     newName: string;
   } | null>(null);
-  
-  // موجودی پیامک کاربر
   const [userSmsBalance, setUserSmsBalance] = useState<number>(0);
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
-  
-  // سرویس‌های داینامیک
   const [services, setServices] = useState<Service[]>([]);
   const [isLoadingServices, setIsLoadingServices] = useState(true);
+
+  // محاسبه تعداد پیامک‌های مورد نیاز
+  const calculateSmsNeeded = useMemo(() => {
+    const reservationSms = sendReservationSms ? 1 : 0;
+    const reminderSms = sendReminderSms ? 1 : 0;
+    return reservationSms + reminderSms;
+  }, [sendReservationSms, sendReminderSms]);
 
   // تابع برای دریافت سرویس‌های کاربر
   const fetchUserServices = useCallback(async () => {
@@ -503,7 +107,6 @@ export default function NewAppointmentPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          // فقط سرویس‌های فعال
           const activeServices = data.services.filter((service: Service) => service.is_active);
           setServices(activeServices);
         } else {
@@ -519,38 +122,29 @@ export default function NewAppointmentPage() {
   }, []);
 
   // تابع برای دریافت موجودی پیامک کاربر
-// تابع برای دریافت موجودی پیامک کاربر
-const fetchUserSmsBalance = useCallback(async () => {
-  try {
-    setIsLoadingBalance(true);
-    const response = await fetch('/api/client/dashboard');
-    if (response.ok) {
-      const data = await response.json();
-      // اولویت‌ها: total_sms_balance -> sms_balance -> purchased_sms_credit
-      const totalBalance = data.user?.total_sms_balance || 
-                          (data.user?.sms_balance || 0) + 
-                          (data.user?.purchased_sms_credit || 0);
-      setUserSmsBalance(totalBalance);
-      console.log("💰 موجودی دریافت شد:", totalBalance, data.user);
+  const fetchUserSmsBalance = useCallback(async () => {
+    try {
+      setIsLoadingBalance(true);
+      const response = await fetch('/api/client/dashboard');
+      if (response.ok) {
+        const data = await response.json();
+        const totalBalance = data.user?.total_sms_balance || 
+                            (data.user?.sms_balance || 0) + 
+                            (data.user?.purchased_sms_credit || 0);
+        setUserSmsBalance(totalBalance);
+        console.log("💰 موجودی دریافت شد:", totalBalance, data.user);
+      }
+    } catch (error) {
+      console.error("خطا در دریافت موجودی پیامک:", error);
+    } finally {
+      setIsLoadingBalance(false);
     }
-  } catch (error) {
-    console.error("خطا در دریافت موجودی پیامک:", error);
-  } finally {
-    setIsLoadingBalance(false);
-  }
-}, []);
+  }, []);
 
   useEffect(() => {
     fetchUserServices();
     fetchUserSmsBalance();
   }, [fetchUserServices, fetchUserSmsBalance]);
-
-  // محاسبه تعداد پیامک‌های مورد نیاز
-  const calculateSmsNeeded = useMemo(() => {
-    const reservationSms = sendReservationSms ? 1 : 0;
-    const reminderSms = sendReminderSms ? 1 : 0;
-    return reservationSms + reminderSms;
-  }, [sendReservationSms, sendReminderSms]);
 
   // تابع چک کردن مشتری موجود
   const checkExistingClient = useCallback(async (phoneNumber: string, currentName: string) => {
@@ -571,7 +165,6 @@ const fetchUserSmsBalance = useCallback(async () => {
           isBlocked: data.client.isBlocked
         });
         
-        // اگر نام مشتری با نام موجود متفاوت است
         if (data.client.name && currentName && data.client.name.trim() !== currentName.trim()) {
           setPendingNameChange({
             oldName: data.client.name,
@@ -590,13 +183,13 @@ const fetchUserSmsBalance = useCallback(async () => {
     }
   }, []);
 
-  // تایمر برای چک کردن مشتری بعد از تایپ کردن
+  // تایمر برای چک کردن مشتری
   useEffect(() => {
     const cleanedPhone = phone.replace(/\D/g, '');
     if (cleanedPhone.length >= 10) {
       const timer = setTimeout(() => {
         checkExistingClient(phone, name);
-      }, 800); // تأخیر 800 میلی‌ثانیه بعد از تایپ
+      }, 800);
       
       return () => clearTimeout(timer);
     } else {
@@ -605,14 +198,12 @@ const fetchUserSmsBalance = useCallback(async () => {
   }, [phone, name, checkExistingClient]);
 
   const handleNameChangeConfirm = () => {
-    // نام جدید را قبول می‌کنیم (نام فعلی در state می‌ماند)
     setShowNameChangeModal(false);
     setPendingNameChange(null);
     toast.success("نام مشتری به روز شد");
   };
 
   const handleNameChangeCancel = () => {
-    // نام قبلی را اعمال می‌کنیم
     if (pendingNameChange) {
       setName(pendingNameChange.oldName);
     }
@@ -646,7 +237,7 @@ const fetchUserSmsBalance = useCallback(async () => {
     return true;
   };
 
-  // اعتبارسنجی موجودی پیامک قبل از ارسال
+  // اعتبارسنجی موجودی پیامک
   const validateSmsBalance = () => {
     const smsNeeded = calculateSmsNeeded;
     if (smsNeeded > userSmsBalance) {
@@ -680,7 +271,6 @@ const fetchUserSmsBalance = useCallback(async () => {
       return;
     }
 
-    // تبدیل تاریخ شمسی به میلادی
     const bookingDate = jalaliToGregorian(
       selectedDate.year,
       selectedDate.month,
@@ -693,24 +283,20 @@ const fetchUserSmsBalance = useCallback(async () => {
       return;
     }
 
-    // اگر مشتری بلاک شده است
     if (existingClient?.isBlocked) {
       toast.error("این مشتری در لیست بلاک شده است. نمی‌توانید نوبت ثبت کنید.");
       return;
     }
 
-    // اعتبارسنجی متن پیام‌ها
     if (!validateMessages()) {
       return;
     }
 
-    // اعتبارسنجی موجودی پیامک
     const smsNeeded = calculateSmsNeeded;
     if (smsNeeded > 0 && !validateSmsBalance()) {
       return;
     }
 
-    // تبدیل پیام‌ها با جایگذاری متغیرها
     let finalReservationMessage = reservationMessage;
     let finalReminderMessage = reminderMessage;
     
@@ -816,7 +402,6 @@ const fetchUserSmsBalance = useCallback(async () => {
               color: '#fff',
             },
           },
-        
         }}
       />
       
@@ -828,341 +413,62 @@ const fetchUserSmsBalance = useCallback(async () => {
           </h1>
 
           <div className="space-y-5">
-            {/* نام و موبایل */}
-            <div className="flex items-end gap-4">
-              <div className="flex-1 space-y-4">
-                <div>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="نام و نام خانوادگی"
-                      className="w-full bg-white/10 border border-white/10 rounded-xl pr-12 px-4 py-3.5 text-right placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm"
-                    />
-                    <User className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
-                  </div>
-                </div>
-                <div>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="شماره موبایل (مثال: 09123456789)"
-                      dir="ltr"
-                      className="w-full bg-white/10 border border-white/10 rounded-xl text-right px-4 py-3.5 pr-12 placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm font-mono"
-                    />
-                    <Phone className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
-                    {isCheckingClient && (
-                      <div className="absolute left-4 top-4">
-                        <div className="w-5 h-5 border-2 border-emerald-400/50 border-t-emerald-400 rounded-full animate-spin"></div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* نمایش اطلاعات مشتری موجود */}
-                  {existingClient && !isCheckingClient && (
-                    <div className="mt-2">
-                      <div className={`p-3 rounded-xl border ${existingClient.isBlocked ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-emerald-400" />
-                            <span className="text-sm font-medium">
-                              مشتری موجود: {existingClient.name}
-                            </span>
-                          </div>
-                          {existingClient.isBlocked ? (
-                            <span className="px-2 py-1 text-xs bg-red-500/20 text-red-300 rounded-full">
-                              بلاک شده
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 text-xs bg-emerald-500/20 text-emerald-300 rounded-full">
-                              {existingClient.totalBookings || 0} نوبت قبلی
-                            </span>
-                          )}
-                        </div>
-                        {existingClient.lastBookingDate && !existingClient.isBlocked && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            آخرین نوبت: {formatPersianDate(existingClient.lastBookingDate)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <button className="w-[120px] h-[120px] bg-white/10 backdrop-blur-sm rounded-2xl border border-emerald-500/30 flex flex-col items-center justify-center gap-3 hover:bg-white/15 transition-all hover:border-emerald-400">
-                <Contact className="w-10 h-10 text-emerald-400" />
-                <span className="text-xs text-center leading-tight">
-                  انتخاب از <br /> مخاطبین
-                </span>
-              </button>
-            </div>
+            <ClientInfoSection
+              name={name}
+              setName={setName}
+              phone={phone}
+              setPhone={setPhone}
+              isCheckingClient={isCheckingClient}
+              existingClient={existingClient}
+            />
 
             <div className="h-px bg-white/10 rounded-full"></div>
 
-            {/* تاریخ و ساعت */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-gray-300 mb-2 block">تاریخ</label>
-                <button
-                  onClick={() => setIsCalendarOpen(true)}
-                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm"
-                >
-                  <span className={selectedDate.day ? "text-white" : "text-gray-400"}>
-                    {formatJalaliDate(selectedDate.year, selectedDate.month, selectedDate.day)}
-                  </span>
-                  <Calendar className="w-5 h-5 text-emerald-400" />
-                </button>
-              </div>
-              <div>
-                <label className="text-sm text-gray-300 mb-2 block">ساعت</label>
-                <button
-                  onClick={() => setIsTimePickerOpen(true)}
-                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm"
-                >
-                  <span className="text-white">{selectedTime}</span>
-                  <Clock className="w-5 h-5 text-emerald-400" />
-                </button>
-              </div>
-            </div>
+            <DateTimeSection
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              onOpenCalendar={() => setIsCalendarOpen(true)}
+              onOpenTimePicker={() => setIsTimePickerOpen(true)}
+            />
 
-            {/* بخش خدمات */}
-            <div>
-              {selectedServices.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {selectedServices.map((service) => (
-                    <span
-                      key={service.id}
-                      className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-4 py-2.5 rounded-xl text-sm font-medium border border-emerald-500/30"
-                    >
-                      <Scissors className="w-4 h-4" />
-                      {service.name}
-                      <button
-                        onClick={() => setSelectedServices(prev => prev.filter(s => s.id !== service.id))}
-                        className="hover:bg-white/20 rounded-full p-1 transition-all"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+            <ServicesSection
+              selectedServices={selectedServices}
+              onOpenServicesModal={() => setIsServicesModalOpen(true)}
+              onRemoveService={(serviceId) => setSelectedServices(prev => prev.filter(s => s.id !== serviceId))}
+            />
 
-              <button
-                onClick={() => setIsServicesModalOpen(true)}
-                className="w-full bg-linear-to-r from-emerald-600 via-emerald-500 to-emerald-600 rounded-2xl py-5 font-bold text-white shadow-2xl hover:shadow-emerald-500/50 active:scale-[0.98] transition-all duration-200 border border-emerald-500/30 flex items-center justify-center gap-4"
-              >
-                <Scissors className="w-8 h-8" />
-                انتخاب خدمات
-                {selectedServices.length > 0 && (
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                    {selectedServices.length} مورد
-                  </span>
-                )}
-              </button>
-            </div>
+            <NotesSection
+              notes={notes}
+              setNotes={setNotes}
+            />
 
-            {/* توضیحات */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-sm text-gray-300">توضیحات (اختیاری)</label>
-              </div>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="هر نکته‌ای که لازم است پرسنل بدونند..."
-                className="w-full bg-white/10 border border-white/10 rounded-xl p-4 text-sm placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 resize-none h-28 backdrop-blur-sm"
-              />
-            </div>
+            <SmsReservationSection
+              sendReservationSms={sendReservationSms}
+              setSendReservationSms={setSendReservationSms}
+              reservationMessage={reservationMessage}
+              setReservationMessage={setReservationMessage}
+              onOpenTemplateModal={() => setIsReservationModalOpen(true)}
+            />
 
-            {/* پیامک رزرو */}
-            <div className="bg-white/5 rounded-xl p-5 border border-emerald-500/20">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <MessageSquare className="w-5 h-5 text-emerald-400" />
-                  <span className="font-medium">ارسال پیامک تأیید رزرو به مشتری</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={sendReservationSms}
-                  onChange={(e) => setSendReservationSms(e.target.checked)}
-                  className="w-6 h-6 text-emerald-500 rounded focus:ring-emerald-500"
-                />
-              </label>
-              {sendReservationSms && (
-                <div className="mt-5 space-y-3">
-                  <button
-                    onClick={() => setIsReservationModalOpen(true)}
-                    className="w-full bg-linear-to-r from-emerald-600 via-emerald-500 to-emerald-600 rounded-2xl p-3 flex items-center gap-4 shadow-2xl hover:shadow-emerald-500/40 active:scale-[0.98] transition-all border border-emerald-500/30"
-                  >
-                    <div className="w-8 h-8 bg-white/20 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Plus className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="text-right flex-1">
-                      <h4 className="font-bold text-sm text-white">پیامک های آماده</h4>
-                      <p className="text-emerald-100 text-sm opacity-90">از لیست پیام های آماده انتخاب کن.</p>
-                    </div>
-                  </button>
-                  <textarea
-                    value={reservationMessage}
-                    onChange={(e) => setReservationMessage(e.target.value)}
-                    placeholder="اینجا میتونی پیام دلخواهتو بنویسی...
-میتونی از متغیرهای زیر استفاده کنی:
-{client_name} - نام مشتری
-{date} - تاریخ نوبت
-{time} - زمان نوبت
-{services} - خدمات انتخاب شده"
-                    className="w-full bg-white/10 border border-white/10 rounded-xl p-4 text-sm placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 resize-none h-40 backdrop-blur-sm"
-                    required={sendReservationSms}
-                  />
-                  {sendReservationSms && !reservationMessage.trim() && (
-                    <p className="text-xs text-red-400 mt-1">⚠️ متن پیام رزرو الزامی است</p>
-                  )}
-                </div>
-              )}
-            </div>
+            <SmsReminderSection
+              sendReminderSms={sendReminderSms}
+              setSendReminderSms={setSendReminderSms}
+              reminderTime={reminderTime}
+              setReminderTime={setReminderTime}
+              reminderMessage={reminderMessage}
+              setReminderMessage={setReminderMessage}
+              onOpenTemplateModal={() => setIsReminderModalOpen(true)}
+            />
 
-            {/* پیامک یادآوری */}
-            <div className="bg-white/5 rounded-xl p-5 border border-emerald-500/20">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <Bell className="w-5 h-5 text-emerald-400" />
-                  <span className="font-medium">ارسال پیامک یادآوری</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={sendReminderSms}
-                  onChange={(e) => setSendReminderSms(e.target.checked)}
-                  className="w-6 h-6 text-emerald-500 rounded focus:ring-emerald-500"
-                />
-              </label>
-              {sendReminderSms && (
-                <div className="mt-5 space-y-4">
-                  <div>
-                    <label className="text-sm text-gray-300 mb-3 block">زمان ارسال یادآوری</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {[1, 3, 6, 24].map((hour) => (
-                        <button
-                          key={hour}
-                          onClick={() => setReminderTime(hour)}
-                          className={`px-5 py-3.5 rounded-xl font-medium text-sm transition-all ${
-                            reminderTime === hour
-                              ? "bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg scale-105"
-                              : "bg-white/10 text-gray-300 hover:bg-white/20 border border-white/20"
-                          }`}
-                        >
-                          {hour} ساعت قبل
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => setIsReminderModalOpen(true)}
-                      className="w-full bg-linear-to-r from-emerald-600 via-emerald-500 to-emerald-600 rounded-2xl p-3 flex items-center gap-4 shadow-2xl hover:shadow-emerald-500/40 active:scale-[0.98] transition-all border border-emerald-500/30"
-                    >
-                      <div className="w-8 h-8 bg-white/20 rounded-2xl flex items-center justify-center shadow-lg">
-                        <Plus className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="text-right flex-1">
-                        <h4 className="font-bold text-sm text-white">پیامک های آماده</h4>
-                        <p className="text-emerald-100 text-sm opacity-90">از لیست پیام های آماده انتخاب کن.</p>
-                      </div>
-                    </button>
-                    <textarea
-                      value={reminderMessage}
-                      onChange={(e) => setReminderMessage(e.target.value)}
-                      placeholder="اینجا میتونی پیام دلخواهتو بنویسی...
-میتونی از متغیرهای زیر استفاده کنی:
-{client_name} - نام مشتری
-{time} - زمان نوبت"
-                      className="mt-3 w-full bg-white/10 border border-white/10 rounded-xl p-4 text-sm placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 resize-none h-40 backdrop-blur-sm"
-                      required={sendReminderSms}
-                    />
-                    {sendReminderSms && !reminderMessage.trim() && (
-                      <p className="text-xs text-red-400 mt-1">⚠️ متن پیام یادآوری الزامی است</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <SmsBalanceSection
+              userSmsBalance={userSmsBalance}
+              isLoadingBalance={isLoadingBalance}
+              sendReservationSms={sendReservationSms}
+              sendReminderSms={sendReminderSms}
+              calculateSmsNeeded={calculateSmsNeeded}
+              onBuySms={() => router.push('/clientdashboard/buysms')}
+            />
 
-            {/* نمایش موجودی پیامک */}
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-emerald-500/20">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-emerald-400" />
-                  <span className="text-sm font-medium text-gray-300">موجودی و هزینه پیامک</span>
-                </div>
-                {isLoadingBalance ? (
-                  <div className="w-6 h-6 border-2 border-emerald-400/50 border-t-emerald-400 rounded-full animate-spin"></div>
-                ) : (
-                  <span className="font-bold text-lg text-emerald-300">{userSmsBalance} پیامک</span>
-                )}
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">پیامک رزرو:</span>
-                  <div className="flex items-center gap-2">
-                    <span className={sendReservationSms ? "text-emerald-400 font-bold" : "text-gray-500"}>
-                      {sendReservationSms ? "۱ پیامک" : "عدم ارسال"}
-                    </span>
-                    {sendReservationSms && (
-                      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">پیامک یادآوری:</span>
-                  <div className="flex items-center gap-2">
-                    <span className={sendReminderSms ? "text-emerald-400 font-bold" : "text-gray-500"}>
-                      {sendReminderSms ? "۱ پیامک" : "عدم ارسال"}
-                    </span>
-                    {sendReminderSms && (
-                      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="h-px bg-white/10 my-2"></div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300">مجموع پیامک‌های این نوبت:</span>
-                  <div className={`px-3 py-1.5 rounded-lg font-bold ${calculateSmsNeeded > 0 ? "bg-emerald-500/20 text-emerald-300" : "bg-gray-500/20 text-gray-400"}`}>
-                    {calculateSmsNeeded} پیامک
-                  </div>
-                </div>
-                
-                {calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance && !isLoadingBalance && (
-                  <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-xs text-red-300 text-center">
-                      ❌ موجودی پیامک کافی نیست!
-                      <br />
-                      <button 
-                        onClick={() => router.push('/clientdashboard/buysms')}
-                        className="underline mt-1 hover:text-red-200 transition"
-                      >
-                        برای ادامه خرید پیامک
-                      </button>
-                    </p>
-                  </div>
-                )}
-                
-                {calculateSmsNeeded === 0 && (
-                  <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <p className="text-xs text-blue-300 text-center">
-                      ⚡ هیچ پیامکی برای این نوبت ارسال نمی‌شود
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* دکمه ثبت */}
             <button 
               onClick={handleSubmitBooking}
               disabled={isSubmitting || existingClient?.isBlocked || (calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance)}
@@ -1191,7 +497,6 @@ const fetchUserSmsBalance = useCallback(async () => {
               )}
             </button>
 
-            {/* پشتیبانی */}
             <button 
               onClick={() => window.open('tel:02112345678', '_blank')}
               className="w-full bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex items-center gap-4 hover:bg-white/15 transition-all border border-white/10"

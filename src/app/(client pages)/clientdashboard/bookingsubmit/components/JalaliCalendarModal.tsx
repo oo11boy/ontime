@@ -25,7 +25,6 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
   const [viewYear, setViewYear] = useState(selectedDate.year);
   const [viewMonth, setViewMonth] = useState(selectedDate.month);
 
-  // وقتی مودال باز می‌شود، تاریخ انتخابی را نمایش بده
   useEffect(() => {
     if (isCalendarOpen) {
       setViewYear(selectedDate.year);
