@@ -328,7 +328,7 @@ export default function NewAppointmentPage() {
   };
 
   return (
-    <div className="h-screen text-white overflow-auto max-w-md mx-auto">
+   <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster
         position="top-center"
         toastOptions={{

@@ -238,7 +238,7 @@ export default function CalendarPage() {
   }, [selectedDayForSms, calendarDays]);
 
   return (
-    <div className="h-screen text-white overflow-auto max-w-md mx-auto">
+   <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-32">
         <HeaderSection

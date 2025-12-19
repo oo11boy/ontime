@@ -1,12 +1,13 @@
-// src/app/(client pages)/clientdashboard/components/DashboardSmsStatus.tsx
 "use client";
 
 import React, { useState } from "react";
-import { MessageCircle, Plus, ChevronDown } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { DashboardProgressCircle } from "./DashboardProgressCircle";
 import { DashboardSmsDetailsModal } from "./DashboardSmsDetailsModal";
+// وارد کردن هوک
+import { useSmsBalance } from "@/hooks/useDashboard";
 
 interface PurchasedPackage {
   id: number;
@@ -34,20 +35,15 @@ export const DashboardSmsStatus: React.FC<DashboardSmsStatusProps> = ({
   purchasedPackages = [],
 }) => {
   const [showDetails, setShowDetails] = useState(false);
+  
+  const { balance: totalRemainingSms, isLoading } = useSmsBalance();
 
-  // محاسبات
   const totalAllocatedFromPackages = purchasedPackages.reduce(
     (sum, pkg) => sum + pkg.sms_amount,
     0
   );
 
-  const remainingFromPackages = purchasedPackages.reduce(
-    (sum, pkg) => sum + pkg.remaining_sms,
-    0
-  );
-
   const totalAllocatedSms = planInitialSms + totalAllocatedFromPackages;
-  const totalRemainingSms = planSmsBalance + remainingFromPackages;
 
   const remainingPercentage = totalAllocatedSms > 0
     ? (totalRemainingSms / totalAllocatedSms) * 100
@@ -80,9 +76,9 @@ export const DashboardSmsStatus: React.FC<DashboardSmsStatusProps> = ({
                     : "bg-linear-to-r from-emerald-400 to-teal-300"
                 }`}
               >
-                {formatNumber(totalRemainingSms)}
+                {isLoading ? "..." : formatNumber(totalRemainingSms)}
               </p>
-              {isLowSms && (
+              {isLowSms && !isLoading && (
                 <motion.p
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -126,7 +122,6 @@ export const DashboardSmsStatus: React.FC<DashboardSmsStatusProps> = ({
         </motion.div>
       </div>
 
-      {/* مودال جزئیات */}
       <DashboardSmsDetailsModal
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}

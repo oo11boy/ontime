@@ -6,18 +6,27 @@ import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 
 
+// ۱. جدا کردن تنظیمات Viewport
+export const viewport = {
+  themeColor: "#1D222A",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
-export const metadata: Metadata = {
-  title: "OnTime",
-  manifest: "/manifest.json", 
-  themeColor: "#000000",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
+// ۲. تنظیمات سایر متادیتاها
+export const metadata:Metadata = {
+  title: "OnTime | پنل مشتریان",
+  description: "مدیریت هوشمند نوبت‌دهی",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "OnTime",
   },
 };
+
 
 export default function RootLayout({
   children,

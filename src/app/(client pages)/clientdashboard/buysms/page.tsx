@@ -136,7 +136,7 @@ export default function BuySMSPage() {
   }
 
   return (
-    <div className="h-screen text-white overflow-auto max-w-md mx-auto">
+   <div className="min-h-screen text-white max-w-md mx-auto relative">
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white py-10 px-4 flex flex-col">
         <HeaderSection pricePer100={pricePer100} formatPrice={formatPrice} />
 

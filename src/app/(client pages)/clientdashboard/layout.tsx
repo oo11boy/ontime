@@ -14,7 +14,6 @@ export default function ClientDashboardLayout({
 
     <AuthGuard>
         <main dir="rtl" className={`antialiased`}>
-             {/* Antialiased Class را اینجا روی یک Wrapper قرار دهید */}
              {children}
         </main>
     </AuthGuard>

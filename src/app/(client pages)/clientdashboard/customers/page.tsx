@@ -85,7 +85,7 @@ export default function CustomersList() {
   };
 
   return (
-    <div className="h-screen text-white overflow-auto max-w-md mx-auto">
+  <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster position="top-center" containerClassName="!top-0" />
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white">
         <HeaderSection
