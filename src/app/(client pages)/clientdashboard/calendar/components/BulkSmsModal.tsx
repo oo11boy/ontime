@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { formatPersianDate } from "@/lib/date-utils";
 import { formatTimeDisplay } from "../utils/formatUtils";
-import { Appointment } from "../page";
+import { Appointment } from "@/types";
 
 interface BulkSmsModalProps {
   isOpen: boolean;

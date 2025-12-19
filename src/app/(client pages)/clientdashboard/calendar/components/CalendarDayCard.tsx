@@ -2,7 +2,7 @@ import React from "react";
 import { Plus, MessageSquare, Clock, MoreVertical } from "lucide-react";
 
 import { formatTimeDisplay } from "../utils/formatUtils";
-import { Appointment } from "../page";
+import { Appointment } from "@/types";
 
 interface CalendarDay {
   date: Date;

@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import Providers from "./providers";
 
 
 export const metadata: Metadata = {
@@ -22,7 +23,8 @@ export default function RootLayout({
         className={`antialiased `}
         style={{backgroundColor:"#1B1F28"}}
       >
-        {children}
+          <Providers>{children}</Providers>
+     
         <Toaster
           position="top-center"  
           reverseOrder={false}

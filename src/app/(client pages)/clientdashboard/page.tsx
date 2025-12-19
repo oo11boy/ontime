@@ -1,8 +1,7 @@
-// src/app/(client pages)/clientdashboard/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Loading from "./components/Loading";
 import Footer from "./components/Footer/Footer";
 
@@ -14,102 +13,46 @@ import { DashboardPlanStatus } from "./components/DashboardPlanStatus";
 import { DashboardWelcomeModal } from "./components/DashboardWelcomeModal";
 import { DashboardRecentAppointments } from "./components/DashboardRecentAppointments";
 
-interface PurchasedPackage {
-  id: number;
-  sms_amount: number;
-  remaining_sms: number;
-  valid_from: string;
-  expires_at: string;
-  amount_paid: number;
-  created_at: string;
-}
-
-interface DashboardData {
-  name: string;
-  phone: string;
-  job_title: string;
-  sms_balance: number | null | undefined;
-  purchased_sms_credit: number | null | undefined;
-  purchased_packages?: PurchasedPackage[] | null;
-  sms_monthly_quota: number;
-  plan_title: string;
-  plan_key: string;
-  trial_ends_at: string | null | undefined;
-}
+// Import React Query Hooks
+import { useDashboard } from "@/hooks/useDashboard";
+import { useRecentBookings } from "@/hooks/useBookings";
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  // React Query Hooks
+  const { data: dashboardData, isLoading, error, refetch } = useDashboard();
+  const { data: recentBookingsData } = useRecentBookings();
+
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
-  // Fetch dashboard data
-  const fetchDashboardData = async () => {
-    try {
-      const res = await fetch("/api/client/dashboard", { 
-        method: "GET", 
-        credentials: "include" 
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        const userData = result.user as DashboardData;
-        setData(userData);
-
-        // Check for welcome modal flag
-        const shouldShow = sessionStorage.getItem("show_welcome_modal");
-        if (shouldShow) {
-          setShowWelcomeModal(true);
-          sessionStorage.removeItem("show_welcome_modal");
-        }
-
-      } else if (res.status === 401 || res.status === 403) {
-        toast.error("جلسه شما منقضی شده. لطفاً دوباره وارد شوید.");
-      } else {
-        toast.error("خطا در بارگذاری اطلاعات داشبورد.");
-      }
-    } catch (error) {
-      console.error("Fetch error:", error);
-      toast.error("خطا در ارتباط با سرور.");
-    } finally {
-      setLoading(false);
+  // Check for welcome modal flag
+  React.useEffect(() => {
+    const shouldShow = sessionStorage.getItem("show_welcome_modal");
+    if (shouldShow && dashboardData?.user) {
+      setShowWelcomeModal(true);
+      sessionStorage.removeItem("show_welcome_modal");
     }
-  };
+  }, [dashboardData?.user]);
 
-  // Fetch recent appointments
-  const fetchRecentAppointments = async () => {
-    try {
-      const response = await fetch("/api/client/bookings/recent");
-      const data = await response.json();
-      
-      if (data.success) {
-        return data.appointments;
-      } else {
-        throw new Error(data.message || "خطا در دریافت نوبت‌ها");
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      throw error;
-    }
+  const handleRefresh = () => {
+    refetch();
   };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
 
   const closeWelcomeModal = () => {
     setShowWelcomeModal(false);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <Loading />;
   }
 
-  if (!data) {
+  if (error || !dashboardData?.user) {
     return (
       <div className="min-h-screen bg-[#1D222A] flex flex-col items-center justify-center">
         <p className="text-white text-lg">خطا در بارگذاری اطلاعات</p>
-        <button 
-          onClick={fetchDashboardData}
+        <button
+          onClick={handleRefresh}
           className="mt-4 px-6 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition"
         >
           تلاش مجدد
@@ -118,10 +61,10 @@ export default function DashboardPage() {
     );
   }
 
-  const purchasedSmsBalance = data.purchased_sms_credit ?? 0;
-  const purchasedPackages = data.purchased_packages || [];
-  const planInitialSms = data.sms_monthly_quota ?? 0;
-  const planSmsBalance = data.sms_balance ?? 0;
+  const userData = dashboardData.user;
+  const purchasedPackages = userData.purchased_packages ?? [];
+  const planInitialSms = userData.sms_monthly_quota ?? 0;
+  const planSmsBalance = userData.sms_balance ?? 0;
 
   return (
     <>
@@ -138,19 +81,24 @@ export default function DashboardPage() {
                   planSmsBalance={planSmsBalance}
                   purchasedPackages={purchasedPackages}
                 />
-              
+
                 <DashboardAddAppointmentButton />
-                
-                <DashboardPlanStatus 
-                  planTitle={data.plan_title}
-                  trialEndsAt={data.trial_ends_at}
+
+                <DashboardPlanStatus
+                  planTitle={userData.plan_title}
+                  trialEndsAt={userData.trial_ends_at}
                 />
               </div>
             </div>
 
             {/* Recent Appointments */}
             <DashboardRecentAppointments
-              onFetchAppointments={fetchRecentAppointments}
+              onFetchAppointments={async () => {
+                if (recentBookingsData?.success) {
+                  return recentBookingsData.appointments ?? [];
+                }
+                return [];
+              }}
             />
           </div>
         </div>

@@ -7,17 +7,9 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { Loader2 } from "lucide-react";
 import { DashboardBookingCard } from "./DashboardBookingCard";
+import { Appointment } from "@/types";
 
-interface Appointment {
-  id: number;
-  client_name: string;
-  client_phone: string;
-  booking_date: string;
-  booking_time: string;
-  booking_description: string;
-  services?: string;
-  status: string;
-}
+
 
 interface DashboardRecentAppointmentsProps {
   onFetchAppointments?: () => Promise<Appointment[]>;

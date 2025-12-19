@@ -2,19 +2,9 @@
 import Link from "next/link";
 import React from "react";
 import { formatPersianDateTime } from "@/lib/date-utils";
+import { DashboardBookingCardProps } from "@/types";
 
-interface DashboardBookingCardProps {
-  appointment: {
-    id: number;
-    client_name: string;
-    client_phone: string;
-    booking_date: string;
-    booking_time: string;
-    booking_description: string;
-    services?: string;
-    status: string;
-  };
-}
+
 
 export const DashboardBookingCard: React.FC<DashboardBookingCardProps> = ({ appointment }) => {
   const formattedDateTime = appointment.booking_date && appointment.booking_time 

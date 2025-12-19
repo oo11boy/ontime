@@ -1,6 +1,5 @@
-// src/app/(client pages)/clientdashboard/services/page.tsx
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { HeaderSection } from "./components/HeaderSection";
@@ -8,6 +7,13 @@ import { RefreshButton } from "./components/RefreshButton";
 import { ServicesList } from "./components/ServicesList";
 import { ServiceModal } from "./components/ServiceModal";
 import Footer from "../components/Footer/Footer";
+import {
+  useServices,
+  useCreateService,
+  useUpdateService,
+  useDeleteService,
+  useToggleService,
+} from "@/hooks/useServices";
 
 interface Service {
   id: number;
@@ -20,8 +26,15 @@ interface Service {
 
 export default function ServicesListPage() {
   const router = useRouter();
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { data: servicesData, isLoading, refetch: fetchServices } = useServices();
+  const createService = useCreateService();
+  const updateService = useUpdateService();
+  const deleteService = useDeleteService();
+  const toggleService = useToggleService();
+
+  const services = servicesData?.services || [];
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState<Service | null>(null);
   const [form, setForm] = useState({
@@ -29,9 +42,7 @@ export default function ServicesListPage() {
     price: "",
     duration_minutes: "30",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // فرمت کردن قیمت
   const formatPrice = (price: number) => {
     return (
       new Intl.NumberFormat("fa-IR", {
@@ -42,31 +53,6 @@ export default function ServicesListPage() {
     );
   };
 
-  // دریافت سرویس‌ها از API
-  const fetchServices = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/client/services");
-      const data = await response.json();
-
-      if (data.success) {
-        setServices(data.services || []);
-      } else {
-        toast.error(data.message || "خطا در دریافت خدمات");
-      }
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      toast.error("خطا در ارتباط با سرور");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
-
-  // توابع مربوط به مودال
   const openAddModal = () => {
     setEditData(null);
     setForm({ name: "", price: "", duration_minutes: "30" });
@@ -87,7 +73,6 @@ export default function ServicesListPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ارسال فرم
   const handleSubmit = async () => {
     if (!form.name.trim()) {
       toast.error("نام خدمت الزامی است");
@@ -99,90 +84,73 @@ export default function ServicesListPage() {
       return;
     }
 
-    setIsSubmitting(true);
+    const serviceData = {
+      name: form.name.trim(),
+      price: form.price ? parseFloat(form.price) : 0,
+      duration_minutes: parseInt(form.duration_minutes) || 30,
+    };
 
-    try {
-      const url = editData
-        ? `/api/client/services/${editData.id}`
-        : "/api/client/services";
-
-      const method = editData ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          price: form.price ? parseFloat(form.price) : 0,
-          duration_minutes: parseInt(form.duration_minutes) || 30,
-        }),
+    if (editData) {
+      updateService.mutate(
+        {
+          url: `/api/client/services/${editData.id}`,
+          data: serviceData,
+        },
+        {
+          onSuccess: () => {
+            toast.success("خدمت با موفقیت به‌روزرسانی شد");
+            setModalOpen(false);
+            setEditData(null);
+          },
+          onError: (error: any) => {
+            toast.error(error.message || "خطا در ذخیره‌سازی");
+          },
+        }
+      );
+    } else {
+      createService.mutate(serviceData, {
+        onSuccess: () => {
+          toast.success("خدمت با موفقیت ایجاد شد");
+          setModalOpen(false);
+        },
+        onError: (error: any) => {
+          toast.error(error.message || "خطا در ذخیره‌سازی");
+        },
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success(data.message);
-        setModalOpen(false);
-        fetchServices();
-      } else {
-        toast.error(data.message || "خطا در ذخیره‌سازی");
-      }
-    } catch (error) {
-      console.error("Frontend error:", error);
-      toast.error("خطا در ارتباط با سرور");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  // حذف سرویس
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!confirm("آیا از حذف این خدمت اطمینان دارید؟")) return;
 
-    try {
-      const response = await fetch(`/api/client/services/${id}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success(data.message);
-        fetchServices();
-      } else {
-        toast.error(data.message);
+    deleteService.mutate(
+      { url: `/api/client/services/${id}` },
+      {
+        onSuccess: () => {
+          toast.success("خدمت با موفقیت حذف شد");
+        },
+        onError: (error: any) => {
+          toast.error(error.message || "خطا در حذف خدمت");
+        },
       }
-    } catch (error) {
-      console.error("Error deleting service:", error);
-      toast.error("خطا در حذف خدمت");
-    }
+    );
   };
 
-  // تغییر وضعیت سرویس
-  const toggleServiceStatus = async (id: number, currentStatus: boolean) => {
-    try {
-      const response = await fetch(`/api/client/services/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+  const handleToggleStatus = (id: number, currentStatus: boolean) => {
+    toggleService.mutate(
+      {
+        url: `/api/client/services/${id}`,
+        data: { is_active: !currentStatus },
+      },
+      {
+        onSuccess: () => {
+          toast.success("وضعیت خدمت با موفقیت تغییر کرد");
         },
-        body: JSON.stringify({
-          is_active: !currentStatus,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success(data.message);
-        fetchServices();
-      } else {
-        toast.error(data.message);
+        onError: (error: any) => {
+          toast.error(error.message || "خطا در تغییر وضعیت");
+        },
       }
-    } catch (error) {
-      console.error("Error toggling service:", error);
-      toast.error("خطا در تغییر وضعیت");
-    }
+    );
   };
 
   return (
@@ -205,26 +173,28 @@ export default function ServicesListPage() {
 
         <RefreshButton isLoading={isLoading} onRefresh={fetchServices} />
 
-        {/* لیست سرویس‌ها */}
         <div className="px-4 mt-4 space-y-3">
           <ServicesList
             services={services}
             isLoading={isLoading}
             formatPrice={formatPrice}
-            onToggleStatus={toggleServiceStatus}
+            onToggleStatus={handleToggleStatus}
             onEdit={openEditModal}
             onDelete={handleDelete}
             onOpenAddModal={openAddModal}
           />
         </div>
 
-    
         <ServiceModal
           isOpen={modalOpen}
           editData={editData}
           form={form}
-          isSubmitting={isSubmitting}
-          onClose={() => setModalOpen(false)}
+          isSubmitting={createService.isPending || updateService.isPending}
+          onClose={() => {
+            setModalOpen(false);
+            setEditData(null);
+            setForm({ name: "", price: "", duration_minutes: "30" });
+          }}
           onFormChange={handleFormChange}
           onSubmit={handleSubmit}
         />

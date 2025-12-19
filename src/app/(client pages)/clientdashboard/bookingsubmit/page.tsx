@@ -1,11 +1,16 @@
+// src/app/(client pages)/clientdashboard/bookingsubmit/page.tsx
 "use client";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { Calendar, Check, ChevronLeft, PhoneCall, X } from "lucide-react";
 
 import Footer from "../components/Footer/Footer";
 import { getTodayJalali, jalaliToGregorian } from "@/lib/date-utils";
+import { useServices } from "@/hooks/useServices";
+import { useCreateBooking } from "@/hooks/useBookings";
+import { useCheckCustomer } from "@/hooks/useCustomers";
+import { useSmsBalance } from "@/hooks/useDashboard";
 
 import { reservationTemplates, reminderTemplates } from "./data/messageTemplates";
 import ClientInfoSection from "./components/ClientInfoSection";
@@ -32,6 +37,12 @@ export default function NewAppointmentPage() {
   const searchParams = useSearchParams();
   const todayJalali = useMemo(() => getTodayJalali(), []);
 
+  // هوک‌های React Query
+  const { data: servicesData } = useServices();
+  const { mutate: createBooking, isPending: isSubmitting } = useCreateBooking();
+  const { mutate: checkCustomer, data: checkData } = useCheckCustomer();
+  const { balance: userSmsBalance, isLoading: isLoadingBalance } = useSmsBalance();
+
   // دریافت تاریخ از URL
   const getInitialDate = () => {
     const dateParam = searchParams.get('date');
@@ -55,11 +66,11 @@ export default function NewAppointmentPage() {
   // State ها
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-const [selectedDate, setSelectedDate] = useState<{ 
-  year: number; 
-  month: number; 
-  day: number | null 
-}>(getInitialDate());
+  const [selectedDate, setSelectedDate] = useState<{ 
+    year: number; 
+    month: number; 
+    day: number | null 
+  }>(getInitialDate());
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [notes, setNotes] = useState("");
@@ -73,24 +84,11 @@ const [selectedDate, setSelectedDate] = useState<{
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [isServicesModalOpen, setIsServicesModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCheckingClient, setIsCheckingClient] = useState(false);
-  const [existingClient, setExistingClient] = useState<{
-    exists: boolean;
-    name?: string;
-    totalBookings?: number;
-    lastBookingDate?: string;
-    isBlocked?: boolean;
-  } | null>(null);
   const [showNameChangeModal, setShowNameChangeModal] = useState(false);
   const [pendingNameChange, setPendingNameChange] = useState<{
     oldName: string;
     newName: string;
   } | null>(null);
-  const [userSmsBalance, setUserSmsBalance] = useState<number>(0);
-  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoadingServices, setIsLoadingServices] = useState(true);
 
   // محاسبه تعداد پیامک‌های مورد نیاز
   const calculateSmsNeeded = useMemo(() => {
@@ -99,157 +97,53 @@ const [selectedDate, setSelectedDate] = useState<{
     return reservationSms + reminderSms;
   }, [sendReservationSms, sendReminderSms]);
 
-  // تابع برای دریافت سرویس‌های کاربر
-  const fetchUserServices = useCallback(async () => {
-    try {
-      setIsLoadingServices(true);
-      const response = await fetch('/api/client/services');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const activeServices = data.services.filter((service: Service) => service.is_active);
-          setServices(activeServices);
-        } else {
-          toast.error(data.message || "خطا در دریافت خدمات");
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      toast.error("خطا در دریافت خدمات");
-    } finally {
-      setIsLoadingServices(false);
+  // سرویس‌های فعال
+  const services = useMemo(() => {
+    if (!servicesData?.services) return [];
+    return servicesData.services.filter((service: Service) => service.is_active);
+  }, [servicesData]);
+
+  // اطلاعات مشتری موجود
+  const existingClient = useMemo(() => {
+    if (!checkData) return null;
+    
+    if (checkData.exists && checkData.client) {
+      return {
+        exists: true,
+        name: checkData.client.name,
+        totalBookings: checkData.client.totalBookings,
+        lastBookingDate: checkData.client.lastBookingDate,
+        isBlocked: checkData.client.isBlocked
+      };
     }
-  }, []);
+    return null;
+  }, [checkData]);
 
-  // تابع برای دریافت موجودی پیامک کاربر
-  const fetchUserSmsBalance = useCallback(async () => {
-    try {
-      setIsLoadingBalance(true);
-      const response = await fetch('/api/client/dashboard');
-      if (response.ok) {
-        const data = await response.json();
-        const totalBalance = data.user?.total_sms_balance || 
-                            (data.user?.sms_balance || 0) + 
-                            (data.user?.purchased_sms_credit || 0);
-        setUserSmsBalance(totalBalance);
-        console.log("💰 موجودی دریافت شد:", totalBalance, data.user);
-      }
-    } catch (error) {
-      console.error("خطا در دریافت موجودی پیامک:", error);
-    } finally {
-      setIsLoadingBalance(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUserServices();
-    fetchUserSmsBalance();
-  }, [fetchUserServices, fetchUserSmsBalance]);
-
-  // تابع چک کردن مشتری موجود
-  const checkExistingClient = useCallback(async (phoneNumber: string, currentName: string) => {
-    const cleanedPhone = phoneNumber.replace(/\D/g, '');
-    if (cleanedPhone.length < 10) return;
-
-    setIsCheckingClient(true);
-    try {
-      const response = await fetch(`/api/client/customers/checkcustomerexist?phone=${encodeURIComponent(cleanedPhone)}`);
-      const data = await response.json();
-      
-      if (data.exists && data.client) {
-        setExistingClient({
-          exists: true,
-          name: data.client.name,
-          totalBookings: data.client.totalBookings,
-          lastBookingDate: data.client.lastBookingDate,
-          isBlocked: data.client.isBlocked
-        });
-        
-        if (data.client.name && currentName && data.client.name.trim() !== currentName.trim()) {
-          setPendingNameChange({
-            oldName: data.client.name,
-            newName: currentName
-          });
-          setShowNameChangeModal(true);
-        }
-      } else {
-        setExistingClient(null);
-      }
-    } catch (error) {
-      console.error("Error checking client:", error);
-      setExistingClient(null);
-    } finally {
-      setIsCheckingClient(false);
-    }
-  }, []);
-
-  // تایمر برای چک کردن مشتری
+  // چک کردن مشتری با debounce
   useEffect(() => {
     const cleanedPhone = phone.replace(/\D/g, '');
     if (cleanedPhone.length >= 10) {
       const timer = setTimeout(() => {
-        checkExistingClient(phone, name);
+        checkCustomer(phone);
       }, 800);
       
       return () => clearTimeout(timer);
-    } else {
-      setExistingClient(null);
     }
-  }, [phone, name, checkExistingClient]);
+  }, [phone, checkCustomer]);
 
-  const handleNameChangeConfirm = () => {
-    setShowNameChangeModal(false);
-    setPendingNameChange(null);
-    toast.success("نام مشتری به روز شد");
-  };
+  // بررسی تغییر نام
+  useEffect(() => {
+    if (existingClient?.name && name && existingClient.name.trim() !== name.trim()) {
+      setPendingNameChange({
+        oldName: existingClient.name,
+        newName: name
+      });
+      setShowNameChangeModal(true);
+    }
+  }, [existingClient, name]);
 
-  const handleNameChangeCancel = () => {
-    if (pendingNameChange) {
-      setName(pendingNameChange.oldName);
-    }
-    setShowNameChangeModal(false);
-    setPendingNameChange(null);
-    toast.success("از نام قبلی مشتری استفاده شد");
-  };
-
-  // اعتبارسنجی متن پیام‌ها
-  const validateMessages = () => {
-    if (sendReservationSms && !reservationMessage.trim()) {
-      toast.error("لطفا متن پیام تأیید رزرو را وارد کنید");
-      return false;
-    }
-    
-    if (sendReservationSms && reservationMessage.trim().length < 10) {
-      toast.error("پیام تأیید رزرو باید حداقل ۱۰ کاراکتر باشد");
-      return false;
-    }
-    
-    if (sendReminderSms && !reminderMessage.trim()) {
-      toast.error("لطفا متن پیام یادآوری را وارد کنید");
-      return false;
-    }
-    
-    if (sendReminderSms && reminderMessage.trim().length < 10) {
-      toast.error("پیام یادآوری باید حداقل ۱۰ کاراکتر باشد");
-      return false;
-    }
-    
-    return true;
-  };
-
-  // اعتبارسنجی موجودی پیامک
-  const validateSmsBalance = () => {
-    const smsNeeded = calculateSmsNeeded;
-    if (smsNeeded > userSmsBalance) {
-      toast.error(`موجودی پیامک کافی نیست. نیاز: ${smsNeeded} پیامک، موجودی: ${userSmsBalance}`);
-      return false;
-    }
-    return true;
-  };
-
-  // تابع ارسال نوبت به API
-  const handleSubmitBooking = async () => {
-    // اعتبارسنجی فیلدهای ضروری
+  const handleSubmitBooking = () => {
+    // اعتبارسنجی‌ها
     if (!name.trim()) {
       toast.error("لطفا نام مشتری را وارد کنید");
       return;
@@ -262,7 +156,7 @@ const [selectedDate, setSelectedDate] = useState<{
 
     const cleanedPhone = phone.replace(/\D/g, '');
     if (cleanedPhone.length < 10 || cleanedPhone.length > 12) {
-      toast.error("شماره تلفن معتبر نیست (باید ۱۰ تا ۱۲ رقم باشد)");
+      toast.error("شماره تلفن معتبر نیست");
       return;
     }
 
@@ -284,69 +178,60 @@ const [selectedDate, setSelectedDate] = useState<{
     }
 
     if (existingClient?.isBlocked) {
-      toast.error("این مشتری در لیست بلاک شده است. نمی‌توانید نوبت ثبت کنید.");
+      toast.error("این مشتری در لیست بلاک شده است");
       return;
     }
 
-    if (!validateMessages()) {
+    // اعتبارسنجی پیام‌ها
+    if (sendReservationSms && (!reservationMessage.trim() || reservationMessage.trim().length < 10)) {
+      toast.error("پیام تأیید رزرو باید حداقل ۱۰ کاراکتر باشد");
       return;
     }
-
-    const smsNeeded = calculateSmsNeeded;
-    if (smsNeeded > 0 && !validateSmsBalance()) {
-      return;
-    }
-
-    let finalReservationMessage = reservationMessage;
-    let finalReminderMessage = reminderMessage;
     
+    if (sendReminderSms && (!reminderMessage.trim() || reminderMessage.trim().length < 10)) {
+      toast.error("پیام یادآوری باید حداقل ۱۰ کاراکتر باشد");
+      return;
+    }
+
+    // اعتبارسنجی موجودی پیامک
+    if (calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance) {
+      toast.error(`موجودی پیامک کافی نیست. نیاز: ${calculateSmsNeeded} پیامک`);
+      return;
+    }
+
+    // فرمت پیام‌ها
     const jalaliDateStr = formatJalaliDate(selectedDate.year, selectedDate.month, selectedDate.day);
     
-    if (reservationMessage) {
-      finalReservationMessage = reservationMessage
-        .replace(/{client_name}/g, name.trim())
-        .replace(/{date}/g, jalaliDateStr)
-        .replace(/{time}/g, selectedTime)
-        .replace(/{services}/g, selectedServices.map(s => s.name).join(", "));
-    }
+    const finalReservationMessage = reservationMessage
+      .replace(/{client_name}/g, name.trim())
+      .replace(/{date}/g, jalaliDateStr)
+      .replace(/{time}/g, selectedTime)
+      .replace(/{services}/g, selectedServices.map(s => s.name).join(", "));
     
-    if (reminderMessage) {
-      finalReminderMessage = reminderMessage
-        .replace(/{client_name}/g, name.trim())
-        .replace(/{time}/g, selectedTime);
-    }
+    const finalReminderMessage = reminderMessage
+      .replace(/{client_name}/g, name.trim())
+      .replace(/{time}/g, selectedTime);
 
-    setIsSubmitting(true);
+    // داده‌های نوبت
+    const bookingData = {
+      client_name: name.trim(),
+      client_phone: cleanedPhone,
+      booking_date: bookingDate,
+      booking_time: selectedTime,
+      booking_description: notes.trim(),
+      services: selectedServices.map(s => s.name).join(", "),
+      sms_reserve_enabled: sendReservationSms,
+      sms_reserve_custom_text: finalReservationMessage,
+      sms_reminder_enabled: sendReminderSms,
+      sms_reminder_custom_text: finalReminderMessage,
+      sms_reminder_hours_before: reminderTime,
+    };
 
-    try {
-      const bookingData = {
-        client_name: name.trim(),
-        client_phone: cleanedPhone,
-        booking_date: bookingDate,
-        booking_time: selectedTime,
-        booking_description: notes.trim(),
-        services: selectedServices.map(s => s.name).join(", "),
-        sms_reserve_enabled: sendReservationSms,
-        sms_reserve_custom_text: finalReservationMessage,
-        sms_reminder_enabled: sendReminderSms,
-        sms_reminder_custom_text: finalReminderMessage,
-        sms_reminder_hours_before: reminderTime,
-      };
-
-      console.log("Submitting booking data:", bookingData);
-
-      const response = await fetch("/api/client/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bookingData),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success(`نوبت با موفقیت ثبت شد! ${smsNeeded > 0 ? `(${smsNeeded} پیامک ارسال شد)` : ''}`);
+    // ارسال با React Query Mutation
+    createBooking(bookingData, {
+      
+      onSuccess: () => {
+        toast.success(`نوبت با موفقیت ثبت شد! ${calculateSmsNeeded > 0 ? `(${calculateSmsNeeded} پیامک ارسال شد)` : ''}`);
         
         // پاک کردن فرم
         setName("");
@@ -355,27 +240,16 @@ const [selectedDate, setSelectedDate] = useState<{
         setNotes("");
         setReservationMessage("");
         setReminderMessage("");
-        setExistingClient(null);
         
-        // به‌روزرسانی موجودی پیامک
-        if (smsNeeded > 0) {
-          setUserSmsBalance(prev => prev - smsNeeded);
-        }
-        
-        // هدایت به صفحه تقویم بعد از 2 ثانیه
+        // هدایت به تقویم
         setTimeout(() => {
           router.push("/clientdashboard/calendar");
         }, 2000);
-      } else {
-        toast.error(result.message || "خطا در ثبت نوبت");
-        console.error("Booking error:", result);
-      }
-    } catch (error) {
-      console.error("Error submitting booking:", error);
-      toast.error("خطا در ارتباط با سرور");
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+      onError: (error: any) => {
+        toast.error(error.message || "خطا در ثبت نوبت");
+      },
+    });
   };
 
   return (
@@ -389,18 +263,6 @@ const [selectedDate, setSelectedDate] = useState<{
             color: '#fff',
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '12px',
-          },
-          success: {
-            style: {
-              background: '#10b981',
-              color: '#fff',
-            },
-          },
-          error: {
-            style: {
-              background: '#ef4444',
-              color: '#fff',
-            },
           },
         }}
       />
@@ -418,9 +280,7 @@ const [selectedDate, setSelectedDate] = useState<{
               setName={setName}
               phone={phone}
               setPhone={setPhone}
-              isCheckingClient={isCheckingClient}
-              existingClient={existingClient}
-            />
+              existingClient={existingClient} isCheckingClient={false}            />
 
             <div className="h-px bg-white/10 rounded-full"></div>
 
@@ -471,7 +331,8 @@ const [selectedDate, setSelectedDate] = useState<{
 
             <button 
               onClick={handleSubmitBooking}
-              disabled={isSubmitting || existingClient?.isBlocked || (calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance)}
+              disabled={isSubmitting || existingClient?.isBlocked || 
+                (calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance)}
               className="w-full py-4 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl font-bold text-lg shadow-lg hover:from-emerald-600 hover:to-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
@@ -525,8 +386,19 @@ const [selectedDate, setSelectedDate] = useState<{
         onClose={() => setShowNameChangeModal(false)}
         oldName={pendingNameChange?.oldName || ""}
         newName={pendingNameChange?.newName || ""}
-        onConfirm={handleNameChangeConfirm}
-        onCancel={handleNameChangeCancel}
+        onConfirm={() => {
+          setShowNameChangeModal(false);
+          setPendingNameChange(null);
+          toast.success("نام مشتری به روز شد");
+        }}
+        onCancel={() => {
+          if (pendingNameChange) {
+            setName(pendingNameChange.oldName);
+          }
+          setShowNameChangeModal(false);
+          setPendingNameChange(null);
+          toast.success("از نام قبلی مشتری استفاده شد");
+        }}
       />
 
       <MessageTemplateModal
@@ -551,7 +423,7 @@ const [selectedDate, setSelectedDate] = useState<{
         selectedServices={selectedServices}
         setSelectedServices={setSelectedServices}
         allServices={services}
-        isLoading={isLoadingServices}
+        isLoading={!servicesData}
       />
 
       <JalaliCalendarModal

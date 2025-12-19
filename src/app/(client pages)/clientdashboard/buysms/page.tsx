@@ -1,4 +1,3 @@
-// src/app/(client pages)/clientdashboard/buysms/page.tsx (کامپوننت اصلی)
 "use client";
 
 import  { useState, useEffect } from "react";

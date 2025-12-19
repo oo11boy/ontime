@@ -1,5 +1,5 @@
 "use client";
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Footer from "../../../components/Footer/Footer";
 import { formatPersianDate, formatPersianDateTime } from "@/lib/date-utils";
@@ -13,37 +13,19 @@ import { AppointmentsList } from "./components/AppointmentsList";
 import { SmsModal } from "./components/SmsModal";
 import { CancelAppointmentModal } from "./components/CancelAppointmentModal";
 import { BlockModal } from "./components/BlockModal";
+import { useCustomerProfile } from "@/hooks/useCustomers";
 
-interface Appointment {
-  id: number;
-  date: string;
-  time: string;
-  note: string;
-  services: string;
-  displayStatus: "pending" | "completed" | "canceled";
-}
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  category: string;
-  is_blocked: boolean;
-  totalAppointments: number;
-  canceledAppointments: number;
-  completedAppointments: number;
-  activeAppointments: number;
-  joinDate: string;
-}
 
 export default function CustomerProfile() {
   const router = useRouter();
   const params = useParams();
   const phone = params?.phone as string;
 
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
+  // React Query Hook
+  const { data: customerData, isLoading, refetch } = useCustomerProfile(phone);
+  
+  const customer = customerData?.client || null;
+  const appointments = customerData?.appointments || [];
 
   // Modals State
   const [showGeneralSmsModal, setShowGeneralSmsModal] = useState(false);
@@ -58,30 +40,6 @@ export default function CustomerProfile() {
   const [sendingSms, setSendingSms] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [blocking, setBlocking] = useState(false);
-
-  // دریافت اطلاعات مشتری
-  const fetchCustomerData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/client/customers/${phone}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setCustomer(data.client);
-        setAppointments(data.appointments);
-      }
-    } catch (error) {
-      console.error("Error fetching customer data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (phone) {
-      fetchCustomerData();
-    }
-  }, [phone]);
 
   // کنسل کردن نوبت
   const handleCancelAppointment = async (apptId: number) => {
@@ -103,21 +61,8 @@ export default function CustomerProfile() {
           });
         }
 
-        setAppointments(
-          appointments.map((appt) =>
-            appt.id === apptId
-              ? { ...appt, displayStatus: "canceled" as const }
-              : appt
-          )
-        );
-
-        if (customer) {
-          setCustomer({
-            ...customer,
-            canceledAppointments: customer.canceledAppointments + 1,
-            activeAppointments: customer.activeAppointments - 1,
-          });
-        }
+        // به‌روزرسانی داده‌ها با React Query
+        await refetch();
       }
     } catch (error) {
       console.error("Error canceling appointment:", error);
@@ -139,8 +84,7 @@ export default function CustomerProfile() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: generalSmsMessage.trim() }),
       });
-      const data = await response.json();
-      if (data.success) {
+      if (response.ok) {
         setShowGeneralSmsModal(false);
         setGeneralSmsMessage("");
       }
@@ -166,16 +110,9 @@ export default function CustomerProfile() {
         }),
       });
 
-      const data = await response.json();
-      if (data.success) {
-        setCustomer({ ...customer, is_blocked: true });
-        setAppointments(
-          appointments.map((appt) =>
-            appt.displayStatus === "pending"
-              ? { ...appt, displayStatus: "canceled" as const }
-              : appt
-          )
-        );
+      if (response.ok) {
+        // به‌روزرسانی داده‌ها با React Query
+        await refetch();
       }
     } catch (error) {
       console.error("Error blocking customer:", error);
@@ -200,9 +137,9 @@ export default function CustomerProfile() {
         }),
       });
 
-      const data = await response.json();
-      if (data.success) {
-        setCustomer({ ...customer, is_blocked: false });
+      if (response.ok) {
+        // به‌روزرسانی داده‌ها با React Query
+        await refetch();
       }
     } catch (error) {
       console.error("Error unblocking customer:", error);
@@ -236,12 +173,12 @@ export default function CustomerProfile() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
   if (!customer) {
-    return <ErrorScreen/>;
+    return <ErrorScreen />;
   }
 
   return (
