@@ -342,7 +342,7 @@ export default function NewAppointmentPage() {
         }}
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933] text-white pb-32">
+      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-32">
         <div className="max-w-2xl mx-auto px-4 py-6">
           <h1 className="text-2xl font-bold text-center mb-8 flex items-center justify-center gap-3">
             <Calendar className="w-7 h-7 text-emerald-400" />
@@ -414,7 +414,7 @@ export default function NewAppointmentPage() {
                 existingClient?.isBlocked ||
                 (calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance)
               }
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl font-bold text-lg shadow-lg hover:from-emerald-600 hover:to-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl font-bold text-lg shadow-lg hover:from-emerald-600 hover:to-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

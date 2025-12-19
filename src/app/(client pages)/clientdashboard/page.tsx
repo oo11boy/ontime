@@ -16,6 +16,8 @@ import { DashboardRecentAppointments } from "./components/DashboardRecentAppoint
 // Import React Query Hooks
 import { useDashboard } from "@/hooks/useDashboard";
 import { useRecentBookings } from "@/hooks/useBookings";
+import InstallPWA from "./components/InstallPWA";
+import IosInstallPrompt from "./components/IosInstallPrompt";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -75,6 +77,8 @@ export default function DashboardPage() {
           <div className="max-w-md mx-auto px-4 space-y-6">
             {/* Service Control Panel */}
             <div className="w-[95%] m-auto shadow-2xl flex flex-col items-center">
+             <InstallPWA />
+             <IosInstallPrompt />
               <div className="bg-[#1B1F28] rounded-xl p-6 flex flex-col gap-6 justify-start items-center shadow-sm w-full mx-auto">
                 <DashboardSmsStatus
                   planInitialSms={planInitialSms}
