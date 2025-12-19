@@ -155,7 +155,7 @@ const AppointmentItem: React.FC<{ appointment: Appointment; onClick: () => void 
               {formatTimeDisplay(appointment.booking_time)}
             </span>
             <span className="text-xs text-gray-400">
-              {appointment.services?.split(',')[0] || 'بدون خدمات'}
+            {appointment.services || "بدون خدمات"}
             </span>
           </div>
         </div>

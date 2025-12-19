@@ -1,15 +1,12 @@
-import React from "react";
+"use client";
+import React, { useMemo } from "react";
 import { Calendar, RefreshCw, MessageSquare, Plus, Filter, X } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface HeaderSectionProps {
   userSmsBalance: number;
   isLoadingBalance: boolean;
   isLoading: boolean;
-  filters: {
-    status: 'all' | 'active' | 'cancelled' | 'done';
-    service: string;
-  };
+  selectedService: string;
   filteredAppointments: any[];
   onRefresh: () => void;
   onFilterClick: () => void;
@@ -21,13 +18,23 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   userSmsBalance,
   isLoadingBalance,
   isLoading,
-  filters,
+  selectedService,
   filteredAppointments,
   onRefresh,
   onFilterClick,
   onAddAppointment,
   onClearFilter,
 }) => {
+  // بررسی اینکه آیا فیلتر فعال است
+  const isFilterActive = selectedService !== "all";
+
+  // ایجاد متن خلاصه فیلتر
+  const filterSummary = useMemo(() => {
+    if (selectedService === "all") {
+      return "همه خدمات";
+    }
+    return selectedService;
+  }, [selectedService]);
 
   return (
     <div className="sticky top-0 z-50 bg-linear-to-b from-[#1a1e26]/90 to-transparent backdrop-blur-xl border-b border-emerald-500/30">
@@ -56,14 +63,16 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={onFilterClick}
-            className="flex items-center justify-between bg-white/10 rounded-xl px-4 py-3.5 border border-white/10 hover:border-emerald-500/50 transition-all"
+            className={`flex items-center justify-between rounded-xl px-4 py-3.5 border transition-all ${
+              isFilterActive
+                ? 'bg-blue-500/20 border-blue-500/40 text-blue-400'
+                : 'bg-white/10 border-white/10 hover:border-emerald-500/40 text-gray-300'
+            }`}
           >
-            <span className="text-sm font-medium">
-              {filters.status === 'all' ? 'همه وضعیت‌ها' : 
-               filters.status === 'active' ? 'فقط فعال' :
-               filters.status === 'cancelled' ? 'کنسل شده‌ها' : 'انجام شده‌ها'}
+            <span className="text-sm font-medium truncate max-w-[120px]">
+              {filterSummary}
             </span>
-            <Filter className="w-5 h-5 text-emerald-400" />
+            <Filter className="w-5 h-5" />
           </button>
           
           <button
@@ -75,7 +84,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
           </button>
         </div>
         
-        {filters.status !== 'all' && (
+        {isFilterActive && (
           <div className="mt-3 flex items-center justify-between">
             <span className="text-sm text-gray-400">
               {filteredAppointments.length} نوبت یافت شد
@@ -94,4 +103,4 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   );
 };
 
-export default HeaderSection;
+export { HeaderSection };

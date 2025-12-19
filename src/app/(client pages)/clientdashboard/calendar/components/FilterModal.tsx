@@ -1,38 +1,42 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Filter, X } from "lucide-react";
 
 interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  filters: {
-    status: 'all' | 'active' | 'cancelled' | 'done';
-    service: string;
-  };
-  setFilters: (filters: { status: 'all' | 'active' | 'cancelled' | 'done'; service: string }) => void;
+  selectedService: string;
+  setSelectedService: (service: string) => void;
   services: string[];
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({
   isOpen,
   onClose,
-  filters,
-  setFilters,
+  selectedService,
+  setSelectedService,
   services,
 }) => {
-  const [tempFilters, setTempFilters] = useState(filters);
+  const [tempService, setTempService] = useState(selectedService);
+
+  // همگام‌سازی وقتی که modal باز می‌شود
+  useEffect(() => {
+    if (isOpen) {
+      setTempService(selectedService);
+    }
+  }, [isOpen, selectedService]);
 
   const handleApply = () => {
-    setFilters(tempFilters);
+    setSelectedService(tempService);
     onClose();
   };
 
   const handleReset = () => {
-    setTempFilters({
-      status: 'all',
-      service: 'all',
-    });
+    setTempService('all');
   };
+
+  // بررسی اینکه آیا تغییراتی ایجاد شده است
+  const hasChanges = tempService !== selectedService;
 
   if (!isOpen) return null;
 
@@ -43,7 +47,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <Filter className="w-6 h-6 text-emerald-400" />
-            <h3 className="text-xl font-bold text-white">فیلتر نوبت‌ها</h3>
+            <h3 className="text-xl font-bold text-white">فیلتر بر اساس خدمات</h3>
           </div>
           <button
             onClick={onClose}
@@ -53,52 +57,22 @@ const FilterModal: React.FC<FilterModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6">
           <div>
-            <label className="text-sm text-gray-300 mb-3 block">وضعیت</label>
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'active', 'cancelled', 'done'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setTempFilters({ ...tempFilters, status: status as any })}
-                  className={`px-4 py-2.5 rounded-xl text-sm transition-all ${
-                    tempFilters.status === status
-                      ? "bg-emerald-500 text-white shadow-lg"
-                      : "bg-white/10 text-gray-300 hover:bg-white/20"
-                  }`}
-                >
-                  {status === 'all' ? 'همه' : 
-                   status === 'active' ? 'فعال' :
-                   status === 'cancelled' ? 'کنسل شده' : 'انجام شده'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-300 mb-3 block">خدمات</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setTempFilters({ ...tempFilters, service: 'all' })}
-                className={`p-3 rounded-xl text-sm transition-all ${
-                  tempFilters.service === 'all'
-                    ? "bg-emerald-500 text-white shadow-lg"
-                    : "bg-white/10 text-gray-300 hover:bg-white/20"
-                }`}
-              >
-                همه خدمات
-              </button>
+            <label className="text-sm text-gray-300 mb-3 block">نوع خدمات</label>
+            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
               {services.map((service) => (
                 <button
                   key={service}
-                  onClick={() => setTempFilters({ ...tempFilters, service })}
-                  className={`p-3 rounded-xl text-sm transition-all ${
-                    tempFilters.service === service
+                  onClick={() => setTempService(service)}
+                  className={`p-4 rounded-xl text-sm transition-all text-center ${
+                    tempService === service
                       ? "bg-emerald-500 text-white shadow-lg"
                       : "bg-white/10 text-gray-300 hover:bg-white/20"
-                }`}
+                  }`}
+                  title={service}
                 >
-                  {service}
+                  <span className="truncate block font-medium">{service}</span>
                 </button>
               ))}
             </div>
@@ -107,14 +81,25 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
         <div className="p-6 border-t border-white/10 flex gap-3">
           <button
-            onClick={handleReset}
+            onClick={() => {
+              handleReset();
+              if (hasChanges) {
+                setSelectedService('all');
+              }
+              onClose();
+            }}
             className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 rounded-xl font-medium transition"
           >
-            بازنشانی
+            {hasChanges ? 'لغو' : 'بستن'}
           </button>
           <button
             onClick={handleApply}
-            className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold transition"
+            disabled={!hasChanges}
+            className={`flex-1 py-3.5 rounded-xl font-bold transition ${
+              hasChanges
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-gray-600 cursor-not-allowed opacity-50"
+            }`}
           >
             اعمال فیلتر
           </button>

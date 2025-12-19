@@ -1,33 +1,50 @@
 "use client";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
-import { Calendar, Plus } from "lucide-react";
+import { Calendar, Plus, Filter } from "lucide-react";
 import Footer from "../components/Footer/Footer";
-import { gregorianToPersian } from "@/lib/date-utils";
+import { gregorianToPersian, getTodayJalali } from "@/lib/date-utils";
 import AppointmentDetailModal from "./components/AppointmentDetailModal";
 import BulkSmsModal from "./components/BulkSmsModal";
 import FilterModal from "./components/FilterModal";
 import CalendarDayCard from "./components/CalendarDayCard";
-import HeaderSection from "./components/HeaderSection";
 import { useBookings } from "@/hooks/useBookings";
 import { useServices } from "@/hooks/useServices";
 import { useSmsBalance } from "@/hooks/useDashboard";
 import { Appointment } from "@/types";
+import { HeaderSection } from "./components/HeaderSection";
+
+// نام‌های فارسی کامل ماه‌ها (0-indexed: فروردین = 0)
+const persianMonths = [
+  'فروردین', 'اردیبهشت', 'خرداد',
+  'تیر', 'مرداد', 'شهریور',
+  'مهر', 'آبان', 'آذر',
+  'دی', 'بهمن', 'اسفند'
+];
 
 interface CalendarDay {
   date: Date;
   jalaliDate: {
     year: number;
-    month: number;
+    month: number; // 0-indexed
     day: number;
     monthName: string;
   };
   isToday: boolean;
   isPast: boolean;
-  isWeekend: boolean;
+  isWeekend: boolean; // فقط جمعه
   appointments: Appointment[];
   hasAppointments: boolean;
+}
+
+// اینترفیس برای Service
+interface Service {
+  id: number;
+  name: string;
+  is_active: boolean;
+  duration_minutes?: number;
+  price?: number;
 }
 
 export default function CalendarPage() {
@@ -43,11 +60,15 @@ export default function CalendarPage() {
   const { balance: userSmsBalance, isLoading: isLoadingBalance } =
     useSmsBalance();
 
-  const appointments = useMemo(
+  const allAppointments = useMemo(
     () => bookingsData?.bookings || [],
     [bookingsData]
   );
-  const services = useMemo(() => servicesData?.services || [], [servicesData]);
+  
+  const services: Service[] = useMemo(() => {
+    if (!servicesData?.services) return [];
+    return servicesData.services as Service[];
+  }, [servicesData]);
 
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   const [selectedAppointment, setSelectedAppointment] =
@@ -55,16 +76,18 @@ export default function CalendarPage() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showBulkSmsModal, setShowBulkSmsModal] = useState(false);
   const [selectedDayForSms, setSelectedDayForSms] = useState<Date | null>(null);
-  const [filters, setFilters] = useState({
-    status: "all" as "all" | "active" | "cancelled" | "done",
-    service: "all",
-  });
+  const [selectedService, setSelectedService] = useState<string>("all");
+
+  // دریافت تاریخ امروز به شمسی
+  const todayJalali = useMemo(() => getTodayJalali(), []);
 
   const dynamicServices = useMemo(() => {
     const serviceNames = services
-      .filter((service: any) => service.is_active)
-      .map((service: any) => service.name);
-    return ["همه خدمات", ...serviceNames];
+      .filter((service: Service) => service.is_active)
+      .map((service: Service) => service.name);
+    
+    console.log("سرویس‌های فعال:", serviceNames);
+    return [ ...serviceNames];
   }, [services]);
 
   const updateAppointmentsStatus = useCallback(async () => {
@@ -79,53 +102,105 @@ export default function CalendarPage() {
     }
   }, [refetchAppointments]);
 
-  // Generate calendar days
-  useMemo(() => {
+  // فیلتر کردن نوبت‌ها بر اساس خدمات انتخاب شده
+  const filteredAppointments = useMemo(() => {
+    console.log("فیلتر خدمات:", selectedService);
+    console.log("کل نوبت‌ها:", allAppointments.length);
+    console.log("لیست سرویس‌ها برای فیلتر:", dynamicServices);
+    
+    if (selectedService === "all") {
+      console.log("همه خدمات انتخاب شده - برگرداندن همه نوبت‌ها");
+      return allAppointments;
+    }
+    
+    const filtered = allAppointments.filter((app) => {
+      // بررسی کنیم که services رشته است یا آرایه
+      let serviceList: string[] = [];
+      
+      if (!app.services) {
+        console.log(`نوبت ${app.id}: بدون خدمات`);
+        return false; // اگر سرویسی ندارد، نادیده بگیر
+      }
+      
+      console.log(`نوبت ${app.id} - services نوع:`, typeof app.services, "مقدار:", app.services);
+      
+      if (typeof app.services === 'string') {
+        // اگر services رشته است، با کاما جدا کنیم
+        serviceList = app.services.split(',').map((s: string) => s.trim());
+      } else if (Array.isArray(app.services)) {
+        // اگر services آرایه است
+        serviceList = (app.services as any[]).map((s: any) => String(s).trim());
+      } else {
+        // اگر نوع دیگری است، به رشته تبدیل کنیم
+        serviceList = [String(app.services).trim()];
+      }
+      
+      console.log(`نوبت ${app.id} - لیست سرویس‌ها:`, serviceList);
+      
+      // بررسی وجود سرویس در لیست (با حذف فاصله و مقایسه دقیق)
+      const normalizedSelectedService = selectedService.trim();
+      const hasService = serviceList.some((service: string) => {
+        const normalizedService = service.trim();
+        const match = normalizedService === normalizedSelectedService;
+        console.log(`  مقایسه: "${normalizedService}" با "${normalizedSelectedService}" => ${match}`);
+        return match;
+      });
+      
+      console.log(`نوبت ${app.id} - سرویس دارد؟ ${hasService}`);
+      
+      return hasService;
+    });
+    
+    console.log("نوبت‌های فیلتر شده:", filtered.length);
+    
+    return filtered;
+  }, [allAppointments, selectedService, dynamicServices]);
+
+  // Generate calendar days based on filtered appointments
+  useEffect(() => {
     const generateCalendar = () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // استخراج تاریخ‌های منحصر به فرد از نوبت‌های فیلتر شده
       const uniqueDates = new Set<string>();
-      appointments.forEach((app) => {
-        if (app.status === "active") {
-          uniqueDates.add(app.booking_date);
-        }
+      
+      filteredAppointments.forEach((app) => {
+        uniqueDates.add(app.booking_date);
       });
 
+      // تبدیل رشته‌های تاریخ به Date و مرتب‌سازی
       const sortedDates = Array.from(uniqueDates)
-        .map((dateStr) => new Date(dateStr))
+        .map((dateStr) => {
+          const date = new Date(dateStr);
+          date.setHours(0, 0, 0, 0);
+          return date;
+        })
         .sort((a, b) => a.getTime() - b.getTime())
         .slice(0, 30);
 
-      if (sortedDates.length === 0) {
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        sortedDates.push(today, tomorrow);
-      }
-
       const days: CalendarDay[] = [];
-      const today = new Date();
 
       sortedDates.forEach((date) => {
         const persianDate = gregorianToPersian(date);
-        const dayOfWeek = date.getDay();
-        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+        const isWeekend = persianDate.weekDay === 'جمعه';
         const isToday = date.toDateString() === today.toDateString();
         const isPast = date < today && !isToday;
 
-        const dayAppointments = appointments.filter((app) => {
+        // فقط نوبت‌های فیلتر شده را برای این تاریخ بگیر
+        const dayAppointments = filteredAppointments.filter((app) => {
           const appDate = new Date(app.booking_date);
-          return appDate.toDateString() === date.toDateString();
+          appDate.setHours(0, 0, 0, 0);
+          return appDate.getTime() === date.getTime();
         });
 
-        const hasActiveAppointments = dayAppointments.some(
-          (app) => app.status === "active"
-        );
-
-        if (hasActiveAppointments || dayAppointments.length > 0) {
+        // فقط روزهایی که حداقل یک نوبت دارند را نمایش بده
+        if (dayAppointments.length > 0) {
           days.push({
             date,
             jalaliDate: {
               year: persianDate.year,
-              month: persianDate.month - 1,
+              month: persianDate.month,
               day: persianDate.day,
               monthName: persianDate.monthName,
             },
@@ -138,29 +213,15 @@ export default function CalendarPage() {
         }
       });
 
+      console.log("روزهای تقویم تولید شده:", days.length);
+
       setCalendarDays(days);
     };
 
     generateCalendar();
-  }, [appointments]);
-
-  const filteredAppointments = useMemo(() => {
-    return appointments.filter((app) => {
-      if (filters.status !== "all" && app.status !== filters.status) {
-        return false;
-      }
-      if (
-        filters.service !== "all" &&
-        !app.services?.includes(filters.service)
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [appointments, filters.status, filters.service]);
+  }, [filteredAppointments]);
 
   const handleCancelAppointment = useCallback((id: number) => {
-    // This should be implemented as a mutation
     console.log("Cancel appointment:", id);
   }, []);
 
@@ -213,7 +274,8 @@ export default function CalendarPage() {
   const handleAddAppointment = useCallback(
     (date: Date) => {
       const persianDate = gregorianToPersian(date);
-      const jalaliDateStr = `${persianDate.year}/${persianDate.month}/${persianDate.day}`;
+      // ماه باید +1 شود چون در URL ماه 1-indexed است
+      const jalaliDateStr = `${persianDate.year}/${persianDate.month + 1}/${persianDate.day}`;
       router.push(
         `/clientdashboard/bookingsubmit?date=${encodeURIComponent(
           jalaliDateStr
@@ -237,6 +299,13 @@ export default function CalendarPage() {
     );
   }, [selectedDayForSms, calendarDays]);
 
+  // تعداد کل نوبت‌های فیلتر شده
+  const totalFilteredAppointments = filteredAppointments.length;
+
+
+  // بررسی اینکه آیا فیلتر فعال است
+  const isFilterActive = selectedService !== "all";
+
   return (
    <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
@@ -245,12 +314,18 @@ export default function CalendarPage() {
           userSmsBalance={userSmsBalance}
           isLoadingBalance={isLoadingBalance}
           isLoading={isLoading}
-          filters={filters}
+          selectedService={selectedService}
           filteredAppointments={filteredAppointments}
           onRefresh={handleRefresh}
           onFilterClick={() => setShowFilterModal(true)}
-          onAddAppointment={() => router.push("/clientdashboard/bookingsubmit")}
-          onClearFilter={() => setFilters({ ...filters, status: "all" })}
+          onAddAppointment={() => {
+            const todayStr = `${todayJalali.year}/${todayJalali.month + 1}/${todayJalali.day}`;
+            router.push(`/clientdashboard/bookingsubmit?date=${encodeURIComponent(todayStr)}`);
+          }}
+          onClearFilter={() => {
+            setSelectedService("all");
+            toast.success("فیلتر حذف شد");
+          }}
         />
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
           {isLoading ? (
@@ -276,31 +351,77 @@ export default function CalendarPage() {
             <div className="text-center py-12">
               <Calendar className="w-16 h-16 text-gray-500 mx-auto mb-4" />
               <h3 className="text-lg font-bold text-gray-400 mb-2">
-                هیچ نوبتی یافت نشد
+                {isFilterActive ? 'هیچ نوبتی با این خدمت یافت نشد' : 'هیچ نوبتی یافت نشد'}
               </h3>
               <p className="text-gray-500 text-sm mb-6">
-                می‌توانید اولین نوبت را ثبت کنید
+                {isFilterActive 
+                  ? 'می‌توانید خدمت دیگری انتخاب کنید یا اولین نوبت را ثبت کنید'
+                  : 'می‌توانید اولین نوبت را ثبت کنید'}
               </p>
-              <button
-                onClick={() => router.push("/clientdashboard/bookingsubmit")}
-                className="bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl px-6 py-3 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all flex items-center gap-2 mx-auto"
-              >
-                <Plus className="w-5 h-5" /> ثبت اولین نوبت
-              </button>
+              <div className="flex flex-col gap-3">
+                {isFilterActive && (
+                  <button
+                    onClick={() => setSelectedService("all")}
+                    className="bg-linear-to-r from-blue-500 to-blue-600 rounded-xl px-6 py-3 font-bold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Filter className="w-5 h-5" /> حذف فیلتر
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    const todayStr = `${todayJalali.year}/${todayJalali.month + 1}/${todayJalali.day}`;
+                    router.push(`/clientdashboard/bookingsubmit?date=${encodeURIComponent(todayStr)}`);
+                  }}
+                  className="bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl px-6 py-3 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-5 h-5" /> ثبت اولین نوبت
+                </button>
+              </div>
             </div>
           ) : (
-            calendarDays.map((day, index) => (
-              <CalendarDayCard
-                key={index}
-                day={day}
-                getDayName={getDayName}
-                onAddAppointment={() => handleAddAppointment(day.date)}
-                onBulkSmsClick={() =>
-                  handleBulkSmsClick(day.date, day.appointments)
-                }
-                onAppointmentClick={setSelectedAppointment}
-              />
-            ))
+            <>
+              {/* نمایش اطلاعات فیلتر */}
+              {isFilterActive && (
+                <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Filter className="w-5 h-5 text-blue-400" />
+                      <div>
+                        <h3 className="font-bold text-sm">فیلتر فعال</h3>
+                        <p className="text-xs text-gray-300">
+                          <span className="ml-2">خدمت: {selectedService}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs text-gray-400">
+                        {totalFilteredAppointments} نوبت ({calendarDays.length} روز)
+                      </p>
+                      <button
+                        onClick={() => setSelectedService("all")}
+                        className="text-xs text-blue-400 hover:text-blue-300 mt-1"
+                      >
+                        حذف فیلتر
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* نمایش روزهای تقویم */}
+              {calendarDays.map((day, index) => (
+                <CalendarDayCard
+                  key={index}
+                  day={day}
+                  getDayName={getDayName}
+                  onAddAppointment={() => handleAddAppointment(day.date)}
+                  onBulkSmsClick={() =>
+                    handleBulkSmsClick(day.date, day.appointments)
+                  }
+                  onAppointmentClick={setSelectedAppointment}
+                />
+              ))}
+            </>
           )}
         </div>
       </div>
@@ -312,13 +433,15 @@ export default function CalendarPage() {
           onCancel={handleCancelAppointment}
         />
       )}
-      <FilterModal
-        isOpen={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
-        filters={filters}
-        setFilters={setFilters}
-        services={dynamicServices.slice(1)}
-      />
+      {dynamicServices.length > 0 && (
+        <FilterModal
+          isOpen={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+          selectedService={selectedService}
+          setSelectedService={setSelectedService}
+          services={dynamicServices}
+        />
+      )}
       {selectedDayForSms && (
         <BulkSmsModal
           isOpen={showBulkSmsModal}
