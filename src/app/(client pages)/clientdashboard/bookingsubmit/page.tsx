@@ -5,6 +5,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { Calendar, Check, ChevronLeft, PhoneCall, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import Footer from "../components/Footer/Footer";
 import { getTodayJalali, jalaliToGregorian } from "@/lib/date-utils";
@@ -46,6 +47,7 @@ const formatJalaliDate = (
 export default function NewAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const todayJalali = useMemo(() => getTodayJalali(), []);
 
   // هوک‌های React Query
@@ -172,6 +174,17 @@ export default function NewAppointmentPage() {
     return reservationSms + reminderSms;
   }, [sendReservationSms, sendReminderSms]);
 
+  // محاسبه مدت زمان کل خدمات انتخاب شده
+  const calculateTotalDuration = useMemo(() => {
+    if (selectedServices.length === 0) return 30; // پیش‌فرض ۳۰ دقیقه
+    
+    const totalMinutes = selectedServices.reduce((total, service) => {
+      return total + (service.duration_minutes || 30);
+    }, 0);
+    
+    return totalMinutes;
+  }, [selectedServices]);
+
   // سرویس‌های فعال
   const services = useMemo(() => {
     if (!servicesData?.services) return [];
@@ -221,7 +234,58 @@ export default function NewAppointmentPage() {
     }
   }, [existingClient, name]);
 
-  const handleSubmitBooking = () => {
+  // تابع برای بررسی در دسترس بودن زمان انتخاب شده
+  const checkTimeAvailability = async (): Promise<boolean> => {
+    if (!selectedDate.day || !selectedTime) return true;
+
+    try {
+      const bookingDate = jalaliToGregorian(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day
+      );
+      
+      const response = await fetch(
+        `/api/client/available-times?date=${bookingDate}&duration=${calculateTotalDuration}`
+      );
+      
+      if (!response.ok) {
+        console.error("Error checking time availability:", response.status);
+        return true; // در صورت خطا، اجازه ثبت دهید
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.availableTimes) {
+        // چک کنید که زمان انتخاب شده در لیست زمان‌های آزاد باشد
+        const isAvailable = data.availableTimes.includes(selectedTime);
+        
+        if (!isAvailable) {
+          // پیدا کردن نزدیک‌ترین زمان‌های آزاد برای پیشنهاد
+          const alternativeTimes = data.availableTimes
+            .filter((time: string) => time > selectedTime)
+            .slice(0, 3);
+          
+          let message = "این زمان دیگر آزاد نیست. ";
+          if (alternativeTimes.length > 0) {
+            message += `زمان‌های آزاد پیشنهادی: ${alternativeTimes.join("، ")}`;
+          } else {
+            message += "لطفاً زمان یا تاریخ دیگری انتخاب کنید.";
+          }
+          
+          toast.error(message);
+          return false;
+        }
+        return true;
+      }
+      return true; // در صورت عدم موفقیت API
+    } catch (error) {
+      console.error("Error checking time availability:", error);
+      return true; // در صورت خطا، اجازه ثبت دهید
+    }
+  };
+
+  const handleSubmitBooking = async () => {
     // اعتبارسنجی‌ها
     if (!name.trim()) return toast.error("لطفا نام مشتری را وارد کنید");
     if (!phone.trim()) return toast.error("لطفا شماره تلفن را وارد کنید");
@@ -242,6 +306,8 @@ export default function NewAppointmentPage() {
     if (bookingDate < today)
       return toast.error("تاریخ نمی‌تواند در گذشته باشد");
 
+    if (!selectedTime) return toast.error("لطفا زمان را انتخاب کنید");
+
     if (existingClient?.isBlocked)
       return toast.error("این مشتری در لیست بلاک شده است");
 
@@ -261,6 +327,10 @@ export default function NewAppointmentPage() {
       return toast.error(
         `موجودی پیامک کافی نیست. نیاز: ${calculateSmsNeeded} پیامک`
       );
+
+    // بررسی در دسترس بودن زمان انتخاب شده
+    const isTimeAvailable = await checkTimeAvailability();
+    if (!isTimeAvailable) return;
 
     // فرمت پیام‌ها
     const jalaliDateStr = formatJalaliDate(
@@ -294,7 +364,7 @@ export default function NewAppointmentPage() {
     };
 
     createBooking(bookingData, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         toast.success(
           `نوبت با موفقیت ثبت شد! ${
             calculateSmsNeeded > 0
@@ -316,7 +386,16 @@ export default function NewAppointmentPage() {
         setReminderTime(24);
         setSendReservationSms(true);
         setSendReminderSms(true);
-
+        
+        // Invalidate queries
+        queryClient.invalidateQueries({
+          predicate: (query) => 
+            query.queryKey[0] === "customers" || 
+            query.queryKey[0] === "bookings" ||
+            query.queryKey[0] === "dashboard"
+        });
+        
+        // هدایت به صفحه تقویم بعد از 2 ثانیه
         setTimeout(() => {
           router.push("/clientdashboard/calendar");
         }, 2000);
@@ -328,7 +407,7 @@ export default function NewAppointmentPage() {
   };
 
   return (
-   <div className="min-h-screen text-white max-w-md mx-auto relative">
+    <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster
         position="top-center"
         toastOptions={{
@@ -521,6 +600,7 @@ export default function NewAppointmentPage() {
         setSelectedTime={setSelectedTime}
         isTimePickerOpen={isTimePickerOpen}
         setIsTimePickerOpen={setIsTimePickerOpen}
+        selectedServices={selectedServices}
       />
     </div>
   );

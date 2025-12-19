@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Helper function برای fetch
-const fetchApi = async (url: string, options?: RequestInit) => {
+export const fetchApi = async (url: string, options?: RequestInit) => {
   const res = await fetch(url, {
     ...options,
     credentials: "include",

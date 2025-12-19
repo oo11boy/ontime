@@ -28,6 +28,8 @@ export const useCreateBooking = () => {
   return useApiMutation("POST", "/api/client/bookings", [
     ["bookings"],
     ["dashboard"],
+    ["customers"], 
+    ["customers", ""],          
   ]);
 };
 

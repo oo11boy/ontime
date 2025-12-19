@@ -1,186 +1,106 @@
-// File Path: src/app/(client pages)/clientdashboard/bookingsubmit/TimePickerModal.tsx
-
-"use client";
-import React, { useState, useMemo, useEffect } from "react";
-import moment from "moment-jalaali";
-import Picker from "react-mobile-picker";
-import { Clock, Check } from "lucide-react";
+import React from "react";
+import { X, Clock, Sun, Sunset, Moon } from "lucide-react";
 
 interface TimePickerModalProps {
-  selectedDate: { year: number; month: number; day: number | null };
   selectedTime: string;
-  setSelectedTime: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedTime: (time: string) => void;
   isTimePickerOpen: boolean;
-  setIsTimePickerOpen: (isOpen: boolean) => void;
+  setIsTimePickerOpen: (open: boolean) => void;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTES = ["00", "15", "30", "45"];
+const TIME_GROUPS = [
+  { label: "صبح", icon: <Sun className="w-4 h-4 text-orange-400" />, slots: ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"] },
+  { label: "عصر", icon: <Sunset className="w-4 h-4 text-emerald-400" />, slots: ["12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"] },
+  { label: "شب", icon: <Moon className="w-4 h-4 text-blue-400" />, slots: ["20:00", "20:30", "21:00", "21:30", "22:00"] },
+];
 
-export default function TimePickerModal({
-  selectedDate,
+const TimePickerModal: React.FC<TimePickerModalProps> = ({
   selectedTime,
   setSelectedTime,
   isTimePickerOpen,
   setIsTimePickerOpen,
-}: TimePickerModalProps) {
-  const now = useMemo(() => moment(), []);
-  const selectedJalaliDate = useMemo(() => {
-    const { year, month, day } = selectedDate;
-    return day ? moment(`${year}/${month + 1}/${day}`, "jYYYY/jMM/jDD") : null;
-  }, [selectedDate]);
-
-  const isToday = selectedJalaliDate?.isSame(now, "day") ?? false;
-
-  // مقدار اولیه: اگر زمان قبلی انتخاب شده و هنوز معتبره، همون رو نگه دار، وگرنه نزدیک‌ترین زمان آینده
-  const getInitialTime = () => {
-    if (!selectedTime) {
-      // اگر هیچ زمانی انتخاب نشده بود، نزدیک‌ترین ۱۵ دقیقه‌ای آینده رو بده
-      const next = now.clone().add(15 - (now.minute() % 15), "minutes");
-      if (next.minute() === 60) {
-        next.minute(0).add(1, "hour");
-      }
-      return { hour: next.format("HH"), minute: next.format("mm") };
-    }
-
-    const [h, m] = selectedTime.split(":").map(s => s.trim().padStart(2, "0"));
-    const selectedMoment = selectedJalaliDate!.clone().hour(+h).minute(+m);
-
-    // اگر زمان انتخاب‌شده گذشته بود، به نزدیک‌ترین آینده بپر
-    if (selectedMoment.isBefore(now, "minute")) {
-      const next = now.clone().add(15 - (now.minute() % 15), "minutes");
-      if (next.minute() === 60) {
-        next.minute(0).add(1, "hour");
-      }
-      return { hour: next.format("HH"), minute: next.format("mm") };
-    }
-
-    // در غیر این صورت همون زمان قبلی
-    return { hour: h, minute: m };
-  };
-
-  const [valueGroups, setValueGroups] = useState<{ hour: string; minute: string }>(getInitialTime());
-
-  // هر بار که مودال باز می‌شه، مقدار رو ریست کن
-  useEffect(() => {
-    if (isTimePickerOpen) {
-      setValueGroups(getInitialTime());
-    }
-  }, [isTimePickerOpen, selectedTime, isToday, selectedJalaliDate]);
-
-  // فیلتر دقیقه‌ها: فقط دقیقه‌هایی که هنوز نگذشته‌اند
-  const availableMinutes = useMemo(() => {
-    if (!isToday) return MINUTES; // روز آینده → همه دقیقه‌ها
-
-    // امروز: فقط دقیقه‌هایی که از الان به بعد هستن
-    return MINUTES.filter(m => {
-      const time = selectedJalaliDate!.clone().hour(+valueGroups.hour).minute(+m);
-      return !time.isBefore(now, "minute");
-    });
-  }, [valueGroups.hour, isToday, selectedJalaliDate, now]);
-
-  // فیلتر ساعت‌ها: فقط ساعت‌هایی که حداقل یک دقیقه معتبر دارن
-  const availableHours = useMemo(() => {
-    if (!isToday) return HOURS; // روز آینده → همه ساعت‌ها
-
-    // امروز: فقط ساعت‌هایی که حداقل یک دقیقه آینده دارن
-    return HOURS.filter(h => {
-      return MINUTES.some(m => {
-        const time = selectedJalaliDate!.clone().hour(+h).minute(+m);
-        return !time.isBefore(now, "minute");
-      });
-    });
-  }, [isToday, selectedJalaliDate, now]);
-
-  const handleChange = (newValue: { hour: string; minute: string }) => {
-    setValueGroups(newValue);
-  };
-
-  const confirm = () => {
-    setSelectedTime(`${valueGroups.hour}:${valueGroups.minute}`);
-    setIsTimePickerOpen(false);
-  };
-
+}) => {
   if (!isTimePickerOpen) return null;
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center px-4 pb-8 sm:pb-0">
-        <div
-          className="absolute inset-0 bg-black/80 backdrop-blur-xl"
-          onClick={() => setIsTimePickerOpen(false)}
-        />
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* بک‌دراپ با افکت بلور */}
+      <div 
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+        onClick={() => setIsTimePickerOpen(false)}
+      />
 
-        <div className="relative w-full max-w-md rounded-3xl overflow-hidden bg-linear-to-br from-gray-950 via-slate-900 to-black shadow-2xl border border-white/10 ring-1 ring-white/5 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-10 duration-500">
-
-          {/* هدر */}
-          <div className="relative px-6 pt-8 pb-6 text-center">
-            <div className="absolute inset-x-0 top-0 h-32 bg-linear-to-b from-emerald-500/10 to-transparent pointer-events-none" />
-            <div className="relative">
-              <div className="inline-flex p-4 bg-emerald-500/15 rounded-2xl backdrop-blur-md border border-emerald-400/20 mb-4">
-                <Clock className="w-8 h-8 text-emerald-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">انتخاب زمان رزرو</h2>
+      {/* کانتینر اصلی مودال (بصورت Sheet در موبایل) */}
+      <div className="relative w-full max-w-md bg-[#1c212c] border-t border-white/10 sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
+        
+        {/* هدر مودال */}
+        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400">
+              <Clock className="w-5 h-5" />
             </div>
+            <h3 className="text-lg font-bold text-white">انتخاب زمان حضور</h3>
           </div>
+          <button 
+            onClick={() => setIsTimePickerOpen(false)}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-gray-400" />
+          </button>
+        </div>
 
-          {/* Picker */}
-          <div className="relative px-6 pb-10">
-            <Picker
-              value={valueGroups}
-              onChange={handleChange}
-              wheelMode="natural"
-              itemHeight={56}
-              height={240}
-            >
-    
-              <Picker.Column name="minute">
-                {availableMinutes.map(m => (
-                  <Picker.Item key={m} value={m}>
-                    {({ selected }) => (
-                      <div className={`text-5xl h-10 font-bold ${selected ? "text-emerald-400 drop-shadow-2xl" : "text-gray-500"}`}>
-                        {m}
-                      </div>
-                    )}
-                  </Picker.Item>
-                ))}
-              </Picker.Column>
-                        <Picker.Column name="hour">
-                {availableHours.map(h => (
-                  <Picker.Item key={h} value={h}>
-                    {({ selected }) => (
-                      <div className={`text-5xl h-10 font-bold ${selected ? "text-emerald-400 drop-shadow-2xl" : "text-gray-500"}`}>
-                        {h}
-                      </div>
-                    )}
-                  </Picker.Item>
-                ))}
-              </Picker.Column>
-
-            </Picker>
-
-            <div className="absolute inset-x-0 top-0 h-20 bg-linear-to-b from-gray-950 to-transparent pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-gray-950 to-transparent pointer-events-none" />
-          </div>
-
-          {/* دکمه‌ها */}
-          <div className="flex gap-4 px-6 pb-8 pt-4">
-            <button
-              onClick={() => setIsTimePickerOpen(false)}
-              className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium backdrop-blur-md transition"
-            >
-              انصراف
-            </button>
-            <button
-              onClick={confirm}
-              className="flex-1 py-4 rounded-2xl bg-linear-to-r from-emerald-500 to-emerald-600 text-white font-bold text-lg shadow-2xl shadow-emerald-600/50 hover:shadow-emerald-500/70 active:scale-95 transition flex items-center justify-center gap-2"
-            >
-              <Check className="w-6 h-6" />
-              تأیید زمان
-            </button>
+        {/* بدنه اسکرول‌شونده برای لیست ساعت‌ها */}
+        <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+          <div className="space-y-8">
+            {TIME_GROUPS.map((group) => (
+              <div key={group.label} className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                  {group.icon}
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    {group.label}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-4 gap-2">
+                  {group.slots.map((time) => {
+                    const isSelected = selectedTime === time;
+                    return (
+                      <button
+                        key={time}
+                        onClick={() => {
+                          setSelectedTime(time);
+                          setTimeout(() => setIsTimePickerOpen(false), 200); // بستن هوشمند پس از انتخاب
+                        }}
+                        className={`
+                          py-3 rounded-2xl text-sm font-medium transition-all active:scale-90
+                          ${isSelected 
+                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                            : "bg-white/5 text-gray-300 border border-white/5 hover:border-emerald-500/30"
+                          }
+                        `}
+                      >
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* فوتر برای تایید نهایی در صورت نیاز */}
+        <div className="p-4 bg-white/5 border-t border-white/5">
+          <button
+            onClick={() => setIsTimePickerOpen(false)}
+            className="w-full py-4 bg-white/10 hover:bg-white/15 text-white rounded-2xl font-bold transition-all"
+          >
+            انصراف
+          </button>
+        </div>
       </div>
-    </>
+    </div>
   );
-}
+};
+
+export default TimePickerModal;
