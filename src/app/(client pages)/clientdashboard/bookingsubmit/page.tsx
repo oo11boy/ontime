@@ -557,17 +557,6 @@ export default function NewAppointmentPage() {
           }
         }
 
-        toast.success(
-          `نوبت با موفقیت ثبت شد! ${
-            calculateSmsNeeded > 0
-              ? `(${calculateSmsNeeded} پیامک ارسال شد)`
-              : ""
-          }`,
-          {
-            duration: 4000,
-            icon: "✅",
-          }
-        );
 
         // پاک کردن فرم و ذخیره موقت
         localStorage.removeItem(STORAGE_KEY);
@@ -597,11 +586,13 @@ export default function NewAppointmentPage() {
             (t) => (
               <div
                 className={`${t.visible ? "animate-enter" : "animate-leave"} 
-              bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg max-w-sm`}
+              bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg w-[85%]`}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Check className="w-5 h-5 text-emerald-400" />
-                  <p className="text-white font-bold">نوبت ثبت شد</p>
+                  <p className="text-white font-bold">
+                    نوبت با موفقیت ثبت شد!
+                  </p>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -634,14 +625,11 @@ export default function NewAppointmentPage() {
                 </button>
               </div>
             ),
-            { duration: 6000 }
+            { duration: 60000 }
           );
         }, 500);
 
-        // هدایت به صفحه تقویم بعد از 7 ثانیه
-        setTimeout(() => {
-          router.push("/clientdashboard/calendar");
-        }, 7000);
+ 
       },
       onError: (error: any) => {
         toast.dismiss(loadingToastId);
