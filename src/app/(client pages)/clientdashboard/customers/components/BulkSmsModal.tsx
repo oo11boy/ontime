@@ -16,7 +16,7 @@ interface BulkSmsModalProps {
   onClose: () => void;
   clients: Client[];
   userSmsBalance: number;
-  onSend: (message: string, clientIds: string[]) => Promise<void>;
+  onSend: (message: string, clientIds: string[]) => void; // تغییر به sync (چون هوک mutate async است)
 }
 
 export const BulkSmsModal: React.FC<BulkSmsModalProps> = ({
@@ -86,13 +86,16 @@ export const BulkSmsModal: React.FC<BulkSmsModalProps> = ({
 
     setIsSending(true);
     try {
+      // فراخوانی onSend (که حالا از هوک useSendBulkSms استفاده می‌کند)
       await onSend(message, selectedClients);
+      
       toast.custom((t) => (
         <div className="bg-emerald-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
           <Send className="w-6 h-6" />
           <span>پیام‌ها با موفقیت ارسال شد</span>
         </div>
       ));
+      
       resetAndClose();
     } catch (e) {
       console.error(e);

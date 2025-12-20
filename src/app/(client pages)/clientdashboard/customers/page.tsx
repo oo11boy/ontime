@@ -1,5 +1,6 @@
 // src/app/(client pages)/clientdashboard/customers/page.tsx
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { Send, X } from "lucide-react";
@@ -9,7 +10,9 @@ import Footer from "../components/Footer/Footer";
 import { AddClientModal } from "./components/AddClientModal";
 import { BulkSmsModal } from "./components/BulkSmsModal";
 import { useCustomers } from "@/hooks/useCustomers";
-import { useSmsBalance } from "@/hooks/useDashboard";
+
+import { useSendBulkSms } from "@/hooks/useSendSms"; // هوک جدید برای ارسال گروهی
+import { useSmsBalance } from "@/hooks/useSmsBalance";
 
 interface Client {
   id: string;
@@ -32,6 +35,9 @@ export default function CustomersList() {
   const { data: customersData, isLoading, refetch } = useCustomers(page, searchQuery);
   const { balance: userSmsBalance, isLoading: isLoadingBalance } = useSmsBalance();
   
+  // هوک جدید برای ارسال پیامک گروهی (از طریق API متمرکز)
+  const { mutate: sendBulkSms } = useSendBulkSms();
+  
   const clients = customersData?.clients || [];
   const pagination = customersData?.pagination || { page: 1, totalPages: 1 };
 
@@ -41,35 +47,37 @@ export default function CustomersList() {
     }
   };
 
-  const handleSendBulkSms = async (message: string, clientIds: string[]) => {
+  const handleSendBulkSms = (message: string, clientIds: string[]) => {
     try {
-      const res = await fetch("/api/bulk-sms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientIds, message }),
-      });
-      
-      const result = await res.json();
-      if (res.ok && result.success) {
-        toast.custom((t) => (
-          <div className="bg-emerald-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-            <Send className="w-6 h-6" />
-            <span>پیام‌ها با موفقیت ارسال شد</span>
-          </div>
-        ));
-      } else {
-        toast.custom((t) => (
-          <div className="bg-red-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-            <X className="w-6 h-6" />
-            <span>{result.message || "خطا در ارسال"}</span>
-          </div>
-        ));
+      // آماده‌سازی recipients برای هوک متمرکز
+      const recipients = clientIds.map((id) => {
+        const client = clients.find((c) => c.id === id);
+        return {
+          phone: client?.phone || "",
+          name: client?.name || "",
+        };
+      }).filter((r) => r.phone); // فیلتر موارد نامعتبر
+
+      if (recipients.length === 0) {
+        toast.error("هیچ شماره تلفنی برای ارسال یافت نشد");
+        return;
       }
-    } catch (e) {
+
+      // ارسال با هوک متمرکز
+      sendBulkSms({
+        recipients,
+        message,
+        sms_type: "bulk_customers",
+      });
+
+      // به‌روزرسانی لیست مشتریان پس از موفقیت (اختیاری)
+      refetch();
+    } catch (error: any) {
+      console.error("Error sending bulk SMS:", error);
       toast.custom((t) => (
         <div className="bg-red-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
           <X className="w-6 h-6" />
-          <span>خطا در ارتباط با سرور</span>
+          <span>{error.message || "خطا در ارتباط با سرور"}</span>
         </div>
       ));
     }
@@ -85,7 +93,7 @@ export default function CustomersList() {
   };
 
   return (
-  <div className="min-h-screen text-white max-w-md mx-auto relative">
+    <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster position="top-center" containerClassName="!top-0" />
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white">
         <HeaderSection
@@ -113,10 +121,18 @@ export default function CustomersList() {
         </div>
       </div>
       <Footer />
-      <AddClientModal isOpen={showAddClientModal} onClose={() => setShowAddClientModal(false)}
-        onSuccess={refreshClients} />
-      <BulkSmsModal isOpen={showBulkSmsModal} onClose={() => setShowBulkSmsModal(false)}
-        clients={clients} userSmsBalance={userSmsBalance} onSend={handleSendBulkSms} />
+      <AddClientModal 
+        isOpen={showAddClientModal} 
+        onClose={() => setShowAddClientModal(false)}
+        onSuccess={refreshClients} 
+      />
+      <BulkSmsModal 
+        isOpen={showBulkSmsModal} 
+        onClose={() => setShowBulkSmsModal(false)}
+        clients={clients} 
+        userSmsBalance={userSmsBalance} 
+        onSend={handleSendBulkSms} 
+      />
     </div>
   );
 }

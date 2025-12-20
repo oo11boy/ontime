@@ -33,23 +33,3 @@ export const useDashboard = () => {
     staleTime: 2 * 60 * 1000,
   });
 };
-
-export const useSmsBalance = () => {
-  const { data } = useDashboard();
-
-  // محاسبه مجموع پیامک‌های باقی‌مانده از تمام بسته‌های خریداری شده
-  const remainingFromPackages = data?.user?.purchased_packages?.reduce(
-    (sum, pkg) => sum + (pkg.remaining_sms || 0),
-    0
-  ) || 0;
-
-  // جمع کل: اعتبار طرح اصلی + مجموع باقی‌مانده بسته‌ها
-  const balance = data?.user
-    ? (data.user.sms_balance || 0) + remainingFromPackages
-    : 0;
-
-  return { 
-    balance, 
-    isLoading: !data 
-  };
-};

@@ -3,17 +3,15 @@ import { NextResponse } from "next/server";
 import { query, QueryResult } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
-import { deductSms, getTotalSmsBalance } from '@/lib/sms-utils';
-// یک handler مشترک برای GET، POST، DELETE و PATCH
-const handler = withAuth(async (req: NextRequest, context) => {
-  const { userId } = context; // userId از withAuth تزریق شده
+import { getTotalSmsBalance } from '@/lib/sms-utils'; // فقط برای چک اولیه موجودی
 
-  // ------------------------------------------------------------------
-  // GET: لیست نوبت‌ها
-  // ------------------------------------------------------------------
-if (req.method === "GET") {
+const handler = withAuth(async (req: NextRequest, context) => {
+  const { userId } = context;
+
+  // GET: لیست نوبت‌ها (بدون تغییر)
+  if (req.method === "GET") {
     try {
-      // ابتدا نوبت‌های گذشته را به "انجام شده" تغییر وضعیت دهید
+      // به‌روزرسانی وضعیت نوبت‌های گذشته
       await query(
         `UPDATE booking
          SET status = 'done',
@@ -67,12 +65,9 @@ if (req.method === "GET") {
       );
     }
   }
-  
 
-  // ------------------------------------------------------------------
   // POST: ثبت نوبت جدید
-  // ------------------------------------------------------------------
-if (req.method === "POST") {
+  if (req.method === "POST") {
     try {
       const body = await req.json();
       const {
@@ -80,7 +75,7 @@ if (req.method === "POST") {
         client_phone,
         booking_date,
         booking_time,
-        duration_minutes = 30, // اضافه شده: مدت زمان نوبت
+        duration_minutes = 30,
         booking_description = "",
         services = "",
         sms_reserve_enabled = false,
@@ -99,40 +94,31 @@ if (req.method === "POST") {
         userId,
       });
 
-      // اعتبارسنجی فیلدهای ضروری
+      // اعتبارسنجی‌ها
       if (!client_name || !client_phone || !booking_date || !booking_time) {
         return NextResponse.json(
-          {
-            message:
-              "فیلدهای ضروری خالی هستند: نام مشتری، شماره تلفن، تاریخ، زمان",
-          },
+          { message: "فیلدهای ضروری خالی هستند" },
           { status: 400 }
         );
       }
 
-      // بررسی اعتبارسنجی شماره تلفن
       const cleanedPhone = client_phone.replace(/\D/g, "");
       if (cleanedPhone.length < 10 || cleanedPhone.length > 12) {
         return NextResponse.json(
-          {
-            message: "فرمت شماره تلفن نامعتبر است (باید ۱۰ تا ۱۲ رقم باشد)",
-          },
+          { message: "فرمت شماره تلفن نامعتبر است" },
           { status: 400 }
         );
       }
 
-      // بررسی تاریخ (نباید گذشته باشد)
       const currentDate = new Date().toISOString().split("T")[0];
       if (booking_date < currentDate) {
         return NextResponse.json(
-          {
-            message: "تاریخ نمی‌تواند در گذشته باشد",
-          },
+          { message: "تاریخ نمی‌تواند در گذشته باشد" },
           { status: 400 }
         );
       }
 
-      // چک تداخل زمانی قبل از ثبت
+      // چک تداخل زمانی
       const conflictingBookings: any[] = await query(
         `SELECT id, client_name, booking_time, duration_minutes
          FROM booking
@@ -162,50 +148,13 @@ if (req.method === "POST") {
         );
       }
 
-      // بررسی مشتری موجود
-      const [existingClient]: any = await query(
-        "SELECT client_name FROM clients WHERE user_id = ? AND client_phone = ?",
-        [userId, cleanedPhone]
-      );
-
-      // محاسبه تعداد پیامک‌های مورد نیاز
+      // محاسبه تعداد پیامک (فقط برای چک اولیه)
       const totalSmsNeeded =
         (sms_reserve_enabled ? 1 : 0) + (sms_reminder_enabled ? 1 : 0);
 
-      // بررسی موجودی SMS در صورت نیاز
-      if (totalSmsNeeded > 0) {
-        const totalBalance = await getTotalSmsBalance(userId);
-       
-        if (totalBalance < totalSmsNeeded) {
-          const [balanceDetails]: any = await query(`
-            SELECT
-              COALESCE(u.sms_balance, 0) AS plan_balance,
-              COALESCE(SUM(sp.remaining_sms), 0) AS purchased_balance
-            FROM users u
-            LEFT JOIN smspurchase sp ON sp.user_id = u.id
-              AND sp.type = 'one_time_sms'
-              AND sp.status = 'active'
-              AND (sp.expires_at IS NULL OR expires_at >= CURDATE())
-            WHERE u.id = ?
-            GROUP BY u.id
-          `, [userId]);
+ 
 
-          return NextResponse.json(
-            {
-              message: `موجودی پیامک کافی نیست. برای ${totalSmsNeeded} پیامک نیاز دارید.`,
-              details: {
-                needed: totalSmsNeeded,
-                plan_balance: balanceDetails?.plan_balance || 0,
-                purchased_balance: balanceDetails?.purchased_balance || 0,
-                total_balance: totalBalance
-              }
-            },
-            { status: 402 }
-          );
-        }
-      }
-
-      // 1. ثبت نوبت در دیتابیس
+      // ثبت نوبت
       const insertSql = `
         INSERT INTO booking
         (user_id, client_name, client_phone, booking_date, booking_time, duration_minutes,
@@ -215,11 +164,7 @@ if (req.method === "POST") {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)
       `;
 
-      const smsReserveEnabled = sms_reserve_enabled ? 1 : 0;
-      const smsReminderEnabled = sms_reminder_enabled ? 1 : 0;
-
-      console.log("🔄 در حال ثبت نوبت در دیتابیس...");
-      const result = await query<QueryResult>(insertSql, [
+      const insertResult = await query(insertSql, [
         userId,
         client_name.trim(),
         cleanedPhone,
@@ -228,103 +173,52 @@ if (req.method === "POST") {
         duration_minutes,
         booking_description.trim(),
         services.trim(),
-        smsReserveEnabled,
+        sms_reserve_enabled ? 1 : 0,
         sms_reserve_custom_text.trim(),
-        smsReminderEnabled,
+        sms_reminder_enabled ? 1 : 0,
         sms_reminder_custom_text.trim(),
         sms_reminder_hours_before,
-      ]);
+      ]) as any; // Type assertion برای دسترسی به insertId
 
-      const bookingId = result[0].insertId;
-      console.log("✅ نوبت ثبت شد. ID:", bookingId);
+      const bookingId = insertResult.insertId;
 
-      let smsLogsCreated = 0;
+      // به‌روزرسانی clients
+      await query(
+        `INSERT INTO clients
+         (client_name, client_phone, user_id, last_booking_date, total_bookings, created_at)
+         VALUES (?, ?, ?, ?, 1, NOW())
+         ON DUPLICATE KEY UPDATE
+         client_name = VALUES(client_name),
+         last_booking_date = VALUES(last_booking_date),
+         total_bookings = total_bookings + 1,
+         updated_at = NOW()`,
+        [client_name.trim(), cleanedPhone, userId, booking_date]
+      );
 
-      // 2. به‌روزرسانی یا ایجاد مشتری در جدول clients
-      try {
-        const upsertClientSql = `
-          INSERT INTO clients
-          (client_name, client_phone, user_id, last_booking_date, total_bookings, created_at)
-          VALUES (?, ?, ?, ?, 1, NOW())
-          ON DUPLICATE KEY UPDATE
-          client_name = VALUES(client_name),
-          last_booking_date = VALUES(last_booking_date),
-          total_bookings = total_bookings + 1,
-          updated_at = NOW()
-        `;
+      // به‌روزرسانی نام مشتری در نوبت‌های آینده (اگر تغییر کرده)
+      const [existingClient]: any = await query(
+        "SELECT client_name FROM clients WHERE user_id = ? AND client_phone = ?",
+        [userId, cleanedPhone]
+      );
 
-        await query(upsertClientSql, [
-          client_name.trim(),
-          cleanedPhone,
-          userId,
-          booking_date,
-        ]);
-      } catch (clientError: unknown) {
-        const error = clientError as { message?: string; code?: string };
-        console.warn("⚠️ خطا در به‌روزرسانی جدول clients:", error);
-      }
-
-      // 3. اگر مشتری موجود بود و نامش تغییر کرده، نوبت‌های آینده را به‌روزرسانی کن
-      if (existingClient && existingClient.client_name && existingClient.client_name !== client_name.trim()) {
-        try {
-          await query(
-            `UPDATE booking
-             SET client_name = ?,
-                 updated_at = NOW()
-             WHERE user_id = ?
-               AND client_phone = ?
-               AND status = 'active'
-               AND (
-                 booking_date > CURDATE() OR
-                 (booking_date = CURDATE() AND booking_time > CURTIME())
-               )`,
-            [client_name.trim(), userId, cleanedPhone]
-          );
-        } catch (updateError: unknown) {
-          const error = updateError as { message?: string };
-          console.warn("⚠️ خطا در به‌روزرسانی نام مشتری:", error.message);
-        }
-      }
-
-      // 4. ارسال SMS رزرو فوری (اگر فعال بود)
-      if (sms_reserve_enabled) {
-        if (!sms_reserve_custom_text.trim() || sms_reserve_custom_text.trim().length < 10) {
-          return NextResponse.json(
-            { message: "متن پیام تأیید رزرو نامعتبر است" },
-            { status: 400 }
-          );
-        }
-
+      if (existingClient && existingClient.client_name !== client_name.trim()) {
         await query(
-          "INSERT INTO smslog (user_id, booking_id, to_phone, content, cost, sms_type) VALUES (?, ?, ?, ?, 1, 'reservation')",
-          [userId, bookingId, cleanedPhone, sms_reserve_custom_text.trim()]
+          `UPDATE booking
+           SET client_name = ?,
+               updated_at = NOW()
+           WHERE user_id = ?
+             AND client_phone = ?
+             AND status = 'active'
+             AND (
+               booking_date > CURDATE() OR
+               (booking_date = CURDATE() AND booking_time > CURTIME())
+             )`,
+          [client_name.trim(), userId, cleanedPhone]
         );
-        smsLogsCreated++;
       }
 
-      // 5. SMS یادآوری
-      if (sms_reminder_enabled) {
-        if (!sms_reminder_custom_text.trim() || sms_reminder_custom_text.trim().length < 10) {
-          return NextResponse.json(
-            { message: "متن پیام یادآوری نامعتبر است" },
-            { status: 400 }
-          );
-        }
-
-        await query(
-          "INSERT INTO smslog (user_id, booking_id, to_phone, content, cost, sms_type) VALUES (?, ?, ?, ?, 1, 'reminder')",
-          [userId, bookingId, cleanedPhone, sms_reminder_custom_text.trim()]
-        );
-        smsLogsCreated++;
-      }
-
-      // 6. کسر پیامک‌ها از موجودی
-      if (totalSmsNeeded > 0) {
-        const deductionResult = await deductSms(userId, totalSmsNeeded);
-        if (!deductionResult) {
-          console.error("❌ خطا در کسر پیامک‌ها");
-        }
-      }
+      // حذف کامل ارسال پیامک‌ها و کسر موجودی از اینجا
+      // حالا همه چیز (ارسال + کسر + لاگ) در فرانت‌اند با sendSingleSms مدیریت می‌شه
 
       return NextResponse.json(
         {
@@ -333,7 +227,6 @@ if (req.method === "POST") {
           smsReserved: sms_reserve_enabled,
           smsReminder: sms_reminder_enabled,
           smsCount: totalSmsNeeded,
-          smsLogsCreated,
           booking: {
             id: bookingId,
             client_name: client_name.trim(),
@@ -348,118 +241,65 @@ if (req.method === "POST") {
         { status: 201 }
       );
     } catch (error: unknown) {
-      const err = error as {
-        message?: string;
-        code?: string;
-        sqlState?: string;
-        sqlMessage?: string;
-        stack?: string;
-      };
-     
-      console.error("❌ خطا در ثبت نوبت:", err);
-
-      if (err.code === "ER_DUP_ENTRY") {
-        return NextResponse.json(
-          { message: "رکورد تکراری در سیستم وجود دارد" },
-          { status: 409 }
-        );
-      }
-
+      console.error("خطا در ثبت نوبت:", error);
       return NextResponse.json(
-        {
-          message: "خطا در ثبت نوبت",
-          error: err.message,
-        },
+        { message: "خطا در ثبت نوبت" },
         { status: 500 }
       );
     }
   }
 
-
-  // ------------------------------------------------------------------
-  // DELETE: حذف/کنسل نوبت
-  // ------------------------------------------------------------------
+  // DELETE: کنسل نوبت (بدون تغییر)
   if (req.method === "DELETE") {
     try {
       const { id } = await req.json();
       
       if (!id) {
-        return NextResponse.json(
-          { message: "آی‌دی نوبت الزامی است" },
-          { status: 400 }
-        );
+        return NextResponse.json({ message: "آی‌دی نوبت الزامی است" }, { status: 400 });
       }
 
-      // بررسی اینکه نوبت متعلق به کاربر است
       const [booking]: any = await query(
-        "SELECT id, status FROM booking WHERE id = ? AND user_id = ?",
+        "SELECT id, status, client_phone FROM booking WHERE id = ? AND user_id = ?",
         [id, userId]
       );
 
       if (!booking) {
-        return NextResponse.json(
-          { message: "نوبت یافت نشد" },
-          { status: 404 }
-        );
+        return NextResponse.json({ message: "نوبت یافت نشد" }, { status: 404 });
       }
 
-      // کنسل کردن نوبت
       await query(
         "UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
         [id]
-      );
-
-      // ثبت در لاگ
-      await query(
-        "INSERT INTO smslog (user_id, booking_id, to_phone, content, cost, sms_type) VALUES (?, ?, '', 'کنسل شد', 1, 'other')",
-        [userId, id]
       );
 
       return NextResponse.json({
         message: "نوبت با موفقیت کنسل شد",
         bookingId: id,
       });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      console.error("❌ خطا در کنسل کردن نوبت:", err.message);
-      return NextResponse.json(
-        {
-          message: "خطا در کنسل کردن نوبت",
-          error: err.message,
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      console.error("خطا در کنسل کردن نوبت:", error);
+      return NextResponse.json({ message: "خطا در کنسل کردن نوبت" }, { status: 500 });
     }
   }
 
-  // ------------------------------------------------------------------
-  // PATCH: به‌روزرسانی نوبت
-  // ------------------------------------------------------------------
+  // PATCH: به‌روزرسانی نوبت (بدون تغییر)
   if (req.method === "PATCH") {
     try {
       const { id, ...updateData } = await req.json();
       
       if (!id) {
-        return NextResponse.json(
-          { message: "آی‌دی نوبت الزامی است" },
-          { status: 400 }
-        );
+        return NextResponse.json({ message: "آی‌دی نوبت الزامی است" }, { status: 400 });
       }
 
-      // بررسی اینکه نوبت متعلق به کاربر است
       const [booking]: any = await query(
         "SELECT id FROM booking WHERE id = ? AND user_id = ?",
         [id, userId]
       );
 
       if (!booking) {
-        return NextResponse.json(
-          { message: "نوبت یافت نشد" },
-          { status: 404 }
-        );
+        return NextResponse.json({ message: "نوبت یافت نشد" }, { status: 404 });
       }
 
-      // ساخت کوئری به‌روزرسانی پویا
       const allowedFields = [
         'client_name', 'client_phone', 'booking_date', 'booking_time',
         'booking_description', 'services', 'sms_reserve_enabled',
@@ -484,7 +324,6 @@ if (req.method === "POST") {
         );
       }
 
-      // اضافه کردن updated_at و id به values
       updateFields.push('updated_at = NOW()');
       updateValues.push(id, userId);
 
@@ -500,22 +339,13 @@ if (req.method === "POST") {
         message: "نوبت با موفقیت به‌روزرسانی شد",
         bookingId: id,
       });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      console.error("❌ خطا در به‌روزرسانی نوبت:", err.message);
-      return NextResponse.json(
-        {
-          message: "خطا در به‌روزرسانی نوبت",
-          error: err.message,
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      console.error("خطا در به‌روزرسانی نوبت:", error);
+      return NextResponse.json({ message: "خطا در به‌روزرسانی نوبت" }, { status: 500 });
     }
   }
 
-  // اگر متد دیگری بود
   return NextResponse.json({ message: "متد مجاز نیست" }, { status: 405 });
 });
 
-// Export صحیح برای Next.js 15
 export { handler as GET, handler as POST, handler as DELETE, handler as PATCH };

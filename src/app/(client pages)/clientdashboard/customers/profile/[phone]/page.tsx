@@ -1,5 +1,7 @@
+// src/app/(client pages)/clientdashboard/customers/profile/[phone]/page.tsx
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Footer from "../../../components/Footer/Footer";
 import { formatPersianDate, formatPersianDateTime } from "@/lib/date-utils";
@@ -14,16 +16,18 @@ import { SmsModal } from "./components/SmsModal";
 import { CancelAppointmentModal } from "./components/CancelAppointmentModal";
 import { BlockModal } from "./components/BlockModal";
 import { useCustomerProfile } from "@/hooks/useCustomers";
-
+import toast from "react-hot-toast";
+import { useSendSingleSms } from "@/hooks/useSendSms";
 
 export default function CustomerProfile() {
-  const router = useRouter();
+  const sendSingleSmsMutation = useSendSingleSms();
+
   const params = useParams();
   const phone = params?.phone as string;
 
   // React Query Hook
   const { data: customerData, isLoading, refetch } = useCustomerProfile(phone);
-  
+
   const customer = customerData?.client || null;
   const appointments = customerData?.appointments || [];
 
@@ -53,13 +57,22 @@ export default function CustomerProfile() {
       });
 
       if (response.ok) {
-        if (sendCancellationSms && cancellationMessage.trim() && customer) {
-          await fetch(`/api/client/customers/${customer.phone}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: cancellationMessage.trim() }),
-          });
-        }
+if (sendCancellationSms && cancellationMessage.trim() && customer) {
+  try {
+    await sendSingleSmsMutation.mutateAsync({
+      to_phone: customer.phone,
+      content: cancellationMessage.trim(),
+      sms_type: "cancellation",
+      booking_id: apptId,
+    });
+
+    toast.success("پیامک کنسل کردن نوبت ارسال شد");
+  } catch (error) {
+    toast.error("ارسال پیامک کنسل نوبت با خطا مواجه شد");
+    console.error(error);
+  }
+}
+
 
         // به‌روزرسانی داده‌ها با React Query
         await refetch();
@@ -77,19 +90,25 @@ export default function CustomerProfile() {
   // ارسال پیامک عمومی
   const handleSendGeneralSms = async () => {
     if (!customer || !generalSmsMessage.trim()) return;
+
     try {
       setSendingSms(true);
-      const response = await fetch(`/api/client/customers/${customer.phone}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: generalSmsMessage.trim() }),
+
+      await sendSingleSmsMutation.mutateAsync({
+        to_phone: customer.phone,
+        content: generalSmsMessage.trim(),
+        sms_type: "individual",
       });
-      if (response.ok) {
-        setShowGeneralSmsModal(false);
-        setGeneralSmsMessage("");
-      }
+
+   
+
+      setShowGeneralSmsModal(false);
+      setGeneralSmsMessage("");
+
+      // نیازی به refetch یا چیز دیگه نیست، داده‌ها قبلا آپدیت شده
     } catch (error) {
-      console.error("Error sending SMS:", error);
+      toast.error("ارسال پیامک با خطا مواجه شد");
+      console.error(error);
     } finally {
       setSendingSms(false);
     }
@@ -111,7 +130,6 @@ export default function CustomerProfile() {
       });
 
       if (response.ok) {
-        // به‌روزرسانی داده‌ها با React Query
         await refetch();
       }
     } catch (error) {
@@ -138,7 +156,6 @@ export default function CustomerProfile() {
       });
 
       if (response.ok) {
-        // به‌روزرسانی داده‌ها با React Query
         await refetch();
       }
     } catch (error) {
@@ -253,7 +270,7 @@ export default function CustomerProfile() {
           }}
           onToggleSmsCheckbox={setSendCancellationSms}
           onMessageChange={setCancellationMessage}
-          onCancelAppointment={() => 
+          onCancelAppointment={() =>
             showCancelModal && handleCancelAppointment(showCancelModal)
           }
         />

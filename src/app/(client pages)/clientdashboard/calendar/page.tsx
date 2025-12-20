@@ -1,4 +1,6 @@
+// src/app/(client pages)/clientdashboard/calendar/page.tsx
 "use client";
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
@@ -11,9 +13,11 @@ import FilterModal from "./components/FilterModal";
 import CalendarDayCard from "./components/CalendarDayCard";
 import { useBookings } from "@/hooks/useBookings";
 import { useServices } from "@/hooks/useServices";
-import { useSmsBalance } from "@/hooks/useDashboard";
+
+import { useSendBulkSms } from "@/hooks/useSendSms"; // هوک جدید برای ارسال گروهی
 import { Appointment } from "@/types";
 import { HeaderSection } from "./components/HeaderSection";
+import { useSmsBalance } from "@/hooks/useSmsBalance";
 
 // نام‌های فارسی کامل ماه‌ها (0-indexed: فروردین = 0)
 const persianMonths = [
@@ -59,6 +63,9 @@ export default function CalendarPage() {
   const { data: servicesData } = useServices();
   const { balance: userSmsBalance, isLoading: isLoadingBalance } =
     useSmsBalance();
+
+  // هوک جدید برای ارسال پیامک گروهی (از طریق API متمرکز)
+  const { mutate: sendBulkSms } = useSendBulkSms();
 
   const allAppointments = useMemo(
     () => bookingsData?.bookings || [],
@@ -114,30 +121,25 @@ export default function CalendarPage() {
     }
     
     const filtered = allAppointments.filter((app) => {
-      // بررسی کنیم که services رشته است یا آرایه
       let serviceList: string[] = [];
       
       if (!app.services) {
         console.log(`نوبت ${app.id}: بدون خدمات`);
-        return false; // اگر سرویسی ندارد، نادیده بگیر
+        return false;
       }
       
       console.log(`نوبت ${app.id} - services نوع:`, typeof app.services, "مقدار:", app.services);
       
       if (typeof app.services === 'string') {
-        // اگر services رشته است، با کاما جدا کنیم
         serviceList = app.services.split(',').map((s: string) => s.trim());
       } else if (Array.isArray(app.services)) {
-        // اگر services آرایه است
         serviceList = (app.services as any[]).map((s: any) => String(s).trim());
       } else {
-        // اگر نوع دیگری است، به رشته تبدیل کنیم
         serviceList = [String(app.services).trim()];
       }
       
       console.log(`نوبت ${app.id} - لیست سرویس‌ها:`, serviceList);
       
-      // بررسی وجود سرویس در لیست (با حذف فاصله و مقایسه دقیق)
       const normalizedSelectedService = selectedService.trim();
       const hasService = serviceList.some((service: string) => {
         const normalizedService = service.trim();
@@ -162,14 +164,12 @@ export default function CalendarPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // استخراج تاریخ‌های منحصر به فرد از نوبت‌های فیلتر شده
       const uniqueDates = new Set<string>();
       
       filteredAppointments.forEach((app) => {
         uniqueDates.add(app.booking_date);
       });
 
-      // تبدیل رشته‌های تاریخ به Date و مرتب‌سازی
       const sortedDates = Array.from(uniqueDates)
         .map((dateStr) => {
           const date = new Date(dateStr);
@@ -187,14 +187,12 @@ export default function CalendarPage() {
         const isToday = date.toDateString() === today.toDateString();
         const isPast = date < today && !isToday;
 
-        // فقط نوبت‌های فیلتر شده را برای این تاریخ بگیر
         const dayAppointments = filteredAppointments.filter((app) => {
           const appDate = new Date(app.booking_date);
           appDate.setHours(0, 0, 0, 0);
           return appDate.getTime() === date.getTime();
         });
 
-        // فقط روزهایی که حداقل یک نوبت دارند را نمایش بده
         if (dayAppointments.length > 0) {
           days.push({
             date,
@@ -228,27 +226,36 @@ export default function CalendarPage() {
   const handleSendBulkSms = useCallback(
     async (message: string, appointmentIds: number[]) => {
       try {
-        const response = await fetch("/api/bulk-sms", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appointmentIds, message }),
+        // آماده‌سازی recipients برای هوک متمرکز
+        const recipients = appointmentIds.map((id) => {
+          const appointment = allAppointments.find((app) => app.id === id);
+          return {
+            phone: appointment?.client_phone || "",
+            name: appointment?.client_name || "",
+            booking_id: id,
+          };
+        }).filter((r) => r.phone); // فیلتر کردن موارد نامعتبر
+
+        if (recipients.length === 0) {
+          toast.error("هیچ شماره تلفنی برای ارسال یافت نشد");
+          return;
+        }
+
+        // ارسال با هوک متمرکز
+        sendBulkSms({
+          recipients,
+          message,
+          sms_type: "bulk_appointments",
         });
 
-        const result = await response.json();
-        if (response.ok && result.success) {
-          toast.success(
-            `پیام با موفقیت برای ${appointmentIds.length} نفر ارسال شد`
-          );
-          await refetchAppointments();
-        } else {
-          toast.error(result.message || "خطا در ارسال پیام همگانی");
-        }
+        // به‌روزرسانی لیست نوبت‌ها پس از موفقیت
+        await refetchAppointments();
       } catch (error: any) {
         console.error("Error sending bulk SMS:", error);
-        toast.error(error.message || "خطا در ارتباط با سرور");
+        toast.error(error.message || "خطا در ارسال پیام همگانی");
       }
     },
-    [refetchAppointments]
+    [allAppointments, sendBulkSms, refetchAppointments]
   );
 
   const getDayName = useCallback((date: Date) => {
@@ -274,7 +281,6 @@ export default function CalendarPage() {
   const handleAddAppointment = useCallback(
     (date: Date) => {
       const persianDate = gregorianToPersian(date);
-      // ماه باید +1 شود چون در URL ماه 1-indexed است
       const jalaliDateStr = `${persianDate.year}/${persianDate.month + 1}/${persianDate.day}`;
       router.push(
         `/clientdashboard/bookingsubmit?date=${encodeURIComponent(
@@ -299,15 +305,11 @@ export default function CalendarPage() {
     );
   }, [selectedDayForSms, calendarDays]);
 
-  // تعداد کل نوبت‌های فیلتر شده
   const totalFilteredAppointments = filteredAppointments.length;
-
-
-  // بررسی اینکه آیا فیلتر فعال است
   const isFilterActive = selectedService !== "all";
 
   return (
-   <div className="min-h-screen text-white max-w-md mx-auto relative">
+    <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-32">
         <HeaderSection
@@ -380,7 +382,6 @@ export default function CalendarPage() {
             </div>
           ) : (
             <>
-              {/* نمایش اطلاعات فیلتر */}
               {isFilterActive && (
                 <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
                   <div className="flex items-center justify-between">
@@ -408,7 +409,6 @@ export default function CalendarPage() {
                 </div>
               )}
               
-              {/* نمایش روزهای تقویم */}
               {calendarDays.map((day, index) => (
                 <CalendarDayCard
                   key={index}
@@ -452,7 +452,9 @@ export default function CalendarPage() {
           date={selectedDayForSms}
           appointments={appointmentsForSelectedDay}
           userSmsBalance={userSmsBalance}
-          onSend={handleSendBulkSms}
+          onSend={(message, appointmentIds) => 
+            handleSendBulkSms(message, appointmentIds)
+          }
         />
       )}
     </div>

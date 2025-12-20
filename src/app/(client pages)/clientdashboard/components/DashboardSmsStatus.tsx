@@ -6,8 +6,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { DashboardProgressCircle } from "./DashboardProgressCircle";
 import { DashboardSmsDetailsModal } from "./DashboardSmsDetailsModal";
+import { useSmsBalance } from "@/hooks/useSmsBalance";
 // وارد کردن هوک
-import { useSmsBalance } from "@/hooks/useDashboard";
 
 interface PurchasedPackage {
   id: number;

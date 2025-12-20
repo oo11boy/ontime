@@ -152,7 +152,7 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
   const night = availableTimes.filter(t => parseInt(t.split(":")[0]) >= 20);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsTimePickerOpen(false)} />
 
       <div className="relative w-full max-w-md bg-[#1c212c] border-t border-white/10 sm:border rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden">
@@ -216,7 +216,7 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
               {hoveredBookedTime && (
                 <div className="mb-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                    <Info className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
                     <div className="text-xs text-orange-300">
                       <p className="font-medium">این زمان قبلاً رزرو شده است</p>
                       {getBookedTimeInfo(hoveredBookedTime) && (
@@ -351,7 +351,7 @@ const TimeButton: React.FC<TimeButtonProps> = ({
       >
         {time}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-full h-px bg-gray-500 rotate-[-45deg] opacity-60"></div>
+          <div className="w-full h-px bg-gray-500 -rotate-45 opacity-60"></div>
         </div>
         {/* Tooltip for booked times */}
         <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 hidden group-hover:block z-10">

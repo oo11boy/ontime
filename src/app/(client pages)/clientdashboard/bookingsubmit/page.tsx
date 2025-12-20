@@ -4,7 +4,14 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
-import { AlertCircle, Calendar, Check, ChevronLeft, PhoneCall, X } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  Check,
+  ChevronLeft,
+  PhoneCall,
+  X,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import Footer from "../components/Footer/Footer";
@@ -12,7 +19,6 @@ import { getTodayJalali, jalaliToGregorian } from "@/lib/date-utils";
 import { useServices } from "@/hooks/useServices";
 import { useCreateBooking } from "@/hooks/useBookings";
 import { useCheckCustomer } from "@/hooks/useCustomers";
-import { useSmsBalance } from "@/hooks/useDashboard";
 
 import {
   reservationTemplates,
@@ -32,6 +38,9 @@ import NameChangeConfirmationModal from "./components/NameChangeConfirmationModa
 import ServicesModal from "./components/ServicesModal";
 
 import type { Service } from "./types";
+import { sendSingleSms } from "@/lib/sms-utils"; // مستقیم از sms-utils استفاده کن (نه mutate)
+import { useAuth } from "@/hooks/useAuth";
+import { useSmsBalance } from "@/hooks/useSmsBalance";
 
 const STORAGE_KEY = "booking_form_draft";
 
@@ -127,7 +136,7 @@ export default function NewAppointmentPage() {
     oldName: string;
     newName: string;
   } | null>(null);
-
+  const { userId, isLoading, isAuthenticated } = useAuth();
   useEffect(() => {
     const formData = {
       name,
@@ -170,11 +179,11 @@ export default function NewAppointmentPage() {
 
   const calculateTotalDuration = useMemo(() => {
     if (selectedServices.length === 0) return 30;
-    
+
     const totalMinutes = selectedServices.reduce((total, service) => {
       return total + (service.duration_minutes || 30);
     }, 0);
-    
+
     return totalMinutes;
   }, [selectedServices]);
 
@@ -232,33 +241,33 @@ export default function NewAppointmentPage() {
         selectedDate.month,
         selectedDate.day
       );
-      
+
       const response = await fetch(
         `/api/client/available-times?date=${bookingDate}&duration=${calculateTotalDuration}`
       );
-      
+
       if (!response.ok) {
         console.error("Error checking time availability:", response.status);
         return true;
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success && data.availableTimes) {
         const isAvailable = data.availableTimes.includes(selectedTime);
-        
+
         if (!isAvailable) {
           const alternativeTimes = data.availableTimes
             .filter((time: string) => time > selectedTime)
             .slice(0, 3);
-          
+
           let message = "این زمان دیگر آزاد نیست. ";
           if (alternativeTimes.length > 0) {
             message += `زمان‌های آزاد پیشنهادی: ${alternativeTimes.join("، ")}`;
           } else {
             message += "لطفاً زمان یا تاریخ دیگری انتخاب کنید.";
           }
-          
+
           toast.error(message);
           return false;
         }
@@ -270,341 +279,400 @@ export default function NewAppointmentPage() {
       return true;
     }
   };
-const handleSubmitBooking = async () => {
-  // اعتبارسنجی‌ها
-  if (!name.trim()) {
-    toast.error("لطفا نام مشتری را وارد کنید");
-    return;
-  }
-  
-  if (!phone.trim()) {
-    toast.error("لطفا شماره تلفن را وارد کنید");
-    return;
-  }
-  
-  const cleanedPhone = phone.replace(/\D/g, "");
-  if (cleanedPhone.length < 10 || cleanedPhone.length > 12) {
-    toast.error("شماره تلفن معتبر نیست");
-    return;
-  }
-  
-  if (!selectedDate.day) {
-    toast.error("لطفا تاریخ را انتخاب کنید");
-    return;
-  }
-  
-  if (!selectedTime) {
-    toast.error("لطفا زمان را انتخاب کنید");
-    return;
-  }
-  
-  // تبدیل تاریخ شمسی به میلادی
-  const bookingDate = jalaliToGregorian(
-    selectedDate.year,
-    selectedDate.month,
-    selectedDate.day
-  );
-  
-  // بررسی تاریخ گذشته
-  const today = new Date().toISOString().split("T")[0];
-  if (bookingDate < today) {
-    toast.error("تاریخ نمی‌تواند در گذشته باشد");
-    return;
-  }
-  
-  // بررسی زمان گذشته (اگر تاریخ امروز باشد)
-  if (bookingDate === today) {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    
-    const [selectedHour, selectedMinute] = selectedTime.split(":").map(Number);
-    
-    // بررسی اینکه تایم انتخاب شده در گذشته نباشد
-    if (selectedHour < currentHour || 
-        (selectedHour === currentHour && selectedMinute <= currentMinute)) {
-      toast.error("زمان انتخاب‌شده در گذشته است. لطفاً زمان دیگری انتخاب کنید.");
+
+  const handleSubmitBooking = async () => {
+    // اعتبارسنجی‌ها
+    if (!name.trim()) {
+      toast.error("لطفا نام مشتری را وارد کنید");
       return;
     }
-  }
-  
-  // بررسی مشتری بلاک شده
-  if (existingClient?.isBlocked) {
-    toast.error("این مشتری در لیست بلاک شده است");
-    return;
-  }
-  
-  // اعتبارسنجی پیام رزرو
-  if (sendReservationSms) {
-    if (!reservationMessage.trim()) {
-      toast.error("لطفا پیام تأیید رزرو را وارد کنید");
+
+    if (!phone.trim()) {
+      toast.error("لطفا شماره تلفن را وارد کنید");
       return;
     }
-    
-    if (reservationMessage.trim().length < 10) {
-      toast.error("پیام تأیید رزرو باید حداقل ۱۰ کاراکتر باشد");
+
+    const cleanedPhone = phone.replace(/\D/g, "");
+    if (cleanedPhone.length < 10 || cleanedPhone.length > 12) {
+      toast.error("شماره تلفن معتبر نیست");
       return;
     }
-  }
-  
-  // اعتبارسنجی پیام یادآوری
-  if (sendReminderSms) {
-    if (!reminderMessage.trim()) {
-      toast.error("لطفا پیام یادآوری را وارد کنید");
+
+    if (!selectedDate.day) {
+      toast.error("لطفا تاریخ را انتخاب کنید");
       return;
     }
-    
-    if (reminderMessage.trim().length < 10) {
-      toast.error("پیام یادآوری باید حداقل ۱۰ کاراکتر باشد");
+
+    if (!selectedTime) {
+      toast.error("لطفا زمان را انتخاب کنید");
       return;
     }
-  }
-  
-  // بررسی موجودی پیامک
-  if (calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance) {
-    toast.error(
-      `موجودی پیامک کافی نیست. نیاز: ${calculateSmsNeeded} پیامک، موجودی شما: ${userSmsBalance}`
+
+    // تبدیل تاریخ شمسی به میلادی
+    const bookingDate = jalaliToGregorian(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day
     );
-    return;
-  }
-  
-  // بررسی در دسترس بودن زمان انتخاب شده
-  const isTimeAvailable = await checkTimeAvailability();
-  if (!isTimeAvailable) return;
-  
-  // بررسی اضافی: چک کنید که زمان واقعاً رزرو نشده باشد (برای جلوگیری از race condition)
-  try {
-    const finalCheckResponse = await fetch(
-      `/api/client/available-times?date=${bookingDate}&duration=${calculateTotalDuration}&finalCheck=true`
-    );
-    
-    if (finalCheckResponse.ok) {
-      const finalCheckData = await finalCheckResponse.json();
-      
-      if (finalCheckData.success && finalCheckData.availableTimes) {
-        const isStillAvailable = finalCheckData.availableTimes.includes(selectedTime);
-        
-        if (!isStillAvailable) {
-          // اگر زمان رزرو شده باشد، اطلاعات رزرو را بگیرید
-          if (finalCheckData.bookedTimes) {
-            const bookedInfo = finalCheckData.bookedTimes.find(
-              (b: any) => b.time === selectedTime
-            );
-            
-            if (bookedInfo) {
-              toast.error(
-                `ساعت ${selectedTime} هم‌اکنون برای ${bookedInfo.clientName} از ساعت ${bookedInfo.startTime} تا ${bookedInfo.endTime} رزرو شده است.`
+
+    // بررسی تاریخ گذشته
+    const today = new Date().toISOString().split("T")[0];
+    if (bookingDate < today) {
+      toast.error("تاریخ نمی‌تواند در گذشته باشد");
+      return;
+    }
+
+    // بررسی زمان گذشته (اگر تاریخ امروز باشد)
+    if (bookingDate === today) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+
+      const [selectedHour, selectedMinute] = selectedTime
+        .split(":")
+        .map(Number);
+
+      if (
+        selectedHour < currentHour ||
+        (selectedHour === currentHour && selectedMinute <= currentMinute)
+      ) {
+        toast.error(
+          "زمان انتخاب‌شده در گذشته است. لطفاً زمان دیگری انتخاب کنید."
+        );
+        return;
+      }
+    }
+
+    // بررسی مشتری بلاک شده
+    if (existingClient?.isBlocked) {
+      toast.error("این مشتری در لیست بلاک شده است");
+      return;
+    }
+
+    // اعتبارسنجی پیام رزرو
+    if (sendReservationSms) {
+      if (!reservationMessage.trim()) {
+        toast.error("لطفا پیام تأیید رزرو را وارد کنید");
+        return;
+      }
+
+      if (reservationMessage.trim().length < 10) {
+        toast.error("پیام تأیید رزرو باید حداقل ۱۰ کاراکتر باشد");
+        return;
+      }
+    }
+
+    // اعتبارسنجی پیام یادآوری
+    if (sendReminderSms) {
+      if (!reminderMessage.trim()) {
+        toast.error("لطفا پیام یادآوری را وارد کنید");
+        return;
+      }
+
+      if (reminderMessage.trim().length < 10) {
+        toast.error("پیام یادآوری باید حداقل ۱۰ کاراکتر باشد");
+        return;
+      }
+    }
+
+    // بررسی موجودی پیامک
+    if (calculateSmsNeeded > 0 && calculateSmsNeeded > userSmsBalance) {
+      toast.error(
+        `موجودی پیامک کافی نیست. نیاز: ${calculateSmsNeeded} پیامک، موجودی شما: ${userSmsBalance}`
+      );
+      return;
+    }
+
+    // بررسی در دسترس بودن زمان انتخاب شده
+    const isTimeAvailable = await checkTimeAvailability();
+    if (!isTimeAvailable) return;
+
+    // بررسی نهایی زمان (برای جلوگیری از race condition)
+    try {
+      const finalCheckResponse = await fetch(
+        `/api/client/available-times?date=${bookingDate}&duration=${calculateTotalDuration}&finalCheck=true`
+      );
+
+      if (finalCheckResponse.ok) {
+        const finalCheckData = await finalCheckResponse.json();
+
+        if (finalCheckData.success && finalCheckData.availableTimes) {
+          const isStillAvailable =
+            finalCheckData.availableTimes.includes(selectedTime);
+
+          if (!isStillAvailable) {
+            // اگر زمان رزرو شده باشد، اطلاعات رزرو را بگیرید
+            if (finalCheckData.bookedTimes) {
+              const bookedInfo = finalCheckData.bookedTimes.find(
+                (b: any) => b.time === selectedTime
               );
+
+              if (bookedInfo) {
+                toast.error(
+                  `ساعت ${selectedTime} هم‌اکنون برای ${bookedInfo.clientName} از ساعت ${bookedInfo.startTime} تا ${bookedInfo.endTime} رزرو شده است.`
+                );
+              } else {
+                toast.error(
+                  "این زمان هم‌اکنون رزرو شده است. لطفاً زمان دیگری انتخاب کنید."
+                );
+              }
             } else {
-              toast.error("این زمان هم‌اکنون رزرو شده است. لطفاً زمان دیگری انتخاب کنید.");
+              toast.error(
+                "این زمان هم‌اکنون رزرو شده است. لطفاً زمان دیگری انتخاب کنید."
+              );
             }
-          } else {
-            toast.error("این زمان هم‌اکنون رزرو شده است. لطفاً زمان دیگری انتخاب کنید.");
+
+            // نمایش زمان‌های آزاد فعلی
+            if (finalCheckData.availableTimes.length > 0) {
+              setTimeout(() => {
+                toast.custom(
+                  (t) => (
+                    <div
+                      className={`${
+                        t.visible ? "animate-enter" : "animate-leave"
+                      } 
+                    bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle className="w-5 h-5 text-emerald-400" />
+                        <p className="text-white font-medium">
+                          زمان‌های آزاد فعلی:
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {finalCheckData.availableTimes
+                          .slice(0, 5)
+                          .map((time: string) => (
+                            <button
+                              key={time}
+                              onClick={() => {
+                                setSelectedTime(time);
+                                toast.dismiss(t.id);
+                              }}
+                              className="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-lg text-sm hover:bg-emerald-500/30 transition-colors"
+                            >
+                              {time}
+                            </button>
+                          ))}
+                        {finalCheckData.availableTimes.length > 5 && (
+                          <span className="text-gray-400 text-sm">
+                            + {finalCheckData.availableTimes.length - 5} زمان
+                            دیگر
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ),
+                  { duration: 5000 }
+                );
+              }, 1000);
+            }
+            return;
           }
-          
-          // لیست زمان‌های آزاد فعلی را نمایش دهید
-          if (finalCheckData.availableTimes.length > 0) {
-            setTimeout(() => {
-              toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
-                  bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle className="w-5 h-5 text-emerald-400" />
-                    <p className="text-white font-medium">زمان‌های آزاد فعلی:</p>
+        }
+      }
+    } catch (error) {
+      console.error("خطا در بررسی نهایی زمان:", error);
+      toast.error("خطا در بررسی نهایی زمان. لطفاً دوباره تلاش کنید.");
+      return;
+    }
+
+    // محاسبه مدت زمان کل خدمات
+    const durationMinutes = calculateTotalDuration;
+
+    // فرمت تاریخ جلالی برای پیام‌ها
+    const jalaliDateStr = formatJalaliDate(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day
+    );
+
+    // ساخت پیام‌های نهایی
+    const finalReservationMessage = reservationMessage
+      .replace(/{client_name}/g, name.trim())
+      .replace(/{date}/g, jalaliDateStr)
+      .replace(/{time}/g, selectedTime)
+      .replace(/{services}/g, selectedServices.map((s) => s.name).join(", "));
+
+    const finalReminderMessage = reminderMessage
+      .replace(/{client_name}/g, name.trim())
+      .replace(/{date}/g, jalaliDateStr)
+      .replace(/{time}/g, selectedTime)
+      .replace(/{services}/g, selectedServices.map((s) => s.name).join(", "));
+
+    // ساخت داده نهایی برای ارسال به بک‌اند
+    const bookingData = {
+      client_name: name.trim(),
+      client_phone: cleanedPhone,
+      booking_date: bookingDate,
+      booking_time: selectedTime,
+      duration_minutes: durationMinutes,
+      booking_description: notes.trim(),
+      services: selectedServices.map((s) => s.name).join(", "),
+      sms_reserve_enabled: sendReservationSms,
+      sms_reserve_custom_text: finalReservationMessage,
+      sms_reminder_enabled: sendReminderSms,
+      sms_reminder_custom_text: finalReminderMessage,
+      sms_reminder_hours_before: reminderTime,
+    };
+
+    // نمایش وضعیت ارسال
+    const loadingToastId = toast.loading("در حال ثبت نوبت...");
+
+    createBooking(bookingData, {
+      onSuccess: async (data) => {
+        // async اضافه شد
+        toast.dismiss(loadingToastId);
+
+        // ارسال پیامک‌ها با تابع sendSingleSms (async)
+        if (sendReservationSms) {
+          if (!userId) {
+            toast.error("کاربر شناسایی نشد. لطفاً دوباره لاگین کنید");
+            return;
+          }
+          const res = await sendSingleSms({
+       
+            to_phone: cleanedPhone,
+            content: finalReservationMessage,
+            sms_type: "reservation",
+            booking_id: data.bookingId,
+          });
+   if (!res.success) {
+  toast.error(res.message || "ارسال پیامک ناموفق بود");
+  return; // خیلی مهم
+}
+
+        }
+
+        if (sendReminderSms) {
+ const res = await sendSingleSms({
+
+    to_phone: cleanedPhone,
+    content: finalReminderMessage,
+    sms_type: "reminder",
+    booking_id: data.bookingId,
+  });
+          if (!res.success) {
+            toast.error(res.message || "خطا در ارسال پیام یادآوری");
+          }
+        }
+
+        toast.success(
+          `نوبت با موفقیت ثبت شد! ${
+            calculateSmsNeeded > 0
+              ? `(${calculateSmsNeeded} پیامک ارسال شد)`
+              : ""
+          }`,
+          {
+            duration: 4000,
+            icon: "✅",
+          }
+        );
+
+        // پاک کردن فرم و ذخیره موقت
+        localStorage.removeItem(STORAGE_KEY);
+        setName("");
+        setPhone("");
+        setSelectedDate(getInitialDate());
+        setSelectedTime("");
+        setSelectedServices([]);
+        setNotes("");
+        setReservationMessage("");
+        setReminderMessage("");
+        setReminderTime(24);
+        setSendReservationSms(true);
+        setSendReminderSms(true);
+
+        // Invalidate queries
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey[0] === "customers" ||
+            query.queryKey[0] === "bookings" ||
+            query.queryKey[0] === "dashboard",
+        });
+
+        // نمایش جزئیات نوبت ثبت شده
+        setTimeout(() => {
+          toast.custom(
+            (t) => (
+              <div
+                className={`${t.visible ? "animate-enter" : "animate-leave"} 
+              bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg max-w-sm`}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Check className="w-5 h-5 text-emerald-400" />
+                  <p className="text-white font-bold">نوبت ثبت شد</p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">مشتری:</span>
+                    <span className="text-white">{name.trim()}</span>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {finalCheckData.availableTimes.slice(0, 5).map((time: string) => (
-                      <button
-                        key={time}
-                        onClick={() => {
-                          setSelectedTime(time);
-                          toast.dismiss(t.id);
-                        }}
-                        className="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-lg text-sm hover:bg-emerald-500/30 transition-colors"
-                      >
-                        {time}
-                      </button>
-                    ))}
-                    {finalCheckData.availableTimes.length > 5 && (
-                      <span className="text-gray-400 text-sm">
-                        + {finalCheckData.availableTimes.length - 5} زمان دیگر
-                      </span>
-                    )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">تاریخ:</span>
+                    <span className="text-white">{jalaliDateStr}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">زمان:</span>
+                    <span className="text-white">{selectedTime}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">خدمات:</span>
+                    <span className="text-white text-left">
+                      {selectedServices.map((s) => s.name).join("، ")}
+                    </span>
                   </div>
                 </div>
-              ), { duration: 5000 });
-            }, 1000);
-          }
-          return;
-        }
-      }
-    }
-  } catch (error) {
-    console.error("خطا در بررسی نهایی زمان:", error);
-    // در صورت خطا ادامه دهید، اما هشدار دهید
-    toast.error("خطا در بررسی نهایی زمان. لطفاً دوباره تلاش کنید.");
-    return;
-  }
-  
-  // محاسبه مدت زمان کل خدمات
-  const durationMinutes = calculateTotalDuration;
-  
-  // فرمت تاریخ جلالی برای پیام‌ها
-  const jalaliDateStr = formatJalaliDate(
-    selectedDate.year,
-    selectedDate.month,
-    selectedDate.day
-  );
-  
-  // ساخت پیام‌های نهایی
-  const finalReservationMessage = reservationMessage
-    .replace(/{client_name}/g, name.trim())
-    .replace(/{date}/g, jalaliDateStr)
-    .replace(/{time}/g, selectedTime)
-    .replace(/{services}/g, selectedServices.map((s) => s.name).join(", "));
-  
-  const finalReminderMessage = reminderMessage
-    .replace(/{client_name}/g, name.trim())
-    .replace(/{date}/g, jalaliDateStr)
-    .replace(/{time}/g, selectedTime)
-    .replace(/{services}/g, selectedServices.map((s) => s.name).join(", "));
-  
-  // ساخت داده نهایی برای ارسال به بک‌اند
-  const bookingData = {
-    client_name: name.trim(),
-    client_phone: cleanedPhone,
-    booking_date: bookingDate,
-    booking_time: selectedTime,
-    duration_minutes: durationMinutes,
-    booking_description: notes.trim(),
-    services: selectedServices.map((s) => s.name).join(", "),
-    sms_reserve_enabled: sendReservationSms,
-    sms_reserve_custom_text: finalReservationMessage,
-    sms_reminder_enabled: sendReminderSms,
-    sms_reminder_custom_text: finalReminderMessage,
-    sms_reminder_hours_before: reminderTime,
-  };
-  
-  // نمایش وضعیت ارسال
-  const loadingToastId = toast.loading("در حال ثبت نوبت...");
-  
-  createBooking(bookingData, {
-    onSuccess: (data) => {
-      toast.dismiss(loadingToastId);
-      
-      toast.success(
-        `نوبت با موفقیت ثبت شد! ${
-          calculateSmsNeeded > 0
-            ? `(${calculateSmsNeeded} پیامک ارسال شد)`
-            : ""
-        }`,
-        {
-          duration: 4000,
-          icon: '✅'
-        }
-      );
-      
-      // پاک کردن فرم و ذخیره موقت
-      localStorage.removeItem(STORAGE_KEY);
-      setName("");
-      setPhone("");
-      setSelectedDate(getInitialDate());
-      setSelectedTime("");
-      setSelectedServices([]);
-      setNotes("");
-      setReservationMessage("");
-      setReminderMessage("");
-      setReminderTime(24);
-      setSendReservationSms(true);
-      setSendReminderSms(true);
-      
-      // Invalidate queries
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === "customers" ||
-          query.queryKey[0] === "bookings" ||
-          query.queryKey[0] === "dashboard"
-      });
-      
-      // نمایش جزئیات نوبت ثبت شده
-      setTimeout(() => {
-        toast.custom((t) => (
-          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
-            bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg max-w-sm`}>
-            <div className="flex items-center gap-2 mb-3">
-              <Check className="w-5 h-5 text-emerald-400" />
-              <p className="text-white font-bold">نوبت ثبت شد</p>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">مشتری:</span>
-                <span className="text-white">{name.trim()}</span>
+                <button
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    router.push("/clientdashboard/calendar");
+                  }}
+                  className="w-full mt-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg text-sm transition-colors"
+                >
+                  مشاهده در تقویم
+                </button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">تاریخ:</span>
-                <span className="text-white">{jalaliDateStr}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">زمان:</span>
-                <span className="text-white">{selectedTime}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">خدمات:</span>
-                <span className="text-white text-left">
-                  {selectedServices.map(s => s.name).join("، ")}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                router.push("/clientdashboard/calendar");
-              }}
-              className="w-full mt-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg text-sm transition-colors"
-            >
-              مشاهده در تقویم
-            </button>
-          </div>
-        ), { duration: 6000 });
-      }, 500);
-      
-      // هدایت به صفحه تقویم بعد از 7 ثانیه
-      setTimeout(() => {
-        router.push("/clientdashboard/calendar");
-      }, 7000);
-    },
-    onError: (error: any) => {
-      toast.dismiss(loadingToastId);
-      
-      let errorMessage = "خطا در ثبت نوبت";
-      
-      // نمایش پیام خطای مناسب
-      if (error.message?.includes("تاریخ گذشته")) {
-        errorMessage = "تاریخ انتخاب شده در گذشته است";
-      } else if (error.message?.includes("زمان گذشته")) {
-        errorMessage = "زمان انتخاب شده در گذشته است";
-      } else if (error.message?.includes("رزرو شده")) {
-        errorMessage = "این زمان قبلاً رزرو شده است";
-      } else if (error.message?.includes("موجودی پیامک")) {
-        errorMessage = "موجودی پیامک کافی نیست";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage, {
-        duration: 5000,
-        icon: '❌'
-      });
-      
-      // اگر خطا مربوط به تداخل زمان باشد، زمان‌های آزاد جدید را بگیرید
-      if (error.message?.includes("رزرو شده")) {
+            ),
+            { duration: 6000 }
+          );
+        }, 500);
+
+        // هدایت به صفحه تقویم بعد از 7 ثانیه
         setTimeout(() => {
-          fetchAvailableTimes();
-        }, 1000);
-      }
-    },
-  });
-};
+          router.push("/clientdashboard/calendar");
+        }, 7000);
+      },
+      onError: (error: any) => {
+        toast.dismiss(loadingToastId);
+
+        let errorMessage = "خطا در ثبت نوبت";
+
+        if (error.message?.includes("تاریخ گذشته")) {
+          errorMessage = "تاریخ انتخاب شده در گذشته است";
+        } else if (error.message?.includes("زمان گذشته")) {
+          errorMessage = "زمان انتخاب شده در گذشته است";
+        } else if (error.message?.includes("رزرو شده")) {
+          errorMessage = "این زمان قبلاً رزرو شده است";
+        } else if (error.message?.includes("موجودی پیامک")) {
+          errorMessage = "موجودی پیامک کافی نیست";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        toast.error(errorMessage, {
+          duration: 5000,
+          icon: "❌",
+        });
+
+        if (error.message?.includes("رزرو شده")) {
+          setTimeout(() => {
+            fetchAvailableTimes();
+          }, 1000);
+        }
+      },
+    });
+  };
 
   return (
     <div className="min-h-screen text-white max-w-md mx-auto relative">

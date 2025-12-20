@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
-import { deductSms, getSmsBalanceDetails } from "@/lib/sms-utils";
+import { getSmsBalanceDetails, sendSingleSms } from "@/lib/sms-utils";
 
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId, params } = context;
@@ -102,7 +102,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     }
   }
 
-  // POST: ارسال پیامک به مشتری
+  // POST: ارسال پیامک به مشتری (حالا با سیستم متمرکز)
   if (req.method === "POST") {
     try {
       const { message } = await req.json();
@@ -131,33 +131,30 @@ const handler = withAuth(async (req: NextRequest, context) => {
         );
       }
 
-      // کسر پیامک از موجودی
-      const deductionResult = await deductSms(userId as number, 1);
-      
-      if (!deductionResult) {
+      // ارسال پیامک با تابع متمرکز (که خودش موجودی را چک و کسر می‌کند)
+      const smsResult = await sendSingleSms({
+
+        to_phone: phone as string, // Type assertion برای رفع خطا TS (phone می‌تواند string | string[] باشد، اما در params تک رشته است)
+        content: message.trim(),
+        sms_type: 'individual',
+      });
+
+      if (!smsResult.success) {
         return NextResponse.json(
           {
             success: false,
-            message: "خطا در کسر پیامک از موجودی",
+            message: smsResult.message || "خطا در ارسال پیامک",
           },
           { status: 500 }
         );
       }
 
-      // ثبت در لاگ پیامک
-      await query(
-        `INSERT INTO smslog 
-        (user_id, to_phone, content, cost, sms_type, created_at) 
-        VALUES (?, ?, ?, 1, 'individual', NOW())`,
-        [userId, phone, message.trim()]
-      );
-
-      // دریافت موجودی جدید
+      // دریافت موجودی جدید پس از ارسال
       const newBalanceDetails = await getSmsBalanceDetails(userId as number);
 
       return NextResponse.json({
         success: true,
-        message: "پیامک با موفقیت ارسال و از موجودی کسر شد",
+        message: "پیامک با موفقیت ارسال شد",
         smsDeducted: true,
         newBalance: newBalanceDetails.total_balance,
         balanceDetails: newBalanceDetails
