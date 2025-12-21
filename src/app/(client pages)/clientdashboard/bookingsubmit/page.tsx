@@ -416,6 +416,7 @@ export default function NewAppointmentPage() {
             content: finalReservationMessage,
             sms_type: "reservation",
             booking_id: data.bookingId,
+            use_template: true // ← مهم: از الگو استفاده کن
           });
 
           if (!res.success) {
@@ -433,6 +434,8 @@ export default function NewAppointmentPage() {
             booking_date: bookingDate,
             booking_time: selectedTime,
             sms_reminder_hours_before: reminderTime,
+            use_template: true // ← مهم: از الگو استفاده کن
+
           });
         }
 

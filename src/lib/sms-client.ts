@@ -10,7 +10,9 @@ export async function sendSingleSms({
   booking_id = null,
   booking_date = null,
   booking_time = null,
+  
   sms_reminder_hours_before = 24,
+  use_template = false,
 }: {
   to_phone: string;
   content: string;
@@ -19,6 +21,7 @@ export async function sendSingleSms({
   booking_date?: string | null;
   booking_time?: string | null;
   sms_reminder_hours_before?: number | null;
+  use_template?: boolean;
 }): Promise<{ success: boolean; message?: string }> {
   try {
     const res = await fetch("/api/sms/send", {
@@ -32,6 +35,7 @@ export async function sendSingleSms({
         booking_date,
         booking_time,
         sms_reminder_hours_before,
+        use_template
       }),
     });
 
