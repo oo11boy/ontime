@@ -1,10 +1,9 @@
-// File Path: src\app\api\Customers\[phone]\route.ts
-
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
-import { getSmsBalanceDetails, sendSingleSms } from "@/lib/sms-utils";
+import { getSmsBalanceDetails } from "@/lib/sms-server";
+import { sendSingleSms } from "@/lib/sms-client";
 
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId, params } = context;
@@ -14,7 +13,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
   // GET: دریافت اطلاعات مشتری
   if (req.method === "GET") {
     try {
-      // 1. دریافت اطلاعات اصلی مشتری
+      // ۱. دریافت اطلاعات اصلی مشتری
       const [client]: any = await query(
         `SELECT 
           c.id,
@@ -35,15 +34,12 @@ const handler = withAuth(async (req: NextRequest, context) => {
 
       if (!client) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "مشتری یافت نشد",
-          },
+          { success: false, message: "مشتری یافت نشد" },
           { status: 404 }
         );
       }
 
-      // 2. دریافت نوبت‌های مشتری
+      // ۲. دریافت نوبت‌های مشتری با نمایش صحیح وضعیت
       const appointments = await query(
         `SELECT 
           b.id,
@@ -56,8 +52,8 @@ const handler = withAuth(async (req: NextRequest, context) => {
           CASE 
             WHEN b.status = 'cancelled' THEN 'canceled'
             WHEN b.status = 'done' THEN 'completed'
-            WHEN b.booking_date < CURDATE() THEN 'completed'
-            WHEN b.booking_date = CURDATE() AND b.booking_time < CURTIME() THEN 'completed'
+            -- اگر وضعیت active است اما زمانش گذشته، در ظاهر به عنوان تکمیل شده نشان بده
+            WHEN b.status = 'active' AND (b.booking_date < CURDATE() OR (b.booking_date = CURDATE() AND b.booking_time < CURTIME())) THEN 'completed'
             ELSE 'pending'
           END as displayStatus
         FROM booking b
@@ -67,7 +63,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
         [userId, phone]
       );
 
-      // 3. آمار نوبت‌ها
+      // ۳. آمار نوبت‌ها
       const [stats]: any = await query(
         `SELECT 
           COUNT(*) as total,
@@ -83,60 +79,54 @@ const handler = withAuth(async (req: NextRequest, context) => {
         success: true,
         client: {
           ...client,
-          totalAppointments: stats.total,
-          canceledAppointments: stats.cancelled,
-          completedAppointments: stats.completed,
-          activeAppointments: stats.active,
+          totalAppointments: stats.total || 0,
+          canceledAppointments: stats.cancelled || 0,
+          completedAppointments: stats.completed || 0,
+          activeAppointments: stats.active || 0,
         },
         appointments,
       });
     } catch (error) {
       console.error("❌ خطا در دریافت اطلاعات مشتری:", error);
       return NextResponse.json(
-        {
-          success: false,
-          message: "خطا در دریافت اطلاعات مشتری",
-        },
+        { success: false, message: "خطا در دریافت اطلاعات مشتری" },
         { status: 500 }
       );
     }
   }
 
-  // POST: ارسال پیامک به مشتری (حالا با سیستم متمرکز)
+  // POST: ارسال پیامک تکی
   if (req.method === "POST") {
     try {
       const { message } = await req.json();
 
       if (!message?.trim()) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "متن پیامک الزامی است",
-          },
+          { success: false, message: "متن پیامک الزامی است" },
           { status: 400 }
         );
       }
 
-      // بررسی موجودی پیامک
+      // بررسی موجودی (قبل از هر اقدامی)
       const balanceDetails = await getSmsBalanceDetails(userId as number);
-      
       if (balanceDetails.total_balance < 1) {
         return NextResponse.json(
           {
             success: false,
             message: "موجودی پیامک کافی نیست",
-            balanceDetails
+            balanceDetails,
           },
           { status: 402 }
         );
       }
 
-      // ارسال پیامک با تابع متمرکز (که خودش موجودی را چک و کسر می‌کند)
+      // ارسال پیامک با استفاده از تابع متمرکز
+      // نکته: این تابع در خروجی باید موفقیت ارسال به درگاه را برگرداند
       const smsResult = await sendSingleSms({
-
-        to_phone: phone as string, // Type assertion برای رفع خطا TS (phone می‌تواند string | string[] باشد، اما در params تک رشته است)
+        to_phone: phone as string,
         content: message.trim(),
-        sms_type: 'individual',
+        sms_type: "individual",
+        // اگر این پیامک مربوط به نوبت خاصی نیست، نیازی به booking_id نداریم
       });
 
       if (!smsResult.success) {
@@ -149,32 +139,24 @@ const handler = withAuth(async (req: NextRequest, context) => {
         );
       }
 
-      // دریافت موجودی جدید پس از ارسال
-      const newBalanceDetails = await getSmsBalanceDetails(userId as number);
+      // دریافت موجودی نهایی
+      const newBalance = await getSmsBalanceDetails(userId as number);
 
       return NextResponse.json({
         success: true,
-        message: "پیامک با موفقیت ارسال شد",
-        smsDeducted: true,
-        newBalance: newBalanceDetails.total_balance,
-        balanceDetails: newBalanceDetails
+        message: "پیامک در صف ارسال قرار گرفت",
+        newBalance: newBalance.total_balance,
       });
     } catch (error) {
       console.error("❌ خطا در ارسال پیامک:", error);
       return NextResponse.json(
-        {
-          success: false,
-          message: "خطا در ارسال پیامک",
-        },
+        { success: false, message: "خطا در پردازش ارسال" },
         { status: 500 }
       );
     }
   }
 
-  return NextResponse.json(
-    { message: "متد مجاز نیست" },
-    { status: 405 }
-  );
+  return NextResponse.json({ message: "متد مجاز نیست" }, { status: 405 });
 });
 
 export { handler as GET, handler as POST };

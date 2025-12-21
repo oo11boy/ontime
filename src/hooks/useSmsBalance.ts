@@ -49,13 +49,6 @@ export const useSmsBalance = () => {
   // جمع کل: اعتبار طرح اصلی + مجموع باقی‌مانده بسته‌ها
   const totalBalance = planBalance + remainingFromPackages;
 
-  console.log("🧮 محاسبه موجودی:", {
-    planBalance,
-    remainingFromPackages,
-    totalBalance,
-    purchasedPackages: data?.user?.purchased_packages
-  });
-
   return {
     balance: totalBalance,
     planBalance,

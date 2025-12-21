@@ -13,13 +13,6 @@ const handler = withAuth(async (req: Request, { userId }) => {
   const durationStr = url.searchParams.get("duration") || "30";
   const duration = parseInt(durationStr, 10);
 
-  console.log("==================================");
-  console.log("[available-times] درخواست جدید");
-  console.log("[available-times] userId از withAuth:", userId, typeof userId);
-  console.log("[available-times] date:", date);
-  console.log("[available-times] duration:", duration);
-  console.log("==================================");
-
   if (!date || isNaN(new Date(date).getTime())) {
     return NextResponse.json({ success: false, message: "تاریخ نامعتبر" }, { status: 400 });
   }
@@ -65,8 +58,7 @@ const handler = withAuth(async (req: Request, { userId }) => {
       booking: b
     }));
 
-    console.log("[available-times] بازه‌های اشغال‌شده:", occupiedIntervals);
-
+ 
     // ایجاد همه بازه‌های ممکن از 8 صبح تا 23:30
     const possibleSlots: number[] = [];
     for (let m = 8 * 60; m <= 23 * 60; m += 30) {
@@ -121,8 +113,6 @@ const handler = withAuth(async (req: Request, { userId }) => {
       }
     }
 
-    console.log("[available-times] زمان‌های آزاد نهایی:", availableTimes);
-    console.log("[available-times] زمان‌های رزرو شده:", bookedTimes);
 
     return NextResponse.json({
       success: true,

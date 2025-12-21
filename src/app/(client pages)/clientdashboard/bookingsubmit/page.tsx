@@ -38,9 +38,9 @@ import NameChangeConfirmationModal from "./components/NameChangeConfirmationModa
 import ServicesModal from "./components/ServicesModal";
 
 import type { Service } from "./types";
-import { sendSingleSms } from "@/lib/sms-utils"; // مستقیم از sms-utils استفاده کن (نه mutate)
 import { useAuth } from "@/hooks/useAuth";
 import { useSmsBalance } from "@/hooks/useSmsBalance";
+import { sendSingleSms } from "@/lib/sms-client";
 
 const STORAGE_KEY = "booking_form_draft";
 
@@ -543,20 +543,19 @@ export default function NewAppointmentPage() {
 }
 
         }
-
-        if (sendReminderSms) {
- const res = await sendSingleSms({
-
+// در فایل page.tsx بخش onSuccess
+if (sendReminderSms) {
+  await sendSingleSms({
     to_phone: cleanedPhone,
     content: finalReminderMessage,
     sms_type: "reminder",
     booking_id: data.bookingId,
+    // این‌ها را حتماً اضافه کنید تا API بالا بتواند محاسبه کند:
+    booking_date: bookingDate, 
+    booking_time: selectedTime,
+    sms_reminder_hours_before: reminderTime
   });
-          if (!res.success) {
-            toast.error(res.message || "خطا در ارسال پیام یادآوری");
-          }
-        }
-
+}
 
         // پاک کردن فرم و ذخیره موقت
         localStorage.removeItem(STORAGE_KEY);
@@ -586,7 +585,7 @@ export default function NewAppointmentPage() {
             (t) => (
               <div
                 className={`${t.visible ? "animate-enter" : "animate-leave"} 
-              bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg w-[85%]`}
+              bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg m-auto w-[90%] md:w-md`}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Check className="w-5 h-5 text-emerald-400" />
