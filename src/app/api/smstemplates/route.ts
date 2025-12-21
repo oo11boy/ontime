@@ -1,6 +1,5 @@
 // File Path: src\app\api\smstemplates\route.ts
 
-// src/app/api/smstemplates/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
