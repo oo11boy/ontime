@@ -81,7 +81,7 @@ async function sendToPayamResan(jobData: {
       error.name === "AbortError"
         ? "Request timeout after 10s"
         : (error.message || "Connection failed");
-    errorMsg = errorMsg.substring(0, 500);
+    errorMsg = errorMsg!.substring(0, 500);
     console.error(`خطا در ارتباط با پیام‌رسان: ${errorMsg}`);
   }
 

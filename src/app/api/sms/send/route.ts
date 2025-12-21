@@ -72,10 +72,11 @@ export const POST = withAuth(async (req, context) => {
         ? `${booking_date} ${booking_time}:00`
         : null;
 
-    // ثبت لاگ — با مدیریت آرایه بودن نتیجه
+    // ثبت لاگ — با تایپ صحیح برای insertId
     let logId: number | null = null;
     try {
-      const logResult = await query(
+      // استفاده از any برای دور زدن تایپ سختگیرانه TypeScript
+      const logResult: any = await query(
         `INSERT INTO smslog (
           user_id, 
           booking_id, 
@@ -97,20 +98,18 @@ export const POST = withAuth(async (req, context) => {
         ]
       );
 
-      // mysql2 گاهی آرایه برمی‌گردونه، گاهی آبجکت
-      if (Array.isArray(logResult) && logResult[0]) {
-        logId = logResult[0].insertId;
-      } else if (
-        logResult &&
-        typeof logResult === "object" &&
-        "insertId" in logResult
-      ) {
-        logId = (logResult as any).insertId;
+      // مدیریت همه حالات ممکن برای insertId
+      if (logResult && typeof logResult === "object") {
+        if (Array.isArray(logResult) && logResult[0]?.insertId) {
+          logId = logResult[0].insertId;
+        } else if ("insertId" in logResult) {
+          logId = logResult.insertId;
+        }
       }
 
       if (!logId || logId === 0) {
         console.error(
-          "[SMS API] insertId معتبر نیست — نتیجه کامل کوئری:",
+          "[SMS API] insertId معتبر نیست — نتیجه کوئری:",
           logResult
         );
         return NextResponse.json(
@@ -121,7 +120,7 @@ export const POST = withAuth(async (req, context) => {
 
       console.log("[SMS API] لاگ پیامک با موفقیت ثبت شد — logId:", logId);
     } catch (dbError: any) {
-      console.error("[SMS API] خطا در INSERT به smslog:", dbError);
+      console.error("[SMS API] خطا در INSERT smslog:", dbError);
       return NextResponse.json(
         { success: false, message: "خطا در ثبت لاگ پیامک" },
         { status: 500 }
@@ -133,7 +132,7 @@ export const POST = withAuth(async (req, context) => {
       await smsQueue.add(
         "send-sms",
         {
-          logId, // حالا حتماً درست پاس داده میشه
+          logId,
           to_phone,
           content: content.trim(),
           template_key,
@@ -145,20 +144,16 @@ export const POST = withAuth(async (req, context) => {
         }
       );
 
-      console.log(
-        "[SMS API] جاب با موفقیت به صف BullMQ اضافه شد — logId:",
-        logId
-      );
+      console.log("[SMS API] جاب با موفقیت به صف اضافه شد — logId:", logId);
     } catch (queueError: any) {
-      console.error("[SMS API] خطا در اضافه کردن جاب به صف:", queueError);
-      // حتی اگر صف خطا داد، لاگ ثبت شده
+      console.error("[SMS API] خطا در اضافه کردن جاب:", queueError);
     }
 
     return NextResponse.json({
       success: true,
       message:
         delay > 0
-          ? "یادآوری پیامک با موفقیت زمان‌بندی شد"
+          ? "یادآوری با موفقیت زمان‌بندی شد"
           : "پیامک تأیید در صف ارسال قرار گرفت",
     });
   } catch (error: any) {
