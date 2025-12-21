@@ -1,4 +1,4 @@
-// src/app/api/sms/send/route.ts
+// File Path: src/app/api/sms/send/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -19,15 +19,15 @@ export const POST = withAuth(async (req, context) => {
       booking_time = null,
       sms_reminder_hours_before = 24,
       use_template = false,
+      template_key = null, // دریافت کد پترن داینامیک از کلاینت
     } = body;
 
-    console.log("[SMS API] درخواست دریافت شد:", {
+    console.log(`[SMS API] درخواست ارسال پیامک (${sms_type}):`, {
       to_phone,
-      sms_type,
-      use_template,
-      booking_id,
+      template_key,
     });
 
+    // ۱. اعتبارسنجی داده‌های پایه
     if (!to_phone || !content?.trim()) {
       return NextResponse.json(
         { success: false, message: "شماره موبایل و متن پیام الزامی است" },
@@ -35,9 +35,8 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
+    // ۲. بررسی موجودی پنل پیامک کاربر
     const balance = await getSmsBalanceDetails(userId);
-    console.log("[SMS API] موجودی کاربر:", balance.total_balance);
-
     if (balance.total_balance < 1) {
       return NextResponse.json(
         { success: false, message: "موجودی پیامک کافی نیست" },
@@ -45,26 +44,32 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
+    // ۳. کسر موجودی از دیتابیس داخلی
     const deducted = await deductSms(userId, 1);
     if (!deducted) {
       return NextResponse.json(
-        { success: false, message: "خطا در کسر موجودی" },
+        { success: false, message: "خطا در کسر موجودی حساب" },
         { status: 500 }
       );
     }
 
+    // ۴. محاسبه زمان ارسال (برای یادآوری‌ها)
     let delay = 0;
-    let template_key: string | null = null;
-
     if (sms_type === "reminder" && booking_date && booking_time) {
       const hoursBefore = Number(sms_reminder_hours_before) || 24;
-      const sendTime = new Date(`${booking_date}T${booking_time}:00`);
-      sendTime.setHours(sendTime.getHours() - hoursBefore);
+      const bookingDateTime = new Date(`${booking_date}T${booking_time}:00`);
+      const sendTime = new Date(
+        bookingDateTime.getTime() - hoursBefore * 60 * 60 * 1000
+      );
       delay = Math.max(0, sendTime.getTime() - Date.now());
     }
 
-    if (use_template) {
-      template_key = sms_type === "reservation" ? "100" : "101";
+    // ۵. تعیین کد پترن نهایی (اولویت با مقدار ارسالی از فرانت است)
+    let finalTemplateKey = template_key;
+    if (use_template && !finalTemplateKey) {
+      // مقادیر Fallback در صورتی که دیتابیس هنوز تنظیم نشده باشد
+      finalTemplateKey =
+        sms_type === "reservation" ? "gyx3qp1fh9r0y5w" : "cl6lfpotqzrcusk";
     }
 
     const bookingAt =
@@ -72,62 +77,29 @@ export const POST = withAuth(async (req, context) => {
         ? `${booking_date} ${booking_time}:00`
         : null;
 
-    // ثبت لاگ — با تایپ صحیح برای insertId
+    // ۶. ثبت لاگ در جدول smslog (برای پیگیری وضعیت ارسال)
     let logId: number | null = null;
     try {
-      // استفاده از any برای دور زدن تایپ سختگیرانه TypeScript
       const logResult: any = await query(
         `INSERT INTO smslog (
-          user_id, 
-          booking_id, 
-          to_phone, 
-          content, 
-          cost, 
-          sms_type, 
-          booking_at, 
-          status, 
-          created_at
+          user_id, booking_id, to_phone, content, cost, sms_type, booking_at, status, created_at
         ) VALUES (?, ?, ?, ?, 1, ?, ?, 'pending', NOW())`,
-        [
-          userId,
-          booking_id || null,
-          to_phone,
-          content.trim(),
-          sms_type,
-          bookingAt,
-        ]
+        [userId, booking_id, to_phone, content.trim(), sms_type, bookingAt]
       );
 
-      // مدیریت همه حالات ممکن برای insertId
-      if (logResult && typeof logResult === "object") {
-        if (Array.isArray(logResult) && logResult[0]?.insertId) {
-          logId = logResult[0].insertId;
-        } else if ("insertId" in logResult) {
-          logId = logResult.insertId;
-        }
-      }
+      // استخراج Insert ID بر اساس پکیج mysql2/mariadb
+      logId = logResult?.insertId || logResult?.[0]?.insertId;
 
-      if (!logId || logId === 0) {
-        console.error(
-          "[SMS API] insertId معتبر نیست — نتیجه کوئری:",
-          logResult
-        );
-        return NextResponse.json(
-          { success: false, message: "خطا در دریافت ID لاگ پیامک" },
-          { status: 500 }
-        );
-      }
-
-      console.log("[SMS API] لاگ پیامک با موفقیت ثبت شد — logId:", logId);
-    } catch (dbError: any) {
-      console.error("[SMS API] خطا در INSERT smslog:", dbError);
+      if (!logId) throw new Error("Could not retrieve log ID");
+    } catch (dbError) {
+      console.error("[SMS API] Error inserting into smslog:", dbError);
       return NextResponse.json(
         { success: false, message: "خطا در ثبت لاگ پیامک" },
         { status: 500 }
       );
     }
 
-    // اضافه کردن جاب به صف
+    // ۷. اضافه کردن به صف BullMQ جهت پردازش توسط Worker
     try {
       await smsQueue.add(
         "send-sms",
@@ -135,7 +107,7 @@ export const POST = withAuth(async (req, context) => {
           logId,
           to_phone,
           content: content.trim(),
-          template_key,
+          template_key: finalTemplateKey, // انتقال کلید داینامیک به صف
         },
         {
           delay: delay > 0 ? delay : undefined,
@@ -143,21 +115,18 @@ export const POST = withAuth(async (req, context) => {
           backoff: { type: "exponential", delay: 5000 },
         }
       );
-
-      console.log("[SMS API] جاب با موفقیت به صف اضافه شد — logId:", logId);
-    } catch (queueError: any) {
-      console.error("[SMS API] خطا در اضافه کردن جاب:", queueError);
+    } catch (queueError) {
+      console.error("[SMS API] Queue Error:", queueError);
+      // توجه: چون نوبت ثبت شده و موجودی کسر شده، اینجا موفقیت برمی‌گردانیم اما لاگ خطا می‌زنیم
     }
 
     return NextResponse.json({
       success: true,
       message:
-        delay > 0
-          ? "یادآوری با موفقیت زمان‌بندی شد"
-          : "پیامک تأیید در صف ارسال قرار گرفت",
+        delay > 0 ? "یادآوری نوبت زمان‌بندی شد" : "پیامک در صف ارسال قرار گرفت",
     });
   } catch (error: any) {
-    console.error("[SMS API] خطای کلی:", error);
+    console.error("[SMS API] Global Error:", error);
     return NextResponse.json(
       { success: false, message: "خطای داخلی سرور" },
       { status: 500 }

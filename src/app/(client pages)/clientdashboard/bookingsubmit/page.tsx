@@ -186,7 +186,8 @@ export default function NewAppointmentPage() {
     if (!reservationMessage) {
       const reserveDefault = smsTemplates.find(
         (t) =>
-          t.payamresan_id === "100" || t.title.toLowerCase().includes("رزرو")
+          t.payamresan_id === "gyx3qp1fh9r0y5w" ||
+          t.title.toLowerCase().includes("رزرو")
       );
       if (reserveDefault) setReservationMessage(reserveDefault.content);
     }
@@ -194,7 +195,8 @@ export default function NewAppointmentPage() {
     if (!reminderMessage) {
       const reminderDefault = smsTemplates.find(
         (t) =>
-          t.payamresan_id === "101" || t.title.toLowerCase().includes("یادآوری")
+          t.payamresan_id === "cl6lfpotqzrcusk" ||
+          t.title.toLowerCase().includes("یادآوری")
       );
       if (reminderDefault) setReminderMessage(reminderDefault.content);
     }
@@ -295,8 +297,8 @@ export default function NewAppointmentPage() {
     }
   };
 
-  const handleSubmitBooking = async () => {
-    // اعتبارسنجی‌های اولیه
+const handleSubmitBooking = async () => {
+    // ۱. اعتبارسنجی فیلدهای ضروری
     if (!name.trim()) return toast.error("لطفا نام مشتری را وارد کنید");
     if (!phone.trim()) return toast.error("لطفا شماره تلفن را وارد کنید");
 
@@ -313,191 +315,127 @@ export default function NewAppointmentPage() {
       selectedDate.day
     );
 
-    const today = new Date().toISOString().split("T")[0];
-    if (bookingDate < today)
-      return toast.error("تاریخ نمی‌تواند در گذشته باشد");
-
-    if (bookingDate === today) {
-      const now = new Date();
-      const [selectedHour, selectedMinute] = selectedTime
-        .split(":")
-        .map(Number);
-      if (
-        selectedHour < now.getHours() ||
-        (selectedHour === now.getHours() && selectedMinute <= now.getMinutes())
-      )
-        return toast.error("زمان انتخاب‌شده در گذشته است");
-    }
-
-    if (existingClient?.isBlocked)
-      return toast.error("این مشتری در لیست بلاک شده است");
-
+    // ۲. بررسی پیامک و موجودی
     if (sendReservationSms && !reservationMessage.trim())
       return toast.error("لطفا پیام تأیید رزرو را وارد کنید");
     if (sendReminderSms && !reminderMessage.trim())
       return toast.error("لطفا پیام یادآوری را وارد کنید");
 
     if (calculateSmsNeeded > userSmsBalance)
-      return toast.error(
-        `موجودی پیامک کافی نیست. نیاز: ${calculateSmsNeeded}، موجودی: ${userSmsBalance}`
-      );
+      return toast.error(`موجودی پیامک کافی نیست. نیاز: ${calculateSmsNeeded}`);
 
+    // ۳. بررسی تداخل زمانی (Race Condition)
     const isTimeAvailable = await checkTimeAvailability();
     if (!isTimeAvailable) return;
 
-    // بررسی نهایی زمان (race condition)
-    const finalCheckResponse = await fetch(
-      `/api/client/available-times?date=${bookingDate}&duration=${calculateTotalDuration}&finalCheck=true`
-    );
+    // ۴. آماده‌سازی پیام‌ها و متغیرها
+    const jalaliDateStr = formatJalaliDate(selectedDate.year, selectedDate.month, selectedDate.day);
+    
+    const replaceVars = (text: string) => 
+      text.replace(/{client_name}/g, name.trim())
+          .replace(/{date}/g, jalaliDateStr)
+          .replace(/{time}/g, selectedTime)
+          .replace(/{services}/g, selectedServices.map(s => s.name).join(", ") || "—");
 
-    if (finalCheckResponse.ok) {
-      const finalData = await finalCheckResponse.json();
-      if (
-        finalData.success &&
-        finalData.availableTimes &&
-        !finalData.availableTimes.includes(selectedTime)
-      ) {
-        toast.error("این زمان هم‌اکنون رزرو شده است");
-        return;
-      }
-    }
+    const finalReservationMsg = replaceVars(reservationMessage);
+    const finalReminderMsg = replaceVars(reminderMessage);
 
-    const durationMinutes = calculateTotalDuration;
-    const jalaliDateStr = formatJalaliDate(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day
-    );
-
-    const finalReservationMessage = reservationMessage
-      .replace(/{client_name}/g, name.trim())
-      .replace(/{date}/g, jalaliDateStr)
-      .replace(/{time}/g, selectedTime)
-      .replace(
-        /{services}/g,
-        selectedServices.map((s) => s.name).join(", ") || "—"
-      );
-
-    const finalReminderMessage = reminderMessage
-      .replace(/{client_name}/g, name.trim())
-      .replace(/{date}/g, jalaliDateStr)
-      .replace(/{time}/g, selectedTime)
-      .replace(
-        /{services}/g,
-        selectedServices.map((s) => s.name).join(", ") || "—"
-      );
+    // پیدا کردن کدهای پترن داینامیک از دیتابیس (هوک useSmsTemplates)
+    const reservePatternId = smsTemplates.find(t => t.type === "reserve" || t.title.includes("رزرو"))?.payamresan_id;
+    const reminderPatternId = smsTemplates.find(t => t.type === "reminder" || t.title.includes("یادآوری"))?.payamresan_id;
 
     const bookingData = {
       client_name: name.trim(),
       client_phone: cleanedPhone,
       booking_date: bookingDate,
       booking_time: selectedTime,
-      duration_minutes: durationMinutes,
+      duration_minutes: calculateTotalDuration,
       booking_description: notes.trim(),
-      services: selectedServices.map((s) => s.name).join(", "),
+      services: selectedServices.map(s => s.name).join(", "),
       sms_reserve_enabled: sendReservationSms,
-      sms_reserve_custom_text: sendReservationSms
-        ? finalReservationMessage
-        : null,
+      sms_reserve_custom_text: sendReservationSms ? finalReservationMsg : null,
       sms_reminder_enabled: sendReminderSms,
-      sms_reminder_custom_text: sendReminderSms ? finalReminderMessage : null,
+      sms_reminder_custom_text: sendReminderSms ? finalReminderMsg : null,
       sms_reminder_hours_before: sendReminderSms ? reminderTime : null,
     };
 
     const loadingToastId = toast.loading("در حال ثبت نوبت...");
 
+    // ۵. اجرای عملیات ثبت در دیتابیس
     createBooking(bookingData, {
       onSuccess: async (data) => {
         toast.dismiss(loadingToastId);
 
-        if (sendReservationSms) {
-          const res = await sendSingleSms({
-            to_phone: cleanedPhone,
-            content: finalReservationMessage,
-            sms_type: "reservation",
-            booking_id: data.bookingId,
-            use_template: true // ← مهم: از الگو استفاده کن
-          });
+        // ۶. ارسال پیامک‌ها به صورت مستقل (Parallel)
+        const smsTasks = [];
 
-          if (!res.success) {
-            toast.error(res.message || "ارسال پیامک تأیید ناموفق بود");
-            return;
-          }
+        if (sendReservationSms) {
+          smsTasks.push(
+            sendSingleSms({
+              to_phone: cleanedPhone,
+              content: finalReservationMsg,
+              sms_type: "reservation",
+              booking_id: data.bookingId,
+              use_template: true,
+              template_key: reservePatternId, // داینامیک
+            }).then(res => !res.success && toast.error("خطا در ارسال پیامک تایید"))
+          );
         }
 
         if (sendReminderSms) {
-          await sendSingleSms({
-            to_phone: cleanedPhone,
-            content: finalReminderMessage,
-            sms_type: "reminder",
-            booking_id: data.bookingId,
-            booking_date: bookingDate,
-            booking_time: selectedTime,
-            sms_reminder_hours_before: reminderTime,
-            use_template: true // ← مهم: از الگو استفاده کن
-
-          });
+          smsTasks.push(
+            sendSingleSms({
+              to_phone: cleanedPhone,
+              content: finalReminderMsg,
+              sms_type: "reminder",
+              booking_id: data.bookingId,
+              booking_date: bookingDate,
+              booking_time: selectedTime,
+              sms_reminder_hours_before: reminderTime,
+              use_template: true,
+              template_key: reminderPatternId, // داینامیک
+            }).then(res => !res.success && toast.error("خطا در زمان‌بندی یادآوری"))
+          );
         }
 
+        // اجرای درخواست‌های پیامک بدون بلاک کردن UI
+        Promise.allSettled(smsTasks);
+
+        // ۷. پاکسازی و نمایش موفقیت
         localStorage.removeItem(STORAGE_KEY);
         queryClient.invalidateQueries({
-          predicate: (query) =>
-            ["customers", "bookings", "dashboard"].includes(
-              query.queryKey[0] as string
-            ),
+          predicate: (query) => ["customers", "bookings", "dashboard"].includes(query.queryKey[0] as string),
         });
 
         toast.custom(
           (t) => (
-            <div
-              className={`${
-                t.visible ? "animate-enter" : "animate-leave"
-              } bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg m-auto w-[90%] md:w-md`}
-            >
+            <div className={`${t.visible ? "animate-enter" : "animate-leave"} bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg m-auto w-[90%] md:w-md`}>
               <div className="flex items-center gap-2 mb-3">
                 <Check className="w-5 h-5 text-emerald-400" />
                 <p className="text-white font-bold">نوبت با موفقیت ثبت شد!</p>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">مشتری:</span>
-                  <span className="text-white">{name.trim()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">تاریخ:</span>
-                  <span className="text-white">{jalaliDateStr}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">زمان:</span>
-                  <span className="text-white">{selectedTime}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">خدمات:</span>
-                  <span className="text-white text-left">
-                    {selectedServices.map((s) => s.name).join("، ")}
-                  </span>
-                </div>
+              <div className="space-y-2 text-sm text-gray-300">
+                <div className="flex justify-between"><span>مشتری:</span><span className="text-white">{name.trim()}</span></div>
+                <div className="flex justify-between"><span>تاریخ و زمان:</span><span className="text-white">{jalaliDateStr} - {selectedTime}</span></div>
               </div>
               <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  router.push("/clientdashboard/calendar");
-                }}
+                onClick={() => { toast.dismiss(t.id); router.push("/clientdashboard/calendar"); }}
                 className="w-full mt-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg text-sm transition-colors"
               >
                 مشاهده در تقویم
               </button>
             </div>
           ),
-          { duration: 60000 }
+          { duration: 6000 }
         );
       },
       onError: (error: any) => {
         toast.dismiss(loadingToastId);
-        toast.error(error.message || "خطا در ثبت نوبت", { duration: 5000 });
+        toast.error(error.message || "خطا در ثبت نوبت");
       },
     });
   };
+  
 
   return (
     <div className="min-h-screen text-white max-w-md mx-auto relative">
