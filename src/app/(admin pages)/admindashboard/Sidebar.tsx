@@ -15,7 +15,8 @@ import {
   Settings,
   LogOut,
   CalendarCheck,
-  X 
+  X, 
+  MessageSquareIcon
 } from "lucide-react";
 import toast from "react-hot-toast"; // برای نمایش پیام‌های خروج
 
@@ -31,6 +32,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const menuItems = [
     { href: "/admindashboard", icon: LayoutDashboard, label: "داشبورد اصلی" },
+    { href: "/admindashboard/systemstatus", icon: MessageSquareIcon, label: "سیستم پیامکی" },
     { title: "مدیریت کاربران" },
     { href: "/admindashboard/clients", icon: Users, label: "کلاینت‌ها" },
     { href: "/admindashboard/jobs", icon: Briefcase, label: "مشاغل" },
