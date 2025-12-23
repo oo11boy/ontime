@@ -16,6 +16,7 @@ import JalaliCalendarModal from "@/app/(client pages)/clientdashboard/bookingsub
 interface RescheduleModalProps {
   currentDate: string; // YYYY-MM-DD
   currentTime: string; // HH:mm
+  customerToken: string;
   onClose: () => void;
   onConfirm: (newDate: string, newTime: string) => Promise<void>;
 }
@@ -23,6 +24,7 @@ interface RescheduleModalProps {
 export default function RescheduleModal({
   currentDate,
   currentTime,
+  customerToken,
   onClose,
   onConfirm,
 }: RescheduleModalProps) {
@@ -57,24 +59,27 @@ export default function RescheduleModal({
   }, [selectedJalaliDate]);
 
   // ⏱ دریافت زمان‌های آزاد
-  const fetchAvailableTimes = async (date: string) => {
-    setIsFetching(true);
-    setSelectedTime(null);
+const fetchAvailableTimes = async (date: string) => {
+  setIsFetching(true);
+  setSelectedTime(null);
+  try {
+    const res = await fetch(
+      `/api/customer/available-times?token=${customerToken}&date=${date}`
+    );
+    const data = await res.json();
 
-    try {
-      const res = await fetch(
-        `/api/client/available-times?date=${date}&duration=30`
-      );
-      const data = await res.json();
-
-      if (!data.success) throw new Error();
-      setAvailableTimes(data.availableTimes);
-    } catch {
-      toast.error("خطا در دریافت زمان‌های آزاد");
-    } finally {
-      setIsFetching(false);
+    if (!data.success) {
+      throw new Error(data.message || "خطا در دریافت زمان‌ها");
     }
-  };
+
+    setAvailableTimes(data.availableTimes);
+  } catch (err: any) {
+    toast.error(err.message || "خطا در دریافت زمان‌های آزاد");
+    setAvailableTimes([]);
+  } finally {
+    setIsFetching(false);
+  }
+};
 
   // 🧠 هر بار تاریخ عوض شد → دریافت زمان‌ها
   useEffect(() => {

@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
         businessName: booking.business_name || "",
         businessPhone: booking.business_phone || "",
         canCancel: booking.status === "active",
-        canReschedule: booking.status === "active" && booking.change_count < 3,
+        canReschedule: booking.status === "active" && booking.change_count < 1,
       },
     });
   } catch (error) {

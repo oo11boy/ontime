@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
-import crypto from "crypto";
-
+import { customAlphabet } from "nanoid";
+const nanoid = customAlphabet("346789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz", 10);
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
@@ -98,7 +98,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
       const cleanedPhone = client_phone.replace(/\D/g, "");
 
       // ایجاد توکن منحصر به فرد برای مشتری
-      const customerToken = crypto.randomBytes(32).toString("hex");
+    const customerToken = nanoid();
       const tokenExpiresAt = new Date();
       tokenExpiresAt.setDate(tokenExpiresAt.getDate() + 7); // 7 روز اعتبار
 
@@ -147,9 +147,9 @@ const handler = withAuth(async (req: NextRequest, context) => {
           message: "نوبت با موفقیت ثبت شد",
           bookingId: insertResult.insertId,
           customerToken, // ارسال توکن به فرانت‌اند
-          bookingLink: `${
-            process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin")
-          }/customer/booking/${customerToken}`,
+       bookingLink: `${
+  process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin")
+}/c/${customerToken}`,
         },
         { status: 201 }
       );

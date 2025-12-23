@@ -351,7 +351,7 @@ useEffect(() => {
                 <RefreshCw className="w-6 h-6" />
                 تغییر زمان نوبت
                 <span className="text-sm bg-blue-500/30 px-2 py-1 rounded">
-                  {3 - booking.changeCount} تغییر باقیمانده
+                  {1 - booking.changeCount} تغییر باقیمانده
                 </span>
               </button>
             )}
@@ -389,6 +389,7 @@ useEffect(() => {
         <RescheduleModal
           currentDate={booking.date}
           currentTime={booking.time}
+          customerToken={booking.token}  // ← اضافه کن
           onClose={() => setShowRescheduleModal(false)}
           onConfirm={handleReschedule}
         />
