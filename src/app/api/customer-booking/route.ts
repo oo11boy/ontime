@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
- interface CustomerBooking {
+
+interface CustomerBooking {
   id: number;
   client_name: string;
   client_phone: string;
@@ -9,7 +10,7 @@ import { query } from "@/lib/db";
   duration_minutes: number;
   booking_description: string | null;
   services: string | null;
-  status: 'active' | 'cancelled' | 'done';
+  status: "active" | "cancelled" | "done";
   change_count: number;
   customer_token: string | null;
   token_expires_at: string | null;
@@ -17,6 +18,7 @@ import { query } from "@/lib/db";
   business_name?: string;
   business_phone?: string;
 }
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -29,14 +31,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // بررسی اعتبار توکن
     const bookings = await query(
       `SELECT 
         b.id,
         b.client_name,
         b.client_phone,
-        b.booking_date,
-        b.booking_time,
+        DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,
+        TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time,
         b.duration_minutes,
         b.booking_description,
         b.services,
@@ -45,11 +46,11 @@ export async function GET(req: NextRequest) {
         b.customer_token,
         b.token_expires_at,
         b.created_at,
-        u.name as business_name,
-        u.phone as business_phone
+        u.name AS business_name,
+        u.phone AS business_phone
       FROM booking b
       LEFT JOIN users u ON b.user_id = u.id
-      WHERE b.customer_token = ? 
+      WHERE b.customer_token = ?
         AND b.token_expires_at > NOW()
         AND b.status IN ('active', 'done')`,
       [token]
@@ -107,21 +108,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // بررسی اعتبار توکن و دریافت اطلاعات نوبت
+    // کوئری تمیز و بدون خطای پارسینگ
     const bookings = await query(
       `SELECT 
-        id, 
-        status, 
-        change_count,
-        user_id,
-        client_name,
-        client_phone,
-        booking_date,
-        booking_time
-       FROM booking 
-       WHERE customer_token = ? 
-         AND token_expires_at > NOW()
-         AND status IN ('active', 'done')`,
+        b.id,
+        b.status,
+        b.change_count,
+        b.user_id,
+        b.client_name,
+        b.client_phone,
+        DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,
+        TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time
+      FROM booking b
+      WHERE b.customer_token = ?
+        AND b.token_expires_at > NOW()
+        AND b.status IN ('active', 'done')`,
       [token]
     );
 
@@ -144,7 +145,6 @@ export async function POST(req: NextRequest) {
     };
 
     if (action === "cancel") {
-      // لغو نوبت
       if (booking.status !== "active") {
         return NextResponse.json(
           { success: false, message: "این نوبت قابل لغو نیست" },
@@ -153,17 +153,12 @@ export async function POST(req: NextRequest) {
       }
 
       await query(
-        `UPDATE booking 
-         SET status = 'cancelled', 
-             updated_at = NOW() 
-         WHERE id = ?`,
+        `UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?`,
         [booking.id]
       );
 
-      // لاگ فعالیت
       await query(
-        `INSERT INTO smslog 
-         (user_id, to_phone, content, sms_type, status, created_at)
+        `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
         [
           booking.user_id,
@@ -176,8 +171,9 @@ export async function POST(req: NextRequest) {
         success: true,
         message: "نوبت با موفقیت لغو شد",
       });
-    } else if (action === "reschedule") {
-      // تغییر زمان نوبت
+    }
+
+    if (action === "reschedule") {
       if (booking.status !== "active") {
         return NextResponse.json(
           { success: false, message: "این نوبت قابل تغییر نیست" },
@@ -200,14 +196,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // بررسی در دسترس بودن زمان جدید
       const conflicts = await query(
         `SELECT id FROM booking 
-         WHERE user_id = ?
-           AND booking_date = ?
-           AND booking_time = ?
-           AND status = 'active'
-           AND id != ?`,
+         WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?`,
         [booking.user_id, newDate, newTime, booking.id]
       );
 
@@ -218,21 +209,15 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // بروزرسانی نوبت
       await query(
         `UPDATE booking 
-         SET booking_date = ?,
-             booking_time = ?,
-             change_count = change_count + 1,
-             updated_at = NOW()
+         SET booking_date = ?, booking_time = ?, change_count = change_count + 1, updated_at = NOW()
          WHERE id = ?`,
         [newDate, newTime, booking.id]
       );
 
-      // لاگ فعالیت
       await query(
-        `INSERT INTO smslog 
-         (user_id, to_phone, content, sms_type, status, created_at)
+        `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'reschedule', 'sent', NOW())`,
         [
           booking.user_id,
@@ -245,12 +230,12 @@ export async function POST(req: NextRequest) {
         success: true,
         message: "زمان نوبت با موفقیت تغییر یافت",
       });
-    } else {
-      return NextResponse.json(
-        { success: false, message: "عملیات نامعتبر" },
-        { status: 400 }
-      );
     }
+
+    return NextResponse.json(
+      { success: false, message: "عملیات نامعتبر" },
+      { status: 400 }
+    );
   } catch (error: any) {
     console.error("خطا در پردازش درخواست:", error);
     return NextResponse.json(

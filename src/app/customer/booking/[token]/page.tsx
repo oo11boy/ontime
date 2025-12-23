@@ -159,10 +159,20 @@ export default function CustomerBookingPage() {
       copyToClipboard();
     }
   };
-
+useEffect(() => {
+  if (booking) {
+    console.log("تاریخ میلادی دریافت‌شده از سرور:", booking.date);
+    console.log("تاریخ شمسی با formatPersianDate:", formatPersianDate(booking.date));
+    
+    // تست مستقیم با moment-jalaali
+    const m = require('moment-jalaali');
+    const test = m(booking.date + ' 12:00', 'YYYY-MM-DD HH:mm');
+    console.log("تست دستی jYear/jMonth/jDate:", test.jYear(), test.jMonth(), test.jDate());
+  }
+}, [booking]);
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933] flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] flex items-center justify-center">
         <div className="text-white text-center">
           <div className="w-16 h-16 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
           <p>در حال دریافت اطلاعات نوبت...</p>
@@ -179,7 +189,7 @@ export default function CustomerBookingPage() {
   const persianDate = formatPersianDate(booking.date);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933] text-white">
+    <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white">
       <Toaster position="top-center" />
       
       <header className="p-4 border-b border-white/10">

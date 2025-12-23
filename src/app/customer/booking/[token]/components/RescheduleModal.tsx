@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Calendar, Clock } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { X, Clock } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import {
-
   gregorianToPersian,
-  getTodayJalali,
-  isPastDate,
   jalaliToGregorian,
-  formatPersianDate,
-} from "@/lib/date-utils"; 
-
+  isTimeInPast,
+  getCurrentDateTime,
+  persianMonths,
+} from "@/lib/date-utils";
+import JalaliCalendarModal from "@/app/(client pages)/clientdashboard/bookingsubmit/components/JalaliCalendarModal";
 
 interface RescheduleModalProps {
   currentDate: string; // YYYY-MM-DD
@@ -21,209 +20,199 @@ interface RescheduleModalProps {
   onConfirm: (newDate: string, newTime: string) => Promise<void>;
 }
 
-interface AvailableTimesResponse {
-  success: boolean;
-  availableTimes: string[];
-  bookedTimes: Array<{
-    time: string;
-    clientName: string;
-    startTime: string;
-    endTime: string;
-    duration: number;
-    services: string;
-  }>;
-  currentTime: string;
-  isToday: boolean;
-}
-
 export default function RescheduleModal({
   currentDate,
   currentTime,
   onClose,
   onConfirm,
 }: RescheduleModalProps) {
-  const [selectedDate, setSelectedDate] = useState(currentDate);
-  const [selectedTime, setSelectedTime] = useState(currentTime);
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
+  const currentPersian = gregorianToPersian(currentDate);
+  const { currentGregorianDate, currentTimeString } = getCurrentDateTime();
 
-  // دریافت زمان‌های آزاد
+  // 📅 تاریخ شمسی انتخاب‌شده
+  const [selectedJalaliDate, setSelectedJalaliDate] = useState<{
+    year: number;
+    month: number;
+    day: number | null;
+  }>({
+    year: currentPersian.year,
+    month: currentPersian.month,
+    day: null,
+  });
+
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // 🔁 تبدیل تاریخ شمسی به میلادی فقط وقتی day انتخاب شد
+  const selectedGregorianDate = useMemo(() => {
+    if (!selectedJalaliDate.day) return null;
+    return jalaliToGregorian(
+      selectedJalaliDate.year,
+      selectedJalaliDate.month,
+      selectedJalaliDate.day
+    );
+  }, [selectedJalaliDate]);
+
+  // ⏱ دریافت زمان‌های آزاد
   const fetchAvailableTimes = async (date: string) => {
-    if (!date) return;
     setIsFetching(true);
+    setSelectedTime(null);
+
     try {
-      const response = await fetch(
+      const res = await fetch(
         `/api/client/available-times?date=${date}&duration=30`
       );
-      const data: AvailableTimesResponse = await response.json();
-      if (data.success) {
-        setAvailableTimes(data.availableTimes);
-      }
-    } catch (error) {
-      console.error("Error fetching available times:", error);
+      const data = await res.json();
+
+      if (!data.success) throw new Error();
+      setAvailableTimes(data.availableTimes);
+    } catch {
       toast.error("خطا در دریافت زمان‌های آزاد");
     } finally {
       setIsFetching(false);
     }
   };
 
+  // 🧠 هر بار تاریخ عوض شد → دریافت زمان‌ها
   useEffect(() => {
-    fetchAvailableTimes(selectedDate);
-  }, [selectedDate]);
+    if (!selectedGregorianDate) return;
+    fetchAvailableTimes(selectedGregorianDate);
+  }, [selectedGregorianDate]);
 
+  // ❌ فیلتر زمان‌های گذشته اگر تاریخ امروز است
+  const filteredTimes = useMemo(() => {
+    if (!selectedGregorianDate) return [];
+
+    if (selectedGregorianDate !== currentGregorianDate)
+      return availableTimes;
+
+    return availableTimes.filter(
+      (time) =>
+        !isTimeInPast(
+          selectedGregorianDate,
+          time,
+    
+        )
+    );
+  }, [availableTimes, selectedGregorianDate]);
+
+  // ✅ ثبت تغییر
   const handleSubmit = async () => {
-    if (!selectedDate || !selectedTime) {
-      toast.error("لطفا تاریخ و زمان جدید را انتخاب کنید");
+    if (!selectedGregorianDate || !selectedTime) {
+      toast.error("لطفاً تاریخ و زمان جدید را انتخاب کنید");
       return;
     }
 
-    if (selectedDate === currentDate && selectedTime === currentTime) {
-      toast.error("لطفا تاریخ یا زمان جدیدی انتخاب کنید");
-      return;
-    }
-
-    // اختیاری: اگر می‌خواهید از انتخاب زمان گذشته جلوگیری کنید
-    if (isPastDate(selectedDate, selectedTime)) {
-      toast.error("نمی‌توانید زمانی در گذشته انتخاب کنید");
+    if (
+      selectedGregorianDate === currentDate &&
+      selectedTime === currentTime
+    ) {
+      toast.error("زمان جدید باید متفاوت باشد");
       return;
     }
 
     setLoading(true);
     try {
-      await onConfirm(selectedDate, selectedTime);
+      await onConfirm(selectedGregorianDate, selectedTime);
     } finally {
       setLoading(false);
     }
   };
 
-  // محاسبه min برای input date (فردا به میلادی)
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const minDateStr = tomorrow.toISOString().split("T")[0];
-
-  // تبدیل تاریخ‌های فعلی و انتخاب‌شده به شمسی
-  const currentPersian = gregorianToPersian(currentDate);
-  const selectedPersian = gregorianToPersian(selectedDate);
-
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1a1e26] rounded-2xl w-full max-w-md border border-white/10 max-h-[90vh] overflow-y-auto">
-        {/* هدر */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#1a1e26]">
-          <h2 className="font-bold text-lg">تغییر زمان نوبت</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="بستن"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <>
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div className="bg-[#1a1e26] w-full max-w-md rounded-2xl border border-white/10">
 
-        {/* محتوا */}
-        <div className="p-4 space-y-4">
-          {/* انتخاب تاریخ */}
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              <Calendar className="w-4 h-4 inline ml-1" />
-              تاریخ جدید
-            </label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              min={minDateStr} // حداقل از فردا میلادی
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-            />
-            {/* نمایش تاریخ شمسی زیر input */}
-            <p className="mt-2 text-sm text-gray-400">
-              {formatPersianDate(selectedDate)} ({selectedPersian.weekDay})
-            </p>
+          {/* Header */}
+          <div className="p-4 border-b border-white/10 flex justify-between">
+            <h2 className="font-bold text-lg">تغییر زمان نوبت</h2>
+            <button onClick={onClose}>
+              <X />
+            </button>
           </div>
 
-          {/* انتخاب زمان */}
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              <Clock className="w-4 h-4 inline ml-1" />
-              زمان جدید
-            </label>
+          {/* Content */}
+          <div className="p-4 space-y-6">
 
-            {isFetching ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-gray-400 text-sm">
-                  در حال دریافت زمان‌های آزاد...
-                </p>
+            {/* 📅 انتخاب تاریخ (شمسی) */}
+            <button
+              onClick={() => setIsCalendarOpen(true)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-right hover:bg-white/10 transition"
+            >
+              <span className="text-sm text-gray-400">تاریخ جدید</span>
+              <div className="font-bold mt-1">
+                {selectedJalaliDate.day
+                  ? `${selectedJalaliDate.day} ${persianMonths[selectedJalaliDate.month]} ${selectedJalaliDate.year}`
+                  : "انتخاب تاریخ"}
               </div>
-            ) : availableTimes.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2">
-                {availableTimes.map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => setSelectedTime(time)}
-                    className={`py-3 rounded-lg text-sm transition-all ${
-                      selectedTime === time
-                        ? "bg-emerald-500 text-white ring-2 ring-emerald-500/50"
-                        : "bg-white/5 hover:bg-white/10"
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-400">
-                زمان آزادی برای این تاریخ وجود ندارد
-              </div>
-            )}
-          </div>
+            </button>
 
-          {/* اطلاعات فعلی */}
-          <div className="p-3 bg-white/5 rounded-lg">
-            <p className="text-sm text-gray-300 mb-1">زمان فعلی:</p>
-            <p className="font-bold">
-              {currentPersian.fullDate} - {currentTime} (
-              {currentPersian.weekDay})
-            </p>
-          </div>
-
-          {/* اطلاعات جدید */}
-          {selectedDate && selectedTime && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-              <p className="text-sm text-emerald-300 mb-1">زمان جدید:</p>
-              <p className="font-bold text-emerald-400">
-                {selectedPersian.fullDate} - {selectedTime} (
-                {selectedPersian.weekDay})
+            {/* ⏰ انتخاب زمان */}
+            <div>
+              <p className="text-sm text-gray-300 mb-2 flex items-center gap-1">
+                <Clock size={16} /> زمان جدید
               </p>
-            </div>
-          )}
-        </div>
 
-        {/* دکمه‌ها */}
-        <div className="p-4 border-t border-white/10 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            انصراف
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={
-              loading ||
-              isFetching ||
-              !selectedDate ||
-              !selectedTime ||
-              (selectedDate === currentDate && selectedTime === currentTime)
-            }
-            className="flex-1 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "در حال تغییر..." : "تأیید تغییر"}
-          </button>
+              {isFetching ? (
+                <p className="text-center text-gray-400 text-sm">
+                  در حال دریافت زمان‌ها...
+                </p>
+              ) : filteredTimes.length === 0 ? (
+                <p className="text-center text-gray-500 text-sm">
+                  زمانی برای این تاریخ وجود ندارد
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {filteredTimes.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => setSelectedTime(time)}
+                      className={`py-2 rounded-lg text-sm transition
+                        ${
+                          selectedTime === time
+                            ? "bg-emerald-500 text-white"
+                            : "bg-white/5 hover:bg-white/10"
+                        }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-white/10 flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 bg-white/5 py-3 rounded-lg"
+            >
+              انصراف
+            </button>
+
+            <button
+              onClick={handleSubmit}
+              disabled={!selectedTime || loading}
+              className="flex-1 bg-emerald-500/20 text-emerald-300 py-3 rounded-lg disabled:opacity-40"
+            >
+              {loading ? "در حال ثبت..." : "تأیید تغییر"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* 📅 مودال تقویم شمسی */}
+      <JalaliCalendarModal
+        selectedDate={selectedJalaliDate}
+        setSelectedDate={setSelectedJalaliDate}
+        isCalendarOpen={isCalendarOpen}
+        setIsCalendarOpen={setIsCalendarOpen}
+      />
+    </>
   );
 }

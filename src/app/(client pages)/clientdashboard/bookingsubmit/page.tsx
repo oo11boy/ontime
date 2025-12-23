@@ -71,21 +71,21 @@ function SuccessBookingToast({
   const { copyBookingLink, shareBookingLink, getBookingLink } = useBookingLink();
   const bookingLink = getBookingLink(customerToken);
 
-  const handleCopyLink = async () => {
-    const result = await copyBookingLink(customerToken);
-    if (result.success) {
-      toast.success("لینک کپی شد!");
-    } else {
-      toast.error("خطا در کپی لینک");
-    }
-  };
+const handleCopyLink = async () => {
+  const result = await copyBookingLink(customerToken);
+  if (result.success) {
+    toast.success("لینک کپی شد!");
+  } else {
+    toast.error("خطا در کپی لینک");
+  }
+};
 
-  const handleShareLink = async () => {
-    const result = await shareBookingLink(customerToken, name);
-    if (!result.success && result.error?.name !== 'AbortError') {
-      handleCopyLink();
-    }
-  };
+const handleShareLink = async () => {
+  const result = await shareBookingLink(customerToken, name);
+  if (!result.success) {
+    handleCopyLink();
+  }
+};
 
   return (
     <div className="bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-4 shadow-lg w-[90%] md:w-md">
@@ -493,7 +493,7 @@ export default function NewAppointmentPage() {
             }).then(res => {
               if (!res.success) {
                 toast.error("خطا در ارسال پیامک تایید");
-                console.error("SMS Error:", res.error);
+              
               }
             })
           );
@@ -514,7 +514,7 @@ export default function NewAppointmentPage() {
             }).then(res => {
               if (!res.success) {
                 toast.error("خطا در زمان‌بندی یادآوری");
-                console.error("SMS Error:", res.error);
+             
               }
             })
           );

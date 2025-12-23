@@ -104,8 +104,8 @@ export default function SystemStatusPage() {
           <div
             className={`p-6 rounded-[2.2rem] text-white shadow-xl relative overflow-hidden ${
               data?.panel?.credit < 500000
-                ? "bg-gradient-to-br from-red-600 to-rose-800"
-                : "bg-gradient-to-br from-indigo-700 to-blue-800"
+                ? "bg-linear-to-br from-red-600 to-rose-800"
+                : "bg-linear-to-br from-indigo-700 to-blue-800"
             }`}
           >
             <p className="text-[10px] font-black opacity-70 mb-1">موجودی پنل</p>
@@ -359,7 +359,7 @@ export default function SystemStatusPage() {
                 filteredList.map((item: any) => (
                   <tr
                     key={item.id}
-                    className="hover:bg-white/[0.02] transition-all group"
+                    className="hover:bg-white/2 transition-all group"
                   >
                     <td className="px-8 py-6 font-black text-white text-sm tracking-widest">
                       {item.phone}
