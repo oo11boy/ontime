@@ -4,13 +4,12 @@ import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 import Script from "next/script";
 
-// ۱. تنظیمات Viewport
+// ۱. تنظیمات Viewport (اصلاح شده برای کسب امتیاز ۱۰۰ در Accessibility)
 export const viewport: Viewport = {
   themeColor: "#1D222A",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // حذف maximumScale و userScalable برای اجازه زوم به کاربران و رفع ارور Lighthouse
 };
 
 // ۲. متادیتاهای حرفه‌ای برای سئو
@@ -24,7 +23,7 @@ export const metadata: Metadata = {
   authors: [{ name: "OnTime Team" }],
   publisher: "آنتایم",
   alternates: {
-    canonical: "https://ontimeapp.ir", // آدرس اصلی سایت خود را جایگزین کنید
+    canonical: "https://ontimeapp.ir",
   },
   openGraph: {
     title: 'آنتایم - تحولی در مدیریت نوبت‌دهی کسب‌وکار شما',
@@ -60,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   
-  // ۲. اسکیما (Schema.org) برای معرفی نرم‌افزار به گوگل
+  // ۳. اسکیما (Schema.org) اصلاح شده برای موتورهای جستجو
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -71,6 +70,7 @@ export default function RootLayout({
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "IRR",
+      "availability": "https://schema.org/InStock",
       "description": "۲ ماه اشتراک رایگان برای شروع"
     },
     "aggregateRating": {
@@ -84,7 +84,6 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <head>
-        {/* تزریق اسکیما به هدر */}
         <Script
           id="json-ld"
           type="application/ld+json"
@@ -92,7 +91,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="antialiased font-vazir" // پیشنهاد: فونت یکسان برای کل پروژه
+        className="antialiased" 
         style={{ backgroundColor: "#1B1F28" }}
       >
         <Providers>
@@ -109,7 +108,6 @@ export default function RootLayout({
               background: '#1a1e26',
               color: '#fff',
               border: '1px solid #333',
-              fontFamily: 'vazir, sans-serif'
             },
             success: {
               iconTheme: {

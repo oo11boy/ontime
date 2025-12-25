@@ -135,8 +135,8 @@ export default function AppCoreValues(): React.JSX.Element {
               <h3 className="text-2xl lg:text-4xl font-black text-white mb-4">
                 آماده‌اید به نوبت‌های خود نظم بدهید؟
               </h3>
-              <p className="text-blue-100 font-bold text-lg">
-                همین حالا با <strong>ثبت نام در سامانه نوبت دهی آنتایم</strong>، ۳ ماه اشتراک رایگان هدیه بگیرید و مدیریت نوبت‌ها را خودکار کنید.
+              <p className="text-white font-bold text-lg">
+                همین حالا با <strong>ثبت نام در سامانه نوبت دهی آنتایم</strong>، ۲ ماه اشتراک رایگان هدیه بگیرید و مدیریت نوبت‌ها را خودکار کنید.
               </p>
             </div>
             

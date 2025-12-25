@@ -53,7 +53,7 @@ export const DashboardWelcomeModal: React.FC<DashboardWelcomeModalProps> = ({
                   ثبت‌نام شما با موفقیت انجام شد.
                 </p>
                 <p className="text-emerald-400 font-bold text-xl">
-                  شما ۳ ماه استفاده رایگان از تمام امکانات اپلیکیشن نوبت‌دهی دریافت کردید!
+                  شما ۲ ماه استفاده رایگان از تمام امکانات اپلیکیشن نوبت‌دهی دریافت کردید!
                 </p>
                 <p>
                   همچنین هر ماه <span className="text-emerald-400 font-bold">۱۵۰ پیامک رایگان</span> به مدت سه ماه برایتان فعال شد.

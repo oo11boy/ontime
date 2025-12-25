@@ -51,7 +51,7 @@ export default function OnTimeLandingPage() {
         <AnalyticsSection />
         <IntegrationEcosystem />
 
-        {/* ۷. آفر ۳ ماه رایگان (هوک بازاریابی) */}
+        {/* ۷. آفر ۲ ماه رایگان (هوک بازاریابی) */}
         <FreeTrialPromo />
 
         {/* ۸. ماشین حساب بازگشت سرمایه (ROI) */}

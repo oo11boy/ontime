@@ -161,7 +161,7 @@ export default function RealIndustrySolutions(): React.JSX.Element {
               key={index}
               className="p-6 text-center group hover:bg-slate-50 rounded-3xl transition-all duration-300"
             >
-              <div className="flex justify-center mb-4 text-slate-400 group-hover:text-blue-600 group-hover:scale-110 transition-all">
+              <div className="flex justify-center mb-4 text-slate-600 group-hover:text-blue-600 group-hover:scale-110 transition-all">
                 {item.icon}
               </div>
               {/* استفاده از h3 برای عنوان صنف + کلمه کلیدی سئو */}

@@ -155,7 +155,7 @@ export default function PricingSection(): React.JSX.Element {
 
                   {/* ویژگی‌های پلن */}
                   <div className="space-y-4 mb-12 grow px-2">
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-6 border-b border-slate-50 pb-3 flex items-center gap-2">
+                    <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.2em] mb-6 border-b border-slate-50 pb-3 flex items-center gap-2">
                       <Zap size={12} className="text-blue-500" />
                       امکانات فول در تمامی پلن‌ها
                     </p>
@@ -204,7 +204,7 @@ export default function PricingSection(): React.JSX.Element {
                     نیاز به راهکار سازمانی دارید؟
                   </h3>
                 </div>
-                <p className="text-slate-400 text-lg lg:text-xl font-medium max-w-2xl leading-relaxed">
+                <p className="text-slate-600 text-lg lg:text-xl font-medium max-w-2xl leading-relaxed">
                   اگر کلینیک، سالن زیبایی زنجیره‌ای یا مجموعه‌ای با بیش از{" "}
                   <strong>۱۰ پرسنل</strong> دارید، ما برای شما پلن‌های شخصی‌سازی
                   شده با تخفیف ویژه در نظر گرفته‌ایم.

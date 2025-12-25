@@ -113,7 +113,7 @@ export default function HeroSection() {
                   <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
                   <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                 </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
                   OnTime Dashboard Preview
                 </span>
               </div>
@@ -146,6 +146,7 @@ export default function HeroSection() {
                   src="/images/app.jpg"
                   width={600}
                   height={400}
+                  sizes="(max-width: 768px) 100vw, 600px"
                   alt="پنل مدیریت سامانه نوبت دهی آنلاین آنتایم ویژه کسب و کارهای خدماتی"
                   className="w-full object-cover h-80 transition-transform duration-700 group-hover:scale-105"
                   priority={true}

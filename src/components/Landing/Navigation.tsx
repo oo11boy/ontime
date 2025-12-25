@@ -107,7 +107,7 @@ export default function Navigation(): React.JSX.Element {
             <span className="text-2xl font-black tracking-tighter text-slate-900 leading-none">
               آنتایم
             </span>
-            <span className="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">
+            <span className="text-[10px] text-slate-700 font-bold mt-1 uppercase tracking-tighter">
               OnTime App
             </span>
           </div>
@@ -142,8 +142,14 @@ export default function Navigation(): React.JSX.Element {
           <button
             className="lg:hidden p-3 text-slate-900 bg-slate-100 rounded-2xl transition-all active:scale-95"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "بستن منو" : "باز کردن منو"}
+            aria-expanded={isOpen}
           >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
+            {isOpen ? (
+              <X size={24} aria-hidden="true" />
+            ) : (
+              <Menu size={24} aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>
@@ -156,7 +162,7 @@ export default function Navigation(): React.JSX.Element {
       `}
       >
         <div className="flex flex-col h-full p-8 pt-24 gap-4">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">
             منوی دسترسی سریع
           </p>
           {menuItems.map((item) => (
@@ -178,14 +184,14 @@ export default function Navigation(): React.JSX.Element {
 
           <div className="mt-auto pb-10 flex flex-col gap-4">
             <Link
-              href="/register"
+              href="/clientdashboard"
               onClick={() => setIsOpen(false)}
               className="bg-emerald-600 text-white p-6 rounded-4xl font-black text-xl text-center shadow-2xl shadow-emerald-200 flex items-center justify-center gap-3 active:scale-95 transition-transform"
             >
               ۲ ماه رایگان شروع کنید
               <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
             </Link>
-            <p className="text-center text-slate-400 text-xs font-bold">
+            <p className="text-center text-slate-600 text-xs font-bold">
               پشتیبانی نوبت‌دهی: ۰۹۹۸۱۳۹۴۸۳۲
             </p>
           </div>
@@ -209,7 +215,7 @@ function NavLink({
       href={href}
       className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-all duration-300 relative group font-black text-[13px]"
     >
-      <span className="text-slate-400 group-hover:text-blue-600 group-hover:rotate-12 transition-all">
+      <span className="text-slate-600 group-hover:text-blue-600 group-hover:rotate-12 transition-all">
         {icon}
       </span>
       {children}

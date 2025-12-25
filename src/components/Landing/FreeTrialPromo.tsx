@@ -76,7 +76,7 @@ export default function FreeTrialPromo(): React.JSX.Element {
                   </span>
                 </h2>
 
-                <p className="text-slate-400 text-lg lg:text-xl font-medium leading-relaxed max-w-xl">
+                <p className="text-slate-600 text-lg lg:text-xl font-medium leading-relaxed max-w-xl">
                   ما به کارایی <strong>نرم‌افزار نوبت‌دهی آنتایم</strong> ایمان
                   داریم. به همین دلیل اجازه می‌دهیم{" "}
                   <span className="text-white font-bold underline decoration-emerald-500 decoration-2">
@@ -109,7 +109,7 @@ export default function FreeTrialPromo(): React.JSX.Element {
 
                   <div className="space-y-8">
                     <div className="space-y-3">
-                      <div className="text-slate-400 font-bold text-sm tracking-widest uppercase">
+                      <div className="text-slate-600 font-bold text-sm tracking-widest uppercase">
                         ارزش این پیشنهاد
                       </div>
                       <div className="text-3xl font-black text-slate-500 line-through decoration-red-500/50">
