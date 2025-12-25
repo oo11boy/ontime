@@ -2,6 +2,7 @@
 
 import { Smartphone, ShieldCheck, Zap, UserCheck, MessageSquare, History, ArrowLeft } from 'lucide-react'
 import Link from 'next/link';
+import Script from 'next/script';
 import React from 'react'
 
 export default function AppCoreValues(): React.JSX.Element {
@@ -40,6 +41,54 @@ export default function AppCoreValues(): React.JSX.Element {
 
   return (
     <section id="values" className="py-24 bg-white" dir="rtl">
+
+
+<Script
+  id="app-core-values-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "serviceType": "نرم‌افزار مدیریت نوبت‌دهی و رزرو آنلاین",
+      "provider": {
+        "@type": "Organization",
+        "name": "آنتایم"
+      },
+      "areaServed": "IR",
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "مزایای هوشمند آنتایم",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "عدم نیاز به نصب اپلیکیشن",
+              "description": "استفاده از تکنولوژی PWA برای دسترسی سریع مشتریان بدون اشغال فضا."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "کنترل هوشمند کنسلی",
+              "description": "کاهش نرخ لغو نوبت با سیستم جابجایی هوشمند."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "پشتیبان‌گیری ابری امن",
+              "description": "ذخیره ایمن اطلاعات مشتریان در سرورهای ابری اختصاصی."
+            }
+          }
+        ]
+      }
+    })
+  }}
+/>
       <div className="max-w-7xl mx-auto px-6">
         
         {/* هدر بخش - استفاده از H2 برای سئو محتوا */}

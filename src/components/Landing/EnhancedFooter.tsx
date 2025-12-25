@@ -4,12 +4,40 @@ import { Instagram, Linkedin, Mail, MapPin, MessageSquare, Phone, Send, External
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image';
+import Script from 'next/script';
 
 export default function EnhancedFooter(): React.JSX.Element {
   const currentYear = new Date().toLocaleDateString('fa-IR', { year: 'numeric' });
 
   return (
     <footer className="bg-slate-950 text-slate-500 py-24 border-t border-white/5 relative overflow-hidden" dir="rtl">
+     {/* اسکیمای سازمان و برندینگ آنتایم (Organization Schema) */}
+<Script
+  id="footer-organization-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "پلتفرم نوبت‌دهی آنتایم",
+      "alternateName": "OnTime",
+      "url": "https://ontimeapp.ir",
+      "logo": "https://ontimeapp.ir/icons/icon-192.png",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+98-9981394832",
+        "contactType": "customer service",
+        "areaServed": "IR",
+        "availableLanguage": "Persian"
+      },
+      "sameAs": [
+        "https://instagram.com/unicodewebdesign",
+        "https://t.me/unicodewebdesign"
+      ],
+      "description": "ارائه دهنده راهکارهای هوشمند نوبت‌دهی آنلاین برای پزشکان، آرایشگاه‌ها و مراکز خدماتی."
+    })
+  }}
+/>
       {/* المان تزیینی در پس‌زمینه فوتر */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full -mr-48 -mb-48"></div>
 

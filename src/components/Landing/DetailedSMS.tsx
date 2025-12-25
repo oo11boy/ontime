@@ -2,6 +2,7 @@
 
 import { Bell, Calendar, Smartphone, MessageSquare, CheckCircle, ArrowLeft } from 'lucide-react'
 import Image from 'next/image';
+import Script from 'next/script';
 import React from 'react'
 
 interface SMSBenefit {
@@ -31,6 +32,46 @@ export default function DetailedSMS(): React.JSX.Element {
 
   return (
     <section id="sms-automation" className="py-24 bg-slate-950 overflow-hidden relative" dir="rtl">
+    {/* اسکیمای تخصصی اتوماسیون پیامکی و اطلاع‌رسانی */}
+<Script
+  id="sms-automation-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "serviceType": "سامانه پیامکی نوبت‌دهی هوشمند",
+      "name": "اتوماسیون یادآوری نوبت آنتایم",
+      "description": "ارسال خودکار پیامک تایید رزرو، یادآوری نوبت و لینک اختصاصی تغییر زمان بدون نیاز به نصب اپلیکیشن توسط مشتری.",
+      "provider": {
+        "@type": "Organization",
+        "name": "آنتایم"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "مزایای اطلاع‌رسانی آنتایم",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "کاهش ۸۰ درصدی کنسلی نوبت",
+              "description": "ارسال لینک هوشمند برای تغییر نوبت توسط مشتری."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "یادآوری خودکار پیامکی",
+              "description": "اطلاع‌رسانی زمان نوبت چند ساعت قبل از موعد به صورت اتوماتیک."
+            }
+          }
+        ]
+      }
+    })
+  }}
+/>
       {/* الگوهای پس‌زمینه برای عمق بخشیدن به طراحی */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent"></div>
       

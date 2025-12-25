@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image';
 import Link from 'next/link'
+import Script from 'next/script';
 import React, { useState, useEffect } from 'react'
 
 export default function Navigation(): React.JSX.Element {
@@ -40,6 +41,51 @@ export default function Navigation(): React.JSX.Element {
       }`} 
       dir="rtl"
     >
+
+{/* اسکیمای ناوبری سایت برای درک بهتر ساختار توسط گوگل */}
+<Script
+  id="navigation-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "منوی اصلی آنتایم",
+      "itemListElement": [
+        {
+          "@type": "SiteNavigationElement",
+          "position": 1,
+          "name": "امکانات",
+          "url": "https://ontime-app.ir/#features"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 2,
+          "name": "تعرفه‌ها",
+          "url": "https://ontime-app.ir/#pricing"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 3,
+          "name": "ماشین حساب",
+          "url": "https://ontime-app.ir/#roi"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 4,
+          "name": "سوالات متداول",
+          "url": "https://ontime-app.ir/#faq"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 5,
+          "name": "درباره ما",
+          "url": "https://ontime-app.ir/#industries"
+        }
+      ]
+    })
+  }}
+/>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         
         {/* بخش برندینگ و لوگو */}

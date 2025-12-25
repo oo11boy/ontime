@@ -4,11 +4,41 @@ import React from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, MessageSquare, Calendar, Smartphone, Zap } from "lucide-react";
 import Image from "next/image";
+import Script from "next/script";
 
 export default function HeroSection() {
   return (
     <article>
       <section className="relative py-16 lg:py-28 overflow-hidden bg-white" dir="rtl">
+
+{/* اسکیمای بخش هیرو - معرفی نرم‌افزار نوبت‌دهی آنتایم */}
+<Script
+  id="hero-webapp-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "اپلیکیشن نوبت‌دهی آنلاین آنتایم",
+      "url": "https://ontime-app.ir",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "All",
+      "abstract": "هوشمندترین سامانه نوبت‌دهی آنلاین برای آرایشگاه‌ها، پزشکان و مراکز خدماتی با قابلیت یادآوری پیامکی خودکار.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "IRR",
+        "description": "۲ ماه اشتراک رایگان برای شروع مدیریت هوشمند نوبت‌ها"
+      },
+      "featureList": [
+        "ارسال پیامک یادآوری نوبت",
+        "لینک رزرو اختصاصی بدون نیاز به نصب",
+        "تقویم آنلاین مدیریت زمان",
+        "بانک اطلاعاتی مشتریان"
+      ]
+    })
+  }}
+/>
         {/* المان‌های بصری پس‌زمینه برای کاهش نرخ پرش */}
         <div className="absolute inset-0 bg-linear-to-br from-blue-50/50 via-white to-cyan-50/50 -z-10"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>

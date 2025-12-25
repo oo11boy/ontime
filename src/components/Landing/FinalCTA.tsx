@@ -3,10 +3,46 @@
 import { Gift, Phone, Sparkles, Zap, ArrowLeft, Users } from 'lucide-react'
 import React from 'react'
 import Link from 'next/link'
+import Script from 'next/script';
 
 export default function FinalCTA(): React.JSX.Element {
   return (
     <section className="py-24 bg-slate-50/50" dir="rtl">
+      {/* اسکیمای پیشنهاد ویژه و فراخوان نهایی (Special Offer Schema) */}
+<Script
+  id="final-cta-offer-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "پنل نوبت‌دهی هوشمند آنتایم",
+      "image": "https://ontime-app.ir/icons/icon-192.png",
+      "description": "سیستم مدیریت نوبت‌دهی آنلاین با قابلیت ارسال پیامک یادآوری و مدیریت پرسنل.",
+      "brand": {
+        "@type": "Brand",
+        "name": "آنتایم"
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": "https://ontime-app.ir/clientdashboard",
+        "priceCurrency": "IRR",
+        "price": "0",
+        "availability": "https://schema.org/InStock",
+        "description": "۲ ماه اشتراک رایگان به همراه ۱۵۰ پیامک هدیه ماهانه برای شروع.",
+        "seller": {
+          "@type": "Organization",
+          "name": "آنتایم"
+        }
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "1500"
+      }
+    })
+  }}
+/>
       <div className="max-w-7xl mx-auto px-6">
         
         {/* باکس اصلی با طراحی Dark Mode جذاب برای کنتراست نهایی */}

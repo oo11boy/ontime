@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { CalendarCheck, MessageSquare, TrendingUp, Trophy } from "lucide-react";
+import Script from "next/script";
 
 // تعریف اینترفیس برای تایپ‌سیف بودن داده‌ها
 interface StatsData {
@@ -86,6 +87,38 @@ export default function StatsSection(): React.JSX.Element {
 function StatItem({ label, value, suffix, icon, description }: any) {
   return (
     <div className="bg-white p-8 rounded-4xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+
+{/* اسکیمای اثبات اجتماعی و اعتبار برند (Social Proof Schema) */}
+<Script
+  id="stats-section-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "آنتایم",
+      "interactionStatistic": [
+        {
+          "@type": "InteractionCounter",
+          "interactionType": "https://schema.org/SubscribeAction",
+          "userInteractionCount": 1500
+        },
+        {
+          "@type": "InteractionCounter",
+          "interactionType": "https://schema.org/TradeAction",
+          "userInteractionCount": 45000
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "1500",
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    })
+  }}
+/>
       {/* دایره دکوراتیو پشت آیکون */}
       <div className="absolute -top-4 -left-4 w-16 h-16 bg-slate-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
       

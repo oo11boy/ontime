@@ -1,16 +1,29 @@
 import withPWA from "next-pwa";
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    turbo: {
+      // تنظیمات خالی برای غیرفعال کردن اخطار در صورت استفاده از وب‌پک
+    },
+  },
   async rewrites() {
     return [
       {
-        source: "/:token",
+        /* توضیح شرط پایین: 
+          فقط زمانی ری‌رایت انجام می‌شود که مقدار بعد از اسلش (token) 
+          جزء موارد زیر نباشد:
+          - فایل‌های سیستمی: robots.txt, sitemap.xml, favicon.ico, manifest.json
+          - پوشه‌های اصلی: api, clientdashboard, admindashboard, login, admin-login, customer
+          - فایل‌های استاتیک: _next, static, images, icons
+        */
+        source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|clientdashboard|admindashboard|login|admin-login|customer|_next|static|images|icons).*)",
         destination: "/customer/booking/:token",
       },
     ];
   },
-  turbopack: {},
+    turbopack: {},
 };
 
 export default withPWA({

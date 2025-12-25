@@ -4,12 +4,46 @@ import React from 'react';
 import { usePlans } from '@/hooks/usePlans';
 import { Check, Loader2, MessageSquare, Phone, Zap, Gift, Star, ShieldCheck, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import Script from 'next/script';
 
 export default function PricingSection(): React.JSX.Element {
   const { data: plansData, isLoading: plansLoading } = usePlans();
 
   return (
     <section id="pricing" className="py-24 bg-white" dir="rtl">
+
+{/* اسکیمای اختصاصی قیمت‌گذاری و تعرفه‌های آنتایم (Pricing Schema) */}
+<Script
+  id="pricing-plans-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "پلن‌های اشتراک آنتایم",
+      "description": "انواع تعرفه‌های نوبت‌دهی آنلاین بر اساس نیاز پیامکی کسب‌وکارها.",
+      "brand": {
+        "@type": "Brand",
+        "name": "آنتایم"
+      },
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "IRR",
+        "lowPrice": "0",
+        "highPrice": "500000", // این مقدار را بر اساس بالاترین پلن خود تنظیم کنید
+        "offerCount": plansData?.plans.length || "3",
+        "offers": plansData?.plans.map((plan: any) => ({
+          "@type": "Offer",
+          "name": plan.title,
+          "price": plan.monthly_fee.toString(),
+          "priceCurrency": "IRR",
+          "description": `${plan.free_sms_month} پیامک رایگان ماهانه به همراه تمام امکانات مدیریتی.`,
+          "url": "https://ontime-app.ir/#pricing"
+        }))
+      }
+    })
+  }}
+/>
       <div className="max-w-7xl mx-auto px-6">
         
         {/* هدر بخش قیمت‌گذاری - سئو شده */}
