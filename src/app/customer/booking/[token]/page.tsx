@@ -39,12 +39,7 @@ interface BookingData {
   canCancel: boolean;
   canReschedule: boolean;
 }
-export const metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+
 export default function CustomerBookingPage() {
   const params = useParams();
   const router = useRouter();
