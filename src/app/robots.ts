@@ -1,7 +1,6 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-  // لیست ربات‌های هوش مصنوعی که می‌خواهیم لندینگ را ببینند
   const aiBots = [
     'xai-crawler',      // Grok
     'GPTBot',           // ChatGPT
@@ -18,21 +17,19 @@ export default function robots(): MetadataRoute.Robots {
 
   return {
     rules: [
-      // قانون برای تمام ربات‌های هوش مصنوعی لیست شده
       {
         userAgent: aiBots,
-        allow: '/$',
-        disallow: '/',
+        allow: ['/$', '/_next/static/'], // اجازه دسترسی به صفحه اصلی و استایل‌ها
+        disallow: '/', // بستن سایر مسیرها
       },
-      // قانون کلی برای بقیه ربات‌ها (گوگل، بینگ و غیره)
       {
         userAgent: '*',
-        allow: '/$',
+        allow: ['/$', '/_next/static/'], // اصلاح: استفاده از آرایه برای چند اجازه دسترسی
         disallow: [
           '/',
           '/admindashboard',
           '/clientdashboard',
-          '/api',
+          '/api/',
           '/admin-login',
           '/login',
         ],
