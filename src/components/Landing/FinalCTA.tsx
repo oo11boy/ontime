@@ -127,7 +127,7 @@ export default function FinalCTA(): React.JSX.Element {
                   +۱.۵k
                 </div>
               </div>
-              <p className="text-slate-600 text-base lg:text-lg font-bold leading-relaxed max-w-lg">
+              <p className="text-slate-400 text-base lg:text-lg font-bold leading-relaxed max-w-lg">
                 به جمع <span className="text-white">۱,۵۰۰ مجموعه موفق</span> که
                 با آنتایم هزینه‌های خود را کاهش داده‌اند بپیوندید.
               </p>
@@ -153,10 +153,10 @@ function BenefitCard({
       <div className="bg-slate-800 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover/card:scale-110 transition-transform duration-500 shadow-inner">
         {icon}
       </div>
-      <h4 className="text-xl font-black mb-3 text-white group-hover/card:text-emerald-400 transition-colors">
+      <h3 className="text-xl font-black mb-3 text-white group-hover/card:text-emerald-400 transition-colors">
         {title}
-      </h4>
-      <p className="text-slate-600 text-sm font-bold leading-relaxed opacity-80 group-hover/card:opacity-100">
+      </h3>
+      <p className="text-slate-300 text-sm font-bold leading-relaxed  group-hover/card:opacity-100">
         {desc}
       </p>
     </div>

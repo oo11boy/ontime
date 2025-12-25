@@ -145,7 +145,7 @@ export default function RealIndustrySolutions(): React.JSX.Element {
                   className="flex items-center gap-3 font-bold text-slate-700"
                 >
                   <div className="bg-emerald-100 p-1 rounded-full">
-                    <Check className="text-emerald-600" size={16} />
+                    <Check className="text-emerald-800" size={16} />
                   </div>
                   {text}
                 </li>

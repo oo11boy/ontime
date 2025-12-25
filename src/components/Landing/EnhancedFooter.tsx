@@ -21,7 +21,7 @@ export default function EnhancedFooter(): React.JSX.Element {
 
   return (
     <footer
-      className="bg-slate-950 text-slate-600 py-24 border-t border-white/5 relative overflow-hidden"
+      className="bg-slate-950 text-slate-200 py-24 border-t border-white/5 relative overflow-hidden"
       dir="rtl"
     >
       {/* Schema همان نسخه قبلی بماند */}
@@ -56,7 +56,7 @@ export default function EnhancedFooter(): React.JSX.Element {
                 <span className="text-3xl font-black tracking-tighter">
                   آنتایم
                 </span>
-                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                   OnTime Scheduling Platform
                 </span>
               </div>
@@ -163,10 +163,10 @@ export default function EnhancedFooter(): React.JSX.Element {
           </div>
 
           <div className="flex flex-col items-center lg:items-end gap-2">
-            <p className="text-[12px] font-bold text-slate-600 tracking-wide">
+            <p className="text-[12px] font-bold text-slate-300 tracking-wide">
               © {currentYear} تمامی حقوق برای پلتفرم نوبت‌دهی آنتایم محفوظ است.
             </p>
-            <p className="text-[11px] font-bold text-slate-500">
+            <p className="text-[11px] font-bold text-slate-400">
               طراحی و توسعه توسط{" "}
               <a
                 href="https://unicodewebdesign.com"
@@ -201,7 +201,7 @@ function SocialIcon({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className={`w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-slate-600 transition-all duration-500 ${hoverColor} hover:text-white hover:-translate-y-2 shadow-lg shadow-black/20`}
+      className={`w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-slate-400 transition-all duration-500 ${hoverColor} hover:text-white hover:-translate-y-2 shadow-lg shadow-black/20`}
     >
       {/* با Cast کردن به any، مشکل محدودیت پراپ‌های aria-hidden حل می‌شود */}
       {React.isValidElement(icon)
@@ -232,7 +232,7 @@ function FooterLink({
     <li>
       <Link
         href={href}
-        className="group flex items-center gap-2 text-slate-600 hover:text-blue-400 transition-all duration-300"
+        className="group flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-all duration-300"
       >
         <span className="w-0 group-hover:w-4 h-0.5 bg-blue-500 transition-all duration-300"></span>
         {children}
@@ -243,7 +243,7 @@ function FooterLink({
 
 function ComplianceBadge({ text }: { text: string }) {
   return (
-    <span className="text-[10px] font-black text-slate-600 border border-white/10 bg-white/5 px-4 py-1.5 rounded-lg uppercase tracking-widest hover:border-blue-500/30 transition-colors cursor-default">
+    <span className="text-[10px] font-black text-slate-400 border border-white/10 bg-white/5 px-4 py-1.5 rounded-lg uppercase tracking-widest hover:border-blue-500/30 transition-colors cursor-default">
       {text}
     </span>
   );

@@ -133,7 +133,7 @@ export default function AnalyticsSection(): React.JSX.Element {
                     وضعیت عملکرد ماهانه
                   </h3>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                <div className="flex items-center gap-2 text-[10px] font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                   بروزرسانی زنده
                 </div>
@@ -150,7 +150,7 @@ export default function AnalyticsSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="p-5 bg-linear-to-br from-slate-50 to-white rounded-4xl border border-slate-100 shadow-sm">
-                  <div className="text-emerald-600 text-3xl font-black mb-1">
+                  <div className="text-emerald-800 text-3xl font-black mb-1">
                     ۸۹٪
                   </div>
                   <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">

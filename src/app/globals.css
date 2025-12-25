@@ -1,37 +1,45 @@
 @import "tailwindcss";
 
 :root {
+  /* بهبود کنتراست برای تم روشن */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a; /* تیره تر برای بهبود Accessibility */
+  
+  /* تعریف متغیر فونت برای هماهنگی با layout.tsx */
+  --font-yekan: "Yekan Bakh", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* بهبود کنتراست برای تم تاریک (نمره 100 در Accessibility) */
+    --background: #0f172a;
+    --foreground: #f8fafc;
+  }
+}
+
 * {
   touch-action: manipulation;
-}
-@font-face {
-  font-family: 'Yekan Bakh';
-  src: url('/fonts/YekanBakh.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+  box-sizing: border-box;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background:#1B1F28;
-    --foreground: #ededed;
-  }
+  /* متصل کردن فونت پیش‌فرض به متغیر یکان‌بخت */
+  --font-sans: var(--font-yekan);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Yekan Bakh";
+  /* استفاده از متغیر فونت بهینه شده برای حذف CLS */
+  font-family: var(--font-yekan);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* رفع مشکل کنتراست لینک‌ها و متن‌های کم‌رنگ که لایت‌هاوس ارور می‌داد */
+.text-muted {
+  color: color-mix(in srgb, var(--foreground), transparent 30%);
+}

@@ -124,11 +124,11 @@ export default function PricingSection(): React.JSX.Element {
                     </h3>
 
                     {isFreeTrial ? (
-                      <div className="bg-emerald-600 text-white p-8 rounded-[2.5rem] shadow-xl shadow-emerald-200/50 transform -rotate-1 group-hover:rotate-0 transition-transform">
+                      <div className="bg-emerald-700 text-white p-8 rounded-[2.5rem] shadow-xl shadow-emerald-200/50 transform -rotate-1 group-hover:rotate-0 transition-transform">
                         <div className="text-4xl font-black mb-1 tracking-tighter">
                           ۲ ماه رایگان
                         </div>
-                        <div className="text-sm font-bold opacity-90 border-t border-white/20 mt-3 pt-3">
+                        <div className="text-sm font-bold  border-t border-white/20 mt-3 pt-3">
                           ۱۵۰ پیامک هدیه / ماهانه
                         </div>
                       </div>
@@ -143,7 +143,7 @@ export default function PricingSection(): React.JSX.Element {
                           </span>
                         </div>
                         {plan.free_sms_month > 0 && (
-                          <div className="mt-4 text-emerald-600 text-[13px] font-black bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-100 inline-flex items-center gap-2">
+                          <div className="mt-4 text-emerald-800 text-[13px] font-black bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-100 inline-flex items-center gap-2">
                             <Zap size={14} fill="currentColor" />
                             {plan.free_sms_month.toLocaleString("fa-IR")} پیامک
                             رایگان ماهانه
@@ -204,7 +204,7 @@ export default function PricingSection(): React.JSX.Element {
                     نیاز به راهکار سازمانی دارید؟
                   </h3>
                 </div>
-                <p className="text-slate-600 text-lg lg:text-xl font-medium max-w-2xl leading-relaxed">
+                <p className="text-slate-400 text-lg lg:text-xl font-medium max-w-2xl leading-relaxed">
                   اگر کلینیک، سالن زیبایی زنجیره‌ای یا مجموعه‌ای با بیش از{" "}
                   <strong>۱۰ پرسنل</strong> دارید، ما برای شما پلن‌های شخصی‌سازی
                   شده با تخفیف ویژه در نظر گرفته‌ایم.

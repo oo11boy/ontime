@@ -105,7 +105,7 @@ export default function DetailedSMS(): React.JSX.Element {
             مشتری شما نیاز به نصب <br /> هیچ اپلیکیشنی ندارد!
           </h2>
 
-          <p className="text-lg text-slate-600 mb-10 leading-relaxed font-medium">
+          <p className="text-lg text-slate-300 mb-10 leading-relaxed font-medium">
             قدرت <strong>نرم‌افزار نوبت‌دهی آنلاین آنتایم</strong> در سادگی آن
             است. شما نوبت را در پنل مدیریت ثبت می‌کنید و سیستم تمام مراحل{" "}
             <strong>اطلاع‌رسانی و یادآوری پیامکی</strong> را به صورت خودکار
@@ -127,7 +127,7 @@ export default function DetailedSMS(): React.JSX.Element {
                     {item.stat}
                   </div>
                 </div>
-                <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                <p className="text-sm text-slate-400 font-medium leading-relaxed">
                   {item.desc}
                 </p>
               </div>
@@ -166,7 +166,7 @@ export default function DetailedSMS(): React.JSX.Element {
 
               {/* باکس پیامک ۱: تایید رزرو نوبت */}
               <div className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none shadow-xl transform rotate-1">
-                <div className="flex items-center gap-2 mb-2 opacity-90">
+                <div className="flex items-center gap-2 mb-2 ">
                   <CheckCircle size={14} />
                   <span className="text-[10px] font-bold">
                     تایید رزرو نوبت آنلاین
