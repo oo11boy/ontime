@@ -126,7 +126,7 @@ export default function Navigation(): React.JSX.Element {
         <div className="flex items-center gap-4">
           <Link
             href="/clientdashboard"
-            className="hidden sm:flex bg-emerald-600 text-white px-6 py-3.5 rounded-2xl font-black text-sm hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-200 transition-all items-center gap-2 group relative overflow-hidden"
+            className="hidden sm:flex bg-emerald-800 text-white px-6 py-3.5 rounded-2xl font-black text-sm hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-200 transition-all items-center gap-2 group relative overflow-hidden"
           >
             <span className="relative z-10 flex items-center gap-2">
               شروع ۲ ماه رایگان

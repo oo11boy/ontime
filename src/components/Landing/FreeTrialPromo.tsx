@@ -19,6 +19,7 @@ export default function FreeTrialPromo(): React.JSX.Element {
       <Script
         id="free-trial-promo-schema"
         type="application/ld+json"
+        
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
