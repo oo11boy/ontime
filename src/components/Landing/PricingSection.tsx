@@ -28,34 +28,43 @@ export default function PricingSection(): React.JSX.Element {
   dangerouslySetInnerHTML={{
     __html: JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "OfferCatalog",
-      name: "پلن‌های اشتراک آنتایم",
+      "@type": "SoftwareApplication",  // یا WebApplication اگر وب‌بیس است
+      name: "پنل نوبت‌دهی آنلاین آنتایم",
       description: "انواع تعرفه‌های نوبت‌دهی آنلاین بر اساس نیاز پیامکی کسب‌وکارها با دسترسی کامل به تمام امکانات.",
-      provider: {
-        "@type": "Organization",
-        name: "آنتایم",
-      },
-      itemListElement: plansData?.plans.map((plan: any, index: number) => ({
-        "@type": "Offer",
-        position: index + 1,
-        name: plan.title,
-        price: plan.monthly_fee.toString(),
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      offers: {
+        "@type": "AggregateOffer",
         priceCurrency: "IRR",
-        description: `${plan.free_sms_month.toLocaleString("fa-IR")} پیامک رایگان ماهانه به همراه تمام امکانات مدیریتی.`,
-        url: "https://ontimeapp.ir/#pricing",
-        // اگر recurring باشد (ماهانه):
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
+        lowPrice: plansData?.plans.reduce((min: number, p: any) => Math.min(min, p.monthly_fee), Infinity) || "0",
+        highPrice: plansData?.plans.reduce((max: number, p: any) => Math.max(max, p.monthly_fee), 0) || "500000",
+        offerCount: plansData?.plans.length || 3,
+        offers: plansData?.plans.map((plan: any) => ({
+          "@type": "Offer",
+          name: plan.title,
           price: plan.monthly_fee.toString(),
           priceCurrency: "IRR",
-          referenceQuantity: {
-            "@type": "QuantitativeValue",
-            value: 1,
-            unitCode: "MON", // ماهانه
-          },
-        },
-        availability: "https://schema.org/InStock",
-      })) || [],
+          description: `${plan.free_sms_month.toLocaleString("fa-IR")} پیامک رایگان ماهانه به همراه تمام امکانات مدیریتی.`,
+          url: "https://ontimeapp.ir/#pricing",
+          availability: "https://schema.org/InStock",
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            price: plan.monthly_fee.toString(),
+            priceCurrency: "IRR",
+            billingIncrement: 1,
+            unitCode: "MON",  // ماهانه (از UN/CEFACT codes)
+            referenceQuantity: {
+              "@type": "QuantitativeValue",
+              value: 1,
+              unitText: "ماه"
+            }
+          }
+        })) || [],
+      },
+      provider: {
+        "@type": "Organization",
+        name: "آنتایم"
+      }
     }),
   }}
 />
