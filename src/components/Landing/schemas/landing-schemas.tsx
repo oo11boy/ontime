@@ -455,49 +455,40 @@ export const landingPageSchemas = [
     },
   },
 
-  // ۱۲. StatsSection - Organization + InteractionStatistic (اثبات اجتماعی و آمار موفقیت)
-  {
-    id: "stats-section-schema",
-    data: {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "آنتایم",
-      description:
-        "سامانه هوشمند نوبت‌دهی آنلاین برای کسب‌وکارهای خدماتی ایران",
-      url: "https://ontimeapp.ir",
-      interactionStatistic: [
-        {
-          "@type": "InteractionCounter",
-          interactionType: {
-            "@type": "InteractionType",
-            name: "https://schema.org/SubscribeAction",
-          },
-          userInteractionCount: 1500,
-        },
-        {
-          "@type": "InteractionCounter",
-          interactionType: {
-            "@type": "InteractionType",
-            name: "https://schema.org/TradeAction",
-          },
-          userInteractionCount: 45000,
-        },
-        {
-          "@type": "InteractionCounter",
-          interactionType: {
-            "@type": "InteractionType",
-            name: "https://schema.org/SendAction",
-          },
-          userInteractionCount: 125000,
-        },
-      ],
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.9",
-        reviewCount: "1500",
-        bestRating: "5",
-        worstRating: "1",
+// ۱۲. StatsSection - Organization + InteractionStatistic (اثبات اجتماعی و آمار موفقیت)
+{
+  id: "stats-section-schema",
+  data: {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "آنتایم",
+    description:
+      "سامانه هوشمند نوبت‌دهی آنلاین برای کسب‌وکارهای خدماتی ایران",
+    url: "https://ontimeapp.ir/",
+    interactionStatistic: [
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/SubscribeAction",  // مثلاً تعداد ثبت‌نام/اشتراک کاربران
+        userInteractionCount: 1500,
       },
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/TradeAction",     // مثلاً تعداد تراکنش‌ها یا رزروهای موفق
+        userInteractionCount: 45000,
+      },
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/SendAction",      // مثلاً تعداد پیامک‌های ارسالی
+        userInteractionCount: 125000,
+      },
+    ],
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      reviewCount: "1500",
+      bestRating: "5",
+      worstRating: "1",
     },
   },
+},
 ];

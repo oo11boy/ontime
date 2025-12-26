@@ -22,38 +22,43 @@ export default function PricingSection(): React.JSX.Element {
   return (
     <section id="pricing" className="py-24 bg-white" dir="rtl">
       {/* اسکیمای اختصاصی قیمت‌گذاری و تعرفه‌های آنتایم (Pricing Schema) */}
-      <Script
-        id="pricing-plans-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: "پلن‌های اشتراک آنتایم",
-            description:
-              "انواع تعرفه‌های نوبت‌دهی آنلاین بر اساس نیاز پیامکی کسب‌وکارها.",
-            brand: {
-              "@type": "Brand",
-              name: "آنتایم",
-            },
-            offers: {
-              "@type": "AggregateOffer",
-              priceCurrency: "IRR",
-              lowPrice: "0",
-              highPrice: "500000", // این مقدار را بر اساس بالاترین پلن خود تنظیم کنید
-              offerCount: plansData?.plans.length || "3",
-              offers: plansData?.plans.map((plan: any) => ({
-                "@type": "Offer",
-                name: plan.title,
-                price: plan.monthly_fee.toString(),
-                priceCurrency: "IRR",
-                description: `${plan.free_sms_month} پیامک رایگان ماهانه به همراه تمام امکانات مدیریتی.`,
-                url: "https://ontimeapp.ir/#pricing",
-              })),
-            },
-          }),
-        }}
-      />
+<Script
+  id="pricing-plans-schema"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "OfferCatalog",
+      name: "پلن‌های اشتراک آنتایم",
+      description: "انواع تعرفه‌های نوبت‌دهی آنلاین بر اساس نیاز پیامکی کسب‌وکارها با دسترسی کامل به تمام امکانات.",
+      provider: {
+        "@type": "Organization",
+        name: "آنتایم",
+      },
+      itemListElement: plansData?.plans.map((plan: any, index: number) => ({
+        "@type": "Offer",
+        position: index + 1,
+        name: plan.title,
+        price: plan.monthly_fee.toString(),
+        priceCurrency: "IRR",
+        description: `${plan.free_sms_month.toLocaleString("fa-IR")} پیامک رایگان ماهانه به همراه تمام امکانات مدیریتی.`,
+        url: "https://ontimeapp.ir/#pricing",
+        // اگر recurring باشد (ماهانه):
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: plan.monthly_fee.toString(),
+          priceCurrency: "IRR",
+          referenceQuantity: {
+            "@type": "QuantitativeValue",
+            value: 1,
+            unitCode: "MON", // ماهانه
+          },
+        },
+        availability: "https://schema.org/InStock",
+      })) || [],
+    }),
+  }}
+/>
       <div className="max-w-7xl mx-auto px-6">
         {/* هدر بخش قیمت‌گذاری - سئو شده */}
         <div className="text-center mb-20">
