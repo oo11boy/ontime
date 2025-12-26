@@ -7,9 +7,52 @@ import BlogSidebar from "./components/BlogSidebar";
 import MobileToolbar from "./components/MobileToolbar";
 import DOMPurify from "isomorphic-dompurify";
 import Link from "next/link";
+import { Metadata } from "next";
 
 export const revalidate = 0;
+// --- بخش جدید: تولید متادیتای پویا ---
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  // تغییر فیلد excerpt به description در کوئری
+  const posts: any[] = await query(`SELECT title, description FROM blog_posts WHERE slug = ?`, [slug]);
+  const post = posts[0];
 
+  if (!post) return { title: "مقاله پیدا نشد" };
+
+  const baseUrl = "https://ontimeapp.ir";
+  const title = `${post.title} | مجله آنتایم`;
+  // استفاده از فیلد description دیتابیس
+  const desc = post.description || `مطالعه مقاله ${post.title} در مجله نوبت‌دهی آنتایم`;
+  // تصویر پیش‌فرض چون مقالات تصویر ندارند
+  const defaultImage = `${baseUrl}/blog-og-image.jpg`; 
+
+  return {
+    title,
+    description: desc,
+    openGraph: {
+      title,
+      description: desc,
+      url: `${baseUrl}/blog/${slug}`,
+      siteName: "آنتایم",
+      images: [{ url: defaultImage, width: 1200, height: 630 }],
+      locale: "fa_IR",
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: desc,
+      images: [defaultImage],
+    },
+    alternates: {
+      canonical: `${baseUrl}/blog/${slug}`,
+    },
+  };
+}
 export default async function BlogPostPage({
   params,
 }: {
@@ -56,7 +99,7 @@ export default async function BlogPostPage({
         "@type": "BlogPosting",
         "@id": `${baseUrl}/blog/${slug}#article`,
         headline: post.title,
-        description: post.excerpt || post.title,
+        description: post.description || post.title,
         image: post.image_url || `${baseUrl}/blog-og-image.jpg`,
         datePublished: formattedDate,
         dateModified: post.updated_at

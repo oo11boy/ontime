@@ -5,7 +5,6 @@ import {
   MessageSquare, Calendar, Users2, Smartphone, 
   Clock, History, AlertCircle, CheckCircle2, ShieldCheck, Zap
 } from 'lucide-react';
-import Script from "next/script";
 
 interface FeatureCardProps {
   title: string;
@@ -18,57 +17,7 @@ interface FeatureCardProps {
 export default function FeaturesGrid(): React.JSX.Element {
   return (
     <section id="features" className="py-24 bg-white" aria-labelledby="core-features-title">
-     {/* اسکیمای لیست ویژگی‌های کلیدی پلتفرم آنتایم */}
-<Script
-  id="features-list-schema"
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      "name": "امکانات تخصصی پنل نوبت‌دهی آنتایم",
-      "description": "لیست قابلیت‌های کلیدی سیستم نوبت‌دهی هوشمند شامل اتوماسیون پیامکی و مدیریت مشتریان.",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "ارسال پیامک یادآوری نوبت خودکار",
-          "description": "سیستم هوشمند اطلاع‌رسانی پیامکی جهت کاهش نرخ کنسلی نوبت‌ها."
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "پنل مشتری تحت وب (PWA)",
-          "description": "دسترسی سریع مشتری به جزییات نوبت بدون نیاز به نصب اپلیکیشن."
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "تقویم آنلاین نوبت‌دهی شمسی",
-          "description": "مدیریت بصری زمان‌های کاری و جلوگیری از تداخل رزروها."
-        },
-        {
-          "@type": "ListItem",
-          "position": 4,
-          "name": "بانک اطلاعاتی و پرونده مشتریان",
-          "description": "تشکیل پروفایل خودکار و ذخیره تاریخچه مراجعات هر مشتری."
-        },
-        {
-          "@type": "ListItem",
-          "position": 5,
-          "name": "مدیریت لیست سیاه و کنسلی‌ها",
-          "description": "شناسایی هوشمند مشتریان بدقول بر اساس سوابق قبلی."
-        },
-        {
-          "@type": "ListItem",
-          "position": 6,
-          "name": "مدیریت چندین پرسنل و لاین کاری",
-          "description": "تفکیک تقویم‌های کاری برای مراکز بزرگ و کلینیک‌های چند تخصصی."
-        }
-      ]
-    })
-  }}
-/>
+
       <div className="max-w-7xl mx-auto px-6">
         
         {/* ۱. هدر بخش: استفاده از H2 با کلمات کلیدی استراتژیک */}

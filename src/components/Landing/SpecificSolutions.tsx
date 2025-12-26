@@ -60,30 +60,7 @@ export default function RealIndustrySolutions(): React.JSX.Element {
 
   return (
     <section id="industries" className="py-24 bg-white" dir="rtl">
-      {/* اسکیمای دسته‌بندی اصناف و راهکارهای نوبت‌دهی (Industry Solutions Schema) */}
-      <Script
-        id="industry-solutions-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            name: "راهکارهای تخصصی نوبت‌دهی آنتایم برای اصناف",
-            description:
-              "سامانه مدیریت نوبت و رزرو آنلاین ویژه آرایشگاه‌ها، پزشکان، وکلا و مراکز خدماتی.",
-            itemListElement: industries.map((industry, index) => ({
-              "@type": "ListItem",
-              position: index + 1,
-              item: {
-                "@type": "Service",
-                name: industry.title,
-                description: industry.description,
-                serviceType: industry.seoKeyword,
-              },
-            })),
-          }),
-        }}
-      />
+
       <div className="max-w-7xl mx-auto px-6">
         {/* هدر بخش: استفاده از H2 برای سئو و تاکید بر USP (مزیت رقابتی) */}
         <div className="text-right mb-16">

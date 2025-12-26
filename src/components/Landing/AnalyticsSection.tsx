@@ -8,44 +8,10 @@ import {
   TrendingDown,
   ArrowLeft,
 } from "lucide-react";
-import Script from "next/script";
 import React from "react";
 
 export default function AnalyticsSection(): React.JSX.Element {
-  const schemaData = {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    name: "پنل تحلیل و آنالیز هوشمند آنتایم",
-    description:
-      "امکانات پیشرفته مدیریتی شامل لیست سیاه مشتریان، آنالیز نرخ کنسلی و گزارش‌های مالی.",
-    provider: {
-      "@type": "Organization",
-      name: "آنتایم",
-    },
-    hasOfferCatalog: {
-      "@type": "OfferCatalog",
-      name: "ابزارهای هوش تجاری آنتایم",
-      itemListElement: [
-        {
-          "@type": "Offer",
-          itemOffered: {
-            "@type": "Service",
-            name: "شناسایی مشتریان بدقول (Blacklist)",
-            description:
-              "مانیتورینگ خودکار مشتریانی که نوبت‌های خود را لغو می‌کنند.",
-          },
-        },
-        {
-          "@type": "Offer",
-          itemOffered: {
-            "@type": "Service",
-            name: "آنالیز نوبت‌های موفق",
-            description: "گزارش‌گیری دقیق از عملکرد ماهانه پرسنل و خدمات.",
-          },
-        },
-      ],
-    },
-  };
+
 
   return (
     <section
@@ -53,11 +19,7 @@ export default function AnalyticsSection(): React.JSX.Element {
       className="py-24 bg-slate-50/50 border-b w-full border-slate-100"
       dir="rtl"
     >
-      <Script
-        id="analytics-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
-      />
+
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* بخش متنی - سئو شده برای کلمات مدیریتی */}

@@ -1,6 +1,4 @@
-"use client";
 
-import React from "react";
 import Navigation from "@/components/Landing/Navigation";
 import HeroSection from "@/components/Landing/HeroSection";
 import StatsSection from "@/components/Landing/StatsSection";
@@ -16,16 +14,30 @@ import FAQSection from "@/components/Landing/FAQSection";
 import FinalCTA from "@/components/Landing/FinalCTA";
 import EnhancedFooter from "@/components/Landing/EnhancedFooter";
 
-/**
- * OnTime Landing Page - SEO Optimized Structure 2025
- * کلمات کلیدی هدف: نوبت دهی آنلاین، رزرو آنلاین، مدیریت آرایشگاه، سیستم نوبت دهی مطب
- */
+import { Metadata } from "next";
+import { mainmetadata } from "./metadata";
+import Script from "next/script";
+import { landingPageSchemas } from "@/components/Landing/schemas/landing-schemas";
+
+export const metadata: Metadata = mainmetadata;
+
 export default function OnTimeLandingPage() {
   return (
     <div 
       className="flex flex-col min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700" 
       dir="rtl"
     >
+      {landingPageSchemas.map((schema) => (
+        <Script
+          key={schema.id}
+          id={schema.id}
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(schema.data),
+          }}
+        />
+      ))}
       {/* هدر سایت با دسترسی سریع */}
       <Navigation />
       
@@ -51,7 +63,7 @@ export default function OnTimeLandingPage() {
         <AnalyticsSection />
         <IntegrationEcosystem />
 
-        {/* ۷. آفر ۲ ماه رایگان (هوک بازاریابی) */}
+        {/* ۷. آفر ۳ ماه رایگان (هوک بازاریابی) */}
         <FreeTrialPromo />
 
         {/* ۸. ماشین حساب بازگشت سرمایه (ROI) */}

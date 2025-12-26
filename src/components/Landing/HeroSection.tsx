@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,7 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import Image from "next/image";
-import Script from "next/script";
+
 
 export default function HeroSection() {
   return (
@@ -20,30 +19,7 @@ export default function HeroSection() {
         className="relative py-12 lg:py-24 overflow-hidden bg-white"
         dir="rtl"
       >
-        {/* ۱. بهینه‌سازی اسکیما: استفاده از استراتژی غیرمسدودکننده */}
-        <Script
-          id="hero-webapp-schema"
-          type="application/ld+json"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              name: "اپلیکیشن نوبت‌دهی آنلاین آنتایم",
-              url: "https://ontimeapp.ir",
-              applicationCategory: "BusinessApplication",
-              operatingSystem: "All",
-              abstract:
-                "هوشمندترین سامانه نوبت‌دهی آنلاین برای آرایشگاه‌ها، پزشکان و مراکز خدماتی با قابلیت یادآوری پیامکی خودکار.",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "IRR",
-                description: "۲ ماه اشتراک رایگان برای شروع مدیریت هوشمند نوبت‌ها",
-              },
-            }),
-          }}
-        />
+
 
         <div className="absolute inset-0 bg-linear-to-br from-blue-50/50 via-white to-cyan-50/50 -z-10"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>

@@ -8,43 +8,7 @@ import Script from "next/script";
 export default function FinalCTA(): React.JSX.Element {
   return (
     <section className="py-24 bg-slate-50/50" dir="rtl">
-      {/* اسکیمای پیشنهاد ویژه و فراخوان نهایی (Special Offer Schema) */}
-      <Script
-        id="final-cta-offer-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: "پنل نوبت‌دهی هوشمند آنتایم",
-            image: "https://ontimeapp.ir/icons/icon-192.png",
-            description:
-              "سیستم مدیریت نوبت‌دهی آنلاین با قابلیت ارسال پیامک یادآوری و مدیریت پرسنل.",
-            brand: {
-              "@type": "Brand",
-              name: "آنتایم",
-            },
-            offers: {
-              "@type": "Offer",
-              url: "https://ontimeapp.ir/clientdashboard",
-              priceCurrency: "IRR",
-              price: "0",
-              availability: "https://schema.org/InStock",
-              description:
-                "۲ ماه اشتراک رایگان به همراه ۱۵۰ پیامک هدیه ماهانه برای شروع.",
-              seller: {
-                "@type": "Organization",
-                name: "آنتایم",
-              },
-            },
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: "4.9",
-              reviewCount: "1500",
-            },
-          }),
-        }}
-      />
+
       <div className="max-w-7xl mx-auto px-6">
         {/* باکس اصلی با طراحی Dark Mode جذاب برای کنتراست نهایی */}
         <div className="bg-slate-900 rounded-[3.5rem] lg:rounded-[5rem] p-10 lg:p-28 text-center text-white relative overflow-hidden shadow-[0_50px_100px_-20px_rgba(15,23,42,0.3)] border border-slate-800">

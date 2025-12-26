@@ -10,46 +10,10 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
-import Script from "next/script";
-
 export default function FreeTrialPromo(): React.JSX.Element {
   return (
     <section className="py-24 relative overflow-hidden bg-white" dir="rtl">
-      {/* اسکیمای تخصصی پیشنهاد دوره رایگان نرم‌افزار (Software SaaS Schema) */}
-      <Script
-        id="free-trial-promo-schema"
-        type="application/ld+json"
-        
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "پنل نوبت‌دهی آنلاین آنتایم",
-            operatingSystem: "Web, Android, iOS",
-            applicationCategory: "BusinessApplication",
-            offers: {
-              "@type": "Offer",
-              price: "0",
-              priceCurrency: "IRR",
-              description:
-                "۶۰ روز اشتراک کاملاً رایگان به همراه ۱۵۰ پیامک هدیه ماهانه بدون نیاز به ثبت کارت بانکی.",
-              availability: "https://schema.org/InStock",
-              url: "https://ontimeapp.ir/clientdashboard",
-            },
-            featureList: [
-              "۲ ماه اشتراک هدیه",
-              "۱۵۰ پیامک رایگان در ماه",
-              "پشتیبانی ویژه راه‌اندازی",
-              "بدون هزینه نصب",
-            ],
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: "5",
-              reviewCount: "1500",
-            },
-          }),
-        }}
-      />
+
       <div className="max-w-7xl mx-auto px-6">
         <div className="relative group">
           {/* افکت نوری و گرادینت پس‌زمینه برای جلب توجه حداکثری */}

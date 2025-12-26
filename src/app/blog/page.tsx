@@ -3,39 +3,54 @@ import { query } from '@/lib/db';
 import { Calendar, Clock, ChevronLeft, Zap, Sparkles, Home } from 'lucide-react';
 import Navigation from '@/components/Landing/Navigation';
 import EnhancedFooter from '@/components/Landing/EnhancedFooter';
-import { blogMetadata } from "@/app/layout"; 
 import type { Metadata } from "next";
+import { blogMetadata } from '../metadata';
 
 export const metadata: Metadata = blogMetadata;
 export const revalidate = 0;
 
 export default async function BlogListPage() {
-  // دریافت مقالات از دیتابیس
   const posts: any = await query(
     `SELECT title, slug, description, created_at, reading_time, category FROM blog_posts ORDER BY created_at DESC`
   );
 
   const baseUrl = "https://ontimeapp.ir";
 
-  // اسکیما برای صفحه لیست مقالات
+  // اسکیما بهینه شده به صورت گراف برای اتصال Breadcrumb به صفحه لیست
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "مجله تخصصی آنتایم",
-    "description": "آخرین مقالات و آموزش‌های تخصصی مدیریت کسب‌وکار و نوبت‌دهی آنلاین",
-    "url": `${baseUrl}/blog`,
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "خانه", "item": baseUrl },
-        { "@type": "ListItem", "position": 2, "name": "مجله آنتایم", "item": `${baseUrl}/blog` }
-      ]
-    }
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": `${baseUrl}/blog/#collection`,
+        "name": "مجله تخصصی آنتایم",
+        "description": "آخرین مقالات و آموزش‌های تخصصی مدیریت کسب‌وکار و نوبت‌دهی آنلاین",
+        "url": `${baseUrl}/blog`,
+        "publisher": { "@id": `${baseUrl}/#organization` },
+        "mainEntity": {
+          "@type": "ItemList",
+          "numberOfItems": posts.length,
+          "itemListElement": posts.map((post: any, index: number) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "url": `${baseUrl}/blog/${post.slug}`,
+            "name": post.title
+          }))
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${baseUrl}/blog/#breadcrumb`,
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "خانه", "item": baseUrl },
+          { "@type": "ListItem", "position": 2, "name": "مجله آنتایم", "item": `${baseUrl}/blog` }
+        ]
+      }
+    ]
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans overflow-x-hidden" dir="rtl">
-      {/* تزریق اسکیما */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -50,7 +65,6 @@ export default async function BlogListPage() {
           <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Breadcrumb بصری */}
         <nav className="flex items-center gap-2 text-gray-500 text-xs mb-8" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-blue-600 flex items-center gap-1 transition-colors">
             <Home size={14} /> خانه
@@ -75,14 +89,12 @@ export default async function BlogListPage() {
           </p>
         </header>
 
-        {/* لیست مقالات */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post: any, index: number) => (
+          {posts.map((post: any) => (
             <Link key={post.slug} href={`/blog/${post.slug}`} className="group h-full">
               <article 
                 className="relative bg-white rounded-[2.5rem] p-8 h-full flex flex-col border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 hover:-translate-y-2"
               >
-                {/* تگ دسته‌بندی */}
                 <div className="mb-6">
                   <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg uppercase tracking-wider">
                     {post.category || 'آموزش'}
@@ -93,14 +105,10 @@ export default async function BlogListPage() {
                   {post.title}
                 </h2>
                 
-   <div className="text-slate-500 leading-relaxed mb-8 grow font-medium text-sm line-clamp-3">
-<p className="text-slate-500 leading-relaxed mb-8 grow font-medium text-sm line-clamp-3">
-  {post.description.replace(/<\/?p>/g, '')}
-</p>
-
-</div>
-
-
+                <p className="text-slate-500 leading-relaxed mb-8 grow font-medium text-sm line-clamp-3">
+                  {/* حذف تگ‌های HTML احتمالی از دیسکریپشن برای نمایش تمیز */}
+                  {post.description?.replace(/<[^>]*>/g, '')}
+                </p>
 
                 <div className="flex items-center justify-between pt-6 border-t border-slate-50">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-slate-400">
@@ -123,7 +131,6 @@ export default async function BlogListPage() {
           ))}
         </div>
 
-        {/* وضعیت خالی */}
         {posts.length === 0 && (
           <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-slate-200">
             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">

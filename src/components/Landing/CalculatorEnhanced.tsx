@@ -2,7 +2,6 @@
 
 import { Wallet, Clock, Share2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import Script from "next/script";
 import React, { useState, useMemo } from "react";
 
 export default function CalculatorEnhanced(): React.JSX.Element {
@@ -35,26 +34,7 @@ export default function CalculatorEnhanced(): React.JSX.Element {
 
   return (
     <section id="roi" className="py-24 bg-slate-50/50" dir="rtl">
-      <Script
-        id="roi-calculator-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            name: "ماشین‌حساب هوشمند بازگشت سرمایه (ROI) آنتایم",
-            description:
-              "ابزاری برای محاسبه میزان جلوگیری از ضرر مالی و صرفه‌جویی در زمان با استفاده از پنل نوبت‌دهی آنلاین.",
-            applicationCategory: "BusinessApplication",
-            operatingSystem: "Web",
-            offers: {
-              "@type": "Offer",
-              price: "0",
-              priceCurrency: "IRR",
-            },
-          }),
-        }}
-      />
+
       <div className="max-w-7xl mx-auto px-6">
         <div className="bg-slate-900 rounded-[3rem] p-8 lg:p-16 text-white relative overflow-hidden shadow-2xl border border-slate-800">
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full -mr-48 -mt-48 blur-[120px] pointer-events-none"></div>

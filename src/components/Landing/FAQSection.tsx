@@ -8,7 +8,6 @@ import {
   HelpCircle,
   PhoneCall,
 } from "lucide-react";
-import Script from "next/script";
 import React, { useState } from "react";
 
 export default function FAQSection(): React.JSX.Element {
@@ -49,59 +48,7 @@ export default function FAQSection(): React.JSX.Element {
 
   return (
     <section id="faq" className="py-24 bg-slate-50/50" dir="rtl">
-      {/* اسکیمای تخصصی سوالات متداول (FAQ Schema) برای نمایش مستقیم در نتایج گوگل */}
-      <Script
-        id="faq-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: [
-              {
-                "@type": "Question",
-                name: "آیا مشتری من هم باید اپلیکیشن آنتایم را نصب کند؟",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "خیر، مشتری شما هیچ نیازی به نصب برنامه ندارد. تمام تعاملات از طریق پیامک و وب‌اپلیکیشن (PWA) انجام می‌شود که روی تمام گوشی‌ها به سرعت باز می‌شود.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "هزینه پیامک‌های یادآوری چگونه محاسبه می‌شود؟",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "شما بر اساس پلن انتخابی، ماهانه تعدادی پیامک هدیه دریافت می‌کنید و در صورت نیاز به پیامک بیشتر، می‌توانید پنل خود را با تعرفه رسمی شارژ کنید.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "سیستم چگونه از کنسلی نوبت‌ها جلوگیری می‌کند؟",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "آنتایم با ارسال پیامک‌های یادآوری هوشمند و ارائه لینک اختصاصی جهت جابجایی نوبت توسط مشتری، از خالی ماندن تایم کاری شما جلوگیری می‌کند.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "آیا امنیت داده‌ها و لیست مشتریان من تضمین شده است؟",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "بله، اطلاعات به صورت رمزنگاری شده در سرورهای ابری اختصاصی نگهداری می‌شود و شما مالک کامل داده‌ها هستید و امکان خروجی اکسل همیشه مهیاست.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "آنتایم برای چه کسب‌وکارهایی مناسب است؟",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "تمام صنف‌های خدماتی از جمله سالن‌های زیبایی، کلینیک‌های پزشکی، مشاوران، آموزشگاه‌ها و تعمیرگاه‌ها می‌توانند از آنتایم استفاده کنند.",
-                },
-              },
-            ],
-          }),
-        }}
-      />
+ 
       <div className="max-w-3xl mx-auto px-6">
         {/* هدر بخش - استفاده از کلمات کلیدی سئو */}
         <div className="text-center mb-16">

@@ -12,7 +12,6 @@ import {
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Script from "next/script";
 
 export default function EnhancedFooter(): React.JSX.Element {
   const currentYear = new Date().toLocaleDateString("fa-IR", {
@@ -24,16 +23,7 @@ export default function EnhancedFooter(): React.JSX.Element {
       className="bg-slate-950 text-slate-200 py-24 border-t border-white/5 relative overflow-hidden"
       dir="rtl"
     >
-      {/* Schema همان نسخه قبلی بماند */}
-      <Script
-        id="footer-organization-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            /* ... همان کد قبلی ... */
-          }),
-        }}
-      />
+
 
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full -mr-48 -mb-48 pointer-events-none"></div>
 
