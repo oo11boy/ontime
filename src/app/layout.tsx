@@ -4,8 +4,8 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 import Script from "next/script";
-import { GoogleAnalytics } from "@next/third-parties/google"; // وارد کردن کتابخانه
-// ۱. بهینه‌سازی فونت برای جلوگیری از جابجایی چیدمان (CLS)
+import { GoogleAnalytics } from "@next/third-parties/google"; 
+
 const yekanBakh = localFont({
   src: [
     {
@@ -24,6 +24,51 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+
+// متادیتای اختصاصی برای صفحه بلاگ (این را در صفحه /blog/page.tsx استفاده کنید)
+export const blogMetadata: Metadata = {
+  title: "مجله آنتایم | مقالات و آموزش‌های تخصصی مدیریت کسب‌وکار و نوبت‌دهی",
+  description: "آخرین مقالات و آموزش‌های تخصصی مدیریت کسب‌وکار در مجله آنتایم ✅ راهکارهای عملی برای افزایش نوبت‌دهی، مدیریت هوشمند مشتریان و رشد پایدار درآمد کسب‌وکار شما.",
+  keywords: [
+    "مقالات مدیریت کسب و کار",
+    "آموزش نوبت دهی آنلاین",
+    "مدیریت مشتریان آرایشگاه",
+    "افزایش درآمد کسب و کار",
+    "نکات مدیریت زمان",
+    "سامانه نوبت دهی",
+    "جذب مشتری بیشتر",
+    "یادآوری نوبت پیامکی",
+  ],
+  alternates: {
+    canonical: "https://ontimeapp.ir/blog",
+  },
+  openGraph: {
+    title: "مجله آنتایم | جدیدترین مقالات مدیریت کسب‌وکار و نوبت‌دهی آنلاین",
+    description: "راهکارهای عملی و حرفه‌ای برای افزایش نوبت‌ها، مدیریت هوشمند مشتریان و رشد پایدار درآمد شما. مقالات رایگان و به‌روز مجله آنتایم.",
+    url: "https://ontimeapp.ir/blog",
+    siteName: "آنتایم",
+    images: [
+      {
+        url: "https://ontimeapp.ir/blog-og-image.jpg", // پیشنهاد: یک تصویر اختصاصی برای بلاگ بسازید (1200x630)
+        width: 1200,
+        height: 630,
+        alt: "مجله تخصصی آنتایم - مقالات مدیریت کسب‌وکار",
+      },
+    ],
+    locale: "fa_IR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "مجله آنتایم | آموزش‌ها و مقالات مدیریت نوبت‌دهی",
+    description: "نکات کاربردی برای رشد کسب‌وکار: افزایش نوبت، جذب مشتری و مدیریت بهتر زمان.",
+    images: ["https://ontimeapp.ir/blog-og-image.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 export const metadata: Metadata = {
   metadataBase: new URL("https://ontimeapp.ir"),
   title: {

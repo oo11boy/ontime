@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|clientdashboard|admindashboard|login|admin-login|customer|_next|static|images|icons).*)",
+      source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|blog|clientdashboard|admindashboard|login|admin-login|customer|_next|static|images|icons).*)",
         destination: "/customer/booking/:token",
       },
     ];

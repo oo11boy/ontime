@@ -36,6 +36,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { title: "مدیریت کاربران" },
     { href: "/admindashboard/clients", icon: Users, label: "کلاینت‌ها" },
     { href: "/admindashboard/jobs", icon: Briefcase, label: "مشاغل" },
+        { title: "مدیریت وبلاگ" },
+    { href: "/admindashboard/blog", icon: Layers, label: "نوشته ها" },
     { title: "سرویس‌ها و مالی" },
     { href: "/admindashboard/plans", icon: Layers, label: "پلن‌ها" },
     { href: "/admindashboard/sms", icon: Smartphone, label: "پلن‌های پیامکی" },

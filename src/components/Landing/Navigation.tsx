@@ -9,6 +9,7 @@ import {
   X,
   Workflow,
   ArrowLeft,
+  Book,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,6 +36,11 @@ export default function Navigation(): React.JSX.Element {
       href: "#industries",
       label: "درباره آنتایم",
       icon: <Building size={18} />,
+    },
+       {
+      href: "../blog",
+      label: "مجله آنتایم",
+      icon: <Book size={18} />,
     },
   ];
 
