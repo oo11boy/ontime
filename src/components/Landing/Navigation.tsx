@@ -97,10 +97,10 @@ export default function Navigation(): React.JSX.Element {
           <div className="w-12 h-12 bg-linear-to-br  rounded-2xl flex items-center justify-center  group-hover:rotate-12 transition-all duration-500">
             <Image
               src="/icons/icon-192.png"
-              width={100}
-              height={100}
+            width={48} 
+          height={48} 
               alt="لوگو اپلیکیشن نوبت دهی آنتایم"
-              className="text-white rounded-2xl font-black text-2xl italic"
+              className="text-white object-cover rounded-2xl font-black text-2xl italic"
             />
           </div>
           <div className="flex flex-col">

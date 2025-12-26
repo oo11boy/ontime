@@ -67,7 +67,7 @@ export default function HeroSection() {
             </div>
 
             <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl font-medium">
-              با <strong>اپلیکیشن نوبت دهی آنتایم</strong>، مدیریت رزروها را
+              با اپلیکیشن نوبت دهی آنتایم، مدیریت رزروها را
               خودکار کنید. ارسال خودکار <strong>پیامک یادآوری نوبت</strong>،
               کاهش کنسلی‌ها و صفحه رزرو اختصاصی مشتری.
             </p>

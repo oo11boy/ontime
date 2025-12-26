@@ -50,7 +50,7 @@ export default function EnhancedFooter(): React.JSX.Element {
                 width={64}
                 height={64}
                 alt="لوگو آنتایم"
-                className="w-16 h-16 rounded-[1.25rem] group-hover:scale-105 transition-transform duration-500"
+                className="w-16 h-16 aspect-square object-cover rounded-[1.25rem] group-hover:scale-105 transition-transform duration-500"
               />
               <div className="flex flex-col">
                 <span className="text-3xl font-black tracking-tighter">

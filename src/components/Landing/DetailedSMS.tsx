@@ -150,10 +150,10 @@ export default function DetailedSMS(): React.JSX.Element {
               <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                 <Image
                   src="/icons/icon-192.png"
-                  height={100}
                   alt="اپلیکیشن نوبت دهی آنتایم"
-                  width={100}
-                  className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-600/40"
+                  height={40} 
+                  width={40}
+                  className="w-10 h-10 object-cover bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-600/40"
                 />
                 <div>
                   <div className="text-white text-sm font-bold">OnTime SMS</div>

@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 import Script from "next/script";
-
+import { GoogleAnalytics } from "@next/third-parties/google"; // وارد کردن کتابخانه
 // ۱. بهینه‌سازی فونت برای جلوگیری از جابجایی چیدمان (CLS)
 const yekanBakh = localFont({
   src: [
@@ -27,11 +27,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://ontimeapp.ir"),
   title: {
-    default: "آنتایم | سامانه هوشمند نوبت‌دهی آنلاین و مدیریت مشتریان",
+    default: "آنتایم | اپلیکیشن هوشمند نوبت دهی آنلاین و مدیریت مشتریان",
     template: "%s | آنتایم",
   },
   description:
-    "هوشمندترین سامانه نوبت‌دهی برای پزشکان، آرایشگاه‌ها و مراکز آموزشی. همین حالا با ۲ ماه اشتراک رایگان و ۱۵۰ پیامک هدیه ماهانه شروع کنید.",
+    "هوشمندترین سامانه و اپلیکیشن نوبت دهی برای پزشکان، آرایشگاه‌ها و مراکز آموزشی. همین حالا با ۲ ماه اشتراک رایگان و ۱۵۰ پیامک هدیه ماهانه شروع کنید.",
   keywords: [
     "نوبت دهی آنلاین",
     "مدیریت آرایشگاه",
@@ -40,6 +40,7 @@ export const metadata: Metadata = {
     "نرم افزار مدیریت نوبت",
     "رزرو آنلاین",
     "پنل مدیریت مشتریان",
+    "اپلیکیشن نوبت دهی آنلاین",
   ],
   authors: [{ name: "OnTime Team" }],
   publisher: "آنتایم",
@@ -48,7 +49,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "آنتایم - تحولی در مدیریت نوبت‌دهی کسب‌وکار شما",
-    description: "۲ ماه استفاده رایگان از تمامی امکانات پنل مدیریت و نوبت‌دهی آنتایم",
+    description:
+      "۲ ماه استفاده رایگان از تمامی امکانات پنل مدیریت و نوبت‌دهی آنتایم",
     url: "https://ontimeapp.ir",
     siteName: "آنتایم",
     images: [
@@ -64,13 +66,22 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "آنتایم | نوبت‌دهی آنلاین",
+    title: "آنتایم |اپلیکیشن نوبت‌دهی آنلاین",
     description: "۲ ماه رایگان نوبت‌های خود را هوشمند مدیریت کنید.",
     images: ["/icons/icon-192.png"],
   },
   robots: {
     index: true,
     follow: true,
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png" }, // برای مرورگرهای قدیمی
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }, // آیکون اصلی
+    ],
+    apple: [
+      { url: "/icons/apple-icon.png", sizes: "180x180", type: "image/png" }, // مخصوص آیفون
+    ],
   },
 };
 
@@ -97,7 +108,8 @@ export default function RootLayout({
       ratingValue: "4.9",
       reviewCount: "1240",
     },
-    description: "سیستم مدیریت نوبت و مشتریان برای آرایشگاه‌ها، پزشکان و مراکز خدماتی",
+    description:
+      "اپلیکیشن نوبت دهی آنلاین برای آرایشگاه‌ها، پزشکان و مراکز خدماتی",
   };
 
   return (
@@ -115,10 +127,8 @@ export default function RootLayout({
         style={{ backgroundColor: "#1B1F28" }}
         suppressHydrationWarning
       >
-        <Providers>
-          {children}
-        </Providers>
-
+        <Providers>{children}</Providers>
+        <GoogleAnalytics gaId="G-4RXRWQ2J4K" />
         <Toaster
           position="top-center"
           toastOptions={{
