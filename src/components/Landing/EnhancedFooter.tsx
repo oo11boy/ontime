@@ -121,23 +121,20 @@ export default function EnhancedFooter(): React.JSX.Element {
                 <div className="bg-white/5 p-2.5 rounded-xl group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
                   <Mail size={18} aria-hidden="true" />
                 </div>
-                <span className="text-sm">info@ontimeapp.ir</span>
+                <span className="text-sm">unicodewebdesign@gmail.com</span>
               </li>
               <li className="pt-4 flex gap-4">
-                <div
-                  role="img"
+                <Link
+              href={"../namad"}
                   aria-label="نماد اعتماد"
-                  className="w-16 h-16 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center grayscale hover:grayscale-0 transition-all cursor-pointer"
+                  className=" flex-col justify-center bg-white/5 rounded-2xl border border-white/10 flex items-center p-2 gap-4 grayscale hover:grayscale-0 transition-all cursor-pointer"
                 >
                   <ShieldCheck size={32} className="opacity-60" />
-                </div>
-                <div
-                  role="button"
-                  aria-label="ای‌نماد"
-                  className="w-16 h-16 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center grayscale hover:grayscale-0 transition-all cursor-pointer text-[10px] text-slate-300 text-center p-2 leading-tight"
-                >
-                  ای‌نماد
-                </div>
+ <span>
+                نماد اعتماد الکترونیکی
+            </span>
+                </Link>
+          
               </li>
             </ul>
           </div>

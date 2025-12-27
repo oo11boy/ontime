@@ -18,6 +18,7 @@ import { Metadata } from "next";
 import { mainmetadata } from "./metadata";
 import Script from "next/script";
 import { landingPageSchemas } from "@/components/Landing/schemas/landing-schemas";
+import Namad from "@/components/Landing/Namad";
 
 export const metadata: Metadata = mainmetadata;
 
@@ -74,10 +75,10 @@ export default function OnTimeLandingPage() {
 
         {/* ۱۰. سوالات متداول (Schema FAQ) */}
         <FAQSection />
-
+      <Namad/>
         {/* ۱۱. دعوت به اقدام نهایی */}
         <FinalCTA />
-        
+  
       </main>
 
       {/* فوتر بهینه شده برای لینک‌سازی داخلی */}
