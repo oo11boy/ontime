@@ -8,10 +8,11 @@ export const POST = withAuth(async (req: NextRequest, context) => {
 
   const connection = await dbPool.getConnection();
   try {
-    // ۱. ثبت در جدول لاگ پرداخت‌ها
+    // ۱. ثبت اولیه در جدول لاگ پرداخت‌ها (وضعیت pending)
+    // نکته: مبلغ را به ریال ذخیره می‌کنیم تا با لاگ زیبال همخوانی داشته باشد
     const [res]: any = await connection.execute(
       "INSERT INTO payments (user_id, amount, type, item_id, status) VALUES (?, ?, ?, ?, ?)",
-      [userId, amount * 10, type, item_id, "pending"] // مبلغ دریافتی (تومان) به ریال تبدیل می‌شود
+      [userId, amount * 10, type, item_id, "pending"]
     );
     const localPaymentId = res.insertId;
 
@@ -20,10 +21,11 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        merchant: "zibal", // در درگاه واقعی کد خود را بگذارید
-        amount: amount * 10,
+        merchant: process.env.ZIBAL_CODE, // حتماً در زمان عملیاتی شدن کد مرچنت خود را جایگزین کنید
+        amount: amount * 10, // تبدیل به ریال برای درگاه
         callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/client/payment/verify`,
-        description: description,
+        description:
+          description || `خرید ${type === "sms" ? "بسته پیامک" : "پلن"}`,
         orderId: localPaymentId.toString(),
       }),
     });
@@ -31,14 +33,22 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     const zibalData = await zibalResponse.json();
 
     if (zibalData.result === 100) {
+      // ۳. ذخیره trackId دریافتی از زیبال برای استفاده در مرحله Verify
       await connection.execute(
         "UPDATE payments SET track_id = ? WHERE id = ?",
         [zibalData.trackId, localPaymentId]
       );
-      return NextResponse.json({ trackId: zibalData.trackId });
+
+      return NextResponse.json({
+        trackId: zibalData.trackId,
+        // آدرس هدایت کاربر به درگاه (در فرانت استفاده کنید)
+        gatewayUrl: `https://gateway.zibal.ir/start/${zibalData.trackId}`,
+      });
+    } else {
+      throw new Error(`خطای زیبال در ایجاد تراکنش: ${zibalData.result}`);
     }
-    throw new Error(`خطای زیبال: ${zibalData.result}`);
   } catch (error: any) {
+    console.error("Payment Request Error:", error);
     return NextResponse.json({ message: error.message }, { status: 500 });
   } finally {
     connection.release();

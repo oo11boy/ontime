@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        merchant: "zibal", // کد مرچنت واقعی خود را قرار دهید
+        merchant: process.env.ZIBAL_CODE, // کد مرچنت واقعی خود را قرار دهید
         trackId: trackId,
       }),
     });
@@ -60,14 +60,13 @@ export async function GET(req: NextRequest) {
       // ب) تحویل محصول بر اساس نوع تراکنش
       if (payment.type === "sms") {
         // --- حالت خرید بسته پیامکی ---
-        const smsCount = payment.item_id; // در زمان Request تعداد را در item_id ذخیره کرده بودیم
+        const smsCount = payment.item_id;
 
-        // ۱. ثبت در تاریخچه خریدها
         await connection.execute(
           `INSERT INTO smspurchase 
-                    (user_id, type, amount_paid, sms_amount, remaining_sms, valid_from, expires_at, status) 
-                    VALUES (?, 'one_time_sms', ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'active')`,
-          [userId, payment.amount / 10, smsCount, smsCount]
+            (user_id, type, amount_paid, ref_number, sms_amount, remaining_sms, valid_from, expires_at, status) 
+            VALUES (?, 'one_time_sms', ?, ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'active')`,
+          [userId, payment.amount / 10, vData.refNumber, smsCount, smsCount]
         );
 
         // ۲. اضافه کردن مستقیم به اعتبار خریداری شده یوزر
@@ -92,12 +91,12 @@ export async function GET(req: NextRequest) {
           // ۲. آپدیت اطلاعات یوزر (پلن جدید و شارژ ماهانه)
           await connection.execute(
             `UPDATE users SET 
-                        plan_key = ?, 
-                        sms_balance = ?, 
-                        sms_monthly_quota = ?, 
-                        quota_starts_at = CURDATE(), 
-                        quota_ends_at = DATE_ADD(CURDATE(), INTERVAL ? DAY)
-                        WHERE id = ?`,
+              plan_key = ?, 
+              sms_balance = ?, 
+              sms_monthly_quota = ?, 
+              quota_starts_at = CURDATE(), 
+              quota_ends_at = DATE_ADD(CURDATE(), INTERVAL ? DAY)
+              WHERE id = ?`,
             [
               plan.plan_key,
               plan.free_sms_month,
@@ -107,14 +106,15 @@ export async function GET(req: NextRequest) {
             ]
           );
 
-          // ۳. ثبت در تاریخچه خریدها
+          // ۳. ثبت در تاریخچه خریدها (با اضافه کردن کد پیگیری بانکی)
           await connection.execute(
             `INSERT INTO smspurchase 
-                        (user_id, type, amount_paid, sms_amount, remaining_sms, valid_from, expires_at, status) 
-                        VALUES (?, 'monthly_subscription', ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL ? DAY), 'active')`,
+              (user_id, type, amount_paid, ref_number, sms_amount, remaining_sms, valid_from, expires_at, status) 
+              VALUES (?, 'monthly_subscription', ?, ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL ? DAY), 'active')`,
             [
               userId,
               payment.amount / 10,
+              vData.refNumber, // ذخیره کد پیگیری برای پلن
               plan.free_sms_month,
               plan.free_sms_month,
               durationDays,

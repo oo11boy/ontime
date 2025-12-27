@@ -2,7 +2,16 @@
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Package, History, CheckCircle2, ReceiptText, Zap, Info } from "lucide-react";
+import {
+  X,
+  Package,
+  History,
+  CheckCircle2,
+  ReceiptText,
+  Zap,
+  Info,
+  Hash,
+} from "lucide-react"; // اضافه کردن Hash
 
 interface PurchasedPackage {
   id: number;
@@ -12,6 +21,7 @@ interface PurchasedPackage {
   expires_at: string | null;
   amount_paid: number;
   created_at: string;
+  ref_number?: string; // اضافه کردن این فیلد برای کد پیگیری بانکی
 }
 
 interface DashboardSmsDetailsModalProps {
@@ -22,7 +32,9 @@ interface DashboardSmsDetailsModalProps {
   purchasedPackages: PurchasedPackage[];
 }
 
-export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> = ({
+export const DashboardSmsDetailsModal: React.FC<
+  DashboardSmsDetailsModalProps
+> = ({
   isOpen,
   onClose,
   planInitialSms,
@@ -31,16 +43,12 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
 }) => {
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
 
-  // تابع اصلاح شده برای تبدیل تاریخ بدون خطا
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return "تاریخ نامشخص";
     try {
-      // رفع مشکل فرمت دیتابیس (جایگزینی فاصله با T برای استاندارد ISO)
       const standardizedDate = dateStr.replace(" ", "T");
       const date = new Date(standardizedDate);
-      
       if (isNaN(date.getTime())) return "تاریخ نامعتبر";
-      
       return date.toLocaleDateString("fa-IR", {
         year: "numeric",
         month: "long",
@@ -53,12 +61,13 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
 
   const formatNumber = (num: number): string => num.toLocaleString("fa-IR");
 
-  // تفکیک بسته‌ها بر اساس وضعیت (فعال/تاریخچه)
   const { activePacks, historyPacks } = useMemo(() => {
     return {
       activePacks: purchasedPackages.filter((pkg) => pkg.remaining_sms > 0),
       historyPacks: [...purchasedPackages].sort(
-        (a, b) => new Date(b.created_at || b.valid_from).getTime() - new Date(a.created_at || a.valid_from).getTime()
+        (a, b) =>
+          new Date(b.created_at || b.valid_from).getTime() -
+          new Date(a.created_at || a.valid_from).getTime()
       ),
     };
   }, [purchasedPackages]);
@@ -88,9 +97,14 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <Zap className="w-5 h-5 text-blue-400" />
               </div>
-              <h3 className="text-lg font-bold text-white">مدیریت اعتبار پیامک</h3>
+              <h3 className="text-lg font-bold text-white">
+                مدیریت اعتبار پیامک
+              </h3>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-800 rounded-full transition"
+            >
               <X className="w-6 h-6 text-gray-400" />
             </button>
           </div>
@@ -100,7 +114,9 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
             <button
               onClick={() => setActiveTab("active")}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${
-                activeTab === "active" ? "bg-emerald-600 text-white shadow-lg" : "text-gray-500"
+                activeTab === "active"
+                  ? "bg-emerald-600 text-white shadow-lg"
+                  : "text-gray-500"
               }`}
             >
               <CheckCircle2 className="w-4 h-4" /> موجودی فعلی
@@ -108,7 +124,9 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
             <button
               onClick={() => setActiveTab("history")}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${
-                activeTab === "history" ? "bg-slate-700 text-white shadow-lg" : "text-gray-500"
+                activeTab === "history"
+                  ? "bg-slate-700 text-white shadow-lg"
+                  : "text-gray-500"
               }`}
             >
               <History className="w-4 h-4" /> تاریخچه خرید
@@ -116,7 +134,7 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
           </div>
 
           {/* Content */}
-          <div className="p-5 h-[400px] overflow-y-auto custom-scrollbar">
+          <div className="p-5 h-[420px] overflow-y-auto custom-scrollbar">
             <AnimatePresence mode="wait">
               {activeTab === "active" ? (
                 <motion.div
@@ -126,34 +144,49 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
                   exit={{ opacity: 0, x: 20 }}
                   className="space-y-4"
                 >
-                  {/* پلن اصلی */}
-                  <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl border-r-4 border-r-emerald-500">
-                    <p className="text-[10px] text-emerald-400 font-bold mb-1">سهمیه طرح اصلی (ماهانه)</p>
+                  <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl border-r-4 border-r-emerald-500 shadow-inner">
+                    <p className="text-[10px] text-emerald-400 font-bold mb-1">
+                      سهمیه طرح اصلی (ماهانه)
+                    </p>
                     <div className="flex justify-between items-end">
                       <span className="text-gray-400 text-xs">باقیمانده:</span>
                       <span className="text-white font-black text-xl">
                         {formatNumber(planSmsBalance)}
-                        <span className="text-xs text-gray-500 font-normal mr-1">/ {formatNumber(planInitialSms)}</span>
+                        <span className="text-xs text-gray-500 font-normal mr-1">
+                          / {formatNumber(planInitialSms)}
+                        </span>
                       </span>
                     </div>
                   </div>
 
-                  {/* بسته‌های فعال */}
                   {activePacks.length > 0 ? (
                     activePacks.map((pkg) => (
-                      <div key={pkg.id} className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl border-r-4 border-r-blue-500">
+                      <div
+                        key={pkg.id}
+                        className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl border-r-4 border-r-blue-500 shadow-inner"
+                      >
                         <div className="flex justify-between items-center mb-1">
-                          <p className="text-[10px] text-blue-400 font-bold uppercase">بسته افزودنی نامحدود</p>
-                          <span className="text-[9px] text-gray-500 italic">خرید: {formatDate(pkg.created_at || pkg.valid_from)}</span>
+                          <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                            بسته افزودنی
+                          </p>
+                          <span className="text-[9px] text-gray-500 italic">
+                            {formatDate(pkg.created_at || pkg.valid_from)}
+                          </span>
                         </div>
                         <div className="flex justify-between items-end">
-                          <span className="text-gray-400 text-xs">اعتبار زنده:</span>
-                          <span className="text-white font-bold text-lg">{formatNumber(pkg.remaining_sms)} پیامک</span>
+                          <span className="text-gray-400 text-xs">
+                            اعتبار باقیمانده:
+                          </span>
+                          <span className="text-white font-bold text-lg">
+                            {formatNumber(pkg.remaining_sms)} پیامک
+                          </span>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="py-10 text-center text-gray-600 text-xs italic">بسته افزودنی فعالی ندارید.</div>
+                    <div className="py-10 text-center text-gray-600 text-xs italic bg-slate-800/20 rounded-2xl border border-dashed border-slate-700">
+                      بسته افزودنی فعالی ندارید.
+                    </div>
                   )}
                 </motion.div>
               ) : (
@@ -165,21 +198,51 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
                   className="space-y-3"
                 >
                   {historyPacks.map((pkg) => (
-                    <div key={pkg.id} className="bg-slate-800/30 border border-slate-800 p-4 rounded-2xl flex justify-between items-center group">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500/10 transition-colors">
-                          <ReceiptText className="w-4 h-4 text-gray-400 group-hover:text-blue-400" />
+                    <div
+                      key={pkg.id}
+                      className="bg-slate-800/30 border border-slate-800 p-4 rounded-2xl group transition-all hover:bg-slate-800/50"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500/10 transition-colors">
+                            <ReceiptText className="w-4 h-4 text-gray-400 group-hover:text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-gray-200 text-sm font-bold">
+                              {formatNumber(pkg.sms_amount)} پیامک
+                            </p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">
+                              {formatDate(pkg.created_at || pkg.valid_from)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-gray-200 text-sm font-bold">{formatNumber(pkg.sms_amount)} پیامک</p>
-                          <p className="text-[10px] text-gray-500 mt-1">خرید در: {formatDate(pkg.created_at || pkg.valid_from)}</p>
+                        <div className="text-left">
+                          <p className="text-xs font-bold text-blue-400">
+                            {formatNumber(pkg.amount_paid)} تومان
+                          </p>
+                          <div
+                            className={`mt-1 inline-block px-2 py-0.5 rounded-full text-[8px] font-bold ${
+                              pkg.remaining_sms > 0
+                                ? "bg-emerald-500/10 text-emerald-500"
+                                : "bg-gray-500/10 text-gray-500"
+                            }`}
+                          >
+                            {pkg.remaining_sms > 0 ? "فعال" : "پایان یافته"}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-left">
-                        <p className="text-xs font-bold text-blue-400">{formatNumber(pkg.amount_paid)} تومان</p>
-                        <p className={`text-[9px] mt-1 ${pkg.remaining_sms > 0 ? "text-emerald-500" : "text-gray-600"}`}>
-                          {pkg.remaining_sms > 0 ? "دارای موجودی" : "مصرف شده"}
-                        </p>
+
+                      {/* بخش نمایش کد پیگیری */}
+                      <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Hash className="w-3 h-3 text-gray-600" />
+                          <span className="text-[10px] text-gray-500">
+                            کد پیگیری:
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-gray-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                          {pkg.ref_number || "تراکنش رایگان/سیستمی"}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -191,7 +254,9 @@ export const DashboardSmsDetailsModal: React.FC<DashboardSmsDetailsModalProps> =
           {/* Footer Info */}
           <div className="p-4 bg-slate-950/80 flex items-center justify-center gap-2 border-t border-slate-800">
             <Info className="w-3 h-3 text-gray-500" />
-            <p className="text-[10px] text-gray-500">اعتبار بسته‌های خریداری شده انقضا ندارد و تا پایان مصرف باقی می‌ماند.</p>
+            <p className="text-[10px] text-gray-500">
+              کدهای پیگیری برای استعلام از درگاه بانکی معتبر هستند.
+            </p>
           </div>
         </motion.div>
       </motion.div>
