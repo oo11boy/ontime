@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN users u ON b.user_id = u.id
       WHERE b.customer_token = ?
         AND b.token_expires_at > NOW()
-        AND b.status IN ('active', 'done')`,
+        AND b.status IN ('active', 'done', 'cancelled')`,
       [token]
     );
 
@@ -108,7 +108,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // کوئری تمیز و بدون خطای پارسینگ
     const bookings = await query(
       `SELECT 
         b.id,
@@ -133,69 +132,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const booking = bookings[0] as {
-      id: number;
-      status: string;
-      change_count: number;
-      user_id: number;
-      client_name: string;
-      client_phone: string;
-      booking_date: string;
-      booking_time: string;
-    };
+    const booking = bookings[0] as any;
 
+    // --- عملیات لغو نوبت ---
     if (action === "cancel") {
       if (booking.status !== "active") {
-        return NextResponse.json(
-          { success: false, message: "این نوبت قابل لغو نیست" },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: "این نوبت قابل لغو نیست" }, { status: 400 });
       }
 
-      await query(
-        `UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?`,
-        [booking.id]
-      );
+      await query(`UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?`, [booking.id]);
 
+      // ۱. ثبت در لاگ پیامک برای مشتری
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
-        [
-          booking.user_id,
-          booking.client_phone,
-          `نوبت شما لغو شد. تاریخ: ${booking.booking_date} - زمان: ${booking.booking_time}`,
-        ]
+        [booking.user_id, booking.client_phone, `نوبت شما لغو شد. تاریخ: ${booking.booking_date} - زمان: ${booking.booking_time}`]
       );
 
-      return NextResponse.json({
-        success: true,
-        message: "نوبت با موفقیت لغو شد",
-      });
+      // ۲. ثبت در جدول اعلان‌ها برای آرایشگر (پنل مدیریت)
+      await query(
+        `INSERT INTO notifications (user_id, booking_id, type, message)
+         VALUES (?, ?, 'cancel', ?)`,
+        [booking.user_id, booking.id, `مشتری (${booking.client_name}) نوبت خود را برای تاریخ ${booking.booking_date} لغو کرد.`]
+      );
+
+      return NextResponse.json({ success: true, message: "نوبت با موفقیت لغو شد" });
     }
 
+    // --- عملیات تغییر زمان نوبت ---
     if (action === "reschedule") {
       if (booking.status !== "active") {
-        return NextResponse.json(
-          { success: false, message: "این نوبت قابل تغییر نیست" },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: "این نوبت قابل تغییر نیست" }, { status: 400 });
       }
 
-      if (booking.change_count >= 3) {
-        return NextResponse.json(
-          { success: false, message: "تعداد مجاز تغییرات تمام شده" },
-          { status: 400 }
-        );
+      if (booking.change_count >= 1) { // محدودیت تغییر (مثلاً ۱ بار)
+        return NextResponse.json({ success: false, message: "تعداد مجاز تغییرات تمام شده" }, { status: 400 });
       }
 
       const { newDate, newTime } = data;
       if (!newDate || !newTime) {
-        return NextResponse.json(
-          { success: false, message: "تاریخ و زمان جدید الزامی است" },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: "تاریخ و زمان جدید الزامی است" }, { status: 400 });
       }
 
+      // چک کردن تداخل زمانی
       const conflicts = await query(
         `SELECT id FROM booking 
          WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?`,
@@ -203,10 +182,7 @@ export async function POST(req: NextRequest) {
       );
 
       if (conflicts.length > 0) {
-        return NextResponse.json(
-          { success: false, message: "این زمان قبلاً رزرو شده است" },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: "این زمان قبلاً رزرو شده است" }, { status: 400 });
       }
 
       await query(
@@ -216,31 +192,26 @@ export async function POST(req: NextRequest) {
         [newDate, newTime, booking.id]
       );
 
+      // ۱. ثبت در لاگ پیامک برای مشتری
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'reschedule', 'sent', NOW())`,
-        [
-          booking.user_id,
-          booking.client_phone,
-          `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newDate} - زمان جدید: ${newTime}`,
-        ]
+        [booking.user_id, booking.client_phone, `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newDate} - زمان جدید: ${newTime}`]
       );
 
-      return NextResponse.json({
-        success: true,
-        message: "زمان نوبت با موفقیت تغییر یافت",
-      });
+      // ۲. ثبت در جدول اعلان‌ها برای آرایشگر (پنل مدیریت)
+      await query(
+        `INSERT INTO notifications (user_id, booking_id, type, message)
+         VALUES (?, ?, 'reschedule', ?)`,
+        [booking.user_id, booking.id, `مشتری (${booking.client_name}) زمان نوبت خود را به ${newDate} ساعت ${newTime} تغییر داد.`]
+      );
+
+      return NextResponse.json({ success: true, message: "زمان نوبت با موفقیت تغییر یافت" });
     }
 
-    return NextResponse.json(
-      { success: false, message: "عملیات نامعتبر" },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, message: "عملیات نامعتبر" }, { status: 400 });
   } catch (error: any) {
     console.error("خطا در پردازش درخواست:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "خطای سرور" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: error.message || "خطای سرور" }, { status: 500 });
   }
 }

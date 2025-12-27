@@ -203,7 +203,7 @@ export default function CommentsPage() {
               {/* Card Header */}
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${comment.avatarColor} flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
+                  <div className={`w-12 h-12 rounded-full bg-linear-to-br ${comment.avatarColor} flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
                     {comment.userName[0]}
                   </div>
                   <div>
@@ -259,7 +259,7 @@ export default function CommentsPage() {
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="پاسخ خود را بنویسید..."
-                    className="w-full bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-3 text-sm focus:border-emerald-400 outline-none text-white min-h-[80px]"
+                    className="w-full bg-[#1a1e26] border border-emerald-500/30 rounded-xl p-3 text-sm focus:border-emerald-400 outline-none text-white min-h-20"
                   ></textarea>
                   <div className="flex justify-end gap-2 mt-2">
                     <button onClick={() => setReplyingTo(null)} className="text-xs text-gray-400 hover:text-white px-3 py-2">انصراف</button>

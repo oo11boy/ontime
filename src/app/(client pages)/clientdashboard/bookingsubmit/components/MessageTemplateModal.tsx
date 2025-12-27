@@ -37,7 +37,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center sm:items-center items-end p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:items-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-[#0f1115]/80 backdrop-blur-md transition-opacity"
@@ -49,7 +49,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
         <div className="bg-[#1a1e26] border border-white/10 rounded-[2.5rem] shadow-2xl max-h-[85vh] flex flex-col overflow-hidden">
           
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02]">
+          <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/2">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-emerald-400" />
@@ -75,7 +75,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                 <p className="text-gray-400 mt-4 text-sm font-medium">در حال دریافت الگوها...</p>
               </div>
             ) : templates.length === 0 ? (
-              <div className="text-center py-20 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
+              <div className="text-center py-20 bg-white/2 rounded-3xl border border-dashed border-white/10">
                 <MessageCircle className="w-12 h-12 text-gray-700 mx-auto mb-3" />
                 <p className="text-gray-500 text-sm">لیست الگوها خالی است</p>
               </div>
@@ -90,7 +90,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                     }}
                     className="group relative w-full text-right transition-all active:scale-[0.98]"
                   >
-                    <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/[0.03] rounded-3xl transition-colors border border-white/5 group-hover:border-emerald-500/30" />
+                    <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/3 rounded-3xl transition-colors border border-white/5 group-hover:border-emerald-500/30" />
                     
                     <div className="relative p-5 space-y-3">
                       <div className="flex justify-between items-center">
@@ -105,7 +105,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                         </div>
                       </div>
 
-                      <div className="bg-[#0f1115]/50 rounded-2xl p-4 border border-white/[0.03]">
+                      <div className="bg-[#0f1115]/50 rounded-2xl p-4 border border-white/3">
                         <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line group-hover:text-white transition-colors">
                           {formatPreviewMessage(template.content)}
                         </p>
@@ -125,7 +125,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
           </div>
 
           {/* Footer Note */}
-          <div className="p-4 bg-white/[0.02] border-t border-white/5 text-center">
+          <div className="p-4 bg-white/2 border-t border-white/5 text-center">
             <p className="text-[10px] text-gray-500">
               متغیرهایی مثل تاریخ و ساعت هنگام ارسال به صورت خودکار جایگزین می‌شوند.
             </p>

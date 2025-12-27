@@ -103,7 +103,7 @@ export default function AdminTemplatesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {templates.map((tpl: any) => (
-              <div key={tpl.id} className="bg-[#181818] p-6 rounded-[2rem] border border-gray-800/50 hover:border-emerald-500/40 transition-all group relative overflow-hidden">
+              <div key={tpl.id} className="bg-[#181818] p-6 rounded-4xl border border-gray-800/50 hover:border-emerald-500/40 transition-all group relative overflow-hidden">
                 <div className="flex justify-between items-start mb-5 relative z-10">
                   <div className="flex flex-col gap-2">
                     <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase w-fit ${
@@ -130,7 +130,7 @@ export default function AdminTemplatesPage() {
                   <span>{tpl.payamresan_id}</span>
                 </div>
 
-                <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-2 min-h-[4.5rem]">
+                <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-2 min-h-18">
                   "{tpl.content}"
                 </p>
               </div>
