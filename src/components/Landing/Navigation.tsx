@@ -46,7 +46,7 @@ export default function Navigation(): React.JSX.Element {
 
   return (
     <nav
-      className={`fixed top-0 w-full z-100 transition-all duration-300 ${
+      className={`fixed top-0 w-full z-500  transition-all duration-300 ${
         scrolled
           ? "bg-white/90 backdrop-blur-xl shadow-lg py-3"
           : "bg-transparent py-5"
@@ -109,7 +109,7 @@ export default function Navigation(): React.JSX.Element {
       {/* منوی موبایل (Overlay) */}
       <div
         className={`
-          lg:hidden fixed inset-0 h-screen bg-white z-200 transition-all duration-500 ease-in-out transform flex flex-col
+          lg:hidden fixed inset-0 pb-5 h-screen bg-white z-200 transition-all duration-500 ease-in-out transform flex flex-col
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
