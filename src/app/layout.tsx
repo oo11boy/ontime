@@ -70,7 +70,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>
-        <GoogleAnalytics gaId="G-4RXRWQ2J4K" />
+        <GoogleAnalytics gaId="G-8PVVM0N5SV" />
         <Toaster
           position="top-center"
           toastOptions={{
