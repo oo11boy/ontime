@@ -4,6 +4,7 @@ import { Metadata } from "next";
 export const blogMetadata: Metadata = {
   title: "مجله آنتایم | مقالات و آموزش‌های تخصصی مدیریت کسب‌وکار و نوبت‌دهی",
   description: "آخرین مقالات و آموزش‌های تخصصی مدیریت کسب‌وکار در مجله آنتایم ✅ راهکارهای عملی برای افزایش نوبت‌دهی، مدیریت هوشمند مشتریان و رشد پایدار درآمد کسب‌وکار شما.",
+ 
   keywords: [
     "مقالات مدیریت کسب و کار",
     "آموزش نوبت دهی آنلاین",
@@ -81,8 +82,12 @@ export const mainmetadata: Metadata = {
         alt: "پنل مدیریت نوبت‌دهی آنتایم",
       },
     ],
+    
     locale: "fa_IR",
     type: "website",
+  },
+  other: {
+    enamad: "39393880",
   },
   twitter: {
     card: "summary_large_image",
