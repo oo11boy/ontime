@@ -14,17 +14,14 @@ import { DashboardWelcomeModal } from "./components/DashboardWelcomeModal";
 import { DashboardRecentAppointments } from "./components/DashboardRecentAppointments";
 
 // Import React Query Hooks
-import { useDashboard } from "@/hooks/useDashboard";
-import { useRecentBookings } from "@/hooks/useBookings";
+import { useDashboard } from "@/hooks/useDashboard";;
 import InstallPWA from "./components/InstallPWA";
 import IosInstallPrompt from "./components/IosInstallPrompt";
 
 export default function DashboardPage() {
-  const router = useRouter();
 
   // React Query Hooks
   const { data: dashboardData, isLoading, error, refetch } = useDashboard();
-  const { data: recentBookingsData } = useRecentBookings();
 
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
@@ -96,14 +93,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Recent Appointments */}
-            <DashboardRecentAppointments
-              onFetchAppointments={async () => {
-                if (recentBookingsData?.success) {
-                  return recentBookingsData.appointments ?? [];
-                }
-                return [];
-              }}
-            />
+          <DashboardRecentAppointments />
           </div>
         </div>
 
