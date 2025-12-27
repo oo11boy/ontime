@@ -174,13 +174,8 @@ export default function Header() {
       )}
 
       <div className="bg-[#1B1F28] border border-gray-700/50 rounded-2xl p-3 md:p-4 flex justify-between items-center shadow-2xl relative z-95">
-        <div className="flex items-center">
-          <span
-            className="text-emerald-400 font-black text-xl md:text-2xl tracking-tighter cursor-pointer"
-            onClick={() => router.push("/clientdashboard")}
-          >
-            ONTIME
-          </span>
+<div className="flex items-center">
+          <span className="text-emerald-400 font-black text-xl md:text-2xl tracking-tighter cursor-pointer" onClick={() => router.push('/clientdashboard')}>ONTIME</span>
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
