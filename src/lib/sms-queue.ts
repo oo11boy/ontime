@@ -61,8 +61,8 @@ async function sendToIPPANEL(jobData: any) {
       status = "sent";
       console.log(`✅ ارسال موفق. شناسه: ${messageId}`);
     } else {
-      errorMsg = result.meta?.message || "خطای پنل";
-      throw new Error(errorMsg);
+      errorMsg = result?.meta?.message || "خطای پنل";
+  
     }
   } catch (err: any) {
     status = "failed";
