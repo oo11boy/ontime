@@ -1,4 +1,3 @@
-// src/app/(client pages)/clientdashboard/components/DashboardPlanStatus.tsx
 import React from "react";
 import { Sparkles, Star } from "lucide-react";
 import Link from "next/link";
@@ -6,6 +5,7 @@ import Link from "next/link";
 interface DashboardPlanStatusProps {
   planTitle: string;
   trialEndsAt: string | null | undefined;
+  quotaEndsAt: string | null | undefined; // اضافه شده برای پلن‌های غیر رایگان
 }
 
 const calculateRemainingDays = (endDate: string | null | undefined): number | null => {
@@ -17,13 +17,14 @@ const calculateRemainingDays = (endDate: string | null | undefined): number | nu
     
     if (isNaN(end.getTime())) return null;
 
+    // حذف ساعت برای محاسبه دقیق روزها
     end.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
 
     const diffTime = end.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    return Math.max(0, diffDays);
+    return diffDays; // اجازه می‌دهیم اعداد منفی هم برگردند تا منقضی شده را تشخیص دهیم
   } catch (e) {
     return null;
   }
@@ -31,20 +32,27 @@ const calculateRemainingDays = (endDate: string | null | undefined): number | nu
 
 export const DashboardPlanStatus: React.FC<DashboardPlanStatusProps> = ({ 
   planTitle, 
-  trialEndsAt 
+  trialEndsAt,
+  quotaEndsAt
 }) => {
-  const remainingDays = calculateRemainingDays(trialEndsAt);
+  // اولویت با تاریخ انقضای کوتای ماهانه است، اگر نبود از تاریخ آزمایشی استفاده می‌کند
+  const finalEndDate = quotaEndsAt || trialEndsAt;
+  const remainingDays = calculateRemainingDays(finalEndDate);
   
   let timeStatusMessage: string;
+  let statusColorClass = "text-gray-500";
   
-  if (!trialEndsAt) {
-    timeStatusMessage = "فعال";
+  if (!finalEndDate) {
+    timeStatusMessage = "وضعیت نامشخص";
   } else if (remainingDays !== null && remainingDays > 0) {
-    timeStatusMessage = `${remainingDays} روز باقیمانده است.`;
+    timeStatusMessage = `${remainingDays.toLocaleString("fa-IR")} روز تا پایان اعتبار باقیست.`;
+    statusColorClass = "text-emerald-600 font-bold";
   } else if (remainingDays !== null && remainingDays === 0) {
-    timeStatusMessage = "امروز منقضی می‌شود.";
+    timeStatusMessage = "اشتراک شما امروز به پایان می‌رسد.";
+    statusColorClass = "text-orange-500 font-bold";
   } else {
-    timeStatusMessage = "منقضی شده است.";
+    timeStatusMessage = "اعتبار اشتراک شما به پایان رسیده است.";
+    statusColorClass = "text-red-500 font-bold";
   }
 
   return (
@@ -55,22 +63,23 @@ export const DashboardPlanStatus: React.FC<DashboardPlanStatusProps> = ({
             <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
           </div>
           <div>
-            <div className="flex items-left flex-col gap-2">
-              <span className="text-sm font-medium text-gray-600">پلن انتخابی</span>
+            <div className="flex items-left flex-col gap-1">
+              <span className="text-xs font-medium text-gray-500">پلن فعال فعلی:</span>
               <span className="text-lg font-bold text-gray-900">{planTitle}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1 font-medium">
+            <p className={`text-[11px] mt-1 ${statusColorClass}`}>
               {timeStatusMessage}
             </p>
           </div>
         </div>
 
-        <button className="mt-2 bg-linear-to-r from-emerald-500 to-teal-600 text-white flex items-center gap-2 px-3 py-3 rounded-2xl font-semibold max-sm:text-sm text-md shadow-md hover:shadow-lg hover:scale-105 transition-all">
-          <Link href="../clientdashboard/pricingplan" className="flex gap-2 items-center">
-            <Sparkles className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
-            ارتقا پلن
-          </Link>
-        </button>
+        <Link 
+          href="/clientdashboard/pricingplan" 
+          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white flex items-center gap-2 px-4 py-2.5 rounded-2xl font-semibold text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all group"
+        >
+          <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+          {remainingDays !== null && remainingDays < 0 ? "تمدید پلن" : "ارتقا پلن"}
+        </Link>
       </div>
     </div>
   );

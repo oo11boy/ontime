@@ -7,19 +7,18 @@ import Footer from "./components/Footer/Footer";
 
 // Import all the new components
 import { DashboardHeader } from "./components/DashboardHeader";
-import { DashboardSmsStatus } from "./components/DashboardSmsStatus";
 import { DashboardAddAppointmentButton } from "./components/DashboardAddAppointmentButton";
 import { DashboardPlanStatus } from "./components/DashboardPlanStatus";
 import { DashboardWelcomeModal } from "./components/DashboardWelcomeModal";
 import { DashboardRecentAppointments } from "./components/DashboardRecentAppointments";
 
 // Import React Query Hooks
-import { useDashboard } from "@/hooks/useDashboard";;
+import { useDashboard } from "@/hooks/useDashboard";
 import InstallPWA from "./components/InstallPWA";
 import IosInstallPrompt from "./components/IosInstallPrompt";
+import { DashboardSmsStatus } from "./components/DashboardSmsStatus";
 
 export default function DashboardPage() {
-
   // React Query Hooks
   const { data: dashboardData, isLoading, error, refetch } = useDashboard();
 
@@ -74,8 +73,8 @@ export default function DashboardPage() {
           <div className="max-w-md mx-auto px-4 space-y-6">
             {/* Service Control Panel */}
             <div className="w-[95%] m-auto shadow-2xl flex flex-col items-center">
-             <InstallPWA />
-             <IosInstallPrompt />
+              <InstallPWA />
+              <IosInstallPrompt />
               <div className="bg-[#1B1F28] rounded-xl p-6 flex flex-col gap-6 justify-start items-center shadow-sm w-full mx-auto">
                 <DashboardSmsStatus
                   planInitialSms={planInitialSms}
@@ -85,15 +84,17 @@ export default function DashboardPage() {
 
                 <DashboardAddAppointmentButton />
 
+                {/* اصلاح شده: پاس دادن هر دو فیلد مربوط به انقضا */}
                 <DashboardPlanStatus
                   planTitle={userData.plan_title}
                   trialEndsAt={userData.trial_ends_at}
+                  quotaEndsAt={userData.quota_ends_at}
                 />
               </div>
             </div>
 
             {/* Recent Appointments */}
-          <DashboardRecentAppointments />
+            <DashboardRecentAppointments />
           </div>
         </div>
 

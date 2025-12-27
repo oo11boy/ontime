@@ -12,6 +12,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
 
   try {
 
+// بخش کوئری در فایل route.ts دشبورد
 const mainSql = `
   SELECT 
     u.name, 
@@ -21,13 +22,15 @@ const mainSql = `
     u.purchased_sms_credit,
     u.sms_monthly_quota,
     p.title AS plan_title,
+    p.price_per_100_sms, -- 👈 اضافه کردن این فیلد برای محاسبه قیمت پیامک
     u.plan_key,
+    u.quota_ends_at,
     u.trial_ends_at,
     COALESCE(SUM(CASE 
       WHEN sp.type = 'one_time_sms' 
         AND sp.status = 'active'
         AND (sp.expires_at IS NULL OR sp.expires_at >= CURDATE())
-      THEN sp.remaining_sms 
+      THEN sp.sms_amount 
       ELSE 0 
     END), 0) AS purchased_packages_total
   FROM users u

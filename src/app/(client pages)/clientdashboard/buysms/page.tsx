@@ -1,6 +1,6 @@
 "use client";
 
-import  { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import Footer from "../components/Footer/Footer";
 import { LoadingScreen } from "./components/LoadingScreen";
@@ -9,136 +9,81 @@ import { SelectedPackage } from "./components/SelectedPackage";
 import { PackagesGrid } from "./components/PackagesGrid";
 import { PurchaseButton } from "./components/PurchaseButton";
 
-interface SMSOption {
-  count: number;
-}
+// استفاده از هوک‌های مورد نظر شما
+import { useBuySms, useSmsPacks } from "@/hooks/useSms";
+import { useDashboard } from "@/hooks/useDashboard";
 
 export default function BuySMSPage() {
   const [selected, setSelected] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [fetchingPlan, setFetchingPlan] = useState(true);
-  const [pricePer100, setPricePer100] = useState<number>(45000);
-  const [smsOptions, setSmsOptions] = useState<SMSOption[]>([]);
-  const [fetchingPacks, setFetchingPacks] = useState(true);
-  const defaultPrice = 45000;
+
+  // 1. دریافت دیتای جامع دشبورد
+  const { data: dashboardData, isLoading: isDashboardLoading } = useDashboard();
+
+  // 2. دریافت لیست بسته‌های فعال
+  const { data: packsData, isLoading: isPacksLoading } = useSmsPacks();
+
+  // 3. هوک خرید (با قابلیت آپدیت خودکار دشبورد پس از موفقیت)
+  const { mutate: buySms, isPending: isPurchasing } = useBuySms();
+
+  // --- محاسبات داینامیک موجودی و قیمت ---
+  
+  // محاسبه کل موجودی: (اعتبار طرح اصلی + مجموع باقی‌مانده بسته‌ها)
+  const totalBalance = useMemo(() => {
+    if (!dashboardData?.user) return 0;
+    
+    const planBalance = dashboardData.user.sms_balance || 0;
+    const packagesBalance = dashboardData.user.purchased_packages?.reduce(
+      (sum, pkg) => sum + (pkg.remaining_sms || 0),
+      0
+    ) || 0;
+    
+    return planBalance + packagesBalance;
+  }, [dashboardData]);
+
+  // استخراج قیمت هر 100 پیامک از پلن کاربر
+  const pricePer100 = dashboardData?.user?.price_per_100_sms || 45000;
+  const smsOptions = packsData?.sms_packs || [];
 
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  // تابع دریافت بسته‌های پیامکی
-  const fetchSMSPacks = async () => {
-    try {
-      const res = await fetch("/api/client/sms-packs-list");
-
-      if (res.ok) {
-        const data = await res.json();
-        const packs: SMSOption[] = data.sms_packs
-          .filter((pack: any) => pack.isActive === true)
-          .map((pack: any) => ({
-            count: pack.count,
-          }))
-          .sort((a: SMSOption, b: SMSOption) => a.count - b.count);
-
-        setSmsOptions(packs);
-
-        if (packs.length === 0) {
-          toast("هیچ بسته پیامکی فعالی یافت نشد.", { icon: "Info" });
-        }
-      } else {
-        throw new Error("Failed to fetch SMS packs");
-      }
-    } catch (error) {
-      console.error("خطا در دریافت بسته‌های پیامکی:", error);
-      toast.error("خطا در بارگذاری بسته‌های پیامکی.");
-    } finally {
-      setFetchingPacks(false);
+  // تابع عملیات خرید
+  const handlePurchase = () => {
+    if (!selected) {
+      toast.error("لطفاً یک بسته انتخاب کنید.");
+      return;
     }
-  };
 
-  // تابع دریافت قیمت پلن کاربر
-  const fetchUserPlanPrice = async () => {
-    try {
-      const res = await fetch("/api/client/dashboard", {
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const userPrice = data.user?.price_per_100_sms;
-        if (userPrice !== undefined && userPrice > 0) {
-          setPricePer100(userPrice);
-        }
-      } else {
-        console.warn(
-          "خطا در دریافت اطلاعات پلن، از قیمت پیش‌فرض استفاده می‌شود"
-        );
-      }
-    } catch (error) {
-      console.error("خطا در دریافت قیمت پلن:", error);
-    } finally {
-      setFetchingPlan(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSMSPacks();
-    fetchUserPlanPrice();
-  }, []);
-
-  // تابع هندل خرید
-  const handlePurchase = async () => {
-    if (!selected || loading) return;
-
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/client/buy-sms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    buySms(
+      { sms_count: selected },
+      {
+        onSuccess: () => {
+          toast.success(`خرید ${selected.toLocaleString("fa-IR")} پیامک با موفقیت انجام شد.`);
+          setSelected(null);
+          // چون useBuySms کلید ["dashboard"] را نامعتبر می‌کند، 
+          // هوک useDashboard دوباره اجرا شده و totalBalance خودکار آپدیت می‌شود.
         },
-        credentials: "include",
-        body: JSON.stringify({
-          sms_count: selected,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(
-          `درخواست خرید ${selected.toLocaleString("fa-IR")} پیامک ثبت شد. در حال انتقال به صفحه پرداخت...`,
-          { duration: 7000 }
-        );
-        setSelected(null);
-      } else {
-        toast.error(
-          data.message || "خطا در خرید پیامک. لطفاً دوباره تلاش کنید."
-        );
+        onError: (err: any) => {
+          toast.error(err.message || "خطا در خرید.");
+        },
       }
-    } catch (error) {
-      console.error("خطا در ارتباط با سرور:", error);
-      toast.error(
-        "خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید."
-      );
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
-  // تابع انتخاب بسته
-  const handleSelectPackage = (count: number) => {
-    setSelected(count);
-  };
-
-  if (fetchingPlan || fetchingPacks) {
+  if (isDashboardLoading || isPacksLoading) {
     return <LoadingScreen />;
   }
 
   return (
-   <div className="min-h-screen text-white max-w-md mx-auto relative">
+    <div className="min-h-screen text-white max-w-md mx-auto relative">
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white py-10 px-4 flex flex-col">
-        <HeaderSection pricePer100={pricePer100} formatPrice={formatPrice} />
+        
+        {/* هدر با موجودی زنده */}
+        <HeaderSection
+          pricePer100={pricePer100}
+          formatPrice={formatPrice}
+          currentBalance={totalBalance}
+        />
 
         <SelectedPackage
           selected={selected}
@@ -146,27 +91,27 @@ export default function BuySMSPage() {
           formatPrice={formatPrice}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg mx-auto mb-12">
+        <div className="grid grid-cols-1 gap-6 w-full max-w-lg mx-auto mb-12">
           <PackagesGrid
             smsOptions={smsOptions}
             selected={selected}
             pricePer100={pricePer100}
-            defaultPrice={defaultPrice}
-            loading={loading}
+            defaultPrice={45000}
+            loading={isPurchasing}
             formatPrice={formatPrice}
-            onSelectPackage={handleSelectPackage}
+            onSelectPackage={(count) => setSelected(count)}
           />
         </div>
 
         <div className="mt-auto px-4 pb-6">
           <PurchaseButton
             selected={selected}
-            loading={loading}
+            loading={isPurchasing}
             onPurchase={handlePurchase}
           />
         </div>
       </div>
-
+      
       <Footer />
     </div>
   );

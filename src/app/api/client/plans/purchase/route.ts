@@ -1,146 +1,128 @@
-// File Path: src\app\api\client\plans\purchase\route.ts
-
-// src/app/api/plans/route.ts - (فقط تابع POST اصلاح شد)
-
 import { NextRequest, NextResponse } from 'next/server';
-import { query, dbPool, QueryResult } from '@/lib/db';
+import { dbPool } from '@/lib/db';
 import { withAuth } from '@/lib/auth';
 import { PoolConnection } from 'mysql2/promise';
 
 /**
  * @method POST
- * ثبت پلن/خرید پیامک برای کاربر
+ * ثبت خرید پلن (رایگان/پولی) یا اعتبار پیامکی
  */
 const purchasePlan = withAuth(async (req: NextRequest, context) => {
-    const { userId } = context; // userId از withAuth تزریق شده
+    const { userId } = context;
 
     let connection: PoolConnection | null = null;
     try {
-        const { plan_id, purchase_type, amount_paid, sms_amount, valid_from, valid_until } = await req.json();
+        const { plan_id, purchase_type, amount_paid, sms_amount, valid_from } = await req.json();
 
         if (!purchase_type || amount_paid === undefined) {
-            return NextResponse.json({ message: 'Required fields missing: purchase_type, amount_paid' }, { status: 400 });
+            return NextResponse.json({ message: 'Required fields missing' }, { status: 400 });
         }
-        
-        const today = new Date().toISOString().split('T')[0];
-        // انقضا پیش‌فرض برای پیامک‌های اعتباری (۱ ماه)
-        const defaultExpiration = new Date();
-        defaultExpiration.setMonth(defaultExpiration.getMonth() + 1);
-        const defaultValidUntil = defaultExpiration.toISOString().split('T')[0];
 
-        // 1. شروع تراکنش
         connection = await dbPool.getConnection();
         await connection.beginTransaction();
 
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
         let totalSmsToAdd = sms_amount || 0;
         let planKey = null;
-        const isPlanPurchase = purchase_type === 'monthly_subscription' && plan_id;
+        let finalValidUntil: string;
 
-        if (isPlanPurchase) {
-            // دریافت اطلاعات پلن
-            const [plans]: any = await connection.execute('SELECT free_sms_month, plan_key FROM plans WHERE id = ?', [plan_id]);
+        const isPlanPurchase = purchase_type === 'monthly_subscription' && plan_id;
+        const isTrialPurchase = purchase_type === 'free_trial' || purchase_type === 'trial_quota';
+
+        // ۱. منطق تعیین تاریخ انقضا و دریافت اطلاعات پلن
+        if (isPlanPurchase || isTrialPurchase) {
+            const [plans]: any = await connection.execute(
+                'SELECT free_sms_month, plan_key FROM plans WHERE id = ?', 
+                [plan_id]
+            );
             const plan = plans[0];
-            
+
             if (!plan) {
                 await connection.rollback();
                 return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
             }
-            
-            // برای خرید پلن، sms_amount موجودی پلن را شامل می‌شود.
-            totalSmsToAdd = plan.free_sms_month; 
+
+            totalSmsToAdd = plan.free_sms_month;
             planKey = plan.plan_key;
+
+            // محاسبه تاریخ انقضا: اگر رایگان بود ۲ ماه، در غیر این صورت ۱ ماه
+            const expirationDate = new Date();
+            if (planKey === 'free_trial') {
+                expirationDate.setMonth(expirationDate.getMonth() + 2);
+            } else {
+                expirationDate.setMonth(expirationDate.getMonth() + 1);
+            }
+            finalValidUntil = expirationDate.toISOString().split('T')[0];
+        } else {
+            // برای خرید پیامک تکی (بدون پلن)
+            const defaultExp = new Date();
+            defaultExp.setMonth(defaultExp.getMonth() + 1);
+            finalValidUntil = defaultExp.toISOString().split('T')[0];
         }
 
-        // 2. ثبت خرید در جدول smspurchase (برای هر دو نوع خرید)
+        // ۲. ثبت در جدول smspurchase
         const purchaseSql = `
             INSERT INTO smspurchase 
             (user_id, type, amount_paid, sms_amount, valid_from, valid_until) 
             VALUES (?, ?, ?, ?, ?, ?)
         `;
-        const finalValidUntil = isPlanPurchase ? valid_until || defaultValidUntil : defaultValidUntil;
-
         await connection.execute(purchaseSql, [
             userId, 
             purchase_type, 
             amount_paid, 
             totalSmsToAdd, 
-            valid_from || today, 
+            valid_from || todayStr, 
             finalValidUntil
         ]);
 
-        // 3. به‌روزرسانی موجودی پیامک کاربر (و به‌روزرسانی پلن در صورت لزوم)
-        let updateSql = 'UPDATE users SET';
-        const updateParams: (string | number | null)[] = [];
-        const updateFields: string[] = [];
-        
-        // ⭐️⭐️ منطق تفکیک موجودی پلن و پیامک خریداری شده ⭐️⭐️
-        
-  // File Path: src\app\api\client\plans\purchase\route.ts
-// بخشی از کد که نیاز به اصلاح دارد:
+        // ۳. به‌روزرسانی جدول users
+        let updateFields: string[] = [];
+        const updateParams: any[] = [];
 
-// در بخش به‌روزرسانی موجودی کاربر:
-if (isPlanPurchase) {
-  // خرید پلن اشتراکی
-  updateFields.push('sms_balance = ?');
-  updateParams.push(totalSmsToAdd);
-  
-  updateFields.push('sms_monthly_quota = ?');
-  updateParams.push(totalSmsToAdd);
-  
-  updateFields.push('plan_key = ?');
-  updateParams.push(planKey);
-  
-  updateFields.push('quota_starts_at = ?');
-  updateParams.push(valid_from || today);
-  
-  updateFields.push('quota_ends_at = ?');
-  updateParams.push(finalValidUntil);
-  
-  // حفظ purchased_sms_credit فعلی
-  updateFields.push('purchased_sms_credit = purchased_sms_credit');
-  
-  // صفر کردن وضعیت تریال
-  if (planKey && planKey !== 'free_trial') {
-    updateFields.push('trial_starts_at = NULL, trial_ends_at = NULL');
-  }
-} else if (purchase_type === 'one_time_sms') {
-  // خرید یک‌بار مصرف: اضافه کردن به purchased_sms_credit
-  updateFields.push('purchased_sms_credit = purchased_sms_credit + ?');
-  updateParams.push(totalSmsToAdd);
-} else if (purchase_type === 'trial_quota') {
-  // تریال: تنظیم موجودی پلن
-  updateFields.push('sms_balance = ?');
-  updateParams.push(totalSmsToAdd);
-  updateFields.push('sms_monthly_quota = ?');
-  updateParams.push(totalSmsToAdd);
-  updateFields.push('plan_key = ?');
-  updateParams.push('free_trial');
-}
+        if (isPlanPurchase || isTrialPurchase) {
+            // تنظیمات پلن و سهمیه ماهانه
+            updateFields.push('sms_balance = ?', 'sms_monthly_quota = ?', 'plan_key = ?');
+            updateParams.push(totalSmsToAdd, totalSmsToAdd, planKey);
 
-        updateSql += ' ' + updateFields.join(', ');
-        updateSql += ' WHERE id = ?';
-        updateParams.push(userId);
-        
-        await connection.execute(updateSql, updateParams);
+            updateFields.push('quota_starts_at = ?', 'quota_ends_at = ?');
+            updateParams.push(valid_from || todayStr, finalValidUntil);
 
-        // 4. اتمام تراکنش
+            // اگر پلن جدید خریداری شده و رایگان نیست، اطلاعات تریال قبلی پاک شود
+            if (planKey !== 'free_trial') {
+                updateFields.push('trial_starts_at = NULL', 'trial_ends_at = NULL');
+            } else {
+                // اگر پلن رایگان فعال شده
+                updateFields.push('trial_starts_at = ?', 'trial_ends_at = ?');
+                updateParams.push(valid_from || todayStr, finalValidUntil);
+            }
+        } else if (purchase_type === 'one_time_sms') {
+            // فقط اضافه کردن به اعتبار خریداری شده
+            updateFields.push('purchased_sms_credit = purchased_sms_credit + ?');
+            updateParams.push(totalSmsToAdd);
+        }
+
+        if (updateFields.length > 0) {
+            const updateSql = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+            updateParams.push(userId);
+            await connection.execute(updateSql, updateParams);
+        }
+
         await connection.commit();
         
         return NextResponse.json({ 
-            message: 'Purchase completed successfully. SMS balance updated.', 
+            message: 'Plan activated successfully', 
+            expires_at: finalValidUntil,
             sms_added: totalSmsToAdd 
         }, { status: 201 });
 
-    } catch (error) {
-        if (connection) {
-            await connection.rollback();
-        }
-        console.error(error);
-        return NextResponse.json({ message: 'Failed to process purchase (Transaction rolled back)' }, { status: 500 });
+    } catch (error: any) {
+        if (connection) await connection.rollback();
+        console.error('Purchase Error:', error);
+        return NextResponse.json({ message: error.message || 'Transaction failed' }, { status: 500 });
     } finally {
-        if (connection) {
-            connection.release();
-        }
+        if (connection) connection.release();
     }
 });
 

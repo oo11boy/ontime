@@ -13,6 +13,8 @@ export interface PurchasedPackage {
 
 interface DashboardData {
   user: {
+    quota_ends_at: any;
+    has_used_free_trial: boolean;
     name: string;
     phone: string;
     job_title: string;
