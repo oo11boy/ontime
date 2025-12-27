@@ -1,6 +1,4 @@
-// src/workers/sms-worker.ts
-// ← این خط رو اول از همه اضافه کن
-import "dotenv/config";   // ← این باعث می‌شه .env.local لود بشه
-import "../lib/sms-queue"; // فقط برای فعال شدن Worker
+import "dotenv/config"; 
+import "../lib/sms-queue"; // لود کردن وورکر از فایل بالا
 
-console.log("🚀 SMS Worker started and listening for jobs...");
+console.log("🔥 SMS Worker Process is Running...");
