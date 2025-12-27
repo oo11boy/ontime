@@ -1,47 +1,63 @@
 import React from "react";
-import { MessageSquareQuote } from "lucide-react"; // اگر از لوساید استفاده می‌کنید برای زیبایی
+import { ArrowRight } from "lucide-react"; // آیکن بازگشت مناسب برای RTL
+import { useRouter } from "next/navigation";
 
 interface HeaderSectionProps {
   pricePer100: number;
   formatPrice: (price: number) => string;
-  currentBalance: number; // 👈 اضافه شدن موجودی فعلی
+  currentBalance: number;
 }
 
-export const HeaderSection: React.FC<HeaderSectionProps> = ({ 
-  pricePer100, 
+export const HeaderSection: React.FC<HeaderSectionProps> = ({
+  pricePer100,
   formatPrice,
-  currentBalance
+  currentBalance,
 }) => {
-  return (
-    <>
-      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-center">
-        خرید پیامک اضافه
-      </h1>
+  const router = useRouter();
 
-      {/* بخش نمایش موجودی فعلی که با خرید آپدیت می‌شود */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 flex items-center justify-between">
+  const handleBack = () => {
+    router.back(); // یا router.push('/dashboard') اگر مسیر خاصی مد نظر است
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-between items-center">
+        {/* دکمه بازگشت + عنوان */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-            <MessageSquareQuote className="w-5 h-5 text-blue-400" />
-          </div>
-          <span className="text-sm text-gray-300">موجودی فعلی شما:</span>
+          <button
+            onClick={handleBack}
+            className="p-2 rounded-full bg-white/5 border border-white/10 
+                       hover:bg-white/10 active:scale-95 
+                       transition-all duration-200 
+                       group"
+            aria-label="بازگشت"
+          >
+            <ArrowRight
+              className="w-5 h-5 text-gray-300 
+                         group-hover:text-white 
+                         transition-colors"
+            />
+          </button>
+
+          <h1 className="text-lg font-black text-white">شارژ پنل</h1>
         </div>
-        <div className="text-right">
-          <span className="text-xl font-bold text-white">
+
+        {/* موجودی */}
+        <div className="bg-white/5 px-3 py-1 rounded-full border border-white/10">
+          <span className="text-[10px] text-gray-400 ml-2">موجودی:</span>
+          <span className="text-sm font-bold text-blue-400">
             {currentBalance.toLocaleString("fa-IR")}
           </span>
-          <span className="text-xs text-gray-400 mr-1">پیامک</span>
         </div>
       </div>
 
-      <div className="mb-8 text-center">
-        <p className="text-sm text-gray-400">
-          قیمت هر ۱۰۰ پیامک بر اساس پلن شما:
-        </p>
-        <p className="text-2xl font-bold text-emerald-400">
+      {/* تعرفه */}
+      <div className="flex justify-between items-center text-[11px] bg-white/[0.02] p-2 rounded-lg">
+        <span className="text-gray-500">تعرفه هر ۱۰۰ پیامک طبق پلن:</span>
+        <span className="text-emerald-400 font-bold">
           {formatPrice(pricePer100)} تومان
-        </p>
+        </span>
       </div>
-    </>
+    </div>
   );
 };

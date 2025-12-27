@@ -19,13 +19,6 @@ import { Appointment } from "@/types";
 import { HeaderSection } from "./components/HeaderSection";
 import { useSmsBalance } from "@/hooks/useSmsBalance";
 
-// نام‌های فارسی کامل ماه‌ها (0-indexed: فروردین = 0)
-const persianMonths = [
-  'فروردین', 'اردیبهشت', 'خرداد',
-  'تیر', 'مرداد', 'شهریور',
-  'مهر', 'آبان', 'آذر',
-  'دی', 'بهمن', 'اسفند'
-];
 
 interface CalendarDay {
   date: Date;

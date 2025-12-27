@@ -13,17 +13,15 @@ interface PlanCardProps {
     popular: boolean;
   };
   isActive: boolean;
-  isPermanentlyDisabled: boolean;
   hasUsedFreeTrial: boolean;
   formatPrice: (price: number) => string;
   onSelect: (planKey: string) => void;
-  isExpired: boolean; // 👈 این پراپ جدید برای مدیریت تمدید است
+  isExpired: boolean;
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({
   plan,
   isActive,
-  isPermanentlyDisabled,
   hasUsedFreeTrial,
   formatPrice,
   onSelect,
@@ -31,124 +29,113 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 }) => {
   const isFreeTrial = plan.plan_key === "free_trial";
 
-  // --- منطق هوشمند دکمه و وضعیت کلیک ---
-  let buttonText = "فعالسازی";
+  let buttonText = "انتخاب پلن";
   let isDisabled = false;
 
   if (isActive) {
     if (isExpired) {
       if (isFreeTrial) {
-        // پلن رایگان منقضی شده -> غیرقابل انتخاب مجدد
         buttonText = "استفاده شده";
         isDisabled = true;
       } else {
-        // پلن پولی منقضی شده -> اجازه تمدید
         buttonText = "تمدید اشتراک";
-        isDisabled = false; 
+        isDisabled = false;
       }
     } else {
-      // پلن فعلی فعال و معتبر
-      buttonText = "پلن فعلی";
+      buttonText = "پلن فعلی شما";
       isDisabled = true;
     }
   } else {
-    // اگر پلن فعلی کاربر نیست
     if (isFreeTrial && hasUsedFreeTrial) {
-      // قبلاً هدیه را گرفته، پس همیشه غیرفعال
       buttonText = "استفاده شده";
       isDisabled = true;
-    } else if (isPermanentlyDisabled) {
-      // سایر شروط محدودکننده
-      buttonText = "غیرقابل انتخاب";
-      isDisabled = true;
-    } else {
-      // پلن‌های دیگر که کاربر می‌تواند بخرد
-      buttonText = "انتخاب پلن";
-      isDisabled = false;
     }
   }
 
-  const features = ["سیستم نوبت‌دهی", "سامانه پیامکی", "دسترسی به CRM"];
+  const features = [
+    "سیستم نوبت‌دهی هوشمند",
+    "سامانه پیامک خودکار",
+    "دسترسی کامل به CRM",
+  ];
 
   return (
     <div
-      className={`relative bg-white/5 backdrop-blur-xl rounded-2xl border overflow-hidden transition-all duration-300
+      className={`relative bg-white/5 backdrop-blur-xl rounded-3xl border transition-all duration-300
         ${
           plan.popular
-            ? "border-emerald-500/60 shadow-xl shadow-emerald-500/10"
+            ? "border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
             : "border-white/10"
         }
-        ${
-          !isDisabled
-            ? "hover:border-white/20 hover:shadow-lg active:scale-98"
-            : "opacity-85"
-        }
+        ${!isDisabled ? "hover:bg-white/[0.08] cursor-pointer" : "opacity-80"}
       `}
+      onClick={() => !isDisabled && onSelect(plan.plan_key)}
     >
-      <div className="p-5">
-        {/* عنوان و قیمت */}
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-xl font-bold">{plan.title}</h3>
-            {plan.popular && (
-              <p className="text-emerald-400 text-xs mt-1 font-medium">توصیه شده</p>
-            )}
-          </div>
+      {plan.popular && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+          پیشنهاد ویژه
+        </div>
+      )}
+
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold tracking-tight">{plan.title}</h3>
           <div className="text-right">
             {plan.monthly_fee === 0 ? (
-              <span className="text-2xl font-bold text-emerald-400">رایگان</span>
+              <span className="text-2xl font-black text-emerald-400">
+                رایگان
+              </span>
             ) : (
-              <div>
-                <span className="text-2xl font-bold">
+              <div className="flex flex-col">
+                <span className="text-2xl font-black">
                   {formatPrice(plan.monthly_fee)}
                 </span>
-                <span className="text-xs text-gray-400 mr-1">هزار تومان</span>
+                <span className="text-[10px] text-gray-400">
+                  تومان / ماهانه
+                </span>
               </div>
             )}
           </div>
         </div>
 
-        {/* مشخصات کلیدی */}
-        <div className="grid grid-cols-3 gap-3 text-center mb-5 py-4 bg-white/5 rounded-xl">
-          <div>
-            <div className="text-lg font-bold">{formatPrice(plan.free_sms_month)}</div>
-            <div className="text-xs text-gray-400">پیامک رایگان</div>
+        <div className="grid grid-cols-3 gap-2 mb-6 p-3 bg-black/20 rounded-2xl border border-white/5">
+          <div className="text-center">
+            <div className="text-sm font-bold">
+              {formatPrice(plan.free_sms_month)}
+            </div>
+            <div className="text-[9px] text-gray-500 uppercase">هدیه</div>
           </div>
-          <div>
-            <div className="text-lg font-bold">{formatPrice(plan.price_per_100_sms)}</div>
-            <div className="text-xs text-gray-400">هر ۱۰۰ پیامک</div>
+          <div className="text-center border-x border-white/10">
+            <div className="text-sm font-bold">
+              {formatPrice(plan.price_per_100_sms)}
+            </div>
+            <div className="text-[9px] text-gray-500 uppercase">تعرفه</div>
           </div>
-          <div>
-            <div className="text-lg font-bold text-emerald-400">{plan.discountPer100}%</div>
-            <div className="text-xs text-gray-400">تخفیف</div>
+          <div className="text-center">
+            <div className="text-sm font-bold text-emerald-400">
+              {plan.discountPer100}%
+            </div>
+            <div className="text-[9px] text-gray-500 uppercase">تخفیف</div>
           </div>
         </div>
 
-        {/* لیست امکانات */}
-        <div className="space-y-2.5 mb-6">
-          {features.map((feature) => (
-            <div key={feature} className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-              </div>
-              <span className="text-sm text-gray-200">{feature}</span>
+        <div className="space-y-3 mb-6">
+          {features.map((f, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Check className="w-4 h-4 text-emerald-500" />
+              <span className="text-xs text-gray-300">{f}</span>
             </div>
           ))}
         </div>
 
-        {/* دکمه عملیاتی */}
         <button
-          onClick={() => !isDisabled && onSelect(plan.plan_key)}
           disabled={isDisabled}
-          className={`w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer
+          className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all
             ${
               isActive && !isExpired
-                ? "bg-emerald-600/80 text-white !cursor-default" 
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                 : isDisabled
-                ? "bg-gray-700/50 text-gray-400 !cursor-not-allowed"
-                : plan.popular
-                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg"
-                : "bg-white/10 hover:bg-white/20 text-white"
+                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                : "bg-white text-black hover:bg-emerald-400 hover:scale-[1.02] active:scale-95"
             }
           `}
         >
@@ -156,7 +143,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           {isActive && !isExpired ? (
             <CircleCheckBig className="w-5 h-5" />
           ) : (
-            <Zap className={`w-5 h-5 ${isDisabled ? 'text-gray-500' : 'text-white'}`} />
+            <Zap className="w-4 h-4" />
           )}
         </button>
       </div>
