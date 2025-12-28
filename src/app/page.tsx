@@ -1,4 +1,3 @@
-
 import Navigation from "@/components/Landing/Navigation";
 import HeroSection from "@/components/Landing/HeroSection";
 import StatsSection from "@/components/Landing/StatsSection";
@@ -19,13 +18,14 @@ import { mainmetadata } from "./metadata";
 import Script from "next/script";
 import { landingPageSchemas } from "@/components/Landing/schemas/landing-schemas";
 import Namad from "@/components/Landing/Namad";
+import IndustrySelector from "@/components/Landing/IndustrySelector";
 
 export const metadata: Metadata = mainmetadata;
 
 export default function OnTimeLandingPage() {
   return (
-    <div 
-      className="flex flex-col min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700" 
+    <div
+      className="flex flex-col min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700"
       dir="rtl"
     >
       {landingPageSchemas.map((schema) => (
@@ -41,10 +41,9 @@ export default function OnTimeLandingPage() {
       ))}
       {/* هدر سایت با دسترسی سریع */}
       <Navigation />
-      
+
       {/* استفاده از تگ main برای سئو حیاتی است */}
       <main className="pt-20">
-        
         {/* ۱. بخش قهرمان (H1) - معرفی اصلی محصول */}
         <HeroSection />
 
@@ -75,10 +74,10 @@ export default function OnTimeLandingPage() {
 
         {/* ۱۰. سوالات متداول (Schema FAQ) */}
         <FAQSection />
-      <Namad/>
+        <Namad />
         {/* ۱۱. دعوت به اقدام نهایی */}
         <FinalCTA />
-  
+        <IndustrySelector/>
       </main>
 
       {/* فوتر بهینه شده برای لینک‌سازی داخلی */}

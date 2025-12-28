@@ -149,7 +149,7 @@ export default function PricingSection(): React.JSX.Element {
                     ) : (
                       <div className="flex flex-col items-center">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-6xl font-black text-slate-900 tracking-tighter">
+                          <span className="text-4xl font-black text-slate-900 tracking-tighter">
                             {plan.monthly_fee.toLocaleString("fa-IR")}
                           </span>
                           <span className="text-slate-500 text-sm font-bold">
@@ -202,48 +202,7 @@ export default function PricingSection(): React.JSX.Element {
           </div>
         )}
 
-        {/* فوتر بخش قیمت‌گذاری - برای کسب‌وکارهای بزرگ */}
-        <div className="mt-24 relative group">
-          <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-indigo-600 rounded-[3.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-          <div className="relative bg-slate-900 rounded-[3.5rem] p-10 lg:p-16 overflow-hidden border border-slate-800">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 blur-[100px] -mr-40 -mt-40"></div>
 
-            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
-              <div className="text-right">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400">
-                    <ShieldCheck size={32} />
-                  </div>
-                  <h3 className="text-3xl lg:text-4xl font-black text-white">
-                    نیاز به راهکار سازمانی دارید؟
-                  </h3>
-                </div>
-                <p className="text-slate-400 text-lg lg:text-xl font-medium max-w-2xl leading-relaxed">
-                  اگر کلینیک، سالن زیبایی زنجیره‌ای یا مجموعه‌ای با بیش از{" "}
-                  <strong>۱۰ پرسنل</strong> دارید، ما برای شما پلن‌های شخصی‌سازی
-                  شده با تخفیف ویژه در نظر گرفته‌ایم.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                <Link
-                  href="tel:09981394832"
-                  className="flex-1 lg:flex-none flex items-center justify-center gap-3 bg-white text-slate-900 px-10 py-6 rounded-2xl font-black text-lg hover:shadow-2xl hover:bg-blue-50 transition-all active:scale-95"
-                >
-                  <Phone size={22} />
-                  مشاوره رایگان فروش
-                </Link>
-                <Link
-                  href="https://wa.me/09354502369"
-                  className="flex-1 lg:flex-none flex items-center justify-center gap-3 border border-slate-700 text-white px-10 py-6 rounded-2xl font-black text-lg hover:bg-slate-800 transition-all active:scale-95"
-                >
-                  <MessageSquare size={22} />
-                  گفتگو در واتساپ
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

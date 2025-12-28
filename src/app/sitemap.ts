@@ -1,23 +1,22 @@
 import { MetadataRoute } from "next";
 import { query } from "@/lib/db";
 
-export const revalidate = 0; // اطمینان از اینکه نقشه سایت همیشه تازه‌ترین داده‌ها را می‌گیرد
+export const revalidate = 0; 
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://ontimeapp.ir";
 
   try {
-    // ۱. دریافت تمام مقالات به ترتیب جدیدترین
+    // ۱. دریافت تمام مقالات
     const posts = (await query(
       "SELECT slug, created_at FROM blog_posts ORDER BY created_at DESC",
       []
     )) as any[];
 
-    // پیدا کردن زمان آخرین مقاله (اگر مقاله‌ای وجود داشت)
     const lastPostDate =
       posts && posts.length > 0 ? new Date(posts[0].created_at) : new Date();
 
-    // ۲. صفحات ثابت سایت
+    // ۲. صفحات ثابت سایت (اصلاح شده)
     const staticRoutes: MetadataRoute.Sitemap = [
       {
         url: baseUrl,
@@ -26,8 +25,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 1,
       },
       {
+        url: `${baseUrl}/industries/beauty-salon`, // اضافه شدن لندینگ آرایشگری
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.9,
+      },
+      {
         url: `${baseUrl}/blog`,
-        lastModified: lastPostDate, // زمان آپدیت لیست برابر با زمان آخرین مقاله
+        lastModified: lastPostDate,
         changeFrequency: "daily",
         priority: 0.9,
       },
@@ -37,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return staticRoutes;
     }
 
-    // ۳. تبدیل مقالات دیتابیس به فرمت نقشه سایت
+    // ۳. تبدیل مقالات به فرمت نقشه سایت
     const dynamicRoutes = posts.map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
       lastModified: new Date(post.created_at),
@@ -56,10 +61,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 1,
       },
       {
+        url: `${baseUrl}/industries/beauty-salon`, // آدرس رزرو در صورت خطا
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.9,
+      },
+      {
         url: `${baseUrl}/blog`,
         lastModified: new Date(),
         changeFrequency: "daily",
-        priority: 0.9,
+        priority: 0.8,
       },
     ];
   }

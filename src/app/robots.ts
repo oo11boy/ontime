@@ -18,9 +18,9 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
-        // تنظیمات برای هوش مصنوعی‌ها: دسترسی به بخش‌های عمومی آزاد باشد
+        // دسترسی هوش مصنوعی به محتوای متنی جهت درک بیزینس
         userAgent: aiBots,
-        allow: ["/", "/blog", "/blog/"],
+        allow: ["/", "/blog", "/blog/", "/industries/"],
         disallow: [
           "/admindashboard",
           "/clientdashboard",
@@ -30,13 +30,16 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
       {
-        // تنظیمات برای گوگل و سایر موتورهای جستجو
+        // تنظیمات عمومی برای گوگل، بینگ و غیره
         userAgent: "*",
         allow: [
-          "/", // اجازه به صفحه اصلی
-          "/blog", // اجازه به لیست مقالات
-          "/blog/", // اجازه به تمام مقالات (خیلی مهم)
-          "/_next/static/", // اجازه به فایل‌های سیستمی برای رندر درست
+          "/",
+          "/blog",
+          "/blog/",
+          "/industries/", // اجازه به لندینگ‌های تخصصی مثل آرایشگری
+          "/_next/static/",
+          "/images/", // بسیار مهم: اجازه به گوگل برای ایندکس تصاویر گالری شما
+          "/icons/",
         ],
         disallow: [
           "/admindashboard",
@@ -45,6 +48,7 @@ export default function robots(): MetadataRoute.Robots {
           "/admin-login",
           "/login",
           "/private",
+          "/customer/booking/", // جلوگیری از ایندکس شدن صفحات رزرو شخصی مشتریان
         ],
       },
     ],

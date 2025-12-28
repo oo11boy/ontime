@@ -189,9 +189,9 @@ useEffect(() => {
   const persianDate = formatPersianDate(booking.date);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white">
-      <Toaster position="top-center" />
-      
+    <div className="min-h-screen bg-[#1a1e26] text-white selection:bg-emerald-500/30 flex flex-col">
+   <Toaster position="top-center" />
+       <div className="max-w-md mx-auto px-4 py-8">
       <header className="p-4 border-b border-white/10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button
@@ -383,7 +383,7 @@ useEffect(() => {
           </div>
         </div>
       </main>
-
+</div> 
       {/* مودال تغییر زمان */}
       {showRescheduleModal && booking && (
         <RescheduleModal
