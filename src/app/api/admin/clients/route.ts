@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
           u.sms_balance,
           u.purchased_sms_credit,
           u.sms_monthly_quota,
-          u.trial_ends_at,
+          u.ended_at,
           u.quota_ends_at,
           u.created_at,
           u.job_id,

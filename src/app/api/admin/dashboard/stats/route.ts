@@ -47,7 +47,7 @@ export const GET = withAdminAuth(async () => {
     const activePlansResult = await query<{ count: number }>(`
       SELECT COUNT(DISTINCT u.id) as count 
       FROM users u
-      WHERE (u.trial_ends_at > CURDATE() OR u.quota_ends_at > CURDATE())
+      WHERE (u.ended_at > CURDATE() OR u.quota_ends_at > CURDATE())
         AND u.id > 0
     `);
     const activePlans = activePlansResult[0]?.count || 0;
