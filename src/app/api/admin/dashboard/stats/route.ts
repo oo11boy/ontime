@@ -43,7 +43,6 @@ export const GET = withAdminAuth(async () => {
     );
     const totalClientsCustomers = customersResult[0]?.count || 0;
 
-    // 5. تعداد پلن‌های فعال (کاربرانی که trial یا quota فعال دارند)
     const activePlansResult = await query<{ count: number }>(`
       SELECT COUNT(DISTINCT u.id) as count 
       FROM users u
