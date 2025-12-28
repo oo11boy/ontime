@@ -1,15 +1,19 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.ontime.client", 
-    "sha256_cert_fingerprints": ["SHA_256_FINGERPRINT_HERE"]
-  }
-},
-{
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ir.ontimeapp.client",
+      "sha256_cert_fingerprints": [
+        "93:3B:BA:6B:3C:69:0B:0B:6F:1E:C3:7C:48:36:11:BB:23:69:1A:A5:67:8C:D6:A0:1D:6D:13:7C:9D:0E:2A:B0"
+      ]
+    }
+  },
+  {
     "relation": ["check_validation"],
     "target": {
       "namespace": "cafebazaar_twa",
-      "package_name": "com.ontime.client"
+      "package_name": "ir.ontimeapp.client"
     }
-}]
+  }
+]
