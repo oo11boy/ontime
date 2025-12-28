@@ -1,6 +1,7 @@
 {
   "name": "OnTime Client",
   "short_name": "OnTime",
+  "description": "سامانه مدیریت هوشمند نوبت‌دهی و مشتریان آن‌تایم",
   "start_url": "/clientdashboard",
   "scope": "/",
   "display": "standalone",
