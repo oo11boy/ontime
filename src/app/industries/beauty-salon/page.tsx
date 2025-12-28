@@ -1,6 +1,5 @@
 // app/industries/beauty-salon/page.tsx
 import { Metadata } from "next";
-import Navigation from "@/components/Landing/Navigation";
 import EnhancedFooter from "@/components/Landing/EnhancedFooter";
 import BeautyHero from "./components/BeautyHero";
 import BeautyStats from "./components/BeautyStats";
@@ -38,7 +37,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://ontimeapp.ir/images/beauty-og-share.jpg", // حتما این تصویر را در پوشه public قرار دهید
+        url: "https://ontimeapp.ir/images/screens/main.jpg", // حتما این تصویر را در پوشه public قرار دهید
         width: 1200,
         height: 630,
         alt: "محیط اپلیکیشن نوبت دهی آنتایم مخصوص آرایشگران",
@@ -86,10 +85,7 @@ export default function BeautySalonLanding() {
         <BeautyFAQ />
 
         {/* ۹. فراخوان نهایی: فشار نهایی برای ثبت‌نام و شروع تست رایگان */}
-        <FinalCTA
-          title="آماده‌اید بیزینس خود را منظم و حرفه‌ای کنید؟" 
-          buttonText="شروع ۲ ماه رایگان ویژه آرایشگران" 
-        />
+        <FinalCTA  />
       </main>
 
       <EnhancedFooter />

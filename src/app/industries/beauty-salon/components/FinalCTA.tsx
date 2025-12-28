@@ -3,9 +3,9 @@
 import { Gift, Phone, Sparkles, Zap, ArrowLeft, Users } from "lucide-react";
 import React from "react";
 import Link from "next/link";
-import Script from "next/script";
 
-export default function FinalCTA(): React.JSX.Element {
+
+export default function FinalCTA() {
   return (
     <section className="py-24 bg-slate-50/50" dir="rtl">
 

@@ -10,7 +10,7 @@ const screenshots = [
   { id: 1, src: "/images/screens/main.jpg", alt: "صفحه ابتدایی اپلیکیشن", label:"صفحه ابتدایی اپلیکیشن", desc: "صفحه‌ابتدایی اپلیکیشن نوبت دهی" },
   { id: 3, src: "/images/screens/service.jpg", alt: "تعریف خدمات", label: "لیست خدمات", desc: "تنظیم قیمت و زمان برای هر لاین زیبایی" },
   { id: 4, src: "/images/screens/calender.jpg", alt: "تقویم کاری", label: "تقویم نوبت‌دهی",  desc: "نمای کلی رزروهای روزانه و وضعیت سالن" },
- { id: 5, src: "/images/screens/customers2.png", alt: "سوابق مشتریان", label: "بانک مشتریان", desc: "دسترسی سریع به پرونده و شماره هر مشتری" },
+ { id: 5, src: "/images/screens/customers.jpg", alt: "سوابق مشتریان", label: "بانک مشتریان", desc: "دسترسی سریع به پرونده و شماره هر مشتری" },
  { id: 2, src: "/images/screens/add.jpg", alt: "پنل افزودن نوبت‌ها", label: "افزودن نوبت‌ها", desc: "نمای کلی از قسمت افزودن نوبت" },
  
 ];
@@ -79,10 +79,11 @@ export default function BeautyGallery() {
               
               <div className="relative rounded-[3rem] overflow-hidden border-[8px] border-slate-900 shadow-[0_40px_100px_-15px_rgba(0,0,0,0.8)] ring-1 ring-slate-800">
                 <div className="aspect-[11/18.5] relative bg-slate-900">
-                  <img
+                  <Image
                     key={activeImage.id + activeImage.src}
-                    src={`${activeImage.src}?v=${activeImage.id}`}
+                    src={activeImage.src}
                     alt={activeImage.alt}
+                    fill
                     className="w-full h-full  animate-in fade-in zoom-in-95 duration-500"
                   />
                   
