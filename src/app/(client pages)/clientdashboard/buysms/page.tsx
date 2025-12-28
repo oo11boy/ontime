@@ -35,19 +35,20 @@ export default function BuySMSPage() {
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  const handlePurchase = async () => {
-    if (!selected) {
-      toast.error("لطفاً یک بسته انتخاب کنید.");
-      return;
-    }
-    const totalPriceToman = Math.round((selected / 100) * pricePer100);
-    await startPayment(
-      totalPriceToman,
-      "sms",
-      selected,
-      `خرید بسته ${selected.toLocaleString("fa-IR")} عددی پیامک`
-    );
-  };
+ const handlePurchase = async () => {
+  if (!selected) {
+    toast.error("لطفاً یک بسته انتخاب کنید.");
+    return;
+  }
+  
+  // ما دیگر قیمت را حساب نمی‌کنیم، فقط می‌گوییم چه بسته‌ای (مثلا ۵۰۰ تایی)
+  await startPayment(
+    0, // مبلغ توسط سرور جایگزین می‌شود
+    "sms",
+    selected, // مقدار عددی بسته مثل 100, 300, 500
+    `خرید بسته ${selected.toLocaleString("fa-IR")} عددی پیامک`
+  );
+};
 
   if (isDashboardLoading || isPacksLoading) {
     return <LoadingScreen />;

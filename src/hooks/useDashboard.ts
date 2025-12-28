@@ -24,6 +24,7 @@ interface DashboardData {
     sms_monthly_quota: number;
     plan_title: string;
     plan_key: string;
+    ended_at:string;
     trial_ends_at: string | null;
     price_per_100_sms: number;
     purchased_packages?: PurchasedPackage[] | null; // ← اضافه شد

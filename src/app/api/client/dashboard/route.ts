@@ -1,4 +1,4 @@
-// File Path: src/app/api/client/dashboard/route.ts
+// src/app/api/client/dashboard/route.ts
 
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
@@ -9,11 +9,54 @@ const handler = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
   try {
-    // کوئری اول: اطلاعات کلی کاربر، پلن و مجموع بسته‌های فعال
+    // ۱. بررسی و تمدید خودکار سهمیه (Lazy Refresh)
+    // ابتدا چک می‌کنیم آیا زمان تمدید ۱۵۰ پیامک ماهانه رسیده است یا خیر
+    const userStatus = await query<any>(
+      "SELECT sms_monthly_quota, quota_ends_at, ended_at FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (userStatus.length > 0) {
+      const { sms_monthly_quota, quota_ends_at, ended_at } = userStatus[0];
+      const today = new Date();
+      const quotaEndDate = new Date(quota_ends_at);
+      const planEndDate = new Date(ended_at);
+
+      // اگر تاریخ سهمیه ماهانه منقضی شده ولی هنوز در بازه کل پلن (مثلا ۲ ماهه) هستیم
+      if (today >= quotaEndDate && today <= planEndDate) {
+        const todayStr = today.toISOString().split("T")[0];
+
+        // محاسبه پایان سهمیه برای ماه جدید (یک ماه بعد از تاریخ انقضای قبلی)
+        const nextQuotaEndDate = new Date(quotaEndDate);
+        nextQuotaEndDate.setMonth(nextQuotaEndDate.getMonth() + 1);
+        const nextQuotaStr = nextQuotaEndDate.toISOString().split("T")[0];
+
+        // بروزرسانی سهمیه در دیتابیس
+        await query(
+          `UPDATE users 
+           SET sms_balance = ?, 
+               quota_starts_at = ?, 
+               quota_ends_at = ? 
+           WHERE id = ?`,
+          [sms_monthly_quota, todayStr, nextQuotaStr, userId]
+        );
+
+        // ثبت یک تراکنش سیستمی برای سوابق تمدید
+        await query(
+          `INSERT INTO smspurchase 
+           (user_id, type, amount_paid, sms_amount, valid_from, valid_until, status)
+           VALUES (?, 'monthly_renewal', 0, ?, ?, ?, 'active')`,
+          [userId, sms_monthly_quota, todayStr, nextQuotaStr]
+        );
+      }
+    }
+
+    // ۲. کوئری اصلی برای دریافت اطلاعات کامل داشبورد
     const mainSql = `
       SELECT 
         u.name, 
         u.phone, 
+        u.has_used_free_trial,
         j.persian_name AS job_title,
         u.sms_balance,
         u.purchased_sms_credit,
@@ -22,7 +65,8 @@ const handler = withAuth(async (req: NextRequest, context) => {
         p.price_per_100_sms,
         u.plan_key,
         u.quota_ends_at,
-        u.trial_ends_at,
+        u.started_at,
+        u.ended_at,
         COALESCE(SUM(CASE 
           WHEN sp.type = 'one_time_sms' 
             AND sp.status = 'active'
@@ -47,7 +91,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
 
     const user = mainResult[0];
 
-    // کوئری دوم: لیست جزئیات تمام بسته‌های خریداری‌شده (برای نمایش در تاریخچه و کد پیگیری)
+    // ۳. کوئری دوم: لیست بسته‌های اضافی خریداری‌شده توسط کاربر
     const packagesSql = `
       SELECT 
         id,
@@ -66,11 +110,11 @@ const handler = withAuth(async (req: NextRequest, context) => {
 
     const packagesResult = await query<any>(packagesSql, [userId]);
 
-    // اضافه کردن لیست بسته‌ها به پاسخ کاربر
+    // اضافه کردن لیست بسته‌ها به شیء کاربر
     user.purchased_packages = packagesResult;
 
     return NextResponse.json({
-      message: "Dashboard data fetched successfully",
+      message: "Dashboard data fetched and updated successfully",
       user,
     });
   } catch (error) {

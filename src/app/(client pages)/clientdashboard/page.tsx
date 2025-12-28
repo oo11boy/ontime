@@ -1,11 +1,12 @@
+// File Path: src/app/(client pages)/clientdashboard/page.tsx
+
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import Loading from "./components/Loading";
 import Footer from "./components/Footer/Footer";
 
-// Import all the new components
+// Import components
 import { DashboardHeader } from "./components/DashboardHeader";
 import { DashboardAddAppointmentButton } from "./components/DashboardAddAppointmentButton";
 import { DashboardPlanStatus } from "./components/DashboardPlanStatus";
@@ -19,9 +20,7 @@ import IosInstallPrompt from "./components/IosInstallPrompt";
 import { DashboardSmsStatus } from "./components/DashboardSmsStatus";
 
 export default function DashboardPage() {
-  // React Query Hooks
   const { data: dashboardData, isLoading, error, refetch } = useDashboard();
-
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   // Check for welcome modal flag
@@ -71,7 +70,6 @@ export default function DashboardPage() {
 
         <div className="flex-1 overflow-y-auto pb-24">
           <div className="max-w-md mx-auto">
-            {/* Service Control Panel */}
             <div className="m-auto shadow-2xl flex flex-col items-center">
               <InstallPWA />
               <IosInstallPrompt />
@@ -84,16 +82,15 @@ export default function DashboardPage() {
 
                 <DashboardAddAppointmentButton />
 
-                {/* اصلاح شده: پاس دادن هر دو فیلد مربوط به انقضا */}
+                {/* هماهنگ شده با فیلد جدید ended_at */}
                 <DashboardPlanStatus
                   planTitle={userData.plan_title}
-                  trialEndsAt={userData.trial_ends_at}
+                  endedAt={userData.ended_at}
                   quotaEndsAt={userData.quota_ends_at}
                 />
               </div>
             </div>
 
-            {/* Recent Appointments */}
             <DashboardRecentAppointments />
           </div>
         </div>

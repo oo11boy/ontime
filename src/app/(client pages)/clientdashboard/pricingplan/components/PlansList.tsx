@@ -33,12 +33,13 @@ export const PlansList: React.FC<PlansListProps> = ({
     <div className="space-y-5">
       {plans.map((plan) => {
         const isCurrentPlan = plan.plan_key === activePlanKey;
+        
         return (
           <PlanCard
             key={plan.id}
             plan={plan}
             isActive={isCurrentPlan}
-            hasUsedFreeTrial={hasUsedFreeTrial}
+            hasUsedFreeTrial={hasUsedFreeTrial} // نام پراپ را اینجا هماهنگ کردیم
             formatPrice={formatPrice}
             onSelect={onSelectPlan}
             isExpired={isExpired}

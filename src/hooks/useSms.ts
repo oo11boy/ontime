@@ -21,8 +21,3 @@ export const useSmsPacks = () => {
   );
 };
 
-export const useBuySms = () => {
-  return useApiMutation("POST", "/api/client/buy-sms", [
-    ["dashboard"],
-  ]);
-};

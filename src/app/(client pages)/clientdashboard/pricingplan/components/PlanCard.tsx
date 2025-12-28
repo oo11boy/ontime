@@ -32,20 +32,25 @@ export const PlanCard: React.FC<PlanCardProps> = ({
   let buttonText = "انتخاب پلن";
   let isDisabled = false;
 
+  // منطق مدیریت وضعیت دکمه و متن آن
   if (isActive) {
     if (isExpired) {
       if (isFreeTrial) {
+        // اگر پلن فعلی رایگان بوده و تمام شده، دیگر قابل انتخاب نیست
         buttonText = "استفاده شده";
         isDisabled = true;
       } else {
+        // اگر پلن فعلی پولی بوده و تمام شده، دکمه تمدید فعال است
         buttonText = "تمدید اشتراک";
         isDisabled = false;
       }
     } else {
+      // اگر پلن فعلی فعال است و هنوز زمان دارد
       buttonText = "پلن فعلی شما";
       isDisabled = true;
     }
   } else {
+    // اگر پلن فعلی کاربر نیست، چک می‌کنیم آیا قبلاً از هدیه استفاده کرده یا خیر
     if (isFreeTrial && hasUsedFreeTrial) {
       buttonText = "استفاده شده";
       isDisabled = true;
@@ -66,12 +71,12 @@ export const PlanCard: React.FC<PlanCardProps> = ({
             ? "border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
             : "border-white/10"
         }
-        ${!isDisabled ? "hover:bg-white/[0.08] cursor-pointer" : "opacity-80"}
+        ${!isDisabled ? "hover:bg-white/[0.08] cursor-pointer" : "opacity-90"}
       `}
       onClick={() => !isDisabled && onSelect(plan.plan_key)}
     >
       {plan.popular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider z-10">
           پیشنهاد ویژه
         </div>
       )}
@@ -97,16 +102,17 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           </div>
         </div>
 
+        {/* بخش جزئیات تعرفه */}
         <div className="grid grid-cols-3 gap-2 mb-6 p-3 bg-black/20 rounded-2xl border border-white/5">
           <div className="text-center">
             <div className="text-sm font-bold">
-              {formatPrice(plan.free_sms_month)}
+              {plan.free_sms_month.toLocaleString('fa-IR')}
             </div>
             <div className="text-[9px] text-gray-500 uppercase">هدیه</div>
           </div>
           <div className="text-center border-x border-white/10">
             <div className="text-sm font-bold">
-              {formatPrice(plan.price_per_100_sms)}
+              {plan.price_per_100_sms.toLocaleString('fa-IR')}
             </div>
             <div className="text-[9px] text-gray-500 uppercase">تعرفه</div>
           </div>
@@ -118,6 +124,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           </div>
         </div>
 
+        {/* لیست ویژگی‌ها */}
         <div className="space-y-3 mb-6">
           {features.map((f, i) => (
             <div key={i} className="flex items-center gap-3">
@@ -127,15 +134,16 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           ))}
         </div>
 
+        {/* دکمه عملیاتی */}
         <button
           disabled={isDisabled}
           className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all
             ${
               isActive && !isExpired
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default"
                 : isDisabled
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : "bg-white text-black hover:bg-emerald-400 hover:scale-[1.02] active:scale-95"
+                ? "bg-gray-800 text-gray-500 cursor-not-allowed grayscale"
+                : "bg-white text-black hover:bg-emerald-400 hover:text-black hover:scale-[1.02] active:scale-95 shadow-lg"
             }
           `}
         >
@@ -143,7 +151,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           {isActive && !isExpired ? (
             <CircleCheckBig className="w-5 h-5" />
           ) : (
-            <Zap className="w-4 h-4" />
+            <Zap className={`w-4 h-4 ${isDisabled ? "text-gray-500" : "animate-pulse"}`} />
           )}
         </button>
       </div>

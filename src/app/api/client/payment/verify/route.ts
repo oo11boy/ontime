@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
   try {
     connection = await dbPool.getConnection();
 
-    // ۱. اگر کاربر پرداخت را لغو کرده یا ناموفق بوده
     if (success !== "1") {
       await connection.execute(
         "UPDATE payments SET status = ? WHERE track_id = ?",
@@ -23,22 +22,19 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // ۲. استعلام نهایی از زیبال (Verify)
     const verifyRes = await fetch("https://gateway.zibal.ir/v1/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        merchant: process.env.ZIBAL_CODE, // کد مرچنت واقعی خود را قرار دهید
+        merchant: process.env.ZIBAL_CODE,
         trackId: trackId,
       }),
     });
     const vData = await verifyRes.json();
 
-    // ۳. اگر پرداخت توسط زیبال تایید شد
     if (vData.result === 100 && vData.status === 1) {
       await connection.beginTransaction();
 
-      // دریافت اطلاعات تراکنش از جدول لاگ ما
       const [payInfo]: any = await connection.execute(
         "SELECT * FROM payments WHERE track_id = ? LIMIT 1",
         [trackId]
@@ -51,17 +47,13 @@ export async function GET(req: NextRequest) {
       const payment = payInfo[0];
       const userId = payment.user_id;
 
-      // الف) آپدیت وضعیت تراکنش در جدول لاگ
       await connection.execute(
         "UPDATE payments SET status = ?, ref_number = ?, card_number = ? WHERE track_id = ?",
         ["success", vData.refNumber, vData.cardNumber, trackId]
       );
 
-      // ب) تحویل محصول بر اساس نوع تراکنش
       if (payment.type === "sms") {
-        // --- حالت خرید بسته پیامکی ---
         const smsCount = payment.item_id;
-
         await connection.execute(
           `INSERT INTO smspurchase 
             (user_id, type, amount_paid, ref_number, sms_amount, remaining_sms, valid_from, expires_at, status) 
@@ -69,16 +61,13 @@ export async function GET(req: NextRequest) {
           [userId, payment.amount / 10, vData.refNumber, smsCount, smsCount]
         );
 
-        // ۲. اضافه کردن مستقیم به اعتبار خریداری شده یوزر
         await connection.execute(
           "UPDATE users SET purchased_sms_credit = purchased_sms_credit + ? WHERE id = ?",
           [smsCount, userId]
         );
       } else if (payment.type === "plan") {
-        // --- حالت خرید/ارتقای پلن ---
         const planId = payment.item_id;
 
-        // ۱. دریافت اطلاعات پلن از جدول plans
         const [plans]: any = await connection.execute(
           "SELECT * FROM plans WHERE id = ?",
           [planId]
@@ -86,50 +75,69 @@ export async function GET(req: NextRequest) {
         const plan = plans[0];
 
         if (plan) {
-          const durationDays = plan.plan_key === "free_trial" ? 60 : 30;
+          // تعیین طول دوره پلن (رایگان ۲ ماه، بقیه ۱ ماه)
+          const durationMonths = plan.plan_key === "free_trial" ? 2 : 1;
 
-          // ۲. آپدیت اطلاعات یوزر (پلن جدید و شارژ ماهانه)
-          await connection.execute(
-            `UPDATE users SET 
-              plan_key = ?, 
-              sms_balance = ?, 
-              sms_monthly_quota = ?, 
-              quota_starts_at = CURDATE(), 
-              quota_ends_at = DATE_ADD(CURDATE(), INTERVAL ? DAY)
-              WHERE id = ?`,
-            [
-              plan.plan_key,
-              plan.free_sms_month,
-              plan.free_sms_month,
-              durationDays,
-              userId,
-            ]
-          );
+          // تاریخ شروع (امروز)
+          const today = new Date();
+          const startedAt = today.toISOString().split("T")[0];
 
-          // ۳. ثبت در تاریخچه خریدها (با اضافه کردن کد پیگیری بانکی)
+          // محاسبه تاریخ پایان کل پلن (ended_at)
+          const endDate = new Date();
+          endDate.setMonth(today.getMonth() + durationMonths);
+          const endedAt = endDate.toISOString().split("T")[0];
+
+          // محاسبه تاریخ پایان سهمیه این ماه (quota_ends_at) - همیشه ۱ ماه بعد
+          const quotaEndDate = new Date();
+          quotaEndDate.setMonth(today.getMonth() + 1);
+          const quotaEndsAt = quotaEndDate.toISOString().split("T")[0];
+
+  // در فایل verify/route.ts - بخش آپدیت پلن
+await connection.execute(
+  `UPDATE users SET 
+    plan_key = ?, 
+    sms_balance = ?, 
+    sms_monthly_quota = ?, 
+    started_at = ?, 
+    ended_at = ?, 
+    quota_starts_at = ?, 
+    quota_ends_at = ?,
+    has_used_free_trial = 1
+    WHERE id = ?`,
+  [
+    plan.plan_key,
+    plan.free_sms_month,
+    plan.free_sms_month,
+    startedAt,
+    endedAt,
+    startedAt,
+    quotaEndsAt,
+    userId,
+  ]
+);
+
+          // ۳. ثبت در تاریخچه خریدها
           await connection.execute(
             `INSERT INTO smspurchase 
               (user_id, type, amount_paid, ref_number, sms_amount, remaining_sms, valid_from, expires_at, status) 
-              VALUES (?, 'monthly_subscription', ?, ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL ? DAY), 'active')`,
+              VALUES (?, 'monthly_subscription', ?, ?, ?, ?, CURDATE(), ?, 'active')`,
             [
               userId,
               payment.amount / 10,
-              vData.refNumber, // ذخیره کد پیگیری برای پلن
+              vData.refNumber,
               plan.free_sms_month,
               plan.free_sms_month,
-              durationDays,
+              endedAt, // کل اعتبار پلن
             ]
           );
         }
       }
 
       await connection.commit();
-      // انتقال به داشبورد با پیام موفقیت
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=success&trackId=${trackId}`
       );
     } else {
-      // اگر تایید نشد (مثلاً پرداخت تکراری یا تقلبی)
       await connection.execute(
         "UPDATE payments SET status = ? WHERE track_id = ?",
         ["failed", trackId]

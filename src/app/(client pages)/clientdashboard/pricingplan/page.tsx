@@ -60,32 +60,31 @@ export default function PricingPlans() {
   const REFERENCE_PRICE = 45000;
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const processedPlans: Plan[] = (plansData?.plans || []).map((plan: PlanData) => ({
+  ...plan,
+  discountPer100: plan.price_per_100_sms < REFERENCE_PRICE 
+    ? Math.round(((REFERENCE_PRICE - plan.price_per_100_sms) / REFERENCE_PRICE) * 100) 
+    : 0,
+  popular: plan.plan_key === "pro",
+}));
 
-  const processedPlans: Plan[] = (plansData?.plans || []).map((plan: PlanData) => ({
-    ...plan,
-    discountPer100:
-      plan.price_per_100_sms < REFERENCE_PRICE
-        ? Math.round(((REFERENCE_PRICE - plan.price_per_100_sms) / REFERENCE_PRICE) * 100)
-        : 0,
-    popular: plan.plan_key === "pro",
-  }));
+const handlePlanSelection = (planKey: string) => {
+  const plan = processedPlans.find((p) => p.plan_key === planKey);
+  if (!plan) return;
 
-  const handlePlanSelection = (planKey: string) => {
-    const plan = processedPlans.find((p) => p.plan_key === planKey);
-    if (!plan) return;
+  // اگر پلن رایگان بود و قبلاً استفاده شده بود، اجازه ادامه نده
+  if (planKey === "free_trial" && hasUsedFreeTrial) {
+    return; // دکمه غیرفعال است اما این برای اطمینان بیشتر است
+  }
 
-    if (planKey === activePlanKey && !isExpired) {
-      setError("اشتراک فعلی شما هنوز معتبر است.");
-      return;
-    }
-    if (planKey === "free_trial" && hasUsedFreeTrial) {
-      setError("شما قبلاً از دوره آزمایشی رایگان استفاده کرده‌اید.");
-      return;
-    }
+  if (planKey === activePlanKey && !isExpired) {
+    setError("اشتراک فعلی شما هنوز معتبر است.");
+    return;
+  }
 
-    setError(null);
-    setSelectedPlanForModal(plan);
-  };
+  setError(null);
+  setSelectedPlanForModal(plan);
+};
 
   const confirmAndPay = async () => {
     if (!selectedPlanForModal) return;
