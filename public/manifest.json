@@ -1,7 +1,7 @@
 {
-  "name": "OnTime Client",
-  "short_name": "OnTime",
-  "description": "سامانه مدیریت هوشمند نوبت‌دهی و مشتریان آن‌تایم",
+  "name": "اپلیکیشن نوبت دهی آنتایم",
+  "short_name": "آنتایم",
+  "description": "سامانه مدیریت هوشمند نوبت‌دهی و مشتریان آنتایم",
   "id": "/clientdashboard",
   "start_url": "/clientdashboard?utm_source=pwa",
   "scope": "/",
@@ -14,7 +14,7 @@
   "icons": [
     {
       "src": "/icons/icon-192.png",
-      "sizes": "192x192",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
@@ -23,6 +23,21 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],"screenshots": [
+    {
+      "src": "/images/screens/main.jpg",
+      "sizes": "584x980",
+      "type": "image/jpg",
+      "form_factor": "narrow",
+      "label": "داشبورد آنتایم"
+    },
+    {
+      "src": "/images/app.jpg",
+      "sizes": "1184x864",
+      "type": "image/jpg",
+      "form_factor": "wide",
+      "label": "نمای دسکتاپ اپلیکیشن آنتایم"
     }
   ]
 }
