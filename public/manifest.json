@@ -2,11 +2,12 @@
   "name": "OnTime Client",
   "short_name": "OnTime",
   "description": "سامانه مدیریت هوشمند نوبت‌دهی و مشتریان آن‌تایم",
-  "start_url": "/clientdashboard",
+  "id": "/clientdashboard",
+  "start_url": "/clientdashboard?utm_source=pwa",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f172a",
+  "background_color": "#1D222A",
+  "theme_color": "#1D222A",
   "lang": "fa",
   "dir": "rtl",
   "orientation": "portrait",
@@ -14,12 +15,14 @@
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

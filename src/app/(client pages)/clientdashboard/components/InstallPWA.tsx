@@ -22,19 +22,24 @@ export default function InstallPWA() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  const handleInstallClick = async () => {
+const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
-    // نمایش پنجره نصب مرورگر
     deferredPrompt.prompt();
 
-    // بررسی انتخاب کاربر
     const { outcome } = await deferredPrompt.userChoice;
+    
     if (outcome === "accepted") {
       console.log("کاربر اپلیکیشن را نصب کرد");
+      // چک کردن وجود gtag برای جلوگیری از کرش کردن برنامه
+      if (typeof window !== "undefined" && (window as any).gtag) {
+        (window as any).gtag('event', 'pwa_install_accepted', {
+          event_category: 'PWA',
+          event_label: 'Android Install'
+        });
+      }
     }
     
-    // در هر صورت دکمه را مخفی کن و رویداد را پاک کن
     setDeferredPrompt(null);
     setIsVisible(false);
   };
