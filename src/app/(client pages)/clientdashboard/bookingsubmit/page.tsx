@@ -231,7 +231,7 @@ export default function NewAppointmentPage() {
                 router={router}
               />
             ),
-            { duration: 10000 }
+            { duration: 3000 }
           );
         },
         onError: () => toast.error("خطا در ثبت نوبت", { id: loadingId }),

@@ -133,7 +133,7 @@ const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
 
       {/* مودال لیست مشتریان */}
       {isClientListOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end">
+        <div className="fixed max-w-md m-auto  inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end">
           <div className="bg-[#1a1e26] w-full rounded-t-3xl max-h-[80vh] overflow-hidden flex flex-col">
             {/* هدر مودال */}
             <div className="p-4 border-b border-white/10 flex items-center justify-between">

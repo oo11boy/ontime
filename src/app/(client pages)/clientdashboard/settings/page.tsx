@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  User, Phone, Save, ArrowRight, Loader2, ShieldCheck, UserCircle, Briefcase 
+  User, Phone, Save, ArrowRight, Loader2, ShieldCheck, UserCircle, Briefcase, Building2 
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,10 +19,10 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    job_id: ""
+    job_id: "",
+    business_name: "" // اضافه شدن نام بیزنس
   });
 
-  // ۱. دریافت لیست مشاغل و اطلاعات فعلی کاربر به‌صورت همزمان
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -33,7 +33,7 @@ export default function SettingsPage() {
         const jobsData = await jobsRes.json();
         setJobs(jobsData.jobs || []);
 
-        // دریافت اطلاعات فعلی کاربر از API تنظیمات
+        // دریافت اطلاعات فعلی کاربر
         const userRes = await fetch("/api/client/settings");
         const userData = await userRes.json();
 
@@ -41,8 +41,8 @@ export default function SettingsPage() {
           setFormData({
             name: userData.user.name || "",
             phone: userData.user.phone || "",
-            // تبدیل id به string برای هماهنگی با value در select
-            job_id: userData.user.job_id?.toString() || ""
+            job_id: userData.user.job_id?.toString() || "",
+            business_name: userData.user.business_name || "" // دریافت از دیتابیس
           });
         }
       } catch (err) {
@@ -58,7 +58,8 @@ export default function SettingsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.phone.trim() || !formData.job_id) {
+    // بررسی پر بودن فیلدها (نام بیزنس هم اجباری لحاظ شده)
+    if (!formData.name.trim() || !formData.phone.trim() || !formData.job_id || !formData.business_name.trim()) {
       toast.error("لطفاً تمامی فیلدها را پر کنید");
       return;
     }
@@ -96,7 +97,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen text-white max-w-md mx-auto relative flex flex-col bg-[#121212]">
-      {/* هدر ثابت */}
+      {/* هدر */}
       <div className="sticky top-0 z-50 bg-[#121212]/80 backdrop-blur-lg border-b border-gray-800/50 px-4 py-4" dir="rtl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -105,7 +106,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-100">تنظیمات پروفایل</h1>
-              <p className="text-[10px] text-gray-500">ویرایش اطلاعات حساب</p>
+              <p className="text-[10px] text-gray-500">ویرایش اطلاعات شخصی و بیزنس</p>
             </div>
           </div>
           <button onClick={() => router.back()} className="p-2.5 rounded-xl bg-gray-800/50 text-gray-400 hover:text-white border border-gray-700/30 transition-all">
@@ -119,36 +120,55 @@ export default function SettingsPage() {
           <div className="bg-[#1B1F28] border border-gray-700/50 rounded-4xl overflow-hidden shadow-2xl">
             <div className="p-6 md:p-8 space-y-7">
               
-              {/* نام */}
+              {/* نام شخص */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 mr-1">
                   <User className="w-4 h-4 text-emerald-500" /> نام و نام خانوادگی
                 </label>
                 <input
                   type="text"
+                  placeholder="مثلاً: علی رضایی"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
                 />
               </div>
 
-              {/* انتخاب شغل - پیش‌فرض ست شده */}
+              {/* نام کسب و کار - فیلد جدید */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 mr-1">
+                  <Building2 className="w-4 h-4 text-emerald-500" /> نام کسب‌وکار  </label>
+                <input
+                  type="text"
+                  placeholder="مثلاً: سالن زیبایی نوین"
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all font-bold"
+                />
+              </div>
+
+              {/* انتخاب شغل */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 mr-1">
                   <Briefcase className="w-4 h-4 text-emerald-500" /> شاخه کاری
                 </label>
-                <select
-                  value={formData.job_id}
-                  onChange={(e) => setFormData({ ...formData, job_id: e.target.value })}
-                  className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 appearance-none cursor-pointer"
-                >
-                  <option value="" disabled>انتخاب کنید...</option>
-                  {jobs.map((j) => (
-                    <option key={j.id} value={j.id.toString()}>
-                      {j.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={formData.job_id}
+                    onChange={(e) => setFormData({ ...formData, job_id: e.target.value })}
+                    className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>انتخاب کنید...</option>
+                    {jobs.map((j) => (
+                      <option key={j.id} value={j.id.toString()}>
+                        {j.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <ArrowRight className="w-4 h-4 text-gray-500 rotate-90" />
+                  </div>
+                </div>
               </div>
 
               {/* شماره موبایل */}
@@ -167,8 +187,8 @@ export default function SettingsPage() {
               <div className="flex items-start gap-4 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
                 <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-1" />
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-gray-200">امنیت حساب</h4>
-                  <p className="text-[10px] text-gray-400 leading-5">اطلاعات شما به‌صورت رمزنگاری شده ذخیره می‌شود.</p>
+                  <h4 className="text-xs font-bold text-gray-200">امنیت اطلاعات</h4>
+                  <p className="text-[10px] text-gray-400 leading-5">نام کسب‌وکار شما در پیامک‌های ارسالی به مشتریان نمایش داده می‌شود.</p>
                 </div>
               </div>
             </div>
@@ -177,7 +197,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="w-full min-w-40 h-14 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-[#1B1F28] font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-[#1B1F28] font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
               >
                 {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Save className="w-5 h-5" /> ذخیره تغییرات</>}
               </button>
