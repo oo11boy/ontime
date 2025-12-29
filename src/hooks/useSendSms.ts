@@ -1,3 +1,4 @@
+// src/hooks/useSendSms.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 
@@ -11,7 +12,6 @@ interface SendSinglePayload {
 
 /**
  * هوک ارسال پیامک تکی
- * پس از موفقیت، کوئری 'dashboard' را ابطال می‌کند تا موجودی آپدیت شود
  */
 export const useSendSingleSms = () => {
   const queryClient = useQueryClient();
@@ -33,8 +33,8 @@ export const useSendSingleSms = () => {
     },
     onSuccess: () => {
       toast.success("پیامک با موفقیت ارسال شد");
-      // ابطال کش داشبورد برای دریافت موجودی جدید از سرور
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["sms-balance"] });
     },
     onError: (error: any) => {
       toast.error(error.message || "خطا در ارتباط با سرور");
@@ -51,19 +51,19 @@ interface BulkRecipient {
 
 interface SendBulkPayload {
   recipients: BulkRecipient[];
-  message: string;
+  templateKey: string; // اصلاح شد: تغییر از message به templateKey برای هماهنگی با API و Page
   sms_type?: string;
 }
 
 /**
  * هوک ارسال پیامک گروهی
- * تعداد پیامک‌های کسر شده را بر اساس تعداد گیرندگان از موجودی کم می‌کند
  */
 export const useSendBulkSms = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (payload: SendBulkPayload) => {
+      // دقت کنید آدرس API باید با فایلی که ساختید (api/sms/bulk) یکی باشد
       const res = await fetch("/api/sms/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,8 +78,10 @@ export const useSendBulkSms = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message || "ارسال گروهی با موفقیت انجام شد");
-      // به‌روزرسانی آنی موجودی در رابط کاربری
+      // به‌روزرسانی موجودی در تمام بخش‌های اپلیکیشن
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["sms-balance"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
     },
     onError: (error: any) => {
       toast.error(error.message || "خطا در عملیات ارسال گروهی");

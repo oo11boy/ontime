@@ -1,31 +1,44 @@
+// src\app\api\client\settings\route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 
-// دریافت اطلاعات فعلی کاربر
-// دریافت اطلاعات فعلی کاربر
+// دریافت اطلاعات فعلی کاربر (شامل نام کسب‌وکار)
 export const GET = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
     const users = await query<any[]>(
-      'SELECT name, phone, job_id FROM users WHERE id = ?',
+      "SELECT name, business_name, phone, job_id FROM users WHERE id = ?",
       [userId]
     );
+
+    if (!users || users.length === 0) {
+      return NextResponse.json(
+        { success: false, message: "کاربر یافت نشد" },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({ success: true, user: users[0] });
   } catch (error) {
-    return NextResponse.json({ success: false, message: 'خطا در دریافت اطلاعات' }, { status: 500 });
+    console.error("Fetch Profile Error:", error);
+    return NextResponse.json(
+      { success: false, message: "خطا در دریافت اطلاعات" },
+      { status: 500 }
+    );
   }
 });
 
-// آپدیت اطلاعات کاربر
+// آپدیت اطلاعات کاربر (نام، نام کسب‌وکار، تلفن و شغل)
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
-    const { name, phone, job_id } = await req.json();
+    const { name, business_name, phone, job_id } = await req.json();
 
+    // فیلد business_name را اجباری نمی‌کنیم تا ثبت‌نام اولیه راحت باشد
     if (!name || !phone || !job_id) {
       return NextResponse.json(
-        { message: "تمامی فیلدها الزامی است" },
+        { message: "نام، شماره تماس و نوع تخصص الزامی است" },
         { status: 400 }
       );
     }
@@ -43,9 +56,10 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
+    // بروزرسانی دیتابیس شامل ستون جدید business_name
     await query(
-      "UPDATE users SET name = ?, phone = ?, job_id = ? WHERE id = ?",
-      [name, phone, job_id, userId]
+      "UPDATE users SET name = ?, business_name = ?, phone = ?, job_id = ? WHERE id = ?",
+      [name, business_name || null, phone, job_id, userId]
     );
 
     return NextResponse.json({
