@@ -126,13 +126,13 @@ export default function CustomersList() {
         onClose={() => setShowAddClientModal(false)}
         onSuccess={refreshClients} 
       />
-      <BulkSmsModal 
+      {/* <BulkSmsModal 
         isOpen={showBulkSmsModal} 
         onClose={() => setShowBulkSmsModal(false)}
         clients={clients} 
         userSmsBalance={userSmsBalance} 
         onSend={handleSendBulkSms} 
-      />
+      /> */}
     </div>
   );
 }

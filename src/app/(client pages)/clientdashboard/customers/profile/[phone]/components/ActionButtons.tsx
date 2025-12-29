@@ -21,7 +21,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   return (
     <div className="flex gap-3 mb-8">
-      <button
+      {/* <button
         onClick={onShowSmsModal}
         disabled={customer.is_blocked}
         className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
@@ -32,7 +32,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       >
         <MessageCircle className="w-5 h-5" />
         ارسال پیامک
-      </button>
+      </button> */}
 
       {customer.is_blocked ? (
         <button

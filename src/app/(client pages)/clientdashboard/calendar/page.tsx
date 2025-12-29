@@ -435,7 +435,7 @@ export default function CalendarPage() {
           services={dynamicServices}
         />
       )}
-      {selectedDayForSms && (
+      {/* {selectedDayForSms && (
         <BulkSmsModal
           isOpen={showBulkSmsModal}
           onClose={() => {
@@ -449,7 +449,7 @@ export default function CalendarPage() {
             handleSendBulkSms(message, appointmentIds)
           }
         />
-      )}
+      )} */}
     </div>
   );
 }

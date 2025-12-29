@@ -1,79 +1,163 @@
-// File Path: src\app\api\client\auth\login\route.ts
+import { NextResponse } from "next/server";
+import { query, QueryResult } from "@/lib/db";
+import { generateToken } from "@/lib/auth";
+import { cookies } from "next/headers";
 
-// src/app/api/auth/route.ts
+async function sendSms(phone: string, code: string) {
+  const API_URL = "https://edge.ippanel.com/v1/api/send";
+  const API_KEY = process.env.IP_PANEL_API_KEY;
+  const SENDER = process.env.SENDER_NUMBER;
+  const PATTERN_CODE = "c08amdu58d226ss";
 
-import { NextResponse } from 'next/server';
-import { query, QueryResult } from '@/lib/db';
-import { generateToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
+  const formattedPhone = phone.startsWith("0") ? `+98${phone.slice(1)}` : phone;
 
-const MOCK_OTP = '123456';
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: API_KEY || "",
+      },
+      body: JSON.stringify({
+        sending_type: "pattern",
+        from_number: SENDER,
+        code: PATTERN_CODE,
+        recipients: [formattedPhone],
+        params: { code },
+      }),
+    });
+    const result = await response.json();
+    return result.meta?.status === true;
+  } catch (error) {
+    console.error("SMS Error:", error);
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
-    try {
-        const body = await req.json();
-        const { phone, otp, resend } = body;
+  try {
+    const body = await req.json();
+    const { phone, otp, resend } = body;
 
-        if (!phone) {
-            return NextResponse.json({ message: 'شماره موبایل الزامی است.' }, { status: 400 });
-        }
-
-        // مرحله ارسال OTP (یا ارسال مجدد)
-        if (!otp || resend) {
-            const users = await query<{ id: number }>('SELECT id FROM users WHERE phone = ?', [phone]);
-            const isRegistered = users.length > 0;
-
-            if (!isRegistered) {
-                await query<QueryResult>(
-                    'INSERT INTO users (phone, plan_key) VALUES (?, ?)',
-                    [phone, 'free_trial']
-                );
-            }
-
-            return NextResponse.json({
-                message: 'کد تأیید ارسال شد (تست: 123456)',
-                otp: MOCK_OTP
-            });
-        }
-
-        // مرحله تأیید OTP
-        if (otp !== MOCK_OTP) {
-            return NextResponse.json({ message: 'کد تأیید اشتباه است.' }, { status: 401 });
-        }
-
-        const users = await query<{
-            id: number;
-            name: string | null;
-            job_id: number | null;
-        }>('SELECT id, name, job_id FROM users WHERE phone = ?', [phone]);
-
-        if (users.length === 0) {
-            return NextResponse.json({ message: 'کاربر یافت نشد.' }, { status: 404 });
-        }
-
-        const user = users[0];
-        const token = generateToken(user.id);
-
-        // تنظیم کوکی
-        (await cookies()).set('authToken', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60,
-            path: '/',
-            sameSite: 'lax',
-        });
-
-        const signupComplete = !!user.name && !!user.job_id;
-
-        // در این مرحله تریال فعال نمی‌شود و مودال هم نشان داده نمی‌شود
-        return NextResponse.json({
-            message: 'ورود موفقیت‌آمیز بود.',
-            signup_complete: signupComplete,
-            // show_welcome_modal ارسال نمی‌شود (همیشه false در نظر گرفته می‌شود)
-        });
-
-    } catch (error: any) {
-        console.error('خطا در احراز هویت:', error);
-        return NextResponse.json({ message: 'خطا در سرور.' }, { status: 500 });
+    if (!phone || !/^09\d{9}$/.test(phone)) {
+      return NextResponse.json(
+        { message: "شماره موبایل نامعتبر است." },
+        { status: 400 }
+      );
     }
+
+    // --- ۱. مرحله درخواست کد (ارسال پیامک) ---
+    if (!otp || resend) {
+      // بررسی محدودیت زمانی (Rate Limit) - هر ۲ دقیقه یک بار
+      const existingUser = await query<{ last_otp_at: string }>(
+        "SELECT last_otp_at FROM users WHERE phone = ?",
+        [phone]
+      );
+
+      if (existingUser.length > 0 && existingUser[0].last_otp_at) {
+        const diff =
+          Date.now() - new Date(existingUser[0].last_otp_at).getTime();
+        if (diff < 120000) {
+          // کمتر از ۱۲۰ ثانیه
+          return NextResponse.json(
+            { message: "لطفاً ۲ دقیقه صبر کرده و دوباره تلاش کنید." },
+            { status: 429 }
+          );
+        }
+      }
+
+      const realOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+      if (existingUser.length === 0) {
+        await query(
+          "INSERT INTO users (phone, plan_key, otp_code, otp_expires_at, last_otp_at, otp_attempts) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 2 MINUTE), NOW(), 0)",
+          [phone, "free_trial", realOtp]
+        );
+      } else {
+        await query(
+          "UPDATE users SET otp_code = ?, otp_expires_at = DATE_ADD(NOW(), INTERVAL 2 MINUTE), last_otp_at = NOW(), otp_attempts = 0 WHERE phone = ?",
+          [realOtp, phone]
+        );
+      }
+
+      const smsSent = await sendSms(phone, realOtp);
+      if (!smsSent) {
+        return NextResponse.json(
+          { message: "خطا در ارسال پیامک." },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        message: "کد با موفقیت ارسال شد.",
+        ...(process.env.NODE_ENV === "development" && { debug_otp: realOtp }),
+      });
+    }
+
+    // --- ۲. مرحله تایید کد (Verify OTP) ---
+    const users = await query<{
+      id: number;
+      name: string;
+      job_id: number;
+      otp_code: string;
+      otp_attempts: number;
+    }>(
+      "SELECT id, name, job_id, otp_code, otp_attempts FROM users WHERE phone = ? AND otp_expires_at > NOW()",
+      [phone]
+    );
+
+    if (users.length === 0) {
+      return NextResponse.json(
+        { message: "کد منقضی شده یا درخواستی یافت نشد." },
+        { status: 401 }
+      );
+    }
+
+    const user = users[0];
+
+    // جلوگیری از Brute Force (حداکثر ۵ تلاش اشتباه)
+    if (user.otp_attempts >= 5) {
+      return NextResponse.json(
+        {
+          message:
+            "تعداد تلاش‌های شما بیش از حد مجاز است. دوباره درخواست کد بدهید.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (user.otp_code !== otp) {
+      await query(
+        "UPDATE users SET otp_attempts = otp_attempts + 1 WHERE id = ?",
+        [user.id]
+      );
+      return NextResponse.json(
+        { message: "کد تایید اشتباه است." },
+        { status: 401 }
+      );
+    }
+
+    // تایید موفق: پاکسازی کد و ریست کردن تلاش‌ها
+    await query(
+      "UPDATE users SET otp_code = NULL, otp_expires_at = NULL, otp_attempts = 0 WHERE id = ?",
+      [user.id]
+    );
+
+    const token = generateToken(user.id);
+    (await cookies()).set("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+      sameSite: "lax",
+    });
+
+    return NextResponse.json({
+      message: "خوش آمدید",
+      signup_complete: !!user.name && !!user.job_id,
+    });
+  } catch (error: any) {
+    console.error("Critical Login Error:", error);
+    return NextResponse.json({ message: "خطای سرور." }, { status: 500 });
+  }
 }

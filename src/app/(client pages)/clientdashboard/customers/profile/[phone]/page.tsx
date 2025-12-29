@@ -211,11 +211,11 @@ if (sendCancellationSms && cancellationMessage.trim() && customer) {
                 : "border-emerald-500/20"
             } overflow-hidden shadow-2xl m-4`}
           >
-            {customer.is_blocked && (
+            {customer.is_blocked ?(
               <div className="bg-linear-to-r from-red-600 to-red-700 text-white text-center py-3.5 font-bold text-sm shadow-lg">
                 این مشتری بلاک شده است
               </div>
-            )}
+            ):""}
 
             <CustomerHeader
               customer={customer}
