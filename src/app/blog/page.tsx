@@ -7,16 +7,23 @@ import type { Metadata } from "next";
 import { blogMetadata } from '../metadata';
 
 export const metadata: Metadata = blogMetadata;
-export const revalidate = 0;
+
+// استفاده از force-dynamic اگر دیتابیس مرتباً آپدیت می‌شود
+export const revalidate = 60; // آپدیت محتوا هر یک دقیقه (بهینه‌تر از 0)
 
 export default async function BlogListPage() {
-  const posts: any = await query(
-    `SELECT title, slug, description, created_at, reading_time, category FROM blog_posts ORDER BY created_at DESC`
-  );
+  // اضافه کردن بلاک try-catch برای جلوگیری از کرش در صورت مشکل دیتابیس
+  let posts: any[] = [];
+  try {
+    posts = await query(
+      `SELECT title, slug, description, created_at, reading_time, category FROM blog_posts ORDER BY created_at DESC`
+    ) as any[];
+  } catch (error) {
+    console.error("Database error:", error);
+  }
 
   const baseUrl = "https://ontimeapp.ir";
 
-  // اسکیما بهینه شده به صورت گراف برای اتصال Breadcrumb به صفحه لیست
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -65,6 +72,7 @@ export default async function BlogListPage() {
           <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl"></div>
         </div>
 
+        {/* Breadcrumb بصری برای کاربر */}
         <nav className="flex items-center gap-2 text-gray-500 text-xs mb-8" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-blue-600 flex items-center gap-1 transition-colors">
             <Home size={14} /> خانه
@@ -81,7 +89,7 @@ export default async function BlogListPage() {
           </div>
           
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 leading-tight">
-            مجله تخصصی <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-700">آنتایم</span>
+            مجله تخصصی <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700">آنتایم</span>
           </h1>
           
           <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
@@ -106,7 +114,6 @@ export default async function BlogListPage() {
                 </h2>
                 
                 <p className="text-slate-500 leading-relaxed mb-8 grow font-medium text-sm line-clamp-3">
-                  {/* حذف تگ‌های HTML احتمالی از دیسکریپشن برای نمایش تمیز */}
                   {post.description?.replace(/<[^>]*>/g, '')}
                 </p>
 

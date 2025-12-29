@@ -1,7 +1,7 @@
 // src/components/Landing/schemas/mainPageSchemas.ts
 
 export const landingPageSchemas = [
-  // ۱. HeroSection - WebApplication
+  // ۱. معرفی اپلیکیشن به عنوان نرم‌افزار تحت وب (WebApplication)
   {
     id: "hero-webapp-schema",
     data: {
@@ -17,12 +17,13 @@ export const landingPageSchemas = [
         "@type": "Offer",
         price: "0",
         priceCurrency: "IRR",
+        priceValidUntil: "2030-12-31",
         description: "۲ ماه اشتراک رایگان برای شروع مدیریت هوشمند نوبت‌ها",
       },
     },
   },
 
-  // ۲. DetailedSMS - Service (اتوماسیون پیامکی)
+  // ۲. خدمات اتوماسیون پیامکی (Service)
   {
     id: "sms-automation-schema",
     data: {
@@ -42,6 +43,7 @@ export const landingPageSchemas = [
         itemListElement: [
           {
             "@type": "Offer",
+              priceValidUntil: "2030-12-31",
             itemOffered: {
               "@type": "Service",
               name: "کاهش ۸۰ درصدی کنسلی نوبت",
@@ -50,6 +52,7 @@ export const landingPageSchemas = [
           },
           {
             "@type": "Offer",
+              priceValidUntil: "2030-12-31",
             itemOffered: {
               "@type": "Service",
               name: "یادآوری خودکار پیامکی",
@@ -62,7 +65,7 @@ export const landingPageSchemas = [
     },
   },
 
-  // ۳. AnalyticsSection - Service (تحلیل و آنالیز)
+  // ۳. تحلیل و آنالیز کسب‌وکار (Service)
   {
     id: "analytics-schema",
     data: {
@@ -101,7 +104,7 @@ export const landingPageSchemas = [
     },
   },
 
-  // ۴. CalculatorEnhanced - WebApplication (ماشین‌حساب ROI)
+  // ۴. ماشین‌حساب بازگشت سرمایه (WebApplication)
   {
     id: "roi-calculator-schema",
     data: {
@@ -116,11 +119,12 @@ export const landingPageSchemas = [
         "@type": "Offer",
         price: "0",
         priceCurrency: "IRR",
+            priceValidUntil: "2030-12-31",
       },
     },
   },
 
-  // ۵. FeaturesSection (FeaturesGrid) - ItemList (لیست امکانات کلیدی)
+  // ۵. لیست امکانات کلیدی (ItemList)
   {
     id: "features-list-schema",
     data: {
@@ -134,46 +138,33 @@ export const landingPageSchemas = [
           "@type": "ListItem",
           position: 1,
           name: "ارسال پیامک یادآوری نوبت خودکار",
-          description:
-            "سیستم هوشمند اطلاع‌رسانی پیامکی جهت کاهش نرخ کنسلی نوبت‌ها.",
         },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "پنل مشتری تحت وب (PWA)",
-          description:
-            "دسترسی سریع مشتری به جزییات نوبت بدون نیاز به نصب اپلیکیشن.",
-        },
+        { "@type": "ListItem", position: 2, name: "پنل مشتری تحت وب (PWA)" },
         {
           "@type": "ListItem",
           position: 3,
           name: "تقویم آنلاین نوبت‌دهی شمسی",
-          description: "مدیریت بصری زمان‌های کاری و جلوگیری از تداخل رزروها.",
         },
         {
           "@type": "ListItem",
           position: 4,
           name: "بانک اطلاعاتی و پرونده مشتریان",
-          description: "تشکیل پروفایل خودکار و ذخیره تاریخچه مراجعات هر مشتری.",
         },
         {
           "@type": "ListItem",
           position: 5,
           name: "مدیریت لیست سیاه و کنسلی‌ها",
-          description: "شناسایی هوشمند مشتریان بدقول بر اساس سوابق قبلی.",
         },
         {
           "@type": "ListItem",
           position: 6,
           name: "مدیریت چندین پرسنل و لاین کاری",
-          description:
-            "تفکیک تقویم‌های کاری برای مراکز بزرگ و کلینیک‌های چند تخصصی.",
         },
       ],
     },
   },
 
-  // ۶. FAQSection - FAQPage
+  // ۶. سوالات متداول (FAQPage) - بسیار مهم برای نمایش در گوگل
   {
     id: "faq-schema",
     data: {
@@ -185,7 +176,7 @@ export const landingPageSchemas = [
           name: "آیا مشتری من هم باید اپلیکیشن آنتایم را نصب کند؟",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "خیر، مشتری شما هیچ نیازی به نصب برنامه ندارد. تمام تعاملات از طریق پیامک و وب‌اپلیکیشن (PWA) انجام می‌شود که روی تمام گوشی‌ها به سرعت باز می‌شود.",
+            text: "خیر، مشتری شما هیچ نیازی به نصب برنامه ندارد. تمام تعاملات از طریق پیامک و وب‌اپلیکیشن (PWA) انجام می‌شود.",
           },
         },
         {
@@ -193,23 +184,7 @@ export const landingPageSchemas = [
           name: "هزینه پیامک‌های یادآوری چگونه محاسبه می‌شود؟",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "شما بر اساس پلن انتخابی، ماهانه تعدادی پیامک هدیه دریافت می‌کنید و در صورت نیاز به پیامک بیشتر، می‌توانید پنل خود را با تعرفه رسمی شارژ کنید.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "سیستم چگونه از کنسلی نوبت‌ها جلوگیری می‌کند؟",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "آنتایم با ارسال پیامک‌های یادآوری هوشمند و ارائه لینک اختصاصی جهت جابجایی نوبت توسط مشتری، از خالی ماندن تایم کاری شما جلوگیری می‌کند.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "آیا امنیت داده‌ها و لیست مشتریان من تضمین شده است؟",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "بله، اطلاعات به صورت رمزنگاری شده در سرورهای ابری اختصاصی نگهداری می‌شود و شما مالک کامل داده‌ها هستید و امکان خروجی اکسل همیشه مهیاست.",
+            text: "شما ماهانه تعدادی پیامک هدیه دریافت می‌کنید و در صورت نیاز بیشتر، می‌توانید با تعرفه رسمی شارژ کنید.",
           },
         },
         {
@@ -217,14 +192,14 @@ export const landingPageSchemas = [
           name: "آنتایم برای چه کسب‌وکارهایی مناسب است؟",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "تمام صنف‌های خدماتی از جمله سالن‌های زیبایی، کلینیک‌های پزشکی، مشاوران، آموزشگاه‌ها و تعمیرگاه‌ها می‌توانند از آنتایم استفاده کنند.",
+            text: "تمام صنف‌های خدماتی از جمله سالن‌های زیبایی، کلینیک‌های پزشکی، آموزشگاه‌ها و تعمیرگاه‌ها.",
           },
         },
       ],
     },
   },
 
-  // ۷. FreeTrialPromo - SoftwareApplication
+  // ۷. پیشنهاد ویژه (SoftwareApplication + AggregateRating)
   {
     id: "free-trial-promo-schema",
     data: {
@@ -237,51 +212,11 @@ export const landingPageSchemas = [
         "@type": "Offer",
         price: "0",
         priceCurrency: "IRR",
+            priceValidUntil: "2030-12-31",
         description:
-          "۶۰ روز اشتراک کاملاً رایگان به همراه ۱۵۰ پیامک هدیه ماهانه بدون نیاز به ثبت کارت بانکی.",
+          "۶۰ روز اشتراک کاملاً رایگان به همراه ۱۵۰ پیامک هدیه ماهانه.",
         availability: "https://schema.org/InStock",
         url: "https://ontimeapp.ir/clientdashboard",
-      },
-      featureList: [
-        "۲ ماه اشتراک هدیه",
-        "۱۵۰ پیامک رایگان در ماه",
-        "پشتیبانی ویژه راه‌اندازی",
-        "بدون هزینه نصب",
-      ],
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "5",
-        reviewCount: "1500",
-      },
-    },
-  },
-
-  // ۸. FinalCTA - Product (پیشنهاد ویژه)
-  {
-    id: "final-cta-offer-schema",
-    data: {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: "پنل نوبت‌دهی هوشمند آنتایم",
-      image: "https://ontimeapp.ir/icons/icon-192.png",
-      description:
-        "سیستم مدیریت نوبت‌دهی آنلاین با قابلیت ارسال پیامک یادآوری و مدیریت پرسنل.",
-      brand: {
-        "@type": "Brand",
-        name: "آنتایم",
-      },
-      offers: {
-        "@type": "Offer",
-        url: "https://ontimeapp.ir/clientdashboard",
-        priceCurrency: "IRR",
-        price: "0",
-        availability: "https://schema.org/InStock",
-        description:
-          "۲ ماه اشتراک رایگان به همراه ۱۵۰ پیامک هدیه ماهانه برای شروع.",
-        seller: {
-          "@type": "Organization",
-          name: "آنتایم",
-        },
       },
       aggregateRating: {
         "@type": "AggregateRating",
@@ -291,54 +226,7 @@ export const landingPageSchemas = [
     },
   },
 
-  // ۹. AppCoreValues - Service (ارزش‌های اصلی اپلیکیشن)
-  {
-    id: "app-core-values-schema",
-    data: {
-      "@context": "https://schema.org",
-      "@type": "Service",
-      serviceType: "نرم‌افزار مدیریت نوبت‌دهی و رزرو آنلاین",
-      provider: {
-        "@type": "Organization",
-        name: "آنتایم",
-      },
-      areaServed: "IR",
-      hasOfferCatalog: {
-        "@type": "OfferCatalog",
-        name: "مزایای هوشمند آنتایم",
-        itemListElement: [
-          {
-            "@type": "Offer",
-            itemOffered: {
-              "@type": "Service",
-              name: "عدم نیاز به نصب اپلیکیشن",
-              description:
-                "استفاده از تکنولوژی PWA برای دسترسی سریع مشتریان بدون اشغال فضا.",
-            },
-          },
-          {
-            "@type": "Offer",
-            itemOffered: {
-              "@type": "Service",
-              name: "کنترل هوشمند کنسلی",
-              description: "کاهش نرخ لغو نوبت با سیستم جابجایی هوشمند.",
-            },
-          },
-          {
-            "@type": "Offer",
-            itemOffered: {
-              "@type": "Service",
-              name: "پشتیبان‌گیری ابری امن",
-              description:
-                "ذخیره ایمن اطلاعات مشتریان در سرورهای ابری اختصاصی.",
-            },
-          },
-        ],
-      },
-    },
-  },
-
-  // ۱۰. Navigation - SiteNavigationElement (منوی ناوبری سایت)
+  // ۸. ناوبری سایت (SiteNavigationElement)
   {
     id: "navigation-schema",
     data: {
@@ -361,24 +249,6 @@ export const landingPageSchemas = [
         {
           "@type": "SiteNavigationElement",
           position: 3,
-          name: "ماشین حساب",
-          url: "https://ontimeapp.ir/#roi",
-        },
-        {
-          "@type": "SiteNavigationElement",
-          position: 4,
-          name: "سوالات متداول",
-          url: "https://ontimeapp.ir/#faq",
-        },
-        {
-          "@type": "SiteNavigationElement",
-          position: 5,
-          name: "درباره آنتایم",
-          url: "https://ontimeapp.ir/#industries",
-        },
-        {
-          "@type": "SiteNavigationElement",
-          position: 6,
           name: "مجله آنتایم",
           url: "https://ontimeapp.ir/blog",
         },
@@ -386,109 +256,58 @@ export const landingPageSchemas = [
     },
   },
 
-  // ۱۱. SpecificSolutions (RealIndustrySolutions) - ItemList (راهکارهای تخصصی برای اصناف)
+  // ۹. راهکارهای اصناف (ItemList)
   {
     id: "industry-solutions-schema",
     data: {
       "@context": "https://schema.org",
       "@type": "ItemList",
       name: "راهکارهای تخصصی نوبت‌دهی آنتایم برای اصناف",
-      description:
-        "سامانه مدیریت نوبت و رزرو آنلاین ویژه آرایشگاه‌ها، پزشکان، وکلا و مراکز خدماتی.",
       itemListElement: [
         {
           "@type": "ListItem",
           position: 1,
-          item: {
-            "@type": "Service",
-            name: "آرایشگاه و سالن زیبایی",
-            description:
-              "مدیریت لاین‌های مختلف و کاهش کنسلی نوبت‌های خدمات زیبایی با پیامک یادآوری.",
-            serviceType: "نوبت دهی آرایشگاه",
-          },
+          item: { "@type": "Service", name: "آرایشگاه و سالن زیبایی" },
         },
         {
           "@type": "ListItem",
           position: 2,
-          item: {
-            "@type": "Service",
-            name: "پزشکان و کلینیک‌ها",
-            description:
-              "نظم بخشیدن به صف انتظار بیماران و ارسال خودکار اطلاعات نوبت بلافاصله پس از ثبت.",
-            serviceType: "مدیریت نوبت مطب",
-          },
+          item: { "@type": "Service", name: "پزشکان و کلینیک‌ها" },
         },
         {
           "@type": "ListItem",
           position: 3,
-          item: {
-            "@type": "Service",
-            name: "وکلا و دفاتر مشاوره",
-            description:
-              "جلوگیری از تداخل جلسات و مدیریت زمان‌های خالی بدون نیاز به دفترچه کاغذی.",
-            serviceType: "رزرو وقت مشاوره",
-          },
-        },
-        {
-          "@type": "ListItem",
-          position: 4,
-          item: {
-            "@type": "Service",
-            name: "کارواش و خدمات خودرو",
-            description:
-              "ثبت پلاک و نوع سرویس خودرو و اطلاع‌رسانی زمان حضور به مالک خودرو.",
-            serviceType: "نوبت دهی کارواش",
-          },
-        },
-        {
-          "@type": "ListItem",
-          position: 5,
-          item: {
-            "@type": "Service",
-            name: "مراکز لیزر و ماساژ",
-            description:
-              "پیگیری مراجعات قبلی مشتری و یادآوری جلسات بعدی برای حفظ نظم مرکز.",
-            serviceType: "مدیریت نوبت لیزر",
-          },
+          item: { "@type": "Service", name: "وکلا و دفاتر مشاوره" },
         },
       ],
     },
   },
 
-// ۱۲. StatsSection - Organization + InteractionStatistic (اثبات اجتماعی و آمار موفقیت)
-{
-  id: "stats-section-schema",
-  data: {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "آنتایم",
-    description:
-      "سامانه هوشمند نوبت‌دهی آنلاین برای کسب‌وکارهای خدماتی ایران",
-    url: "https://ontimeapp.ir/",
-    interactionStatistic: [
-      {
-        "@type": "InteractionCounter",
-        interactionType: "https://schema.org/SubscribeAction",  // مثلاً تعداد ثبت‌نام/اشتراک کاربران
-        userInteractionCount: 1500,
+  // ۱۰. آمار موفقیت (Organization + Statistics)
+  {
+    id: "stats-section-schema",
+    data: {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "آنتایم",
+      url: "https://ontimeapp.ir/",
+      interactionStatistic: [
+        {
+          "@type": "InteractionCounter",
+          interactionType: "https://schema.org/SubscribeAction",
+          userInteractionCount: 1500,
+        },
+        {
+          "@type": "InteractionCounter",
+          interactionType: "https://schema.org/TradeAction",
+          userInteractionCount: 45000,
+        },
+      ],
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "4.9",
+        reviewCount: "1500",
       },
-      {
-        "@type": "InteractionCounter",
-        interactionType: "https://schema.org/TradeAction",     // مثلاً تعداد تراکنش‌ها یا رزروهای موفق
-        userInteractionCount: 45000,
-      },
-      {
-        "@type": "InteractionCounter",
-        interactionType: "https://schema.org/SendAction",      // مثلاً تعداد پیامک‌های ارسالی
-        userInteractionCount: 125000,
-      },
-    ],
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "1500",
-      bestRating: "5",
-      worstRating: "1",
     },
   },
-},
 ];

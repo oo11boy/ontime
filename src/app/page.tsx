@@ -12,13 +12,14 @@ import PricingSection from "@/components/Landing/PricingSection";
 import FAQSection from "@/components/Landing/FAQSection";
 import FinalCTA from "@/components/Landing/FinalCTA";
 import EnhancedFooter from "@/components/Landing/EnhancedFooter";
+import Namad from "@/components/Landing/Namad";
+import IndustrySelector from "@/components/Landing/IndustrySelector";
 
 import { Metadata } from "next";
 import { mainmetadata } from "./metadata";
 import Script from "next/script";
 import { landingPageSchemas } from "@/components/Landing/schemas/landing-schemas";
-import Namad from "@/components/Landing/Namad";
-import IndustrySelector from "@/components/Landing/IndustrySelector";
+import UniversalAppGallery from "./industries/beauty-salon/components/BeautyGallery";
 
 export const metadata: Metadata = mainmetadata;
 
@@ -28,6 +29,7 @@ export default function OnTimeLandingPage() {
       className="flex flex-col min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700"
       dir="rtl"
     >
+      {/* تزریق تمام اسکیماهای سئو به هدر برای شناسایی توسط ربات‌های گوگل */}
       {landingPageSchemas.map((schema) => (
         <Script
           key={schema.id}
@@ -39,48 +41,54 @@ export default function OnTimeLandingPage() {
           }}
         />
       ))}
-      {/* هدر سایت با دسترسی سریع */}
+
+      {/* ناوبری اصلی سایت */}
       <Navigation />
 
-      {/* استفاده از تگ main برای سئو حیاتی است */}
+      {/* استفاده از تگ main برای سئو حیاتی است (Semantic HTML) */}
       <main className="pt-20">
-        {/* ۱. بخش قهرمان (H1) - معرفی اصلی محصول */}
+        {/* ۱. بخش قهرمان (H1) - معرفی اصلی محصول و ارزش پیشنهادی */}
         <HeroSection />
 
-        {/* ۲. اعتبار سنجی (Social Proof) */}
+        {/* ۲. اعتبار سنجی (Social Proof) و آمار موفقیت */}
         <StatsSection />
+<UniversalAppGallery
+  accentColor="blue"
+  title={<>مدیریت نوبت دهی در <span className="text-blue-500">دستان شما</span></>}
+  description="محیط کاربری اپلیکیشن نوبت دهی آنتایم ساده، سریع و متناسب با نیاز تمام کسب‌وکارهای نوبت‌محور طراحی شده است."
 
-        {/* ۳. راهکارهای صنفی (H2) - کلمات کلیدی: آرایشگاه، مطب، وکیل */}
-        <SpecificSolutions />
+/>
 
-        {/* ۴. ویژگی‌های کلیدی - کلمات کلیدی: رزرو وقت، مدیریت مشتری */}
+        {/* ۱۱. انتخاب سریع صنف و دعوت به اقدام نهایی */}
+        <IndustrySelector />
+
+        {/* ۴. ویژگی‌های کلیدی - تمرکز بر رزرو وقت و مدیریت مشتری */}
         <FeaturesSection />
 
-        {/* ۵. ارسال پیامک هوشمند (نقطه فروش اصلی) */}
+        {/* ۵. اتوماسیون پیامکی (نقطه تمایز محصول) */}
         <DetailedSMS />
 
-        {/* ۶. تحلیل داده‌ها و اکوسیستم */}
+        {/* ۶. تحلیل داده‌ها و اکوسیستم یکپارچه */}
         <AnalyticsSection />
         <IntegrationEcosystem />
 
-        {/* ۷. آفر ۳ ماه رایگان (هوک بازاریابی) */}
+        {/* ۷. پیشنهاد ویژه (Free Trial) - نرخ تبدیل (Conversion) */}
         <FreeTrialPromo />
 
-        {/* ۸. ماشین حساب بازگشت سرمایه (ROI) */}
+        {/* ۸. ماشین حساب ROI - تعامل با کاربر (Engagement) */}
         <CalculatorEnhanced />
 
-        {/* ۹. قیمت گذاری شفاف */}
+        {/* ۹. پلن‌های قیمت‌گذاری شفاف */}
         <PricingSection />
 
-        {/* ۱۰. سوالات متداول (Schema FAQ) */}
+        {/* ۱۰. سوالات متداول و نمادهای اعتماد */}
         <FAQSection />
         <Namad />
-        {/* ۱۱. دعوت به اقدام نهایی */}
+
         <FinalCTA />
-        <IndustrySelector/>
       </main>
 
-      {/* فوتر بهینه شده برای لینک‌سازی داخلی */}
+      {/* فوتر بهینه شده برای لینک‌سازی داخلی و سئو */}
       <EnhancedFooter />
     </div>
   );

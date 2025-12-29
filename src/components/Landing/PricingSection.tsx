@@ -28,19 +28,26 @@ export default function PricingSection(): React.JSX.Element {
   dangerouslySetInnerHTML={{
     __html: JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",  // یا WebApplication اگر وب‌بیس است
+      "@type": "SoftwareApplication",  
       name: "پنل نوبت‌دهی آنلاین آنتایم",
       description: "انواع تعرفه‌های نوبت‌دهی آنلاین بر اساس نیاز پیامکی کسب‌وکارها با دسترسی کامل به تمام امکانات.",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
+      image: "https://ontimeapp.ir/icons/icon-192.png", // اضافه کردن لوگو برای سئو بهتر
       offers: {
         "@type": "AggregateOffer",
         priceCurrency: "IRR",
-        lowPrice: plansData?.plans.reduce((min: number, p: any) => Math.min(min, p.monthly_fee), Infinity) || "0",
-        highPrice: plansData?.plans.reduce((max: number, p: any) => Math.max(max, p.monthly_fee), 0) || "500000",
+        // اصلاح مقدار پیش‌فرض برای جلوگیری از خطای Infinity
+        lowPrice: plansData?.plans.length 
+          ? Math.min(...plansData.plans.map((p: any) => p.monthly_fee)) 
+          : "0",
+        highPrice: plansData?.plans.length 
+          ? Math.max(...plansData.plans.map((p: any) => p.monthly_fee)) 
+          : "500000",
         offerCount: plansData?.plans.length || 3,
         offers: plansData?.plans.map((plan: any) => ({
           "@type": "Offer",
+          priceValidUntil: "2025-12-31", // تاریخ انقضای منطقی‌تر
           name: plan.title,
           price: plan.monthly_fee.toString(),
           priceCurrency: "IRR",
@@ -52,7 +59,7 @@ export default function PricingSection(): React.JSX.Element {
             price: plan.monthly_fee.toString(),
             priceCurrency: "IRR",
             billingIncrement: 1,
-            unitCode: "MON",  // ماهانه (از UN/CEFACT codes)
+            unitCode: "MON",
             referenceQuantity: {
               "@type": "QuantitativeValue",
               value: 1,
@@ -63,7 +70,8 @@ export default function PricingSection(): React.JSX.Element {
       },
       provider: {
         "@type": "Organization",
-        name: "آنتایم"
+        name: "آنتایم",
+        url: "https://ontimeapp.ir"
       }
     }),
   }}

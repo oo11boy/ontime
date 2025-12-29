@@ -1,23 +1,22 @@
-// app/industries/beauty-salon/page.tsx
 import { Metadata } from "next";
 import EnhancedFooter from "@/components/Landing/EnhancedFooter";
 import BeautyHero from "./components/BeautyHero";
 import BeautyStats from "./components/BeautyStats";
 import BeautyFeatures from "./components/BeautyFeatures";
-import BeautyGallery from "./components/BeautyGallery"; // گالری تصاویر محیط اپلیکیشن
+import BeautyGallery from "./components/BeautyGallery";
 import BeautyComparison from "./components/BeautyComparison";
 import BeautySMS from "./components/BeautySMS";
 import BeautyFAQ from "./components/BeautyFAQ";
-import FinalCTA from "./components/FinalCTA";
+import FinalCTA from "@/components/Landing/FinalCTA"; // اصلاح مسیر ایمپورت
 import PricingSection from "@/components/Landing/PricingSection";
 import BeautySteps from "./components/BeautySteps";
 import BeautyNavigation from "./components/BeautyNavigation";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "اپلیکیشن نوبت دهی آرایشگاه و مدیریت هوشمند سالن | آنتایم",
-  
-  description: "بهترین نرم‌افزار مدیریت نوبت و مشتری ویژه آرایشگران. ارسال پیامک یادآوری، لینک اختصاصی مدیریت نوبت برای مشتری، لیست قیمت آنلاین و پرونده الکترونیک.",
-  
+  description:
+    "بهترین نرم‌افزار مدیریت نوبت و مشتری ویژه آرایشگران. ارسال پیامک یادآوری، لینک اختصاصی مدیریت نوبت برای مشتری، لیست قیمت آنلاین و پرونده الکترونیک.",
   keywords: [
     "نوبت دهی آرایشگاه",
     "مدیریت سالن زیبایی",
@@ -25,67 +24,94 @@ export const metadata: Metadata = {
     "نرم افزار آرایشگاه زنانه",
     "پیامک یادآوری نوبت",
     "پنل مدیریت آرایشگر",
-    "رزرو آنلاین آرایشگاه"
+    "رزرو آنلاین آرایشگاه",
   ],
-
- openGraph: {
+  alternates: {
+    canonical: "https://ontimeapp.ir/industries/beauty-salon",
+  },
+  openGraph: {
     title: "تخصصی‌ترین اپلیکیشن مدیریت نوبت و مشتری ویژه آرایشگران",
-    description: "با دفترچه خداحافظی کنید! مدیریت حرفه‌ای نوبت‌ها و کاهش کنسلی با اپلیکیشن هوشمند آنتایم.",
+    description:
+      "با دفترچه خداحافظی کنید! مدیریت حرفه‌ای نوبت‌ها و کاهش کنسلی با اپلیکیشن هوشمند آنتایم.",
     url: "https://ontimeapp.ir/industries/beauty-salon",
     siteName: "آنتایم",
     locale: "fa_IR",
     type: "website",
     images: [
       {
-        url: "https://ontimeapp.ir/images/screens/main.jpg", // حتما این تصویر را در پوشه public قرار دهید
+        url: "/images/screens/beauty-og.jpg", // مسیر را در پوشه public چک کنید
         width: 1200,
         height: 630,
         alt: "محیط اپلیکیشن نوبت دهی آنتایم مخصوص آرایشگران",
       },
     ],
   },
-
-  alternates: {
-    canonical: "https://ontimeapp.ir/industries/beauty-salon",
-  },
-
-  viewport: "width=device-width, initial-scale=1",
-  robots: "index, follow",
 };
 
 export default function BeautySalonLanding() {
+  // اسکیما برای خدمات تخصصی آرایشگاه (LocalBusiness یا Service)
+  const beautySchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    serviceType: "نرم‌افزار مدیریت و نوبت‌دهی آرایشگاه",
+    provider: {
+      "@type": "Organization",
+      name: "آنتایم",
+    },
+    areaServed: "IR",
+    description:
+      "راهکار جامع مدیریت سالن‌های زیبایی، نوبت‌دهی آنلاین و سیستم یادآوری پیامکی مشتریان.",
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white" dir="rtl">
-     <BeautyNavigation/>
-      
+      {/* تزریق اسکیما اختصاصی این صفحه */}
+      <Script
+        id="beauty-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(beautySchema) }}
+      />
+
+      <BeautyNavigation />
+
       <main>
-        {/* ۱. بخش قهرمان: جذب آنی با کلمات کلیدی اصلی */}
+        {/* ۱. بخش قهرمان: H1 باید در این کامپوننت باشد */}
         <BeautyHero />
 
-        {/* ۲. آمار و ارقام: ایجاد اعتماد اولیه (Social Proof) */}
+        {/* ۲. اعتبار سنجی و آمار */}
         <BeautyStats />
 
-        {/* ۳. ویژگی‌ها: معرفی قابلیت‌های فنی (خدمات، قیمت، پرونده) */}
+        {/* ۳. ویژگی‌های تخصصی صنف آرایشگری */}
         <BeautyFeatures />
 
-        {/* ۴. گالری: نمایش محیط واقعی اپلیکیشن برای رفع ابهام بصری */}
-        <BeautyGallery />
-       {/* ۲. آمار و ارقام: ایجاد اعتماد اولیه (Social Proof) */}
+        {/* ۴. نمایش بصری محیط کاربری */}
+        <BeautyGallery
+          accentColor="pink"
+          title={
+            <>
+              نمای داخلی <span className="text-pink-500">اپلیکیشن</span>
+            </>
+          }
+          description="سادگی در طراحی، قدرت در مدیریت. تمام آنچه یک آرایشگر حرفه‌ای نیاز دارد."
+        />
+
+        {/* ۵. مراحل شروع به کار (How it works) */}
         <BeautySteps />
-        {/* ۵. مقایسه: نشان دادن تضاد بین روش سنتی و مدرن (ایجاد نیاز) */}
+
+        {/* ۶. مقایسه سنتی vs مدرن (بسیار تاثیرگذار در تبدیل) */}
         <BeautyComparison />
 
-        {/* ۶. بخش پیامک: تمرکز بر بزرگترین مزیت رقابتی (کاهش کنسلی) */}
+        {/* ۷. تمرکز بر سیستم پیامکی و کاهش ضرر مالی */}
         <BeautySMS />
 
-        {/* ۷. قیمت‌گذاری: ارائه پیشنهاد مالی شفاف */}
+        {/* ۸. قیمت‌گذاری (استفاده از کامپوننت مشترک برای یکپارچگی) */}
         <PricingSection />
 
-        {/* ۸. سوالات متداول: رفع آخرین تردیدها و بهبود سئو با اسکیما */}
+        {/* ۹. رفع ابهامات نهایی */}
         <BeautyFAQ />
 
-        {/* ۹. فراخوان نهایی: فشار نهایی برای ثبت‌نام و شروع تست رایگان */}
-        <FinalCTA  />
+        {/* ۱۰. دعوت به اقدام نهایی با تاکید بر ۶۰ روز رایگان */}
+        <FinalCTA />
       </main>
 
       <EnhancedFooter />
