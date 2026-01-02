@@ -1,6 +1,13 @@
 "use client";
-import React, { useMemo } from "react";
-import { Calendar, RefreshCw, MessageSquare, Plus, Filter, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import {
+  Calendar,
+  RefreshCw,
+  MessageSquare,
+  Plus,
+  Filter,
+  X,
+} from "lucide-react";
 
 interface HeaderSectionProps {
   userSmsBalance: number;
@@ -25,37 +32,49 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   onAddAppointment,
   onClearFilter,
 }) => {
-  // بررسی اینکه آیا فیلتر فعال است
+  // وضعیتی برای تضمین چرخش حداقل ۱ ثانیه‌ای
+  const [isForcingSpin, setIsForcingSpin] = useState(false);
+
   const isFilterActive = selectedService !== "all";
 
-  // ایجاد متن خلاصه فیلتر
   const filterSummary = useMemo(() => {
-    if (selectedService === "all") {
-      return "همه خدمات";
-    }
+    if (selectedService === "all") return "همه خدمات";
     return selectedService;
   }, [selectedService]);
 
+  const handleRefreshClick = () => {
+    setIsForcingSpin(true);
+    onRefresh();
+    // متوقف کردن انیمیشن بعد از ۱ ثانیه
+    setTimeout(() => setIsForcingSpin(false), 1000);
+  };
+
   return (
-    <div className="sticky top-0 z-50 bg-linear-to-b from-[#1a1e26]/90 to-transparent backdrop-blur-xl border-b border-emerald-500/30">
+    <div className="sticky top-0 z-50 bg-linear-to-b from-[#1a1e26]/90 to-transparent backdrop-blur-xl border-b border-emerald-500/30 text-white">
       <div className="max-w-2xl mx-auto p-4">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-md font-bold flex items-center gap-3">
             <Calendar className="w-7 h-7 text-emerald-400" />
             تقویم نوبت‌ها
           </h1>
-          
+
           <div className="flex items-center gap-2">
             <div className="text-xs text-gray-400 bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2">
               <MessageSquare className="w-3 h-3" />
-              موجودی: {isLoadingBalance ? '...' : `${userSmsBalance} پیامک`}
+              موجودی: {isLoadingBalance ? "..." : `${userSmsBalance} پیامک`}
             </div>
             <button
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition disabled:opacity-50"
+              onClick={handleRefreshClick}
+              disabled={isLoading || isForcingSpin}
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition disabled:opacity-50 flex items-center justify-center"
             >
-              <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-5 h-5 ${
+                  isLoading || isForcingSpin
+                    ? "animate-spin text-emerald-400"
+                    : "text-gray-300"
+                }`}
+              />
             </button>
           </div>
         </div>
@@ -65,8 +84,8 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
             onClick={onFilterClick}
             className={`flex items-center justify-between rounded-xl px-4 py-3.5 border transition-all ${
               isFilterActive
-                ? 'bg-blue-500/20 border-blue-500/40 text-blue-400'
-                : 'bg-white/10 border-white/10 hover:border-emerald-500/40 text-gray-300'
+                ? "bg-blue-500/20 border-blue-500/40 text-blue-400"
+                : "bg-white/10 border-white/10 hover:border-emerald-500/40 text-gray-300"
             }`}
           >
             <span className="text-sm font-medium truncate max-w-[120px]">
@@ -74,7 +93,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
             </span>
             <Filter className="w-5 h-5" />
           </button>
-          
+
           <button
             onClick={onAddAppointment}
             className="flex items-center justify-center gap-2 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl px-4 py-3.5 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg"
@@ -83,7 +102,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
             نوبت جدید
           </button>
         </div>
-        
+
         {isFilterActive && (
           <div className="mt-3 flex items-center justify-between">
             <span className="text-sm text-gray-400">

@@ -19,7 +19,7 @@ const SmsReservationSection: React.FC<SmsReservationSectionProps> = ({
   formatPreview,
 }) => {
   return (
-    <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+    <div className="bg-white/5 z-[999] rounded-2xl p-5 border border-white/5">
       <div 
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setSendReservationSms(!sendReservationSms)}
@@ -38,7 +38,7 @@ const SmsReservationSection: React.FC<SmsReservationSectionProps> = ({
       </div>
 
       {sendReservationSms && (
-        <div className="mt-5 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="mt-5 z-[999] animate-in fade-in slide-in-from-top-2 duration-300">
           {!reservationMessage ? (
             <button
               onClick={(e) => { e.stopPropagation(); onOpenTemplateModal(); }}

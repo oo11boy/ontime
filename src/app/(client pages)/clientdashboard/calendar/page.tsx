@@ -43,7 +43,7 @@ export default function CalendarPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: bookingsData, isLoading, refetch: refetchAppointments } = useBookings();
+  const { data: bookingsData, isLoading, isFetching,refetch: refetchAppointments } = useBookings();
   const { data: servicesData } = useServices();
   const { balance: userSmsBalance, isLoading: isLoadingBalance } = useSmsBalance();
   const { mutateAsync: sendBulkSms } = useSendBulkSms();
@@ -154,10 +154,10 @@ export default function CalendarPage() {
     <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster position="top-center" />
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] pb-32">
-        <HeaderSection
+<HeaderSection
           userSmsBalance={userSmsBalance}
           isLoadingBalance={isLoadingBalance}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
           selectedService={selectedService}
           filteredAppointments={filteredAppointments}
           onRefresh={() => refetchAppointments()}

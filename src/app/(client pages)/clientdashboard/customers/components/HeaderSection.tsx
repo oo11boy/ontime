@@ -1,6 +1,5 @@
-// components/HeaderSection.tsx
 import { User, MessageSquare, RefreshCw, Search } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 interface HeaderProps {
   searchQuery: string;
@@ -8,6 +7,7 @@ interface HeaderProps {
   userSmsBalance: number;
   isLoadingBalance: boolean;
   onRefresh: () => void;
+  isLoading: boolean;
   onShowBulkSms: () => void;
   onShowAddClient: () => void;
   clientsCount: number;
@@ -19,10 +19,24 @@ export const HeaderSection: React.FC<HeaderProps> = ({
   userSmsBalance,
   isLoadingBalance,
   onRefresh,
+  isLoading,
   onShowBulkSms,
   onShowAddClient,
   clientsCount,
 }) => {
+  // وضعیتی برای کنترل چرخش آیکون (حداقل ۱ ثانیه)
+  const [isForcingSpin, setIsForcingSpin] = useState(false);
+
+  const handleRefreshClick = () => {
+    setIsForcingSpin(true);
+    onRefresh(); // فراخوانی رفرش اصلی
+    
+    // متوقف کردن چرخش اجباری بعد از ۱ ثانیه
+    setTimeout(() => {
+      setIsForcingSpin(false);
+    }, 1000);
+  };
+
   return (
     <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
       <div className="max-w-2xl mx-auto p-4">
@@ -37,10 +51,13 @@ export const HeaderSection: React.FC<HeaderProps> = ({
               موجودی: {isLoadingBalance ? "..." : `${userSmsBalance} پیامک`}
             </div>
             <button
-              onClick={onRefresh}
-              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20"
+              onClick={handleRefreshClick}
+              disabled={isLoading || isForcingSpin}
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-50 transition-all"
             >
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw 
+                className={`w-5 h-5 ${(isLoading || isForcingSpin) ? 'animate-spin text-emerald-400' : 'text-gray-300'}`} 
+              />
             </button>
           </div>
         </div>
@@ -51,7 +68,7 @@ export const HeaderSection: React.FC<HeaderProps> = ({
             placeholder="جستجو نام یا شماره..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full py-3.5 px-5 pr-12 bg-[#242933] rounded-xl border border-emerald-500/40 focus:border-emerald-400 text-sm"
+            className="w-full py-3.5 px-5 pr-12 bg-[#242933] rounded-xl border border-emerald-500/40 focus:border-emerald-400 text-sm outline-none"
           />
           <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400" />
         </div>
@@ -60,7 +77,7 @@ export const HeaderSection: React.FC<HeaderProps> = ({
           <button
             onClick={onShowBulkSms}
             disabled={clientsCount === 0}
-            className="flex-1 py-3.5 bg-purple-600 hover:bg-purple-700 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 py-3.5 bg-purple-600 hover:bg-purple-700 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
           >
             <MessageSquare className="w-5 h-5" />
             پیام همگانی
@@ -68,7 +85,7 @@ export const HeaderSection: React.FC<HeaderProps> = ({
 
           <button
             onClick={onShowAddClient}
-            className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2"
+            className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
           >
             <User className="w-5 h-5" />
             افزودن مشتری

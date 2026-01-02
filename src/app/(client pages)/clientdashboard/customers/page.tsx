@@ -11,7 +11,7 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useSendBulkSms } from "@/hooks/useSendSms";
 import { useSmsBalance } from "@/hooks/useSmsBalance";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BulkSmsModal } from "../BulkSmsModal"; // آدرس را چک کنید که درست باشد
+import { BulkSmsModal } from "../BulkSmsModal";
 
 export default function CustomersList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,9 +20,12 @@ export default function CustomersList() {
   const [showAddClientModal, setShowAddClientModal] = useState(false);
 
   const queryClient = useQueryClient();
+  
+  // استخراج isFetching برای ردیابی رفرش‌ها
   const {
     data: customersData,
     isLoading,
+    isFetching,
     refetch,
   } = useCustomers(page, searchQuery);
 
@@ -94,7 +97,7 @@ export default function CustomersList() {
       refetch();
     } catch (error: any) {
       console.error("SMS Send Error:", error);
-      throw error; // اجازه دهید مودال خطا را مدیریت کند
+      throw error;
     }
   };
 
@@ -103,6 +106,7 @@ export default function CustomersList() {
       <Toaster position="top-center" containerClassName="!top-0" />
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933]">
         <HeaderSection
+          isLoading={isLoading || isFetching} // ترکیب هر دو وضعیت بارگذاری
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           userSmsBalance={userSmsBalance}

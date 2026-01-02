@@ -1,29 +1,57 @@
-// src/app/(client pages)/clientdashboard/services/components/HeaderSection.tsximport React from "react";
-import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+"use client";
+import React, { useState } from "react";
+import { Settings, Plus, RefreshCw } from "lucide-react";
 
-interface HeaderProps {
+interface HeaderSectionProps {
   onAddClick: () => void;
+  onRefresh: () => void;
+  isLoading: boolean;
 }
 
-export const HeaderSection: React.FC<HeaderProps> = ({ onAddClick }) => {
-  const router = useRouter();
+export const HeaderSection: React.FC<HeaderSectionProps> = ({
+  onAddClick,
+  onRefresh,
+  isLoading,
+}) => {
+  const [isForcingSpin, setIsForcingSpin] = useState(false);
+
+  const handleRefreshClick = () => {
+    setIsForcingSpin(true);
+    onRefresh();
+    setTimeout(() => setIsForcingSpin(false), 1000);
+  };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0f1117]/90 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex justify-between items-center">
-      <button
-        onClick={() => router.back()}
-        className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center active:scale-90 hover:bg-white/20 transition"
-      >
-        <ArrowLeft className="w-6 h-6" />
-      </button>
-      <h1 className="text-lg font-bold">خدمات من</h1>
-      <button
-        onClick={onAddClick}
-        className="bg-linear-to-r from-emerald-500 to-emerald-600 px-4 py-2 rounded-xl text-sm font-bold active:scale-90 hover:from-emerald-600 hover:to-emerald-700 transition"
-      >
-        افزودن
-      </button>
-    </header>
+    <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
+      <div className="max-w-2xl mx-auto p-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-md font-bold flex items-center gap-3">
+            <Settings className="w-7 h-7 text-emerald-400" />
+            مدیریت خدمات
+          </h1>
+
+          <div className="flex items-center gap-2">
+            {/* دکمه رفرش که به هدر اضافه شد */}
+            <button
+              onClick={handleRefreshClick}
+              disabled={isLoading || isForcingSpin}
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition disabled:opacity-50 flex items-center justify-center"
+            >
+              <RefreshCw
+                className={`w-5 h-5 ${(isLoading || isForcingSpin) ? "animate-spin text-emerald-400" : "text-gray-300"}`}
+              />
+            </button>
+
+            {/* دکمه افزودن */}
+            <button
+              onClick={onAddClick}
+              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 transition text-white"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };

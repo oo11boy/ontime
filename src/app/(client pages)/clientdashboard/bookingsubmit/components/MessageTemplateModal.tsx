@@ -37,7 +37,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center sm:items-center p-4">
+    <div className="fixed z-[999] inset-0  flex items-center justify-center sm:items-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-[#0f1115]/80 backdrop-blur-md transition-opacity"

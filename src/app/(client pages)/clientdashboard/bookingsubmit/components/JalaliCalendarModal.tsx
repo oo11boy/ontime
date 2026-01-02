@@ -125,7 +125,7 @@ const firstDayOfWeek = (gregorianDayOfWeek + 1) % 7;
   if (!isCalendarOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsCalendarOpen(false)} />
       <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
         <div className="bg-linear-to-b from-[#1a1e26] to-[#242933] backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">

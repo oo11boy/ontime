@@ -23,7 +23,7 @@ const SmsReminderSection: React.FC<SmsReminderSectionProps> = ({
   formatPreview,
 }) => {
   return (
-    <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+    <div className="bg-white/5 z-[999] rounded-2xl p-5 border border-white/5">
       {/* هدر و دکمه سوییچ */}
       <div 
         className="flex items-center justify-between cursor-pointer"

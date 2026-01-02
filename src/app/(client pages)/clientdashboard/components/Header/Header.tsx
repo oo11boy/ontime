@@ -12,7 +12,6 @@ import {
   Calendar,
   XCircle,
   X,
-  Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -64,7 +63,7 @@ export default function Header() {
   };
 
   const fetchNotifications = async () => {
-    if (document.hidden) return;
+    if (typeof document !== "undefined" && document.hidden) return;
     try {
       const res = await fetch("/api/client/notifications");
       const data = await res.json();
@@ -79,14 +78,14 @@ export default function Header() {
               <div
                 className={`${
                   t.visible ? "animate-center-enter" : "animate-center-leave"
-                } fixed top-[15%] left-0 right-0 flex items-center justify-center z-[9999] pointer-events-none`}
+                } fixed top-[10%] left-0 right-0 flex items-center justify-center z-[9999] pointer-events-none`}
               >
-                <div className="max-w-md w-[90%] bg-[#232936] shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-2xl pointer-events-auto flex flex-col ring-2 ring-emerald-500/40 border border-gray-700 overflow-hidden">
+                <div className="max-w-md w-[90%] bg-[#232936] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl pointer-events-auto flex flex-col ring-2 ring-emerald-500/40 border border-gray-700 overflow-hidden">
                   <div className="p-6 text-center" dir="rtl">
                     <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4 mx-auto">
                       <Bell className="w-7 h-7 text-emerald-400 animate-swing" />
                     </div>
-                    <p className="text-lg font-bold text-gray-100 font-sans">
+                    <p className="text-lg font-bold text-gray-100">
                       اعلان جدید
                     </p>
                     <p className="mt-2 text-sm text-gray-400 leading-relaxed">
@@ -136,8 +135,9 @@ export default function Header() {
       if (
         profileRef.current &&
         !profileRef.current.contains(event.target as Node)
-      )
+      ) {
         setIsProfileOpen(false);
+      }
       if (
         notifRef.current &&
         !notifRef.current.contains(event.target as Node)
@@ -166,11 +166,14 @@ export default function Header() {
     }
   };
 
+  const isAnyModalOpen = isProfileOpen || isNotifOpen;
+
   return (
-    <div className="w-full">
-      {(isProfileOpen || isNotifOpen) && (
+    <div className="w-full relative">
+      {/* --- Overlay Backdrop با بلور و انیمیشن نرم --- */}
+      {isAnyModalOpen && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-md z-[90] md:hidden transition-all duration-300"
+          className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-md animate-backdrop-appear"
           onClick={() => {
             setIsProfileOpen(false);
             setIsNotifOpen(false);
@@ -179,6 +182,7 @@ export default function Header() {
         />
       )}
 
+      {/* --- Main Header --- */}
       <div className="bg-[#1B1F28] border border-gray-700/50 rounded-2xl p-3 md:p-4 flex justify-between items-center shadow-2xl relative z-[95]">
         <div className="flex items-center">
           <span
@@ -190,7 +194,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          {/* بخش نوتیفیکیشن با عدد رنگی */}
+          {/* Notification Section */}
           <div className="relative" ref={notifRef}>
             <button
               onClick={() =>
@@ -198,7 +202,11 @@ export default function Header() {
                   ? (setIsNotifOpen(false), (isNotifOpenRef.current = false))
                   : openNotifPanel()
               }
-              className="p-2.5 rounded-xl bg-gray-800/50 text-gray-400 hover:text-emerald-400 transition-all relative border border-gray-700/30"
+              className={`p-2.5 rounded-xl bg-gray-800/50 text-gray-400 hover:text-emerald-400 transition-all relative border border-gray-700/30 ${
+                isNotifOpen
+                  ? "ring-2 ring-emerald-500/50 text-emerald-400 bg-emerald-500/5"
+                  : ""
+              }`}
             >
               <Bell
                 className={`w-5 h-5 ${unreadCount > 0 ? "animate-swing" : ""}`}
@@ -210,28 +218,24 @@ export default function Header() {
               )}
             </button>
 
-            {/* لیست نوتیفیکیشن‌ها */}
             {isNotifOpen && (
-              <div className="fixed bottom-0 left-0 right-0 z-[100] bg-[#232936] rounded-t-3xl border-t border-gray-700 md:absolute md:bottom-auto md:top-full md:left-0 md:right-auto md:mt-3 md:w-80 md:rounded-2xl md:border md:border-gray-700 animate-in slide-in-from-bottom duration-300">
-                <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-1 md:hidden" />
+              <div className="fixed top-20 left-4 right-4 z-[100] bg-[#232936] rounded-2xl border border-gray-700 shadow-[0_20px_50px_rgba(0,0,0,0.6)] md:absolute md:top-full md:left-0 md:right-auto md:mt-4 md:w-80 animate-top-drop overflow-hidden">
                 <div
-                  className="p-4 border-b border-gray-700/50 flex justify-between items-center"
+                  className="p-4 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30"
                   dir="rtl"
                 >
-                  <span className="font-bold text-sm text-gray-200">
+                  <span className="font-bold text-sm text-gray-200 flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-emerald-400" />
                     اعلان‌های اخیر
                   </span>
                   <X
-                    className="w-5 h-5 text-gray-500 md:hidden"
-                    onClick={() => {
-                      setIsNotifOpen(false);
-                      isNotifOpenRef.current = false;
-                    }}
+                    className="w-4 h-4 text-gray-500 cursor-pointer"
+                    onClick={() => setIsNotifOpen(false)}
                   />
                 </div>
-                <div className="max-h-[50vh] md:max-h-80 overflow-y-auto p-2 custom-scrollbar">
+                <div className="max-h-[60vh] md:max-h-96 overflow-y-auto p-2 custom-scrollbar">
                   {notifications.length === 0 ? (
-                    <div className="p-10 text-center text-gray-500 text-xs">
+                    <div className="p-12 text-center text-gray-500 text-xs">
                       اعلانی وجود ندارد
                     </div>
                   ) : (
@@ -270,9 +274,7 @@ export default function Header() {
             )}
           </div>
 
-          <div className="w-px h-6 bg-gray-700/50 hidden md:block"></div>
-
-          {/* بخش پروفایل */}
+          {/* Profile Section */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => {
@@ -280,15 +282,21 @@ export default function Header() {
                 setIsNotifOpen(false);
                 isNotifOpenRef.current = false;
               }}
-              className="flex items-center gap-2 p-1 md:p-1.5 md:pr-3 rounded-xl bg-gray-800/50 border border-gray-700/30 hover:bg-gray-700/50 transition-all"
+              className={`flex items-center gap-2 p-1 md:p-1.5 md:pr-3 rounded-xl bg-gray-800/50 border border-gray-700/30 hover:bg-gray-700/50 transition-all ${
+                isProfileOpen
+                  ? "ring-2 ring-emerald-500/50 bg-emerald-500/5"
+                  : ""
+              }`}
             >
               <div className="hidden md:flex flex-col items-end">
                 <span className="text-xs font-bold text-gray-200">
                   {isDashLoading ? "..." : dashboardData?.user?.name || "کاربر"}
                 </span>
-                <span className="text-[10px] text-emerald-500">آنلاین</span>
+                <span className="text-[10px] text-emerald-500 font-medium">
+                  آنلاین
+                </span>
               </div>
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 font-bold shadow-inner">
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 font-bold">
                 <User className="w-5 h-5" />
               </div>
               <ChevronDown
@@ -299,43 +307,42 @@ export default function Header() {
             </button>
 
             {isProfileOpen && (
-              <div className="fixed bottom-0 left-0 right-0 z-[100] bg-[#232936] rounded-t-3xl border-t border-gray-700 p-4 md:absolute md:bottom-auto md:top-full md:left-0 md:right-auto md:mt-3 md:w-60 md:rounded-2xl md:border md:border-gray-700 animate-in slide-in-from-bottom duration-300">
-                {/* نمایش نام به زیبایی در موبایل */}
-                <div className="flex flex-col items-center mb-6 md:hidden">
-                  <div className="w-12 h-1 bg-gray-700 rounded-full mb-6 opacity-40" />
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 mb-3">
-                    <User className="w-8 h-8" />
+              <div className="fixed top-20 left-4 right-4 z-[100] bg-[#232936] rounded-2xl border border-gray-700 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.6)] md:absolute md:top-full md:left-0 md:right-auto md:mt-4 md:w-64 animate-top-drop">
+                <div
+                  className="p-4 border-b border-gray-700/50 flex items-center gap-3"
+                  dir="rtl"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                    <User className="w-5 h-5" />
                   </div>
-                  <span className="text-lg font-bold text-gray-100">
-                    {isDashLoading
-                      ? "..."
-                      : dashboardData?.user?.name || "کاربر گرامی"}
-                  </span>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-xs text-gray-400">
-                      پنل مدیریت فعال
+                  <div className="flex flex-col text-right">
+                    <span className="text-sm font-bold text-gray-100">
+                      {isDashLoading
+                        ? "..."
+                        : dashboardData?.user?.name || "کاربر"}
+                    </span>
+                    <span className="text-[10px] text-gray-500">
+                      مدیریت نوبت‌دهی
                     </span>
                   </div>
                 </div>
-
-                <div className="space-y-1">
+                <div className="mt-2 space-y-1">
                   <button
                     onClick={() => {
                       router.push("/clientdashboard/settings");
                       setIsProfileOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 p-4 md:p-3 text-sm text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-2xl md:rounded-xl transition-all"
+                    className="w-full flex items-center gap-3 p-3 text-sm text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all"
                     dir="rtl"
                   >
                     <Settings className="w-5 h-5 md:w-4 md:h-4 text-gray-500" />
                     <span>تنظیمات حساب</span>
                   </button>
-                  <div className="h-px bg-gray-700/50 my-1 mx-2 hidden md:block"></div>
+                  <div className="h-px bg-gray-700/50 my-1 mx-2"></div>
                   <button
                     onClick={handleLogout}
                     disabled={loading}
-                    className="w-full flex items-center gap-3 p-4 md:p-3 text-sm text-red-400 hover:bg-red-400/10 rounded-2xl md:rounded-xl transition-all"
+                    className="w-full flex items-center gap-3 p-3 text-sm text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
                     dir="rtl"
                   >
                     {loading ? (
@@ -353,32 +360,52 @@ export default function Header() {
       </div>
 
       <style jsx global>{`
+        /* انیمیشن نرم برای بلور و تاریکی بک‌گراند */
+        @keyframes backdrop-appear {
+          0% {
+            opacity: 0;
+            backdrop-filter: blur(0px);
+          }
+          100% {
+            opacity: 1;
+            backdrop-filter: blur(12px);
+          }
+        }
+        .animate-backdrop-appear {
+          animation: backdrop-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* انیمیشن باز شدن مودال از بالا */
+        @keyframes top-drop {
+          0% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.97);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .animate-top-drop {
+          animation: top-drop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform-origin: top;
+        }
+
+        /* انیمیشن نوتیفیکیشن toast */
         @keyframes center-enter {
           0% {
             opacity: 0;
-            transform: scale(0.9) translateY(20px);
+            transform: scale(0.9) translateY(-20px);
           }
           100% {
             opacity: 1;
             transform: scale(1) translateY(0);
           }
         }
-        @keyframes center-leave {
-          0% {
-            opacity: 1;
-            transform: scale(1);
-          }
-          100% {
-            opacity: 0;
-            transform: scale(0.9) translateY(20px);
-          }
-        }
         .animate-center-enter {
           animation: center-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .animate-center-leave {
-          animation: center-leave 0.3s ease-in forwards;
-        }
+
         @keyframes swing {
           0%,
           100% {
@@ -401,6 +428,7 @@ export default function Header() {
           animation: swing 2s ease infinite;
           transform-origin: top center;
         }
+
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
