@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
-import { Calendar, Loader2 } from "lucide-react";
+import { Calendar, AlertTriangle, UserX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import Footer from "../components/Footer/Footer";
@@ -12,10 +12,8 @@ import { useServices } from "@/hooks/useServices";
 import { useCreateBooking } from "@/hooks/useBookings";
 import { useCheckCustomer } from "@/hooks/useCustomers";
 import { useSmsBalance } from "@/hooks/useSmsBalance";
-import { sendSingleSms } from "@/lib/sms-client";
 import { useSmsTemplates } from "@/hooks/useSmsTemplates";
 
-// Components
 import ClientInfoSection from "./components/ClientInfoSection";
 import DateTimeSection from "./components/DateTimeSection";
 import ServicesSection from "./components/ServicesSection";
@@ -23,19 +21,14 @@ import NotesSection from "./components/NotesSection";
 import SmsReservationSection from "./components/SmsReservationSection";
 import SmsReminderSection from "./components/SmsReminderSection";
 import SmsBalanceSection from "./components/SmsBalanceSection";
-import JalaliCalendarModal from "./components/JalaliCalendarModal";
-import TimePickerModal from "./components/TimePickerModal";
-import MessageTemplateModal from "./components/MessageTemplateModal";
-import ServicesModal from "./components/ServicesModal";
-import { SuccessBookingToast } from "./components/SuccessBookingToast";
+import ModalManager from "./components/ModalManager";
+import SubmitButton from "./components/SubmitButton";
+import UnblockCustomerModal from "./components/UnblockCustomerModal";
 
 import type { Service } from "./types";
 
 const STORAGE_KEY = "booking_form_draft";
 
-/**
- * تابع فرمت‌دهی پیش‌نمایش پیامک با داده‌های تست
- */
 const formatPreviewMessage = (text: string) => {
   if (!text) return "";
   return text
@@ -53,35 +46,26 @@ export default function NewAppointmentPage() {
 
   const { data: servicesData } = useServices();
   const { mutate: createBooking, isPending: isSubmitting } = useCreateBooking();
-  const { mutate: checkCustomer, data: checkData } = useCheckCustomer();
-  const { balance: userSmsBalance, isLoading: isLoadingBalance } =
-    useSmsBalance();
-  const { data: templatesData, isLoading: isLoadingTemplates } =
-    useSmsTemplates();
+  const { balance: userSmsBalance, isLoading: isLoadingBalance } = useSmsBalance();
+  const { data: templatesData, isLoading: isLoadingTemplates } = useSmsTemplates();
 
-  const getInitialState = () => {
+  const [form, setForm] = useState<any>(() => {
     if (typeof window === "undefined") return null;
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  };
-
-  const saved = getInitialState();
-  const [form, setForm] = useState({
-    name: saved?.name || "",
-    phone: saved?.phone || "",
-    date: saved?.date || {
-      year: today.year,
-      month: today.month,
-      day: today.day,
-    },
-    time: saved?.time || "",
-    services: (saved?.services as Service[]) || [],
-    notes: saved?.notes || "",
-    sendReserveSms: saved?.sendReserveSms ?? true,
-    sendRemindSms: saved?.sendRemindSms ?? true,
-    reserveMsg: saved?.reserveMsg || "",
-    remindMsg: saved?.remindMsg || "",
-    remindTime: saved?.remindTime || 24,
+    const s = saved ? JSON.parse(saved) : null;
+    return {
+      name: s?.name || "",
+      phone: s?.phone || "",
+      date: s?.date || { year: today.year, month: today.month, day: today.day },
+      time: s?.time || "",
+      services: (s?.services as Service[]) || [],
+      notes: s?.notes || "",
+      sendReserveSms: s?.sendReserveSms ?? true,
+      sendRemindSms: s?.sendRemindSms ?? true,
+      reserveMsg: s?.reserveMsg || "",
+      remindMsg: s?.remindMsg || "",
+      remindTime: s?.remindTime || 24,
+    };
   });
 
   const [modals, setModals] = useState({
@@ -90,162 +74,204 @@ export default function NewAppointmentPage() {
     services: false,
     reserve: false,
     remind: false,
+    nameChange: false,
+  });
+
+  const [unblockModal, setUnblockModal] = useState({
+    show: false,
+    clientName: "",
+    cancelledCount: 0,
+  });
+
+  const [isUnblocking, setIsUnblocking] = useState(false);
+
+  const [checkedCustomerData, setCheckedCustomerData] = useState<any>(null);
+  const [isNameMismatchIgnored, setIsNameMismatchIgnored] = useState(false);
+
+  const { mutate: checkCustomer, isPending: isCheckingClient } = useCheckCustomer((data) => {
+    setCheckedCustomerData(data);
+    setIsNameMismatchIgnored(false);
   });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
-  }, [form]);
-
-  // مدیریت پترن رزرو و یادآوری اولیه
-  useEffect(() => {
-    if (isLoadingTemplates || !templatesData?.templates?.length) return;
-
-    const resTpl = templatesData.templates.find(
-      (t: any) => t.type === "reserve"
-    );
-
-    const targetSub = form.remindTime >= 24 ? "tomorrow" : "today";
-    const remTpl = templatesData.templates.find(
-      (t: any) => t.type === "reminder" && t.sub_type === targetSub
-    );
-
-    setForm((prev) => ({
-      ...prev,
-      reserveMsg: prev.reserveMsg || resTpl?.content || "",
-      remindMsg: prev.remindMsg || remTpl?.content || "",
-    }));
-  }, [templatesData, isLoadingTemplates]);
-
-  // تغییر خودکار یادآوری با تغییر زمان
-  useEffect(() => {
-    if (isLoadingTemplates || !templatesData?.templates?.length) return;
-
-    const targetSub = form.remindTime >= 24 ? "tomorrow" : "today";
-    const selectedTemplate = templatesData.templates.find(
-      (t: any) => t.type === "reminder" && t.sub_type === targetSub
-    );
-
-    if (selectedTemplate) {
-      setForm((prev) => ({
-        ...prev,
-        remindMsg: selectedTemplate.content,
-      }));
+    const purePhone = form?.phone?.replace(/\D/g, "");
+    if (purePhone?.length >= 10) {
+      checkCustomer(purePhone.slice(-10));
     }
-  }, [form.remindTime, templatesData, isLoadingTemplates]);
+  }, [form?.phone, checkCustomer]);
 
-  const jalaliDateStr = `${form.date.year}/${form.date.month + 1}/${
-    form.date.day
-  }`;
+  useEffect(() => {
+    if (checkedCustomerData?.exists && checkedCustomerData?.client?.name) {
+      const dbName = checkedCustomerData.client.name.trim();
+      const inputName = form?.name?.trim();
+      if (inputName && dbName !== "" && dbName !== inputName && !isNameMismatchIgnored && !modals.nameChange) {
+        setModals((prev) => ({ ...prev, nameChange: true }));
+      }
+    }
+  }, [form?.name, checkedCustomerData, isNameMismatchIgnored, modals.nameChange]);
 
-  const totalDuration = useMemo(
-    () =>
-      form.services.reduce((acc, s) => acc + (s.duration_minutes || 30), 0) ||
-      30,
-    [form.services]
-  );
+  const updateForm = (updates: Partial<typeof form>) => setForm((prev: any) => ({ ...prev, ...updates }));
 
-  const smsNeededCount =
-    (form.sendReserveSms ? 1 : 0) + (form.sendRemindSms ? 1 : 0);
+  const handleConfirmNameChange = async () => {
+    const cleanPhone = form?.phone?.replace(/\D/g, "").slice(-10);
+    try {
+      const res = await fetch("/api/client/customers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone, newName: form.name.trim() }),
+      });
+      if (res.ok) {
+        toast.success("نام مشتری به‌روزرسانی شد");
+        setCheckedCustomerData((prev: any) => ({ ...prev, client: { ...prev.client, name: form.name.trim() } }));
+        setIsNameMismatchIgnored(true);
+        setModals((prev) => ({ ...prev, nameChange: false }));
+      }
+    } catch (error) {
+      toast.error("خطا در ارتباط با سرور");
+    }
+  };
 
-  const updateForm = (updates: Partial<typeof form>) =>
-    setForm((prev) => ({ ...prev, ...updates }));
+  const handleCancelNameChange = () => {
+    updateForm({ name: checkedCustomerData.client.name });
+    setModals((prev) => ({ ...prev, nameChange: false }));
+  };
+
+  const openUnblockModal = () => {
+    setUnblockModal({
+      show: true,
+      clientName: checkedCustomerData?.client?.client_name || form.name.trim(),
+      cancelledCount: checkedCustomerData?.client?.cancelled_count || 0,
+    });
+  };
+
+  const handleUnblockAndSubmit = async () => {
+    if (isUnblocking) return;
+    setIsUnblocking(true);
+
+    const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
+
+    try {
+      const res = await fetch("/api/client/customers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone, is_blocked: 0 }),
+      });
+
+      if (res.ok) {
+        toast.success("مشتری با موفقیت رفع مسدودیت شد");
+        setCheckedCustomerData((prev: any) => ({
+          ...prev,
+          client: { ...prev.client, is_blocked: 0 },
+        }));
+        setUnblockModal({ show: false, clientName: "", cancelledCount: 0 });
+        queryClient.invalidateQueries({ queryKey: ["customers"] });
+        handleSubmit(); // دوباره ثبت نوبت
+      } else {
+        toast.error("خطا در رفع مسدودیت");
+      }
+    } catch (err) {
+      toast.error("خطا در ارتباط با سرور");
+    } finally {
+      setIsUnblocking(false);
+    }
+  };
 
   const handleSubmit = async () => {
-    if (!form.name.trim() || !form.phone.trim() || !form.date.day || !form.time)
-      return toast.error("لطفاً تمام فیلدهای ضروری را تکمیل کنید");
-
-    if (smsNeededCount > userSmsBalance)
-      return toast.error("موجودی پیامک کافی نیست");
+    const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
+    if (!form.name.trim() || cleanPhone.length !== 10 || !form.time) {
+      return toast.error("لطفاً اطلاعات ضروری را تکمیل کنید");
+    }
 
     const loadingId = toast.loading("در حال ثبت نوبت...");
 
     createBooking(
       {
         client_name: form.name.trim(),
-        client_phone: form.phone.replace(/\D/g, ""),
-        booking_date: jalaliToGregorian(
-          form.date.year,
-          form.date.month,
-          form.date.day
-        ),
+        client_phone: cleanPhone,
+        booking_date: jalaliToGregorian(form.date.year, form.date.month, form.date.day),
         booking_time: form.time,
-        duration_minutes: totalDuration,
+        duration_minutes: form.services.reduce((acc: any, s: any) => acc + (s.duration_minutes || 30), 0) || 30,
         booking_description: form.notes.trim(),
-        services: form.services.map((s) => s.name).join(", "),
+        services: form.services.map((s: any) => s.name).join(", "),
         sms_reserve_enabled: form.sendReserveSms,
         sms_reminder_enabled: form.sendRemindSms,
         sms_reminder_hours_before: form.sendRemindSms ? form.remindTime : null,
       },
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           toast.dismiss(loadingId);
           localStorage.removeItem(STORAGE_KEY);
           queryClient.invalidateQueries({ queryKey: ["bookings"] });
-
-          if (form.sendReserveSms) {
-            const template = templatesData?.templates.find(
-              (t: any) => t.type === "reserve"
-            );
-            sendSingleSms({
-              to_phone: form.phone.replace(/\D/g, ""),
-              sms_type: "reservation",
-              booking_id: data.bookingId,
-              template_key: template?.payamresan_id,
-              use_template: true,
-              name: form.name.trim(),
-              date: jalaliDateStr,
-              time: form.time,
-              service: form.services.map((s) => s.name).join(", ") || "خدمات",
-              link: `ontimeapp.ir/${data.customerToken}`,
-            });
-          }
-
-          if (form.sendRemindSms) {
-            sendSingleSms({
-              to_phone: form.phone.replace(/\D/g, ""),
-              sms_type: "reminder",
-              booking_id: data.bookingId,
-              booking_date: jalaliToGregorian(
-                form.date.year,
-                form.date.month,
-                form.date.day
-              ),
-              booking_time: form.time,
-              sms_reminder_hours_before: form.remindTime,
-              name: form.name.trim(),
-              date: jalaliDateStr,
-              time: form.time,
-              service: form.services.map((s) => s.name).join(", ") || "خدمات",
-              link: `ontimeapp.ir/${data.customerToken}`,
-            });
-          }
-
-          toast.custom(
-            (t) => (
-              <SuccessBookingToast
-                onClose={() => toast.dismiss(t.id)}
-                name={form.name}
-                jalaliDateStr={jalaliDateStr}
-                selectedTime={form.time}
-                customerToken={data.customerToken}
-                router={router}
-              />
-            ),
-            { duration: 3000 }
-          );
+          queryClient.invalidateQueries({ queryKey: ["customers"] });
+          toast.success("نوبت با موفقیت ثبت شد");
+          router.push("/clientdashboard/bookingsubmit");
         },
-        onError: () => toast.error("خطا در ثبت نوبت", { id: loadingId }),
+onError: (error: any) => {
+  toast.dismiss(loadingId);
+
+  // حالا error.data شامل تمام داده‌های JSON سرور هست
+  const errorData = error?.data || {};
+  const status = error?.status;
+
+  if (status === 403 && errorData.isBlocked) {
+    setUnblockModal({
+      show: true,
+      clientName: errorData.clientName || form.name.trim(),
+      cancelledCount: errorData.cancelledCount || 0,
+    });
+    return; // جلوگیری از نمایش toast خطا
+  }
+
+  toast.error(errorData.message || error.message || "خطا در ثبت نوبت");
+},
       }
     );
   };
 
+  useEffect(() => {
+    if (form) localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+  }, [form]);
+
+  if (!form) return null;
+
+  const smsNeededCount = (form.sendReserveSms ? 1 : 0) + (form.sendRemindSms ? 1 : 0);
+  const isCustomerBlocked = checkedCustomerData?.client?.is_blocked === 1;
+
   return (
     <div className="min-h-screen bg-[#1a1e26] text-white pb-32">
       <Toaster position="top-center" />
+
       <div className="max-w-md mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-          <Calendar className="w-7 h-7 text-emerald-400" /> ثبت نوبت جدید
+          <Calendar className="w-7 h-7 text-emerald-400" />
+          ثبت نوبت جدید
         </h1>
+
+        {/* هشدار بلاک بودن با دکمه مستقیم رفع بلاک */}
+        {isCustomerBlocked && (
+          <div className="mb-8 p-6 bg-red-900/30 border-2 border-red-600 rounded-2xl flex flex-col items-center gap-4 animate-pulse">
+            <div className="flex items-center gap-4">
+              <UserX className="w-10 h-10 text-red-500" />
+              <div className="text-center">
+                <p className="text-xl font-bold text-red-400">مشتری مسدود شده است!</p>
+                <p className="text-sm text-red-300 mt-1">
+                  {checkedCustomerData.client.client_name} به دلیل{" "}
+                  <span className="font-bold text-red-400">
+                    {checkedCustomerData.client.cancelled_count} بار لغو نوبت
+                  </span>{" "}
+                  در لیست سیاه قرار دارد.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={openUnblockModal}
+              disabled={isUnblocking}
+              className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 rounded-xl font-bold transition-all active:scale-95"
+            >
+              {isUnblocking ? "در حال رفع مسدودیت..." : "رفع مسدودیت و ثبت نوبت"}
+            </button>
+          </div>
+        )}
 
         <div className="space-y-5">
           <ClientInfoSection
@@ -253,8 +279,8 @@ export default function NewAppointmentPage() {
             setName={(v) => updateForm({ name: v })}
             phone={form.phone}
             setPhone={(v) => updateForm({ phone: v })}
-            isCheckingClient={false}
-            existingClient={checkData?.client}
+            isCheckingClient={isCheckingClient}
+            existingClient={checkedCustomerData?.client}
           />
           <DateTimeSection
             selectedDate={form.date}
@@ -264,26 +290,17 @@ export default function NewAppointmentPage() {
           />
           <ServicesSection
             selectedServices={form.services}
-            onOpenServicesModal={() =>
-              setModals((m) => ({ ...m, services: true }))
-            }
-            onRemoveService={(id) =>
-              updateForm({ services: form.services.filter((s) => s.id !== id) })
-            }
+            onOpenServicesModal={() => setModals((m) => ({ ...m, services: true }))}
+            onRemoveService={(id) => updateForm({ services: form.services.filter((s: any) => s.id !== id) })}
           />
-          <NotesSection
-            notes={form.notes}
-            setNotes={(v) => updateForm({ notes: v })}
-          />
+          <NotesSection notes={form.notes} setNotes={(v) => updateForm({ notes: v })} />
 
           <SmsReservationSection
             sendReservationSms={form.sendReserveSms}
             setSendReservationSms={(v) => updateForm({ sendReserveSms: v })}
             reservationMessage={form.reserveMsg}
             setReservationMessage={(v) => updateForm({ reserveMsg: v })}
-            onOpenTemplateModal={() =>
-              setModals((m) => ({ ...m, reserve: true }))
-            }
+            onOpenTemplateModal={() => setModals((m) => ({ ...m, reserve: true }))}
             formatPreview={formatPreviewMessage}
           />
 
@@ -294,9 +311,7 @@ export default function NewAppointmentPage() {
             setReminderTime={(v) => updateForm({ remindTime: v })}
             reminderMessage={form.remindMsg}
             setReminderMessage={(v) => updateForm({ remindMsg: v })}
-            onOpenTemplateModal={() =>
-              setModals((m) => ({ ...m, remind: true }))
-            }
+            onOpenTemplateModal={() => setModals((m) => ({ ...m, remind: true }))}
             formatPreview={formatPreviewMessage}
           />
 
@@ -309,77 +324,41 @@ export default function NewAppointmentPage() {
             onBuySms={() => router.push("/clientdashboard/buysms")}
           />
 
-          <button
+          <SubmitButton
+            isSubmitting={isSubmitting}
+            isDisabled={
+              isCustomerBlocked ||
+              (smsNeededCount > (userSmsBalance ?? 0) && smsNeededCount > 0)
+            }
             onClick={handleSubmit}
-            disabled={isSubmitting || smsNeededCount > userSmsBalance}
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-600 rounded-2xl font-bold flex justify-center items-center transition-all shadow-lg active:scale-95"
-          >
-            {isSubmitting ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              "ثبت نوبت نهایی"
-            )}
-          </button>
+          />
         </div>
       </div>
 
-      {/* Modals */}
-      <MessageTemplateModal
-         formatPreviewMessage={formatPreviewMessage}
-        isOpen={modals.reserve}
-        onClose={() => setModals((m) => ({ ...m, reserve: false }))}
-        templates={
-          templatesData?.templates?.filter((t: any) => t.type === "reserve") ||
-          []
-        }
-        onSelect={(v) => updateForm({ reserveMsg: v })}
-        title="انتخاب الگوی رزرو"
-        isLoading={isLoadingTemplates}
+      {/* مودال رفع مسدودیت */}
+      <UnblockCustomerModal
+        isOpen={unblockModal.show}
+        clientName={unblockModal.clientName}
+        cancelledCount={unblockModal.cancelledCount}
+        onConfirm={handleUnblockAndSubmit}
+        onCancel={() => setUnblockModal({ show: false, clientName: "", cancelledCount: 0 })}
       />
 
+      {/* سایر مودال‌ها */}
+      <ModalManager
+        modals={modals}
+        setModals={setModals}
+        form={form}
+        updateForm={updateForm}
+        templatesData={templatesData}
+        isLoadingTemplates={isLoadingTemplates}
+        servicesData={servicesData}
+        formatPreviewMessage={formatPreviewMessage}
+        checkData={checkedCustomerData}
+        onConfirmNameChange={handleConfirmNameChange}
+        onCancelNameChange={handleCancelNameChange}
+      />
 
-      <MessageTemplateModal
-      formatPreviewMessage={formatPreviewMessage}
-        isOpen={modals.remind}
-        onClose={() => setModals((m) => ({ ...m, remind: false }))}
-        templates={
-          templatesData?.templates?.filter((t: any) => t.type === "reminder") ||
-          []
-        }
-        onSelect={(v) => updateForm({ remindMsg: v })}
-        title="انتخاب الگوی یادآوری"
-        isLoading={isLoadingTemplates}
-      />
-      <ServicesModal
-        isOpen={modals.services}
-        onClose={() => setModals((m) => ({ ...m, services: false }))}
-        selectedServices={form.services}
-        setSelectedServices={(v) =>
-          updateForm({
-            services: typeof v === "function" ? v(form.services) : v,
-          })
-        }
-        allServices={
-          servicesData?.services?.filter((s: any) => s.is_active) || []
-        }
-        isLoading={!servicesData}
-      />
-      <JalaliCalendarModal
-        selectedDate={form.date}
-        setSelectedDate={(v: any) =>
-          updateForm({ date: typeof v === "function" ? v(form.date) : v })
-        }
-        isCalendarOpen={modals.calendar}
-        setIsCalendarOpen={(v) => setModals((m) => ({ ...m, calendar: v }))}
-      />
-      <TimePickerModal
-        selectedDate={form.date}
-        selectedTime={form.time}
-        setSelectedTime={(v) => updateForm({ time: v })}
-        isTimePickerOpen={modals.time}
-        setIsTimePickerOpen={(v) => setModals((m) => ({ ...m, time: v }))}
-        selectedServices={form.services}
-      />
       <Footer />
     </div>
   );

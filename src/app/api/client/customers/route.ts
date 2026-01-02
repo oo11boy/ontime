@@ -12,12 +12,11 @@ const handler = withAuth(async (req: NextRequest, context) => {
     return NextResponse.json({ success: false, message: "Authentication Error: Invalid User ID" }, { status: 401 });
   }
 
-  // GET: دریافت لیست مشتریان
+  // GET: دریافت لیست مشتریان با جستجو و صفحه‌بندی
   if (req.method === "GET") {
     try {
       const url = new URL(req.url);
       const search = url.searchParams.get("search") || "";
-
       const rawPage = Number(url.searchParams.get("page") || 1);
       const rawLimit = Number(url.searchParams.get("limit") || 20);
 
@@ -36,24 +35,27 @@ const handler = withAuth(async (req: NextRequest, context) => {
         mainParams.push(`%${search}%`, `%${search}%`);
       }
 
+      // کوئری بهینه برای لیست مشتریان و آخرین نوبت آن‌ها
       const sql = `
         SELECT 
-          c.id, c.client_name as name, c.client_phone as phone,
+          c.id, 
+          c.client_name as name, 
+          c.client_phone as phone,
           DATE_FORMAT(c.last_booking_date, '%Y/%m/%d') as lastVisit,
-          c.total_bookings, c.cancelled_count, c.is_blocked,
-          MAX(b.booking_date) as last_booking_date, MAX(b.booking_time) as last_booking_time
+          c.total_bookings, 
+          c.cancelled_count, 
+          c.is_blocked,
+          (SELECT MAX(booking_date) FROM booking WHERE client_phone = c.client_phone AND user_id = c.user_id) as last_booking_date
         FROM clients c
-        LEFT JOIN booking b ON c.client_phone = b.client_phone AND c.user_id = b.user_id
         WHERE c.user_id = ? ${searchCondition}
-        GROUP BY c.id
-        ORDER BY c.last_booking_date DESC, c.total_bookings DESC
+        ORDER BY c.last_booking_date DESC, c.id DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
 
       const clients = await query(sql, mainParams);
 
       const countSql = `
-        SELECT COUNT(DISTINCT c.id) as total 
+        SELECT COUNT(*) as total 
         FROM clients c 
         WHERE c.user_id = ? ${searchCondition}
       `;
@@ -73,173 +75,135 @@ const handler = withAuth(async (req: NextRequest, context) => {
       });
     } catch (error) {
       console.error("❌ خطا در دریافت لیست مشتریان:", error);
-      return NextResponse.json(
-        { success: false, message: "خطا در دریافت لیست مشتریان" },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, message: "خطا در دریافت لیست مشتریان" }, { status: 500 });
     }
   }
 
-  // POST: افزودن مشتری جدید
+  // POST: افزودن مشتری جدید یا بلاک/رفع بلاک
   if (req.method === "POST") {
     try {
-      const { name, phone } = await req.json();
+      const body = await req.json();
+      const { action, name, phone: rawPhone, clientId } = body;
 
-      if (!name?.trim() || !phone?.trim()) {
-        return NextResponse.json(
-          { success: false, message: "نام و شماره تلفن الزامی است" },
-          { status: 400 }
+      // عملیات بلاک/رفع بلاک
+      if (action === "block" || action === "unblock") {
+        const isBlocked = action === "block" ? 1 : 0;
+        const targetPhone = rawPhone?.replace(/\D/g, "").slice(-10);
+
+        await query(
+          "UPDATE clients SET is_blocked = ?, updated_at = NOW() WHERE user_id = ? AND id = ?",
+          [isBlocked, userId, clientId]
         );
+
+        // اگر بلاک شد، نوبت‌های فعال او کنسل شود
+        if (isBlocked === 1 && targetPhone) {
+          await query(
+            "UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE user_id = ? AND client_phone = ? AND status = 'active'",
+            [userId, targetPhone]
+          );
+        }
+
+        return NextResponse.json({ 
+          success: true, 
+          message: isBlocked ? "مشتری بلاک شد" : "مشتری رفع بلاک شد" 
+        });
       }
 
-      if (phone.length !== 11 || !/^\d{11}$/.test(phone)) {
-        return NextResponse.json(
-          { success: false, message: "شماره تلفن باید 11 رقم باشد" },
-          { status: 400 }
-        );
+      // عملیات افزودن مشتری جدید
+      const phone = rawPhone?.replace(/\D/g, "").slice(-10);
+
+      if (!name?.trim() || !phone || phone.length !== 10) {
+        return NextResponse.json({ success: false, message: "نام و شماره تلفن ۱۰ رقمی معتبر الزامی است" }, { status: 400 });
       }
 
-      // چک کردن تکراری بودن
+      // بررسی تکراری بودن شماره (۱۰ رقمی)
       const [existing]: any = await query(
         "SELECT id, client_name FROM clients WHERE user_id = ? AND client_phone = ?",
         [userId, phone]
       );
 
       if (existing) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "این شماره تلفن قبلاً ثبت شده است",
-            existingName: existing.client_name,
-            status: 409,
-          },
-          { status: 409 }
-        );
+        return NextResponse.json({
+          success: false,
+          message: "این شماره تلفن قبلاً ثبت شده است",
+          existingName: existing.client_name,
+          status: 409,
+        }, { status: 409 });
       }
 
-      // ثبت مشتری جدید
       await query(
-        `INSERT INTO clients 
-          (client_name, client_phone, user_id, created_at, updated_at) 
-        VALUES (?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO clients (client_name, client_phone, user_id, created_at, updated_at) 
+         VALUES (?, ?, ?, NOW(), NOW())`,
         [name.trim(), phone, userId]
       );
 
-      return NextResponse.json({
-        success: true,
-        message: "مشتری با موفقیت اضافه شد",
-      });
+      return NextResponse.json({ success: true, message: "مشتری با موفقیت ثبت شد" });
     } catch (error) {
-      console.error("❌ خطا در ثبت مشتری جدید:", error);
-      return NextResponse.json(
-        { success: false, message: "خطا در ثبت مشتری" },
-        { status: 500 }
-      );
+      console.error("❌ خطا در عملیات POST مشتری:", error);
+      return NextResponse.json({ success: false, message: "خطا در پردازش درخواست" }, { status: 500 });
     }
   }
 
-  // PATCH: به‌روزرسانی نام مشتری (فقط برای شماره تکراری)
+  // PATCH: به‌روزرسانی نام مشتری یا وضعیت بلاک
   if (req.method === "PATCH") {
     try {
-      const { phone, newName } = await req.json();
+      const body = await req.json();
+      const { phone: rawPhone, newName, is_blocked } = body;
 
-      if (!phone || !newName?.trim()) {
-        return NextResponse.json(
-          { success: false, message: "شماره تلفن و نام جدید الزامی است" },
-          { status: 400 }
-        );
+      const phone = rawPhone?.replace(/\D/g, "").slice(-10);
+
+      if (!phone) {
+        return NextResponse.json({ success: false, message: "شماره تلفن الزامی است" }, { status: 400 });
       }
 
-      // چک کردن وجود مشتری
-      const [client]: any = await query(
-        "SELECT id FROM clients WHERE user_id = ? AND client_phone = ?",
-        [userId, phone]
-      );
+      // اگر is_blocked ارسال شده (0 یا 1)
+      if (is_blocked !== undefined) {
+        if (is_blocked !== 0 && is_blocked !== 1) {
+          return NextResponse.json({ success: false, message: "مقدار is_blocked نامعتبر است" }, { status: 400 });
+        }
 
-      if (!client) {
-        return NextResponse.json(
-          { success: false, message: "مشتری یافت نشد" },
-          { status: 404 }
+        const result: any = await query(
+          "UPDATE clients SET is_blocked = ?, updated_at = NOW() WHERE user_id = ? AND client_phone = ?",
+          [is_blocked, userId, phone]
         );
-      }
 
-      // به‌روزرسانی نام
-      await query(
-        "UPDATE clients SET client_name = ?, updated_at = NOW() WHERE user_id = ? AND client_phone = ?",
-        [newName.trim(), userId, phone]
-      );
-
-      return NextResponse.json({
-        success: true,
-        message: "نام مشتری با موفقیت به‌روزرسانی شد",
-      });
-    } catch (error) {
-      console.error("❌ خطا در به‌روزرسانی نام مشتری:", error);
-      return NextResponse.json(
-        { success: false, message: "خطا در به‌روزرسانی" },
-        { status: 500 }
-      );
-    }
-  }
-
-  // POST: بلاک یا رفع بلاک (کد قبلی شما)
-  if (req.method === "POST") {
-    try {
-      const { action, clientId, phone } = await req.json();
-
-      const cleanClientId = Number(clientId);
-
-      if (action === "block") {
-        await query(
-          "UPDATE clients SET is_blocked = 1, updated_at = NOW() WHERE user_id = ? AND id = ?",
-          [userId, cleanClientId]
-        );
-        await query(
-          "UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE user_id = ? AND client_phone = ? AND status = 'active'",
-          [userId, phone]
-        );
+        if (result.affectedRows === 0) {
+          return NextResponse.json({ success: false, message: "مشتری یافت نشد" }, { status: 404 });
+        }
 
         return NextResponse.json({
           success: true,
-          message: "مشتری با موفقیت بلاک شد",
+          message: is_blocked === 1 ? "مشتری بلاک شد" : "مشتری رفع بلاک شد",
         });
       }
 
-      if (action === "unblock") {
-        await query(
-          "UPDATE clients SET is_blocked = 0, updated_at = NOW() WHERE user_id = ? AND id = ?",
-          [userId, cleanClientId]
+      // اگر newName ارسال شده → تغییر نام
+      if (newName !== undefined) {
+        if (!newName?.trim()) {
+          return NextResponse.json({ success: false, message: "نام جدید نمی‌تواند خالی باشد" }, { status: 400 });
+        }
+
+        const result: any = await query(
+          "UPDATE clients SET client_name = ?, updated_at = NOW() WHERE user_id = ? AND client_phone = ?",
+          [newName.trim(), userId, phone]
         );
 
-        return NextResponse.json({
-          success: true,
-          message: "مشتری با موفقیت رفع بلاک شد",
-        });
+        if (result.affectedRows === 0) {
+          return NextResponse.json({ success: false, message: "مشتری یافت نشد" }, { status: 404 });
+        }
+
+        return NextResponse.json({ success: true, message: "نام مشتری با موفقیت به‌روزرسانی شد" });
       }
 
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Action نامعتبر",
-        },
-        { status: 400 }
-      );
+      // اگر هیچ‌کدوم نبود
+      return NextResponse.json({ success: false, message: "هیچ عملیاتی مشخص نشده" }, { status: 400 });
     } catch (error) {
-      console.error("❌ خطا در عملیات بلاک/رفع بلاک:", error);
-      return NextResponse.json(
-        {
-          success: false,
-          message: "خطا در عملیات",
-        },
-        { status: 500 }
-      );
+      console.error("خطا در PATCH مشتری:", error);
+      return NextResponse.json({ success: false, message: "خطا در به‌روزرسانی" }, { status: 500 });
     }
   }
 
-  return NextResponse.json(
-    { message: "متد مجاز نیست" },
-    { status: 405 }
-  );
+  return NextResponse.json({ message: "متد مجاز نیست" }, { status: 405 });
 });
 
 export { handler as GET, handler as POST, handler as PATCH };

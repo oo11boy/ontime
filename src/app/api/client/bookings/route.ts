@@ -4,7 +4,7 @@ import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 import { customAlphabet } from "nanoid";
 
-// الفبای ۵۴ کاراکتری (حذف کاراکترهای مشابه مثل 0, O, 1, l برای جلوگیری از اشتباه مشتری)
+// تولید توکن ۴ رقمی برای لینک نوبت مشتری
 const nanoid = customAlphabet(
   "346789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz",
   4
@@ -13,9 +13,10 @@ const nanoid = customAlphabet(
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
-  // --- متد GET: دریافت لیست نوبت‌ها و آپدیت وضعیت‌های قدیمی ---
+  // --- متد GET: دریافت لیست و آپدیت خودکار وضعیت‌ها ---
   if (req.method === "GET") {
     try {
+      // آپدیت نوبت‌های منقضی شده به وضعیت done
       await query(
         `UPDATE booking SET status = 'done', updated_at = NOW()
          WHERE user_id = ? AND status = 'active'
@@ -52,7 +53,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     }
   }
 
-  // --- متد POST: ثبت نوبت جدید با تضمین توکن یکتا ---
+  // --- متد POST: ثبت نوبت با بررسی دقیق وضعیت بلاک ---
   if (req.method === "POST") {
     try {
       const body = await req.json();
@@ -76,7 +77,30 @@ const handler = withAuth(async (req: NextRequest, context) => {
         );
       }
 
-      // ۱. بررسی تداخل زمانی برای همان کاربر
+      const cleanedPhone = client_phone.replace(/\D/g, "").slice(-10);
+
+      // ۱. بررسی وضعیت بلاک و دریافت اطلاعات مشتری برای مودال فرانت‌اِند
+      const [clientData]: any = await query(
+        "SELECT id, is_blocked, cancelled_count, client_name FROM clients WHERE user_id = ? AND client_phone = ? LIMIT 1",
+        [userId, cleanedPhone]
+      );
+
+      if (clientData && clientData.is_blocked === 1) {
+        // ارسال پاسخ ۴۰۳ با دیتای کامل برای نمایش مودال رفع بلاک در فرانت
+        return NextResponse.json(
+          {
+            success: false,
+            isBlocked: true,
+            clientId: clientData.id,
+            clientName: clientData.client_name,
+            cancelledCount: clientData.cancelled_count || 0,
+            message: "مشتری مسدود شده است",
+          },
+          { status: 403 }
+        );
+      }
+
+      // ۲. بررسی تداخل زمانی در نوبت‌های فعال
       const conflicts: any = await query(
         `SELECT id FROM booking WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active'`,
         [userId, booking_date, booking_time]
@@ -88,41 +112,30 @@ const handler = withAuth(async (req: NextRequest, context) => {
         );
       }
 
-      // ۲. تولید توکن ۴ کاراکتری یکتا (جلوگیری از تداخل)
+      // ۳. تولید توکن یکتا برای مشتری
       let customerToken = "";
       let isUnique = false;
       let attempts = 0;
-
       while (!isUnique && attempts < 10) {
         customerToken = nanoid();
         const [existing]: any = await query(
           "SELECT id FROM booking WHERE customer_token = ? LIMIT 1",
           [customerToken]
         );
-        if (!existing) {
-          isUnique = true;
-        } else {
-          attempts++;
-        }
+        if (!existing) isUnique = true;
+        else attempts++;
       }
 
-      // سوپاپ اطمینان: اگر بعد از ۱۰ بار تداخل داشت (بسیار بعید)، طول را کمی بیشتر کن
-      if (!isUnique)
-        customerToken = customAlphabet(
-          "346789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz",
-          6
-        )();
-
-      // ۳. پیدا کردن پترن فعال
+      // ۴. دریافت قالب پیامک رزرو فعال کاربر
       const [template]: any = await query(
-        `SELECT id, payamresan_id FROM smstemplates WHERE type = 'reserve' LIMIT 1`
+        `SELECT id FROM smstemplates WHERE type = 'reserve' AND user_id = ? LIMIT 1`,
+        [userId]
       );
 
-      const cleanedPhone = client_phone.replace(/\D/g, "");
       const tokenExpiresAt = new Date();
       tokenExpiresAt.setDate(tokenExpiresAt.getDate() + 14);
 
-      // ۴. درج در دیتابیس
+      // ۵. درج نوبت در جدول booking
       const insertResult: any = await query(
         `INSERT INTO booking
         (user_id, client_name, client_phone, booking_date, booking_time, duration_minutes,
@@ -147,12 +160,15 @@ const handler = withAuth(async (req: NextRequest, context) => {
         ]
       );
 
-      // ۵. به‌روزرسانی اطلاعات مشتری در جدول Clients
+      // ۶. بروزرسانی یا ثبت در جدول مشتریان (clients)
       await query(
-        `INSERT INTO clients (client_name, client_phone, user_id, total_bookings, last_booking_date, created_at)
-         VALUES (?, ?, ?, 1, ?, NOW())
+        `INSERT INTO clients (client_name, client_phone, user_id, total_bookings, last_booking_date, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, NOW(), NOW())
          ON DUPLICATE KEY UPDATE 
-         client_name = VALUES(client_name), total_bookings = total_bookings + 1, last_booking_date = VALUES(last_booking_date)`,
+         client_name = VALUES(client_name), 
+         total_bookings = total_bookings + 1, 
+         last_booking_date = VALUES(last_booking_date), 
+         updated_at = NOW()`,
         [client_name.trim(), cleanedPhone, userId, booking_date]
       );
 
@@ -161,13 +177,12 @@ const handler = withAuth(async (req: NextRequest, context) => {
           success: true,
           bookingId: insertResult.insertId,
           customerToken,
-          bookingLink: `${process.env.NEXT_PUBLIC_APP_URL}/c/${customerToken}`,
         },
         { status: 201 }
       );
     } catch (error: any) {
-      console.error("Booking Error:", error);
-      return NextResponse.json({ message: "خطا در سرور" }, { status: 500 });
+      console.error("Critical Booking Error:", error);
+      return NextResponse.json({ message: "خطای داخلی سرور" }, { status: 500 });
     }
   }
 
@@ -175,23 +190,12 @@ const handler = withAuth(async (req: NextRequest, context) => {
   if (req.method === "DELETE") {
     try {
       const { id } = await req.json();
-      const [booking]: any = await query(
-        "SELECT id FROM booking WHERE id = ? AND user_id = ?",
+      const result: any = await query(
+        "UPDATE booking SET status = 'cancelled', customer_token = NULL WHERE id = ? AND user_id = ?",
         [id, userId]
       );
-
-      if (!booking)
+      if (result.affectedRows === 0)
         return NextResponse.json({ message: "نوبت یافت نشد" }, { status: 404 });
-
-      await query(
-        "UPDATE booking SET status = 'cancelled', customer_token = NULL WHERE id = ?",
-        [id]
-      );
-      await query(
-        "UPDATE smslog SET status = 'cancelled' WHERE booking_id = ? AND status = 'pending'",
-        [id]
-      );
-
       return NextResponse.json({
         success: true,
         message: "نوبت با موفقیت لغو شد",
@@ -201,7 +205,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     }
   }
 
-  return NextResponse.json({ message: "Method not allowed" }, { status: 405 });
+  return NextResponse.json({ message: "متد مجاز نیست" }, { status: 405 });
 });
 
-export { handler as GET, handler as POST, handler as DELETE, handler as PATCH };
+export { handler as GET, handler as POST, handler as DELETE };

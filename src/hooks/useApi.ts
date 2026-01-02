@@ -16,12 +16,22 @@ export const fetchApi = async (url: string, options?: RequestInit) => {
     },
   });
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || `خطا: ${res.status}`);
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
   }
 
-  return res.json();
+  if (!res.ok) {
+    // مهم: کل داده‌های JSON رو همراه error بفرست
+    const error = new Error(data.message || `خطا: ${res.status}`) as any;
+    error.status = res.status;        // وضعیت HTTP
+    error.data = data;                // کل بدنه JSON (شامل isBlocked و ...)
+    throw error;
+  }
+
+  return data;
 };
 
 // هوک GET با پشتیبانی از QueryKey استاندارد

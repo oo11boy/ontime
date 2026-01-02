@@ -1,8 +1,10 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Scissors, X, Plus, Check } from "lucide-react";
+
+import { motion, AnimatePresence } from "framer-motion"; 
 import { Service } from "../types";
+import { Check, Plus, Scissors, X } from "lucide-react";
 
 interface ServicesModalProps {
   isOpen: boolean;
@@ -25,147 +27,150 @@ const ServicesModal: React.FC<ServicesModalProps> = ({
 
   const toggleService = (service: Service) => {
     setSelectedServices((prev) =>
-      prev.some(s => s.id === service.id) 
-        ? prev.filter((s) => s.id !== service.id) 
+      prev.some((s) => s.id === service.id)
+        ? prev.filter((s) => s.id !== service.id)
         : [...prev, service]
     );
   };
 
   const calculateTotalDuration = () => {
-    return selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
+    return selectedServices.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-linear-to-b from-[#1a1e26] to-[#242933] rounded-3xl border border-white/10 shadow-2xl overflow-hidden max-h-[85vh]">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h3 className="text-xl font-bold text-white">انتخاب خدمات</h3>
-            <button
-              onClick={onClose}
-              className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        // اضافه کردن key به کانتینر اصلی برای حل خطای React
+        <div key="services-modal-wrapper" className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          
+          {/* Backdrop */}
+          <motion.div
+            key="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            onClick={onClose}
+          />
 
-          <div className="px-6 pt-4">
-            <button
-              onClick={() => {
-                onClose();
-                router.push("/clientdashboard/services"); 
-              }}
-              className="w-full bg-linear-to-r from-purple-600 to-pink-600 rounded-2xl py-4 font-bold text-white shadow-lg hover:shadow-purple-500/50 active:scale-98 transition-all flex items-center justify-center gap-3"
-            >
-              <Plus className="w-6 h-6" />
-              مدیریت خدمات
-            </button>
-          </div>
+          {/* Modal Body */}
+          <motion.div
+            key="modal-content"
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="relative w-full max-w-md z-[10000]"
+          >
+            <div className="bg-[#1a1e26] rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
+                <h3 className="text-xl font-black text-white">انتخاب خدمات</h3>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="w-11 h-11 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </motion.button>
+              </div>
 
-          <div className="px-6 py-6 max-h-96 overflow-y-auto custom-scrollbar space-y-3">
-            {isLoading ? (
-              // Loading state
-              Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="w-full rounded-2xl p-5 bg-white/5 animate-pulse">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-6 h-6 bg-white/10 rounded"></div>
-                      <div className="h-4 bg-white/10 rounded w-32"></div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : allServices.length === 0 ? (
-              // Empty state
-              <div className="text-center py-8">
-                <Scissors className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                <p className="text-gray-400">هنوز خدمتی اضافه نکرده‌اید</p>
-                <button
+              {/* Action Button */}
+              <div className="px-6 pt-6">
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     onClose();
                     router.push("/clientdashboard/services");
                   }}
-                  className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl py-4 font-bold text-white shadow-lg flex items-center justify-center gap-3"
                 >
-                  افزودن خدمت
-                </button>
+                  <Plus className="w-6 h-6" />
+                  مدیریت خدمات
+                </motion.button>
               </div>
-            ) : (
-              // Services list
-              allServices.map((service) => {
-                const isSelected = selectedServices.some(s => s.id === service.id);
-                return (
-                  <button
-                    key={service.id}
-                    onClick={() => toggleService(service)}
-                    className={`w-full rounded-2xl p-5 text-right transition-all border ${
-                      isSelected
-                        ? "bg-linear-to-r from-emerald-500/30 to-emerald-600/30 border-emerald-400/60 shadow-lg shadow-emerald-500/30"
-                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-emerald-500/40"
-                    }`}
-                    disabled={!service.is_active}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Scissors className={`w-6 h-6 ${
-                          isSelected ? "text-emerald-300" : 
-                          service.is_active ? "text-gray-400" : "text-gray-600"
-                        }`} />
-                        <div className="text-right">
-                          <span className={`font-medium block ${
-                            isSelected ? "text-white" : 
-                            service.is_active ? "text-gray-200" : "text-gray-500"
-                          }`}>
-                            {service.name}
-                          </span>
-                          {!service.is_active && (
-                            <span className="text-xs text-gray-500 mt-1">(غیرفعال)</span>
-                          )}
-                        </div>
-                      </div>
-                      {isSelected && <Check className="w-6 h-6 text-emerald-400" />}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
 
-          <div className="p-6 border-t border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-emerald-300 font-bold block">
-                  {selectedServices.length} خدمت انتخاب شد
-                </span>
-                {selectedServices.length > 0 && (
-                  <span className="text-xs text-gray-400 mt-1 block">
-                    مدت زمان تخمینی: {calculateTotalDuration()} دقیقه
-                  </span>
+              {/* Scrollable List */}
+              <div className="px-6 py-6 overflow-y-auto custom-scrollbar space-y-3 flex-1">
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={`skeleton-${i}`} className="w-full rounded-2xl p-5 bg-white/5 animate-pulse h-20" />
+                  ))
+                ) : (
+                  allServices.map((service, index) => {
+                    const isSelected = selectedServices.some((s) => s.id === service.id);
+                    // اطمینان از داشتن کی منحصر به فرد
+                    const itemKey = service.id ? `service-${service.id}` : `service-idx-${index}`;
+                    
+                    return (
+                      <motion.button
+                        key={itemKey}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => toggleService(service)}
+                        disabled={!service.is_active}
+                        className={`w-full rounded-2xl p-5 text-right transition-all border relative overflow-hidden ${
+                          isSelected
+                            ? "bg-emerald-500/20 border-emerald-500/50"
+                            : "bg-white/5 border-white/5 hover:border-emerald-500/30"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 text-right">
+                            <Scissors className={isSelected ? "text-emerald-400" : "text-gray-500"} size={20} />
+                            <div>
+                              <span className={`font-bold block ${isSelected ? "text-white" : "text-gray-300"}`}>
+                                {service.name}
+                              </span>
+                              <span className="text-xs text-gray-500">{service.duration_minutes} دقیقه</span>
+                            </div>
+                          </div>
+                          {isSelected && <Check className="w-6 h-6 text-emerald-400" />}
+                        </div>
+                      </motion.button>
+                    );
+                  })
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className="px-8 py-3 bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition"
-              >
-                تأیید و بستن
-              </button>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-white/5 bg-white/[0.02]">
+                <div className="flex items-center justify-between">
+                  <div className="text-right">
+                    <span className="text-emerald-400 font-black text-sm block">
+                      {selectedServices.length} خدمت انتخاب شده
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-bold mt-1 block">
+                      زمان کل: {calculateTotalDuration()} دقیقه
+                    </span>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onClose}
+                    className="px-8 py-3 bg-emerald-500 text-slate-900 rounded-2xl font-black shadow-lg shadow-emerald-500/20"
+                  >
+                    تأیید
+                  </motion.button>
+                </div>
+              </div>
+
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      )}
+
       <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 2px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
         }
       `}</style>
-    </div>
+    </AnimatePresence>
   );
 };
 

@@ -1,7 +1,7 @@
-// hooks/useCustomers.ts
 import { useMutation } from "@tanstack/react-query";
 import { useApiQuery, useApiMutation } from "./useApi";
 
+// اینترفیس‌ها همان قبلی‌ها هستند
 interface Client {
   id: string;
   name: string;
@@ -62,6 +62,7 @@ export interface CustomerProfileResponse {
     displayStatus: "pending" | "completed" | "canceled";
   }[];
 }
+
 export const useCustomerProfile = (phone: string) => {
   return useApiQuery<CustomerProfileResponse>(
     ["customer", phone],
@@ -69,14 +70,20 @@ export const useCustomerProfile = (phone: string) => {
     { enabled: !!phone }
   );
 };
-export const useCheckCustomer = () => {
+
+export const useCheckCustomer = (onSuccessCallback?: (data: any) => void) => {
   return useMutation({
     mutationFn: async (phone: string) => {
-      const cleanedPhone = phone.replace(/\D/g, "");
+      // استخراج ۱۰ رقم آخر برای هماهنگی با دیتابیس
+      const cleanedPhone = phone.replace(/\D/g, "").slice(-10);
       const res = await fetch(
         `/api/client/customers/checkcustomerexist?phone=${encodeURIComponent(cleanedPhone)}`
       );
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
       return res.json();
+    },
+    onSuccess: (data) => {
+      if (onSuccessCallback) onSuccessCallback(data);
     },
   });
 };

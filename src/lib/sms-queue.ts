@@ -3,9 +3,6 @@ import { Queue, Worker, Job } from "bullmq";
 import Redis from "ioredis";
 import { query } from "@/lib/db";
 
-// استفاده از fetch استاندارد در Node.js 18 به بالا یا نصب node-fetch
-// اگر از نسخه‌های قدیمی استفاده می‌کنید: import fetch from "node-fetch";
-
 // ۱. تنظیمات اتصال به Redis با مدیریت خطا
 const redisConnection = new Redis(
   process.env.REDIS_URL || "redis://localhost:6379",
@@ -16,15 +13,15 @@ const redisConnection = new Redis(
 );
 
 // ۲. تعریف صف (Queue)
-export const smsQueue = new Queue("sms", { 
+export const smsQueue = new Queue("sms", {
   connection: redisConnection,
   defaultJobOptions: {
     attempts: 3, // در صورت خطا تا ۳ بار تلاش مجدد انجام شود
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 5000, // فاصله ۵ ثانیه‌ای بین تلاش‌ها
     },
-  }
+  },
 });
 
 /**
@@ -45,11 +42,14 @@ async function sendToIPPANEL(jobData: any) {
   let errorMsg: string | null = null;
 
   try {
-    console.log(`🚀 [Worker] Processing SMS for: ${to_phone} (LogID: ${logId})`);
+    console.log(
+      `🚀 [Worker] Processing SMS for: ${to_phone} (LogID: ${logId})`
+    );
 
-    // استانداردسازی شماره: حذف صفر اول و اضافه کردن 98
-    const cleanPhone = to_phone.replace(/^(\+98|98|0)/, "");
-    const recipient = `+98${cleanPhone}`;
+    // --- استانداردسازی شماره برای IPPanel ---
+    // با توجه به اینکه شماره‌ها در دیتابیس ۱۰ رقمی (بدون صفر اول) ذخیره شده‌اند:
+    const cleanPhone = to_phone.replace(/\D/g, "").slice(-10);
+    const recipient = `+98${cleanPhone}`; // تبدیل به فرمت +989123456789
 
     // آماده‌سازی پارامترها با مقادیر پیش‌فرض برای جلوگیری از خطای پنل
     const finalParams = {
@@ -78,13 +78,19 @@ async function sendToIPPANEL(jobData: any) {
 
     const result: any = await response.json().catch(() => ({}));
 
-    // بررسی دقیق وضعیت پاسخ از IPPanel
-    if (response.ok && (result.meta?.status === true || result.status === "OK")) {
-      messageId = String(result.data?.message_outbox_ids?.[0] || "sent");
+    // بررسی دقیق وضعیت پاسخ از IPPanel بر اساس مستندات جدید
+    if (response.ok) {
+      // IPPanel در متد Pattern معمولاً آبجکت متفاوتی برمی‌گرداند، این شرط برای پوشش حداکثری است
+      messageId = String(
+        result.data?.message_outbox_ids?.[0] || result.data?.bulk_id || "sent"
+      );
       status = "sent";
       console.log(`✅ SMS Sent Successfully to ${to_phone}. ID: ${messageId}`);
     } else {
-      errorMsg = result?.meta?.message || result?.message || `Error Code: ${response.status}`;
+      errorMsg =
+        result?.meta?.message ||
+        result?.message ||
+        `Error Code: ${response.status}`;
       console.error(`❌ IPPanel Rejection: ${errorMsg}`);
     }
   } catch (err: any) {
@@ -104,7 +110,7 @@ async function sendToIPPANEL(jobData: any) {
   }
 }
 
-// ۳. تعریف وورکر به صورت Global برای جلوگیری از تعدد Instance ها در محیط Dev
+// ۳. تعریف وورکر به صورت Global برای جلوگیری از تعدد Instance ها در محیط Dev (Hot Reload)
 const workerGlobalKey = "sms-worker-instance";
 
 if (!(global as any)[workerGlobalKey]) {
@@ -115,8 +121,8 @@ if (!(global as any)[workerGlobalKey]) {
     },
     {
       connection: redisConnection,
-      concurrency: 5, // پردازش همزمان ۵ پیامک برای سرعت بالاتر در ارسال‌های گروهی
-      removeOnComplete: { count: 100 }, 
+      concurrency: 5, // پردازش همزمان ۵ پیامک
+      removeOnComplete: { count: 100 },
       removeOnFail: { count: 500 },
     }
   );
