@@ -1,6 +1,3 @@
-// File Path: src\app\api\admin\admin-auth\check\route.ts
-
-// src/app/api/admin-auth/check/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
@@ -8,38 +5,51 @@ import { query } from '@/lib/db';
 
 const ADMIN_COOKIE_NAME = 'adminAuthToken';
 
+/**
+ * @method GET
+ * بررسی وضعیت نشست (Session) ادمین و تایید هویت در دیتابیس
+ */
 export async function GET() {
     try {
-        const token = (await cookies()).get(ADMIN_COOKIE_NAME)?.value;
+        const cookieStore = await cookies();
+        const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
 
+        // ۱. اگر توکنی وجود ندارد
         if (!token) {
-            return NextResponse.json({ message: 'توکن یافت نشد.' }, { status: 401 });
+            return NextResponse.json({ isAuthenticated: false, message: 'توکن یافت نشد.' }, { status: 401 });
         }
 
-        // *** اصلاح: verifyToken مستقیماً adminId را برمی‌گرداند ***
+        // ۲. تایید اعتبار توکن (JWT)
         const adminId = verifyToken(token); 
 
         if (!adminId) {
-             return NextResponse.json({ message: 'توکن نامعتبر یا منقضی.' }, { status: 401 });
+            // اگر توکن منقضی یا دستکاری شده بود، کوکی را پاک کن
+            cookieStore.delete(ADMIN_COOKIE_NAME);
+            return NextResponse.json({ isAuthenticated: false, message: 'توکن نامعتبر یا منقضی.' }, { status: 401 });
         }
 
-        // تأیید نهایی وجود ادمین در جدول admins
-        const admins = await query<{ id: number; role: string }>('SELECT id, role FROM admins WHERE id = ?', [adminId]);
+        // ۳. تایید نهایی وجود ادمین در دیتابیس (برای امنیت حداکثری)
+        const admins = await query<{ id: number; role: string; name: string }>(
+            'SELECT id, role, name FROM admins WHERE id = ?', 
+            [adminId]
+        );
 
         if (admins.length === 0) {
-            // توکن معتبر است اما کاربر در جدول ادمین‌ها موجود نیست
-            return NextResponse.json({ message: 'کاربر ادمین نامعتبر.' }, { status: 401 });
+            cookieStore.delete(ADMIN_COOKIE_NAME);
+            return NextResponse.json({ isAuthenticated: false, message: 'کاربر ادمین نامعتبر.' }, { status: 401 });
         }
 
+        // ۴. بازگرداندن اطلاعات ادمین
         return NextResponse.json({ 
-            message: 'احراز هویت ادمین موفق.',
+            isAuthenticated: true,
             isAdmin: true,
+            adminId: admins[0].id,
+            name: admins[0].name,
             role: admins[0].role
-        });
+        }, { status: 200 });
 
     } catch (error) {
-        // خطای انقضای توکن یا نامعتبر بودن
         console.error('Admin Auth Check Error:', error);
-        return NextResponse.json({ message: 'احراز هویت ناموفق.' }, { status: 401 });
+        return NextResponse.json({ isAuthenticated: false, message: 'خطای سرور.' }, { status: 500 });
     }
 }

@@ -1,25 +1,38 @@
-// File Path: src\app\api\admin\admin-auth\logout\route.ts
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-// src/app/api/admin-auth/logout/route.ts
+const ADMIN_COOKIE_NAME = "adminAuthToken";
 
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+/**
+ * @method POST
+ * خروج از پنل مدیریت و پاکسازی کوکی امنیتی ادمین
+ */
+export async function POST() {
+  try {
+    const cookieStore = await cookies();
 
-const ADMIN_COOKIE_NAME = 'adminAuthToken';
+    // حذف کوکی مخصوص ادمین برای قطع دسترسی Middleware
+    cookieStore.delete(ADMIN_COOKIE_NAME);
 
-export async function POST(req: Request) {
-    try {
-        // حذف کوکی مخصوص ادمین
-        (await cookies()).delete(ADMIN_COOKIE_NAME);
-        
-        return NextResponse.json({ 
-            message: 'Admin Logout successful. Authentication cookie has been removed.',
-        }, { 
-            status: 200 
-        });
-
-    } catch (error) {
-        console.error("Admin Logout failed:", error);
-        return NextResponse.json({ message: 'Logout failed' }, { status: 500 });
-    }
+    return NextResponse.json(
+      {
+        success: true,
+        message: "خروج از پنل مدیریت با موفقیت انجام شد.",
+      },
+      {
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Admin Logout Error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "خطا در عملیات خروج از سیستم.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }

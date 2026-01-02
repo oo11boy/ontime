@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { query, QueryResult } from "@/lib/db";
+import { query } from "@/lib/db";
 import { generateToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 
@@ -46,9 +46,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // --- ۱. مرحله درخواست کد (ارسال پیامک) ---
+    // --- ۱. مرحله درخواست کد ---
     if (!otp || resend) {
-      // بررسی محدودیت زمانی (Rate Limit) - هر ۲ دقیقه یک بار
       const existingUser = await query<{ last_otp_at: string }>(
         "SELECT last_otp_at FROM users WHERE phone = ?",
         [phone]
@@ -58,7 +57,6 @@ export async function POST(req: Request) {
         const diff =
           Date.now() - new Date(existingUser[0].last_otp_at).getTime();
         if (diff < 120000) {
-          // کمتر از ۱۲۰ ثانیه
           return NextResponse.json(
             { message: "لطفاً ۲ دقیقه صبر کرده و دوباره تلاش کنید." },
             { status: 429 }
@@ -94,11 +92,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // --- ۲. مرحله تایید کد (Verify OTP) ---
+    // --- ۲. مرحله تایید کد ---
     const users = await query<{
       id: number;
-      name: string;
-      job_id: number;
+      name: string | null;
+      job_id: number | null;
       otp_code: string;
       otp_attempts: number;
     }>(
@@ -108,20 +106,16 @@ export async function POST(req: Request) {
 
     if (users.length === 0) {
       return NextResponse.json(
-        { message: "کد منقضی شده یا درخواستی یافت نشد." },
+        { message: "کد منقضی شده است." },
         { status: 401 }
       );
     }
 
     const user = users[0];
 
-    // جلوگیری از Brute Force (حداکثر ۵ تلاش اشتباه)
     if (user.otp_attempts >= 5) {
       return NextResponse.json(
-        {
-          message:
-            "تعداد تلاش‌های شما بیش از حد مجاز است. دوباره درخواست کد بدهید.",
-        },
+        { message: "تعداد تلاش‌ها بیش از حد مجاز است." },
         { status: 403 }
       );
     }
@@ -137,14 +131,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // تایید موفق: پاکسازی کد و ریست کردن تلاش‌ها
+    // تایید موفق
     await query(
       "UPDATE users SET otp_code = NULL, otp_expires_at = NULL, otp_attempts = 0 WHERE id = ?",
       [user.id]
     );
 
     const token = generateToken(user.id);
-    (await cookies()).set("authToken", token, {
+    const signupComplete = !!user.name && !!user.job_id;
+
+    const cookieStore = await cookies();
+
+    // کوکی اصلی احراز هویت
+    cookieStore.set("authToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 7 * 24 * 60 * 60,
@@ -152,9 +151,16 @@ export async function POST(req: Request) {
       sameSite: "lax",
     });
 
+    // کوکی کمکی برای تشخیص وضعیت ثبت‌نام در Middleware (بدون HttpOnly برای دسترسی سریع)
+    cookieStore.set("is_registered", signupComplete ? "true" : "false", {
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+      sameSite: "lax",
+    });
+
     return NextResponse.json({
       message: "خوش آمدید",
-      signup_complete: !!user.name && !!user.job_id,
+      signup_complete: signupComplete,
     });
   } catch (error: any) {
     console.error("Critical Login Error:", error);

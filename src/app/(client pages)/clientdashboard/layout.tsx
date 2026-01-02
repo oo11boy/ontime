@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import AuthGuard from "./AuthGuard";
 import { useDashboard } from "@/hooks/useDashboard";
 import Loading from "./components/Loading";
 
@@ -48,10 +47,10 @@ export default function ClientDashboardLayout({
   if (isLoading) return <Loading />;
 
   return (
-    <AuthGuard>
+
       <main dir="rtl" className="antialiased">
         {children}
       </main>
-    </AuthGuard>
+
   );
 }

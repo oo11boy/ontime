@@ -2,8 +2,7 @@
 
 "use client";
 import React, { useState } from "react";
-// ایمپورت کامپوننت گارد احراز هویت ادمین
-import AdminAuthGuard from "./AdminAuthGuard"; 
+
 import Sidebar from "./Sidebar"; 
 import { Menu, Search, Bell } from "lucide-react";
 
@@ -19,7 +18,7 @@ export default function AdminDashboardLayout({
     // ----------------------------------------------------
     // *** گارد احراز هویت ادمین در بالاترین سطح قرار می‌گیرد ***
     // ----------------------------------------------------
-    <AdminAuthGuard>
+
       <div className="flex h-screen bg-[#1a1e26] dir-rtl font-sans text-white overflow-hidden">
         
         {/* 2. ارسال وضعیت و تابع بستن به سایدبار */}
@@ -72,6 +71,5 @@ export default function AdminDashboardLayout({
           
         </div>
       </div>
-    </AdminAuthGuard>
   );
 }

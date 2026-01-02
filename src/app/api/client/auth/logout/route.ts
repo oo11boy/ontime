@@ -1,29 +1,38 @@
-// File Path: src\app\api\client\auth\logout\route.ts
-
-// src/app/api/auth/logout/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers'; // 👈 ایمپورت cookies
+import { cookies } from 'next/headers';
 
 /**
  * @method POST
- * خروج از حساب کاربری (Logout)
- * با حذف کوکی‌های احراز هویت HTTP-Only انجام می‌شود.
+ * خروج کامل از حساب کاربری
+ * حذف تمامی کوکی‌های مربوط به احراز هویت و وضعیت ثبت‌نام کلاینت
  */
-export async function POST(req: Request) {
+export async function POST() {
     try {
+        const cookieStore = await cookies();
 
-        (await
-         
-            cookies()).delete('authToken');
-        
-        return NextResponse.json({ 
-            message: 'Logout successful. Authentication cookie has been removed.',
-        }, { 
-            status: 200 
+        // ۱. حذف توکن اصلی احراز هویت
+        cookieStore.delete('authToken');
+
+        // ۲. حذف کوکی وضعیت ثبت‌نام (برای هماهنگی با Middleware)
+        cookieStore.delete('is_registered');
+
+        // ۳. اگر کوکی‌های دیگری مثل مشخصات غیرحساس کاربر دارید اینجا اضافه کنید
+        // cookieStore.delete('user_role');
+
+        return NextResponse.json({ 
+            success: true,
+            message: 'خروج با موفقیت انجام شد و تمامی نشست‌ها پاکسازی شدند.',
+        }, { 
+            status: 200 
         });
 
     } catch (error) {
-        console.error("Logout failed:", error);
-        return NextResponse.json({ message: 'Logout failed' }, { status: 500 });
+        console.error("Logout error:", error);
+        return NextResponse.json({ 
+            success: false,
+            message: 'خطا در عملیات خروج' 
+        }, { 
+            status: 500 
+        });
     }
 }
