@@ -54,10 +54,12 @@ interface UniversalBulkSmsModalProps {
 }
 
 const InternalTemplateModal = ({ isOpen, onClose, templates, onSelect, formatPreview, isLoading }: any) => {
+ 
+ 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4" dir="rtl">
+        <div className="fixed inset-0 z-999 flex items-center justify-center p-4" dir="rtl">
           <motion.div 
             variants={overlayVariants} initial="hidden" animate="visible" exit="hidden"
             className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} 

@@ -1,119 +1,115 @@
-// File Path: src\app\(client pages)\clientdashboard\components\Footer\Footer.tsx
-
 "use client";
 
-import { Calendar, Home, List, ListCheck, Plus, PlusCircle, User } from "lucide-react";
+import React from "react";
 import Link from "next/link";
-import React, { useState } from "react";
 import { usePathname } from "next/navigation";
-import "./Footer.css";
-
-interface Ripple {
-  id: number;
-  x: number;
-  y: number;
-}
+import { motion } from "framer-motion";
+import { Calendar, User, ListCheck, Plus, LayoutGrid } from "lucide-react";
 
 export default function Footer() {
   const pathname = usePathname();
-  const [ripples, setRipples] = useState<Map<string, Ripple[]>>(new Map());
 
   const navItems = [
-    { href: "/clientdashboard", icon: Home, label: "خانه" },
+    { href: "/clientdashboard", icon: LayoutGrid, label: "پیشخوان" },
     { href: "/clientdashboard/customers", icon: User, label: "مشتریان" },
-    { href: "/clientdashboard/bookingsubmit", icon: Plus, label: "نوبت جدید" },
+    {
+      href: "/clientdashboard/bookingsubmit",
+      icon: Plus,
+      label: "رزرو نوبت",
+      isCenter: true,
+    },
     { href: "/clientdashboard/calendar", icon: Calendar, label: "تقویم" },
     { href: "/clientdashboard/services", icon: ListCheck, label: "خدمات" },
   ];
 
-  const triggerRipple = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
-  ) => {
-    const btn = e.currentTarget;
-    const rect = btn.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const newRipple: Ripple = { id: Date.now() + Math.random(), x, y };
-
-    setRipples((prev) => {
-      const updated = new Map(prev);
-      updated.set(href, [...(updated.get(href) || []), newRipple]);
-      return updated;
-    });
-
-    setTimeout(() => {
-      setRipples((prev) => {
-        const updated = new Map(prev);
-        const current = updated.get(href) || [];
-        updated.set(
-          href,
-          current.filter((r) => r.id !== newRipple.id)
-        );
-        if (updated.get(href)?.length === 0) updated.delete(href);
-        return updated;
-      });
-    }, 600);
-  };
-
   const isActive = (href: string) => {
-    if (href === "/clientdashboard") {
-      return (
-        pathname === "/clientdashboard" || pathname === "/clientdashboard/"
-      );
-    }
-    return pathname.startsWith(href);
+    return href === "/clientdashboard"
+      ? pathname === "/clientdashboard"
+      : pathname.startsWith(href);
   };
 
   return (
-    <>
-      <footer className="fixed max-w-md z-50 mx-auto bottom-0 inset-x-0 h-[10%] bg-[#1B1F28] border-t border-t-emerald-500/30 shadow-2xl">
-        <nav className="h-full flex">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            const itemRipples = ripples.get(item.href) || [];
+    <div className="fixed bottom-0 inset-x-0 z-[100] flex justify-center items-end pb-4 px-4 pointer-events-none">
+      <motion.nav
+        initial={false}
+        className="flex items-center justify-around w-full max-w-[460px] h-[80px] bg-[#0c111d] border border-white/10 rounded-[28px] px-2 shadow-[0_25px_50px_rgba(0,0,0,0.5)] pointer-events-auto relative"
+      >
+        {navItems.map((item, index) => {
+          const active = isActive(item.href);
+          const Icon = item.icon;
 
+          if (item.isCenter) {
             return (
               <Link
-                key={item.href}
+                key={index}
                 href={item.href}
-                onClick={(e) => triggerRipple(e, item.href)}
-                className="relative flex-1 flex flex-col items-center justify-center gap-1 overflow-hidden"
+                className="relative -top-6 flex flex-col items-center"
               >
-                {itemRipples.map((ripple) => (
-                  <span
-                    key={ripple.id}
-                    className="absolute pointer-events-none rounded-full bg-emerald-400/40 animate-ripple-pro"
-                    style={{
-                      left: ripple.x - 36,
-                      top: ripple.y - 36,
-                      width: 72,
-                      height: 72,
-                    }}
-                  />
-                ))}
-
-                <Icon
-                  size={26}
-             
-                  fill={active ? "#34D399" : "none"}
-                  color={active ? "#34D399" : "#9EABBE"}
-                  className="relative z-10 transition-all duration-300"
-                />
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="w-16 h-16 bg-emerald-500 rounded-[22px] flex items-center justify-center shadow-[0_15px_30px_rgba(16,185,129,0.35)] border-[5px] border-[#0c111d]"
+                >
+                  <Plus size={32} className="text-black stroke-[3px]" />
+                </motion.div>
                 <span
-                  className={`text-xs transition-all duration-300 ${
-                    active ? "text-emerald-400 font-semibold" : "text-gray-500"
+                  className={`text-[11px] mt-2 font-bold ${
+                    active ? "text-emerald-400" : "text-gray-400"
                   }`}
                 >
                   {item.label}
                 </span>
               </Link>
             );
-          })}
-        </nav>
-      </footer>
-    </>
+          }
+
+          return (
+            <Link
+              key={index}
+              href={item.href}
+              className="relative flex flex-col items-center justify-center flex-1 h-full transition-none"
+            >
+              {/* پس‌زمینه محو برای آیتم فعال جهت تفکیک بهتر */}
+              {active && (
+                <motion.div
+                  layoutId="nav-pill"
+                  className="absolute inset-x-1 inset-y-3 bg-white/[0.03] rounded-2xl -z-0"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                />
+              )}
+
+              <div
+                className={`relative z-10 flex flex-col items-center gap-1.5 ${
+                  active
+                    ? "text-emerald-400"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                <Icon
+                  size={active ? 24 : 22}
+                  strokeWidth={active ? 2.5 : 2}
+                  className="transition-all duration-200"
+                />
+
+                <span
+                  className={`text-[11px] font-bold tracking-tight transition-colors ${
+                    active ? "opacity-100" : "opacity-80"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </div>
+
+              {/* نشانگر خطی ظریف برای تاکید خوانایی */}
+              {active && (
+                <motion.div
+                  layoutId="active-line"
+                  className="absolute top-0 w-8 h-1 bg-emerald-500 rounded-b-full shadow-[0_2px_10px_rgba(16,185,129,0.5)]"
+                />
+              )}
+            </Link>
+          );
+        })}
+      </motion.nav>
+    </div>
   );
 }

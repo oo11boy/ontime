@@ -291,7 +291,7 @@ if (sendCancellationSms && cancellationMessage.trim() && customer) {
           onConfirm={handleUnblockCustomer}
         />
       </div>
-      <Footer />
+
     </div>
   );
 }

@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  User, Phone, Save, ArrowRight, Loader2, ShieldCheck, UserCircle, Briefcase, Building2 
+  User, Phone, Save, ArrowRight, Loader2, ShieldCheck, 
+  UserCircle, Briefcase, Building2, ChevronLeft 
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import Footer from "../components/Footer/Footer";
+import { motion } from "framer-motion";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -20,47 +21,43 @@ export default function SettingsPage() {
     name: "",
     phone: "",
     job_id: "",
-    business_name: "" // اضافه شدن نام بیزنس
+    business_name: ""
   });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsPageLoading(true);
+        const [jobsRes, userRes] = await Promise.all([
+          fetch("/api/client/jobs/list"),
+          fetch("/api/client/settings")
+        ]);
         
-        // دریافت لیست مشاغل
-        const jobsRes = await fetch("/api/client/jobs/list");
         const jobsData = await jobsRes.json();
-        setJobs(jobsData.jobs || []);
-
-        // دریافت اطلاعات فعلی کاربر
-        const userRes = await fetch("/api/client/settings");
         const userData = await userRes.json();
 
+        setJobs(jobsData.jobs || []);
         if (userData.success && userData.user) {
           setFormData({
             name: userData.user.name || "",
             phone: userData.user.phone || "",
             job_id: userData.user.job_id?.toString() || "",
-            business_name: userData.user.business_name || "" // دریافت از دیتابیس
+            business_name: userData.user.business_name || ""
           });
         }
       } catch (err) {
-        toast.error("خطا در بارگذاری اطلاعات");
-        console.error(err);
+        toast.error("خطا در دریافت اطلاعات");
       } finally {
         setIsPageLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // بررسی پر بودن فیلدها (نام بیزنس هم اجباری لحاظ شده)
     if (!formData.name.trim() || !formData.phone.trim() || !formData.job_id || !formData.business_name.trim()) {
-      toast.error("لطفاً تمامی فیلدها را پر کنید");
+      toast.error("همه موارد را تکمیل کنید");
       return;
     }
 
@@ -73,14 +70,14 @@ export default function SettingsPage() {
       });
 
       if (res.ok) {
-        toast.success("تغییرات با موفقیت اعمال شد");
+        toast.success("تغییرات ذخیره شد");
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       } else {
         const data = await res.json();
-        toast.error(data.message || "خطایی در عملیات رخ داد");
+        toast.error(data.message || "خطایی رخ داد");
       }
     } catch (error) {
-      toast.error("خطا در برقراری ارتباط با سرور");
+      toast.error("خطا در اتصال");
     } finally {
       setIsSaving(false);
     }
@@ -88,124 +85,159 @@ export default function SettingsPage() {
 
   if (isPageLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
-        <p className="mt-4 text-gray-400 text-sm">در حال دریافت اطلاعات...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#060910]">
+        <motion.div 
+          animate={{ rotate: 360 }} 
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <Loader2 className="w-12 h-12 text-emerald-500" />
+        </motion.div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen text-white max-w-md mx-auto relative flex flex-col bg-[#121212]">
-      {/* هدر */}
-      <div className="sticky top-0 z-50 bg-[#121212]/80 backdrop-blur-lg border-b border-gray-800/50 px-4 py-4" dir="rtl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-              <UserCircle className="w-6 h-6 text-emerald-500" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-100">تنظیمات پروفایل</h1>
-              <p className="text-[10px] text-gray-500">ویرایش اطلاعات شخصی و بیزنس</p>
-            </div>
-          </div>
-          <button onClick={() => router.back()} className="p-2.5 rounded-xl bg-gray-800/50 text-gray-400 hover:text-white border border-gray-700/30 transition-all">
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
 
-      <div className="flex-1 px-4 py-6 pb-32" dir="rtl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-[#1B1F28] border border-gray-700/50 rounded-4xl overflow-hidden shadow-2xl">
-            <div className="p-6 md:p-8 space-y-7">
-              
-              {/* نام شخص */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 mr-1">
-                  <User className="w-4 h-4 text-emerald-500" /> نام و نام خانوادگی
-                </label>
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
+
+  return (
+    <div className="min-h-screen text-white max-w-md mx-auto bg-[#060910] font-sans" dir="rtl">
+      {/* Header مدرن */}
+      <header className="sticky top-0 z-[60] bg-[#060910]/80 backdrop-blur-xl border-b border-white/[0.05] px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20 shadow-inner">
+            <UserCircle className="w-7 h-7 text-emerald-500" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-white">تنظیمات</h1>
+            <p className="text-[11px] text-gray-500 font-medium">Profile & Business</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => router.back()} 
+          className="w-10 h-10 rounded-full bg-white/[0.03] border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
+        >
+          <ChevronLeft className="w-6 h-6 rotate-180" />
+        </button>
+      </header>
+
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="px-6 py-8 space-y-8"
+      >
+        <form onSubmit={handleSubmit} className="space-y-8 pb-20">
+          
+          {/* بخش اطلاعات شخصی */}
+          <section className="space-y-6">
+            <h3 className="text-[13px] font-black text-emerald-500/80 mr-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              اطلاعات حساب
+            </h3>
+
+            <motion.div variants={itemVariants} className="space-y-5">
+              {/* نام و نام خانوادگی */}
+              <div className="relative group">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-500 transition-colors">
+                  <User size={20} />
+                </div>
                 <input
                   type="text"
-                  placeholder="مثلاً: علی رضایی"
+                  placeholder="نام و نام خانوادگی"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                  className="w-full bg-white/[0.02] border border-white/[0.08] focus:border-emerald-500/50 rounded-[20px] pr-12 pl-5 py-4 text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-gray-600 font-bold"
                 />
-              </div>
-
-              {/* نام کسب و کار - فیلد جدید */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 mr-1">
-                  <Building2 className="w-4 h-4 text-emerald-500" /> نام کسب‌وکار  </label>
-                <input
-                  type="text"
-                  placeholder="مثلاً: سالن زیبایی نوین"
-                  value={formData.business_name}
-                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                  className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all font-bold"
-                />
-              </div>
-
-              {/* انتخاب شغل */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 mr-1">
-                  <Briefcase className="w-4 h-4 text-emerald-500" /> شاخه کاری
-                </label>
-                <div className="relative">
-                  <select
-                    value={formData.job_id}
-                    onChange={(e) => setFormData({ ...formData, job_id: e.target.value })}
-                    className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>انتخاب کنید...</option>
-                    {jobs.map((j) => (
-                      <option key={j.id} value={j.id.toString()}>
-                        {j.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                    <ArrowRight className="w-4 h-4 text-gray-500 rotate-90" />
-                  </div>
-                </div>
               </div>
 
               {/* شماره موبایل */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 mr-1">
-                  <Phone className="w-4 h-4 text-emerald-500" /> شماره موبایل
-                </label>
+              <div className="relative group">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-500 transition-colors">
+                  <Phone size={20} />
+                </div>
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full bg-[#232936] border border-gray-700/50 rounded-2xl px-5 py-4 text-gray-100 text-left focus:outline-none focus:ring-2 focus:ring-emerald-500/40 font-mono tracking-widest"
+                  readOnly
+                  className="w-full bg-white/[0.01] border border-white/[0.05] rounded-[20px] pr-12 pl-5 py-4 text-sm text-gray-500 cursor-not-allowed font-mono tracking-widest"
+                />
+              </div>
+            </motion.div>
+          </section>
+
+          {/* بخش کسب و کار */}
+          <section className="space-y-6 p-6 bg-gradient-to-br from-white/[0.03] to-transparent rounded-[32px] border border-white/[0.05] shadow-inner">
+            <h3 className="text-[13px] font-black text-emerald-500/80 flex items-center gap-2">
+               <Building2 size={16} /> جزئیات بیزنس
+            </h3>
+
+            <motion.div variants={itemVariants} className="space-y-5">
+              {/* نام بیزنس */}
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="نام برند یا کسب‌وکار شما"
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  className="w-full bg-white/[0.04] border border-white/[0.1] focus:border-emerald-500 rounded-2xl px-5 py-4 text-sm focus:outline-none transition-all font-black text-emerald-50 shadow-sm"
                 />
               </div>
 
-              <div className="flex items-start gap-4 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-1" />
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-gray-200">امنیت اطلاعات</h4>
-                  <p className="text-[10px] text-gray-400 leading-5">نام کسب‌وکار شما در پیامک‌های ارسالی به مشتریان نمایش داده می‌شود.</p>
+              {/* شاخه کاری */}
+              <div className="relative">
+                <select
+                  value={formData.job_id}
+                  onChange={(e) => setFormData({ ...formData, job_id: e.target.value })}
+                  className="w-full bg-white/[0.04] border border-white/[0.1] rounded-2xl px-5 py-4 text-sm appearance-none focus:outline-none cursor-pointer font-bold text-gray-200"
+                >
+                  <option value="" disabled className="bg-[#0c111d]">انتخاب تخصص...</option>
+                  {jobs.map((j) => (
+                    <option key={j.id} value={j.id.toString()} className="bg-[#0c111d]">
+                      {j.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500">
+                  <Briefcase size={18} />
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="px-6 py-5 bg-gray-800/30 border-t border-gray-700/50">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-[#1B1F28] font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
-              >
-                {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Save className="w-5 h-5" /> ذخیره تغییرات</>}
-              </button>
+            {/* کارت راهنما */}
+            <div className="flex gap-4 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 backdrop-blur-sm">
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+              <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+                نام کسب‌وکار شما به عنوان امضا در پایین پیامک‌های ارسالی به مشتریان درج خواهد شد.
+              </p>
             </div>
-          </div>
+          </section>
+
+          {/* دکمه ذخیره چسبیده به پایین محتوا */}
+          <motion.div variants={itemVariants} className="pt-4">
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="w-full h-[64px] bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-[24px] flex items-center justify-center gap-3 transition-all active:scale-[0.97] shadow-[0_20px_40px_rgba(16,185,129,0.25)] disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <>
+                  <Save size={22} strokeWidth={2.5} />
+                  <span className="text-lg">ذخیره تغییرات</span>
+                </>
+              )}
+            </button>
+          </motion.div>
         </form>
-      </div>
-      <Footer />
+      </motion.div>
     </div>
   );
 }
