@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { formatPersianDate } from "@/lib/date-utils"; // ← حتماً این رو ایمپورت کن
 
 interface CustomerBooking {
   id: number;
@@ -134,6 +135,10 @@ export async function POST(req: NextRequest) {
 
     const booking = bookings[0] as any;
 
+    // تبدیل تاریخ به شمسی فارسی
+    const persianDate = formatPersianDate(booking.booking_date); // مثال: "۳ دی ۱۴۰۴"
+    const timeDisplay = booking.booking_time; // مثال: "۱۴:۳۰"
+
     // --- عملیات لغو نوبت ---
     if (action === "cancel") {
       if (booking.status !== "active") {
@@ -142,18 +147,22 @@ export async function POST(req: NextRequest) {
 
       await query(`UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?`, [booking.id]);
 
-      // ۱. ثبت در لاگ پیامک برای مشتری
+      // پیامک برای مشتری
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
-        [booking.user_id, booking.client_phone, `نوبت شما لغو شد. تاریخ: ${booking.booking_date} - زمان: ${booking.booking_time}`]
+        [booking.user_id, booking.client_phone, `نوبت شما لغو شد. تاریخ: ${persianDate} - زمان: ${timeDisplay}`]
       );
 
-      // ۲. ثبت در جدول اعلان‌ها برای آرایشگر (پنل مدیریت)
+      // اعلان برای آرایشگر — با تاریخ شمسی
       await query(
-        `INSERT INTO notifications (user_id, booking_id, type, message)
-         VALUES (?, ?, 'cancel', ?)`,
-        [booking.user_id, booking.id, `مشتری (${booking.client_name}) نوبت خود را برای تاریخ ${booking.booking_date} لغو کرد.`]
+        `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
+         VALUES (?, ?, 'cancel', ?, NOW())`,
+        [
+          booking.user_id,
+          booking.id,
+          `مشتری (${booking.client_name}) نوبت خود را برای تاریخ ${persianDate} ساعت ${timeDisplay} لغو کرد.`,
+        ]
       );
 
       return NextResponse.json({ success: true, message: "نوبت با موفقیت لغو شد" });
@@ -165,7 +174,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: "این نوبت قابل تغییر نیست" }, { status: 400 });
       }
 
-      if (booking.change_count >= 1) { // محدودیت تغییر (مثلاً ۱ بار)
+      if (booking.change_count >= 1) {
         return NextResponse.json({ success: false, message: "تعداد مجاز تغییرات تمام شده" }, { status: 400 });
       }
 
@@ -174,7 +183,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: "تاریخ و زمان جدید الزامی است" }, { status: 400 });
       }
 
-      // چک کردن تداخل زمانی
+      const newPersianDate = formatPersianDate(newDate);
+
+      // چک تداخل زمانی
       const conflicts = await query(
         `SELECT id FROM booking 
          WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?`,
@@ -192,18 +203,22 @@ export async function POST(req: NextRequest) {
         [newDate, newTime, booking.id]
       );
 
-      // ۱. ثبت در لاگ پیامک برای مشتری
+      // پیامک برای مشتری
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'reschedule', 'sent', NOW())`,
-        [booking.user_id, booking.client_phone, `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newDate} - زمان جدید: ${newTime}`]
+        [booking.user_id, booking.client_phone, `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newPersianDate} - زمان جدید: ${newTime}`]
       );
 
-      // ۲. ثبت در جدول اعلان‌ها برای آرایشگر (پنل مدیریت)
+      // اعلان برای آرایشگر — با تاریخ شمسی
       await query(
-        `INSERT INTO notifications (user_id, booking_id, type, message)
-         VALUES (?, ?, 'reschedule', ?)`,
-        [booking.user_id, booking.id, `مشتری (${booking.client_name}) زمان نوبت خود را به ${newDate} ساعت ${newTime} تغییر داد.`]
+        `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
+         VALUES (?, ?, 'reschedule', ?, NOW())`,
+        [
+          booking.user_id,
+          booking.id,
+          `مشتری (${booking.client_name}) زمان نوبت خود را به ${newPersianDate} ساعت ${newTime} تغییر داد.`,
+        ]
       );
 
       return NextResponse.json({ success: true, message: "زمان نوبت با موفقیت تغییر یافت" });

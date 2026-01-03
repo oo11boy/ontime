@@ -9,11 +9,12 @@ import {
   Bell,
   Settings,
   ChevronDown,
-  Calendar,
-  XCircle,
   X,
+  XCircle,
+  Calendar,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 import { useDashboard } from "@/hooks/useDashboard";
 
 interface Notification {
@@ -75,15 +76,16 @@ export default function Header() {
         if (currentUnreads > lastUnreadCount.current) {
           toast.custom(
             (t) => (
-              <div
-                className={`${
-                  t.visible ? "animate-center-enter" : "animate-center-leave"
-                } fixed top-[10%] left-0 right-0 flex items-center justify-center z-[9999] pointer-events-none`}
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                className="fixed top-[10%] left-0 right-0 flex items-center justify-center z-[9999] pointer-events-none"
               >
                 <div className="max-w-md w-[90%] bg-[#232936] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl pointer-events-auto flex flex-col ring-2 ring-emerald-500/40 border border-gray-700 overflow-hidden">
                   <div className="p-6 text-center" dir="rtl">
                     <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                      <Bell className="w-7 h-7 text-emerald-400 animate-swing" />
+                      <Bell className="w-7 h-7 text-emerald-400 animate-pulse" />
                     </div>
                     <p className="text-lg font-bold text-gray-100">
                       اعلان جدید
@@ -111,7 +113,7 @@ export default function Header() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ),
             { duration: 5000 }
           );
@@ -131,7 +133,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         profileRef.current &&
         !profileRef.current.contains(event.target as Node)
@@ -145,7 +147,7 @@ export default function Header() {
         setIsNotifOpen(false);
         isNotifOpenRef.current = false;
       }
-    }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -170,19 +172,25 @@ export default function Header() {
 
   return (
     <div className="w-full relative">
-      {/* --- Overlay Backdrop با بلور و انیمیشن نرم --- */}
-      {isAnyModalOpen && (
-        <div
-          className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-md animate-backdrop-appear"
-          onClick={() => {
-            setIsProfileOpen(false);
-            setIsNotifOpen(false);
-            isNotifOpenRef.current = false;
-          }}
-        />
-      )}
+      {/* Backdrop با انیمیشن Framer Motion */}
+      <AnimatePresence>
+        {isAnyModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-md"
+            onClick={() => {
+              setIsProfileOpen(false);
+              setIsNotifOpen(false);
+              isNotifOpenRef.current = false;
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* --- Main Header --- */}
+      {/* Main Header */}
       <div className="bg-[#1B1F28] border border-gray-700/50 rounded-2xl p-3 md:p-4 flex justify-between items-center shadow-2xl relative z-[95]">
         <div className="flex items-center">
           <span
@@ -194,7 +202,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          {/* Notification Section */}
+          {/* Notification Dropdown */}
           <div className="relative" ref={notifRef}>
             <button
               onClick={() =>
@@ -209,7 +217,7 @@ export default function Header() {
               }`}
             >
               <Bell
-                className={`w-5 h-5 ${unreadCount > 0 ? "animate-swing" : ""}`}
+                className={`w-5 h-5 ${unreadCount > 0 ? "animate-pulse" : ""}`}
               />
               {unreadCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-[#1B1F28] animate-pulse">
@@ -218,63 +226,70 @@ export default function Header() {
               )}
             </button>
 
-            {isNotifOpen && (
-              <div className="fixed top-20 left-4 right-4 z-[100] bg-[#232936] rounded-2xl border border-gray-700 shadow-[0_20px_50px_rgba(0,0,0,0.6)] md:absolute md:top-full md:left-0 md:right-auto md:mt-4 md:w-80 animate-top-drop overflow-hidden">
-                <div
-                  className="p-4 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30"
-                  dir="rtl"
+            <AnimatePresence>
+              {isNotifOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed top-20 left-4 right-4 z-[100] bg-[#232936] rounded-2xl border border-gray-700 shadow-[0_20px_50px_rgba(0,0,0,0.6)] md:absolute md:top-full md:left-auto md:right-0 md:mt-4 md:w-80 overflow-hidden"
                 >
-                  <span className="font-bold text-sm text-gray-200 flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-emerald-400" />
-                    اعلان‌های اخیر
-                  </span>
-                  <X
-                    className="w-4 h-4 text-gray-500 cursor-pointer"
-                    onClick={() => setIsNotifOpen(false)}
-                  />
-                </div>
-                <div className="max-h-[60vh] md:max-h-96 overflow-y-auto p-2 custom-scrollbar">
-                  {notifications.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 text-xs">
-                      اعلانی وجود ندارد
-                    </div>
-                  ) : (
-                    notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={`p-4 mb-2 rounded-xl border border-transparent transition-all ${
-                          notif.is_read === 0
-                            ? "bg-emerald-400/5 border-emerald-500/10"
-                            : "opacity-60"
-                        }`}
-                      >
-                        <div
-                          className="flex gap-3 items-start text-right"
-                          dir="rtl"
-                        >
-                          {notif.type === "cancel" ? (
-                            <XCircle className="text-red-400 w-5 h-5 shrink-0" />
-                          ) : (
-                            <Calendar className="text-blue-400 w-5 h-5 shrink-0" />
-                          )}
-                          <div className="flex-1">
-                            <p className="text-[11px] text-gray-200 leading-5">
-                              {notif.message}
-                            </p>
-                            <span className="text-[10px] text-gray-600 mt-2 block">
-                              {notif.time}
-                            </span>
-                          </div>
-                        </div>
+                  <div
+                    className="p-4 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30"
+                    dir="rtl"
+                  >
+                    <span className="font-bold text-sm text-gray-200 flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-emerald-400" />
+                      اعلان‌های اخیر
+                    </span>
+                    <X
+                      className="w-4 h-4 text-gray-500 cursor-pointer"
+                      onClick={() => setIsNotifOpen(false)}
+                    />
+                  </div>
+                  <div className="max-h-[60vh] md:max-h-96 overflow-y-auto p-2 custom-scrollbar">
+                    {notifications.length === 0 ? (
+                      <div className="p-12 text-center text-gray-500 text-xs">
+                        اعلانی وجود ندارد
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+                    ) : (
+                      notifications.map((notif) => (
+                        <motion.div
+                          key={notif.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className={`p-4 mb-2 rounded-xl border transition-all ${
+                            notif.is_read === 0
+                              ? "bg-emerald-400/5 border-emerald-500/10"
+                              : "opacity-60 border-transparent"
+                          }`}
+                        >
+                          <div className="flex gap-3 items-start text-right" dir="rtl">
+                            {notif.type === "cancel" ? (
+                              <XCircle className="text-red-400 w-5 h-5 shrink-0" />
+                            ) : (
+                              <Calendar className="text-blue-400 w-5 h-5 shrink-0" />
+                            )}
+                            <div className="flex-1">
+                              <p className="text-[11px] text-gray-200 leading-5">
+                                {notif.message}
+                              </p>
+                              <span className="text-[10px] text-gray-600 mt-2 block">
+                                {notif.time}
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Profile Section */}
+          {/* Profile Dropdown */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => {
@@ -306,137 +321,68 @@ export default function Header() {
               />
             </button>
 
-            {isProfileOpen && (
-              <div className="fixed top-20 left-4 right-4 z-[100] bg-[#232936] rounded-2xl border border-gray-700 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.6)] md:absolute md:top-full md:left-0 md:right-auto md:mt-4 md:w-64 animate-top-drop">
-                <div
-                  className="p-4 border-b border-gray-700/50 flex items-center gap-3"
-                  dir="rtl"
+            <AnimatePresence>
+              {isProfileOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed top-20 left-4 right-4 z-[100] bg-[#232936] rounded-2xl border border-gray-700 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.6)] md:absolute md:top-full md:left-auto md:right-0 md:mt-4 md:w-64"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <div className="flex flex-col text-right">
-                    <span className="text-sm font-bold text-gray-100">
-                      {isDashLoading
-                        ? "..."
-                        : dashboardData?.user?.name || "کاربر"}
-                    </span>
-                    <span className="text-[10px] text-gray-500">
-                      مدیریت نوبت‌دهی
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-2 space-y-1">
-                  <button
-                    onClick={() => {
-                      router.push("/clientdashboard/settings");
-                      setIsProfileOpen(false);
-                    }}
-                    className="w-full flex items-center gap-3 p-3 text-sm text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all"
+                  <div
+                    className="p-4 border-b border-gray-700/50 flex items-center gap-3"
                     dir="rtl"
                   >
-                    <Settings className="w-5 h-5 md:w-4 md:h-4 text-gray-500" />
-                    <span>تنظیمات حساب</span>
-                  </button>
-                  <div className="h-px bg-gray-700/50 my-1 mx-2"></div>
-                  <button
-                    onClick={handleLogout}
-                    disabled={loading}
-                    className="w-full flex items-center gap-3 p-3 text-sm text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
-                    dir="rtl"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" />
-                    ) : (
-                      <LogOut className="w-5 h-5 md:w-4 md:h-4" />
-                    )}
-                    <span>خروج از حساب</span>
-                  </button>
-                </div>
-              </div>
-            )}
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-sm font-bold text-gray-100">
+                        {isDashLoading
+                          ? "..."
+                          : dashboardData?.user?.name || "کاربر"}
+                      </span>
+                      <span className="text-[10px] text-gray-500">
+                        مدیریت نوبت‌دهی
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        router.push("/clientdashboard/settings");
+                        setIsProfileOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 p-3 text-sm text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all"
+                      dir="rtl"
+                    >
+                      <Settings className="w-5 h-5 md:w-4 md:h-4 text-gray-500" />
+                      <span>تنظیمات حساب</span>
+                    </button>
+                    <div className="h-px bg-gray-700/50 my-1 mx-2"></div>
+                    <button
+                      onClick={handleLogout}
+                      disabled={loading}
+                      className="w-full flex items-center gap-3 p-3 text-sm text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                      dir="rtl"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" />
+                      ) : (
+                        <LogOut className="w-5 h-5 md:w-4 md:h-4" />
+                      )}
+                      <span>خروج از حساب</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
-      <style jsx global>{`
-        /* انیمیشن نرم برای بلور و تاریکی بک‌گراند */
-        @keyframes backdrop-appear {
-          0% {
-            opacity: 0;
-            backdrop-filter: blur(0px);
-          }
-          100% {
-            opacity: 1;
-            backdrop-filter: blur(12px);
-          }
-        }
-        .animate-backdrop-appear {
-          animation: backdrop-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        /* انیمیشن باز شدن مودال از بالا */
-        @keyframes top-drop {
-          0% {
-            opacity: 0;
-            transform: translateY(-20px) scale(0.97);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        .animate-top-drop {
-          animation: top-drop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          transform-origin: top;
-        }
-
-        /* انیمیشن نوتیفیکیشن toast */
-        @keyframes center-enter {
-          0% {
-            opacity: 0;
-            transform: scale(0.9) translateY(-20px);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-        .animate-center-enter {
-          animation: center-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes swing {
-          0%,
-          100% {
-            transform: rotate(0);
-          }
-          20% {
-            transform: rotate(10deg);
-          }
-          40% {
-            transform: rotate(-10deg);
-          }
-          60% {
-            transform: rotate(5deg);
-          }
-          80% {
-            transform: rotate(-5deg);
-          }
-        }
-        .animate-swing {
-          animation: swing 2s ease infinite;
-          transform-origin: top center;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #374151;
-          border-radius: 10px;
-        }
-      `}</style>
+      {/* حذف تمام style jsx — دیگر نیاز نیست چون از Framer Motion استفاده کردیم */}
     </div>
   );
 }
