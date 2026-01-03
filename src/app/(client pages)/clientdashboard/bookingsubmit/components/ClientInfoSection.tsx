@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { User, Phone, Contact, Search, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // اضافه شد
+import { motion, AnimatePresence } from "framer-motion";
 import { ExistingClient } from "../types";
 import { useCustomers } from "@/hooks/useCustomers";
 
@@ -12,6 +12,7 @@ interface ClientInfoSectionProps {
   setPhone: (phone: string) => void;
   isCheckingClient: boolean;
   existingClient: ExistingClient | null;
+  onNameBlur?: () => void; // ← اضافه شد: برای چک کردن تغییر نام بعد از خروج از فیلد
 }
 
 const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
@@ -21,6 +22,7 @@ const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
   setPhone,
   isCheckingClient,
   existingClient,
+  onNameBlur,
 }) => {
   const [isClientListOpen, setIsClientListOpen] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
@@ -45,6 +47,7 @@ const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={onNameBlur} // ← مهم: وقتی کاربر از فیلد خارج شد، چک می‌کنیم
               placeholder="نام و نام خانوادگی"
               className="w-full bg-white/10 border border-white/10 rounded-xl pr-12 px-4 py-3.5 text-right placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm"
             />
