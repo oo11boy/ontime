@@ -81,19 +81,26 @@ export default function CalendarPage() {
 
   const todayJalali = useMemo(() => getTodayJalali(), []);
 
-  const handleUpdateBusinessName = async (newName: string) => {
+  // تابع اصلاح شده برای هماهنگی با مودال جدید (دریافت نام و آدرس)
+  const handleUpdateBusinessProfile = async (newName: string, newAddress: string) => {
     try {
       const response = await fetch("/api/client/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...userData?.user, business_name: newName }),
+        body: JSON.stringify({ 
+          ...userData?.user, 
+          business_name: newName,
+          business_address: newAddress 
+        }),
       });
       if (response.ok) {
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        toast.success("اطلاعات با موفقیت بروزرسانی شد");
         return true;
       }
       return false;
     } catch (error) {
+      console.error("Update error:", error);
       return false;
     }
   };
@@ -101,7 +108,6 @@ export default function CalendarPage() {
   const filteredAppointments = useMemo(() => {
     if (selectedService === "all") return allAppointments;
     return allAppointments.filter((app) => {
-      // اصلاح بخش خطا دار با تعیین صریح نوع داده (Type Casting)
       const serviceList: string[] =
         typeof app.services === "string"
           ? (app.services as string).split(",").map((s: string) => s.trim())
@@ -205,8 +211,8 @@ export default function CalendarPage() {
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
           {isLoading ? (
-            <div className="text-center py-10 opacity-50">
-              در حال بارگذاری...
+            <div className="text-center py-10 opacity-50 text-sm">
+              در حال بارگذاری نوبت‌ها...
             </div>
           ) : calendarDays.length === 0 ? (
             <div className="text-center py-12">
@@ -274,8 +280,9 @@ export default function CalendarPage() {
         recipients={appointmentsForSms}
         userSmsBalance={userSmsBalance}
         businessName={userData?.user?.business_name || null}
+        businessAddress={userData?.user?.business_address || null}
         onSend={handleSendBulkSms}
-        onUpdateBusinessName={handleUpdateBusinessName}
+        onUpdateBusinessProfile={handleUpdateBusinessProfile}
       />
     </div>
   );

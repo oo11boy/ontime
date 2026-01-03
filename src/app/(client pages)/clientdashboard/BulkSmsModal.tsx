@@ -10,6 +10,7 @@ import {
   Users,
   Info,
   MessageSquare,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
@@ -28,7 +29,7 @@ const modalVariants = {
     scale: 1, 
     y: 0,
     transition: { 
-      type: "spring" as const, // اضافه کردن as const اینجا
+      type: "spring" as const,
       damping: 25, 
       stiffness: 300 
     }
@@ -49,17 +50,16 @@ interface UniversalBulkSmsModalProps {
   recipients: GenericRecipient[];
   userSmsBalance: number;
   businessName: string | null;
+  businessAddress: string | null; // اضافه شده
   onSend: (templateKey: string, ids: (string | number)[]) => Promise<void>;
-  onUpdateBusinessName: (newName: string) => Promise<boolean>;
+  onUpdateBusinessProfile: (newName: string, newAddress: string) => Promise<boolean>; // تغییر نام و پارامتر
 }
 
 const InternalTemplateModal = ({ isOpen, onClose, templates, onSelect, formatPreview, isLoading }: any) => {
- 
- 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-999 flex items-center justify-center p-4" dir="rtl">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" dir="rtl">
           <motion.div 
             variants={overlayVariants} initial="hidden" animate="visible" exit="hidden"
             className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} 
@@ -103,7 +103,7 @@ const InternalTemplateModal = ({ isOpen, onClose, templates, onSelect, formatPre
 };
 
 export const BulkSmsModal: React.FC<UniversalBulkSmsModalProps> = ({
-  isOpen, onClose, title = "ارسال همگانی", recipients, userSmsBalance, businessName, onSend, onUpdateBusinessName,
+  isOpen, onClose, title = "ارسال همگانی", recipients, userSmsBalance, businessName, businessAddress, onSend, onUpdateBusinessProfile,
 }) => {
   const [isSending, setIsSending] = useState(false);
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
@@ -111,8 +111,11 @@ export const BulkSmsModal: React.FC<UniversalBulkSmsModalProps> = ({
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showConfirmStep, setShowConfirmStep] = useState(false);
+  
+  // استیت‌های ویرایش بیزنس
   const [newBusinessName, setNewBusinessName] = useState("");
-  const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const [newBusinessAddress, setNewBusinessAddress] = useState("");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   const { data: templatesData, isLoading: isLoadingTemplates } = useSmsTemplates();
 
@@ -120,6 +123,14 @@ export const BulkSmsModal: React.FC<UniversalBulkSmsModalProps> = ({
     () => templatesData?.templates?.filter((t: any) => t.type === "bulk" || t.type === "generic") || [],
     [templatesData]
   );
+
+  // سینک کردن استیت با پراپس هنگام باز شدن مودال
+  useEffect(() => {
+    if (isOpen) {
+      setNewBusinessName(businessName || "");
+      setNewBusinessAddress(businessAddress || "");
+    }
+  }, [isOpen, businessName, businessAddress]);
 
   const formatPreview = (text: string | null | undefined) => {
     if (!text) return "متنی انتخاب نشده است...";
@@ -144,7 +155,11 @@ export const BulkSmsModal: React.FC<UniversalBulkSmsModalProps> = ({
     if (selectedIds.length === 0) return toast.error("حداقل یک گیرنده انتخاب کنید");
     if (!selectedTemplate) return toast.error("لطفاً یک الگو انتخاب کنید");
     if (selectedIds.length > userSmsBalance) return toast.error("اعتبار کافی نیست");
-    if (!businessName) return setShowBusinessModal(true);
+    
+    // اگر نام یا آدرس بیزنس موجود نباشد، مودال تکمیل اطلاعات باز می‌شود
+    if (!businessName || !businessAddress || businessName.trim() === "" || businessAddress.trim() === "") {
+      return setShowBusinessModal(true);
+    }
     setShowConfirmStep(true);
   };
 
@@ -152,7 +167,7 @@ export const BulkSmsModal: React.FC<UniversalBulkSmsModalProps> = ({
     <>
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4" dir="rtl">
+          <div className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center p-4" dir="rtl">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} 
@@ -291,33 +306,56 @@ export const BulkSmsModal: React.FC<UniversalBulkSmsModalProps> = ({
         onSelect={(content: string, key: string) => setSelectedTemplate({ key, content })}
       />
 
-      {/* Business Name Modal */}
+      {/* Business Info Update Modal */}
       <AnimatePresence>
         {showBusinessModal && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 text-center">
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center p-6 text-center">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setShowBusinessModal(false)} />
             <motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit" className="relative w-full max-w-sm bg-[#1e232d] rounded-[3rem] border border-emerald-500/30 p-8 shadow-2xl">
               <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 mx-auto mb-4"><Building2 size={32} /></div>
-              <h4 className="text-xl font-bold text-white mb-2">نام بیزنس شما</h4>
-              <p className="text-xs text-gray-500 mb-6">این نام در متن پیامک جایگزین <span className="text-emerald-500">%salon%</span> خواهد شد.</p>
-              <input
-                type="text" value={newBusinessName} onChange={(e) => setNewBusinessName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 text-center text-white mb-6 outline-none focus:border-emerald-500 font-bold transition-all"
-                placeholder="مثلاً: سالن زیبایی مینا" autoFocus
-              />
+              <h4 className="text-xl font-bold text-white mb-2">تکمیل اطلاعات بیزنس</h4>
+              <p className="text-xs text-gray-500 mb-6">برای ارسال پیامک، وارد کردن نام و آدرس الزامی است.</p>
+              
+              <div className="space-y-4 mb-6">
+                <div className="relative">
+                   <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"><Building2 size={16}/></div>
+                   <input
+                    type="text" value={newBusinessName} onChange={(e) => setNewBusinessName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-12 pl-4 text-right text-white outline-none focus:border-emerald-500 font-bold transition-all text-sm"
+                    placeholder="نام بیزنس (مثلاً: سالن مریم)"
+                  />
+                </div>
+
+                <div className="relative">
+                   <div className="absolute right-4 top-5 text-gray-500"><MapPin size={16}/></div>
+                   <textarea
+                    rows={2}
+                    value={newBusinessAddress} onChange={(e) => setNewBusinessAddress(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-12 pl-4 text-right text-white outline-none focus:border-emerald-500 font-bold transition-all text-sm resize-none"
+                    placeholder="آدرس دقیق بیزنس..."
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <button onClick={() => setShowBusinessModal(false)} className="flex-1 py-4 text-gray-500 font-bold hover:text-white transition-colors">لغو</button>
                 <button
                   onClick={async () => {
-                    if (!newBusinessName.trim()) return toast.error("نام را وارد کنید");
-                    setIsUpdatingName(true);
-                    if (await onUpdateBusinessName(newBusinessName)) { setShowBusinessModal(false); setShowConfirmStep(true); }
-                    setIsUpdatingName(false);
+                    if (!newBusinessName.trim() || !newBusinessAddress.trim()) {
+                      return toast.error("نام و آدرس را وارد کنید");
+                    }
+                    setIsUpdatingProfile(true);
+                    const success = await onUpdateBusinessProfile(newBusinessName, newBusinessAddress);
+                    if (success) { 
+                      setShowBusinessModal(false); 
+                      setShowConfirmStep(true); 
+                    }
+                    setIsUpdatingProfile(false);
                   }}
-                  disabled={isUpdatingName}
+                  disabled={isUpdatingProfile}
                   className="flex-[2] py-4 bg-emerald-500 rounded-2xl text-white font-black flex items-center justify-center shadow-lg active:scale-95 transition-all"
                 >
-                  {isUpdatingName ? <Loader2 className="animate-spin w-5 h-5" /> : "تأیید و ادامه"}
+                  {isUpdatingProfile ? <Loader2 className="animate-spin w-5 h-5" /> : "تأیید و ادامه"}
                 </button>
               </div>
             </motion.div>

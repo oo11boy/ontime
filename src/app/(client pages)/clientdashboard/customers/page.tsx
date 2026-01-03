@@ -43,7 +43,8 @@ export default function CustomersList() {
   const clients = customersData?.clients || [];
   const pagination = customersData?.pagination || { page: 1, totalPages: 1 };
 
-  const handleUpdateBusinessName = async (newName: string) => {
+  // اصلاح تابع برای دریافت هر دو پارامتر نام و آدرس
+  const handleUpdateBusinessProfile = async (newName: string, newAddress: string) => {
     try {
       const response = await fetch("/api/client/settings", {
         method: "POST",
@@ -51,16 +52,21 @@ export default function CustomersList() {
         body: JSON.stringify({
           ...userData?.user,
           business_name: newName,
+          business_address: newAddress, // اضافه شدن آدرس به بدنه درخواست
         }),
       });
 
       if (response.ok) {
+        // بروزرسانی کش کوئری برای نمایش آنی تغییرات
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        toast.success("اطلاعات بیزنس بروزرسانی شد");
         return true;
       }
+      toast.error("خطا در بروزرسانی اطلاعات");
       return false;
     } catch (error) {
       console.error("Update Error:", error);
+      toast.error("مشکل در برقراری ارتباط با سرور");
       return false;
     }
   };
@@ -106,7 +112,7 @@ export default function CustomersList() {
       <Toaster position="top-center" containerClassName="!top-0" />
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933]">
         <HeaderSection
-          isLoading={isLoading || isFetching} // ترکیب هر دو وضعیت بارگذاری
+          isLoading={isLoading || isFetching}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           userSmsBalance={userSmsBalance}
@@ -153,8 +159,9 @@ export default function CustomersList() {
           }))}
         userSmsBalance={userSmsBalance}
         businessName={userData?.user?.business_name || null}
+        businessAddress={userData?.user?.business_address || null}
         onSend={handleSendBulkSms}
-        onUpdateBusinessName={handleUpdateBusinessName}
+        onUpdateBusinessProfile={handleUpdateBusinessProfile} // نام پراپ اصلاح شد
       />
     </div>
   );

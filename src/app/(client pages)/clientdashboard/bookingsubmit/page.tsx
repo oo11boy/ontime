@@ -3,8 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
-import { Calendar, UserX } from "lucide-react";
+import { Calendar, UserX, Building2, AlertCircle, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 
 import Footer from "../components/Footer/Footer";
 import { getTodayJalali, jalaliToGregorian } from "@/lib/date-utils";
@@ -59,7 +60,23 @@ export default function NewAppointmentPage() {
     reserve: false,
     remind: false,
     nameChange: false,
+    businessInfoMissing: false,
   });
+
+  const [businessForm, setBusinessForm] = useState({
+    business_name: "",
+    business_address: "",
+  });
+  const [isSavingBusiness, setIsSavingBusiness] = useState(false);
+
+  const [userProfile, setUserProfile] = useState<{
+    business_name?: string;
+    business_address?: string;
+    name?: string;
+    phone?: string;
+    job_id?: number;
+  }>({});
+
   const [unblockModal, setUnblockModal] = useState({
     show: false,
     clientName: "",
@@ -76,6 +93,34 @@ export default function NewAppointmentPage() {
       setNameMismatchIgnored(false);
       setNameModalShown(false);
     });
+
+  // دریافت اطلاعات فعلی کسب‌وکار
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/client/settings");
+        const data = await res.json();
+        if (data.success && data.user) {
+          const { name, phone, job_id, business_name, business_address } =
+            data.user;
+          setUserProfile({
+            name: name || "",
+            phone: phone || "",
+            job_id: job_id ? job_id.toString() : null, // اگر job_id وجود نداشت null باشه، نه ""
+            business_name: business_name || "",
+            business_address: business_address || "",
+          });
+          setBusinessForm({
+            business_name: business_name || "",
+            business_address: business_address || "",
+          });
+        }
+      } catch (err) {
+        console.error("خطا در دریافت اطلاعات پروفایل");
+      }
+    };
+    fetchProfile();
+  }, []);
 
   // لود فرم از localStorage
   useEffect(() => {
@@ -107,7 +152,9 @@ export default function NewAppointmentPage() {
     if (digits?.length >= 10) checkCustomer(digits.slice(-10));
   }, [form?.phone, checkCustomer]);
 
-  // چک تغییر نام فقط در onBlur
+  const updateForm = (updates: Partial<typeof form>) =>
+    setForm((prev: any) => ({ ...prev, ...updates }));
+
   const handleNameBlur = () => {
     if (!checkedCustomerData?.exists || !checkedCustomerData.client?.name)
       return;
@@ -131,9 +178,6 @@ export default function NewAppointmentPage() {
       setModals((prev) => ({ ...prev, nameChange: true }));
     }
   };
-
-  const updateForm = (updates: Partial<typeof form>) =>
-    setForm((prev: any) => ({ ...prev, ...updates }));
 
   const handleConfirmNameChange = async () => {
     const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
@@ -202,10 +246,61 @@ export default function NewAppointmentPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const saveBusinessInfo = async () => {
+    if (
+      !businessForm.business_name.trim() ||
+      !businessForm.business_address.trim()
+    ) {
+      toast.error("نام و آدرس کسب‌وکار الزامی است");
+      return;
+    }
+
+    // اگر job_id وجود نداشت یا خالی بود، خطا بده (چون کاربر قبلاً باید انتخاب کرده باشه)
+    if (!userProfile.job_id) {
+      toast.error("نوع تخصص انتخاب نشده است. لطفاً به تنظیمات بروید.");
+      return;
+    }
+
+    setIsSavingBusiness(true);
+    try {
+      const res = await fetch("/api/client/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: userProfile.name || "کاربر",
+          phone: userProfile.phone,
+          job_id: Number(userProfile.job_id), // حتماً به عدد تبدیل کن
+          business_name: businessForm.business_name.trim(),
+          business_address: businessForm.business_address.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("اطلاعات کسب‌وکار با موفقیت ذخیره شد");
+        setUserProfile((prev) => ({
+          ...prev,
+          business_name: businessForm.business_name.trim(),
+          business_address: businessForm.business_address.trim(),
+        }));
+        setModals((prev) => ({ ...prev, businessInfoMissing: false }));
+        proceedWithBooking();
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "خطا در ذخیره اطلاعات");
+      }
+    } catch (error) {
+      toast.error("خطا در ارتباط با سرور");
+    } finally {
+      setIsSavingBusiness(false);
+    }
+  };
+  // تابع اصلی ثبت نوبت (بعد از اطمینان از داشتن اطلاعات کسب‌وکار)
+  const proceedWithBooking = () => {
     const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
-    if (!form.name.trim() || cleanPhone.length !== 10 || !form.time)
-      return toast.error("اطلاعات ضروری را تکمیل کنید");
+    if (!form.name.trim() || cleanPhone.length !== 10 || !form.time) {
+      toast.error("اطلاعات ضروری را تکمیل کنید");
+      return;
+    }
 
     const loadingId = toast.loading("در حال ثبت نوبت...");
 
@@ -238,7 +333,7 @@ export default function NewAppointmentPage() {
             queryKey: ["bookings", "customers"],
           });
           toast.success("نوبت با موفقیت ثبت شد");
-          router.push("/clientdashboard/bookings");
+          router.push("/clientdashboard/bookingsubmit");
         },
         onError: (error: any) => {
           toast.dismiss(loadingId);
@@ -258,6 +353,18 @@ export default function NewAppointmentPage() {
         },
       }
     );
+  };
+
+  const handleSubmit = async () => {
+    const hasBusinessName = userProfile.business_name?.trim();
+    const hasBusinessAddress = userProfile.business_address?.trim();
+
+    if (!hasBusinessName || !hasBusinessAddress) {
+      setModals((prev) => ({ ...prev, businessInfoMissing: true }));
+      return;
+    }
+
+    proceedWithBooking();
   };
 
   // ذخیره فرم
@@ -380,6 +487,101 @@ export default function NewAppointmentPage() {
           />
         </div>
       </div>
+
+      {/* مودال تکمیل اطلاعات کسب‌وکار - داخل همین صفحه */}
+      <AnimatePresence>
+        {modals.businessInfoMissing && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4"
+            dir="rtl"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() =>
+                setModals((prev) => ({ ...prev, businessInfoMissing: false }))
+              }
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 100, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 100, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#1c212c] rounded-t-[2.5rem] sm:rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 pb-4 text-center">
+                <div className="w-16 h-16 mx-auto mb-5 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
+                  <Building2 className="w-9 h-9 text-emerald-400" />
+                </div>
+                <h3 className="text-xl font-black text-white mb-3">
+                  تکمیل اطلاعات کسب‌وکار
+                </h3>
+                <p className="text-sm text-gray-400 leading-relaxed px-4">
+                  برای ثبت نوبت، لطفاً نام و آدرس کسب‌وکار خود را وارد کنید. این
+                  اطلاعات در پیامک‌های مشتریان نمایش داده می‌شود.
+                </p>
+              </div>
+
+              <div className="px-6 space-y-5 pb-6">
+                <input
+                  type="text"
+                  placeholder="نام برند یا کسب‌وکار"
+                  value={businessForm.business_name}
+                  onChange={(e) =>
+                    setBusinessForm({
+                      ...businessForm,
+                      business_name: e.target.value,
+                    })
+                  }
+                  className="w-full bg-white/[0.04] border border-white/[0.1] focus:border-emerald-500 rounded-2xl px-5 py-4 text-sm focus:outline-none transition-all font-black text-emerald-50 shadow-sm"
+                />
+
+                <textarea
+                  placeholder="آدرس کامل (خیابان، پلاک، طبقه و...)"
+                  value={businessForm.business_address}
+                  onChange={(e) =>
+                    setBusinessForm({
+                      ...businessForm,
+                      business_address: e.target.value,
+                    })
+                  }
+                  rows={3}
+                  className="w-full bg-white/[0.04] border border-white/[0.1] focus:border-emerald-500 rounded-2xl px-5 py-4 text-sm focus:outline-none transition-all resize-none font-medium text-gray-200 placeholder:text-gray-600"
+                />
+              </div>
+
+              <div className="px-6 pb-6 grid grid-cols-2 gap-4">
+                <button
+                  onClick={() =>
+                    setModals((prev) => ({
+                      ...prev,
+                      businessInfoMissing: false,
+                    }))
+                  }
+                  disabled={isSavingBusiness}
+                  className="py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold text-gray-300 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  انصراف
+                </button>
+                <button
+                  onClick={saveBusinessInfo}
+                  disabled={isSavingBusiness}
+                  className="py-4 bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl font-black transition-all active:scale-95 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSavingBusiness ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "ذخیره و ثبت نوبت"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <UnblockCustomerModal
         isOpen={unblockModal.show}

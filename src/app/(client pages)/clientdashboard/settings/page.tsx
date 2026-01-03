@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   User, Phone, Save, ArrowRight, Loader2, ShieldCheck, 
-  UserCircle, Briefcase, Building2, ChevronLeft 
+  UserCircle, Briefcase, Building2, MapPin, ChevronLeft 
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,12 +16,13 @@ export default function SettingsPage() {
   
   const [isSaving, setIsSaving] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
+  const [jobs, setJobs] = useState<{ id: number; persian_name: string }[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     job_id: "",
-    business_name: ""
+    business_name: "",
+    business_address: ""  // فیلد جدید آدرس
   });
 
   useEffect(() => {
@@ -42,7 +43,8 @@ export default function SettingsPage() {
             name: userData.user.name || "",
             phone: userData.user.phone || "",
             job_id: userData.user.job_id?.toString() || "",
-            business_name: userData.user.business_name || ""
+            business_name: userData.user.business_name || "",
+            business_address: userData.user.business_address || ""  // مقدار آدرس از سرور
           });
         }
       } catch (err) {
@@ -56,8 +58,9 @@ export default function SettingsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.phone.trim() || !formData.job_id || !formData.business_name.trim()) {
-      toast.error("همه موارد را تکمیل کنید");
+    
+    if (!formData.name.trim() || !formData.phone.trim() || !formData.job_id) {
+      toast.error("نام، شماره تماس و نوع تخصص الزامی است");
       return;
     }
 
@@ -70,14 +73,14 @@ export default function SettingsPage() {
       });
 
       if (res.ok) {
-        toast.success("تغییرات ذخیره شد");
+        toast.success("تغییرات با موفقیت ذخیره شد");
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       } else {
         const data = await res.json();
         toast.error(data.message || "خطایی رخ داد");
       }
     } catch (error) {
-      toast.error("خطا در اتصال");
+      toast.error("خطا در اتصال به سرور");
     } finally {
       setIsSaving(false);
     }
@@ -190,6 +193,25 @@ export default function SettingsPage() {
                 />
               </div>
 
+              {/* آدرس کسب‌وکار - فیلد جدید */}
+              <div className="space-y-2">
+                <div className="relative">
+                  <div className="absolute right-4 top-4 text-gray-500">
+                    <MapPin size={20} />
+                  </div>
+                  <textarea
+                    placeholder="آدرس کامل کسب‌وکار (خیابان، پلاک، طبقه و...)"
+                    value={formData.business_address}
+                    onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
+                    rows={3}
+                    className="w-full bg-white/[0.04] border border-white/[0.1] focus:border-emerald-500 rounded-2xl pr-12 pl-5 py-4 text-sm focus:outline-none transition-all resize-none font-medium text-gray-200 placeholder:text-gray-600"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500 mr-1">
+                  این آدرس در پیامک‌های ارسالی به مشتریان و لینک رزرو نمایش داده می‌شود.
+                </p>
+              </div>
+
               {/* شاخه کاری */}
               <div className="relative">
                 <select
@@ -200,7 +222,7 @@ export default function SettingsPage() {
                   <option value="" disabled className="bg-[#0c111d]">انتخاب تخصص...</option>
                   {jobs.map((j) => (
                     <option key={j.id} value={j.id.toString()} className="bg-[#0c111d]">
-                      {j.name}
+                      {j.persian_name}
                     </option>
                   ))}
                 </select>
@@ -212,14 +234,15 @@ export default function SettingsPage() {
 
             {/* کارت راهنما */}
             <div className="flex gap-4 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 backdrop-blur-sm">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-              <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
-                نام کسب‌وکار شما به عنوان امضا در پایین پیامک‌های ارسالی به مشتریان درج خواهد شد.
-              </p>
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="text-[10px] text-gray-400 leading-relaxed font-medium">
+                <p className="mb-1">نام کسب‌وکار شما به عنوان امضا در پایین پیامک‌های ارسالی درج می‌شود.</p>
+                <p>آدرس دقیق کمک می‌کند مشتریان راحت‌تر شما را پیدا کنند.</p>
+              </div>
             </div>
           </section>
 
-          {/* دکمه ذخیره چسبیده به پایین محتوا */}
+          {/* دکمه ذخیره */}
           <motion.div variants={itemVariants} className="pt-4">
             <button
               type="submit"

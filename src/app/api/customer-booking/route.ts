@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { formatPersianDate } from "@/lib/date-utils"; // ← حتماً این رو ایمپورت کن
+import { formatPersianDate } from "@/lib/date-utils";
 
 interface CustomerBooking {
   id: number;
@@ -18,6 +18,7 @@ interface CustomerBooking {
   created_at: string;
   business_name?: string;
   business_phone?: string;
+  business_address?: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -47,8 +48,9 @@ export async function GET(req: NextRequest) {
         b.customer_token,
         b.token_expires_at,
         b.created_at,
-        u.name AS business_name,
-        u.phone AS business_phone
+        u.business_name,
+        u.phone AS business_phone,
+        u.business_address
       FROM booking b
       LEFT JOIN users u ON b.user_id = u.id
       WHERE b.customer_token = ?
@@ -82,8 +84,9 @@ export async function GET(req: NextRequest) {
         token: booking.customer_token,
         expiresAt: booking.token_expires_at,
         createdAt: booking.created_at,
-        businessName: booking.business_name || "",
+        businessName: booking.business_name || "نام کسب‌وکار ثبت نشده",
         businessPhone: booking.business_phone || "",
+        businessAddress: booking.business_address || "",
         canCancel: booking.status === "active",
         canReschedule: booking.status === "active" && booking.change_count < 1,
       },
@@ -135,26 +138,32 @@ export async function POST(req: NextRequest) {
 
     const booking = bookings[0] as any;
 
-    // تبدیل تاریخ به شمسی فارسی
-    const persianDate = formatPersianDate(booking.booking_date); // مثال: "۳ دی ۱۴۰۴"
-    const timeDisplay = booking.booking_time; // مثال: "۱۴:۳۰"
+    const persianDate = formatPersianDate(booking.booking_date);
+    const timeDisplay = booking.booking_time;
 
-    // --- عملیات لغو نوبت ---
     if (action === "cancel") {
       if (booking.status !== "active") {
-        return NextResponse.json({ success: false, message: "این نوبت قابل لغو نیست" }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: "این نوبت قابل لغو نیست" },
+          { status: 400 }
+        );
       }
 
-      await query(`UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?`, [booking.id]);
+      await query(
+        `UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?`,
+        [booking.id]
+      );
 
-      // پیامک برای مشتری
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
-        [booking.user_id, booking.client_phone, `نوبت شما لغو شد. تاریخ: ${persianDate} - زمان: ${timeDisplay}`]
+        [
+          booking.user_id,
+          booking.client_phone,
+          `نوبت شما لغو شد. تاریخ: ${persianDate} - زمان: ${timeDisplay}`,
+        ]
       );
 
-      // اعلان برای آرایشگر — با تاریخ شمسی
       await query(
         `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
          VALUES (?, ?, 'cancel', ?, NOW())`,
@@ -165,27 +174,37 @@ export async function POST(req: NextRequest) {
         ]
       );
 
-      return NextResponse.json({ success: true, message: "نوبت با موفقیت لغو شد" });
+      return NextResponse.json({
+        success: true,
+        message: "نوبت با موفقیت لغو شد",
+      });
     }
 
-    // --- عملیات تغییر زمان نوبت ---
     if (action === "reschedule") {
       if (booking.status !== "active") {
-        return NextResponse.json({ success: false, message: "این نوبت قابل تغییر نیست" }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: "این نوبت قابل تغییر نیست" },
+          { status: 400 }
+        );
       }
 
       if (booking.change_count >= 1) {
-        return NextResponse.json({ success: false, message: "تعداد مجاز تغییرات تمام شده" }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: "تعداد مجاز تغییرات تمام شده" },
+          { status: 400 }
+        );
       }
 
       const { newDate, newTime } = data;
       if (!newDate || !newTime) {
-        return NextResponse.json({ success: false, message: "تاریخ و زمان جدید الزامی است" }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: "تاریخ و زمان جدید الزامی است" },
+          { status: 400 }
+        );
       }
 
       const newPersianDate = formatPersianDate(newDate);
 
-      // چک تداخل زمانی
       const conflicts = await query(
         `SELECT id FROM booking 
          WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?`,
@@ -193,7 +212,10 @@ export async function POST(req: NextRequest) {
       );
 
       if (conflicts.length > 0) {
-        return NextResponse.json({ success: false, message: "این زمان قبلاً رزرو شده است" }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: "این زمان قبلاً رزرو شده است" },
+          { status: 400 }
+        );
       }
 
       await query(
@@ -203,14 +225,16 @@ export async function POST(req: NextRequest) {
         [newDate, newTime, booking.id]
       );
 
-      // پیامک برای مشتری
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'reschedule', 'sent', NOW())`,
-        [booking.user_id, booking.client_phone, `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newPersianDate} - زمان جدید: ${newTime}`]
+        [
+          booking.user_id,
+          booking.client_phone,
+          `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newPersianDate} - زمان جدید: ${newTime}`,
+        ]
       );
 
-      // اعلان برای آرایشگر — با تاریخ شمسی
       await query(
         `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
          VALUES (?, ?, 'reschedule', ?, NOW())`,
@@ -221,12 +245,21 @@ export async function POST(req: NextRequest) {
         ]
       );
 
-      return NextResponse.json({ success: true, message: "زمان نوبت با موفقیت تغییر یافت" });
+      return NextResponse.json({
+        success: true,
+        message: "زمان نوبت با موفقیت تغییر یافت",
+      });
     }
 
-    return NextResponse.json({ success: false, message: "عملیات نامعتبر" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "عملیات نامعتبر" },
+      { status: 400 }
+    );
   } catch (error: any) {
     console.error("خطا در پردازش درخواست:", error);
-    return NextResponse.json({ success: false, message: error.message || "خطای سرور" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: error.message || "خطای سرور" },
+      { status: 500 }
+    );
   }
 }

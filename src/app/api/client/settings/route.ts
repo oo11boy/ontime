@@ -3,12 +3,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 
-// دریافت اطلاعات فعلی کاربر (شامل نام کسب‌وکار)
+// دریافت اطلاعات فعلی کاربر (شامل نام کسب‌وکار و آدرس)
 export const GET = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
     const users = await query<any[]>(
-      "SELECT name, business_name, phone, job_id FROM users WHERE id = ?",
+      `SELECT 
+        name, 
+        business_name, 
+        business_address, 
+        phone, 
+        job_id 
+       FROM users 
+       WHERE id = ?`,
       [userId]
     );
 
@@ -29,13 +36,14 @@ export const GET = withAuth(async (req: NextRequest, context) => {
   }
 });
 
-// آپدیت اطلاعات کاربر (نام، نام کسب‌وکار، تلفن و شغل)
+// آپدیت اطلاعات کاربر (نام، نام کسب‌وکار، آدرس کسب‌وکار، تلفن و شغل)
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
-    const { name, business_name, phone, job_id } = await req.json();
+    const { name, business_name, business_address, phone, job_id } =
+      await req.json();
 
-    // فیلد business_name را اجباری نمی‌کنیم تا ثبت‌نام اولیه راحت باشد
+    // فیلدهای الزامی
     if (!name || !phone || !job_id) {
       return NextResponse.json(
         { message: "نام، شماره تماس و نوع تخصص الزامی است" },
@@ -56,10 +64,23 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // بروزرسانی دیتابیس شامل ستون جدید business_name
+    // بروزرسانی دیتابیس شامل ستون‌های جدید business_name و business_address
     await query(
-      "UPDATE users SET name = ?, business_name = ?, phone = ?, job_id = ? WHERE id = ?",
-      [name, business_name || null, phone, job_id, userId]
+      `UPDATE users 
+       SET name = ?, 
+           business_name = ?, 
+           business_address = ?, 
+           phone = ?, 
+           job_id = ? 
+       WHERE id = ?`,
+      [
+        name,
+        business_name || null,
+        business_address || null, // آدرس اختیاریه، اگر خالی بود null ذخیره می‌شه
+        phone,
+        job_id,
+        userId,
+      ]
     );
 
     return NextResponse.json({
