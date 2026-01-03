@@ -20,7 +20,9 @@ interface ModalManagerProps {
   // اضافه کردن این دو پراپ جدید برای مدیریت دقیق‌تر دکمه‌ها
   onConfirmNameChange: () => void;
   onCancelNameChange: () => void;
+  offDays: number[];
 }
+
 
 const ModalManager: React.FC<ModalManagerProps> = ({
   modals,
@@ -34,6 +36,7 @@ const ModalManager: React.FC<ModalManagerProps> = ({
   checkData,
   onConfirmNameChange,
   onCancelNameChange,
+  offDays
 }) => {
   return (
     <>
@@ -80,6 +83,7 @@ const ModalManager: React.FC<ModalManagerProps> = ({
       />
 
 <JalaliCalendarModal
+offDays={offDays}
   selectedDate={form.date}
   setSelectedDate={(v: any) => updateForm({ date: typeof v === "function" ? v(form.date) : v })}
   isCalendarOpen={modals.calendar}

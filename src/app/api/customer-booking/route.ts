@@ -19,6 +19,7 @@ interface CustomerBooking {
   business_name?: string;
   business_phone?: string;
   business_address?: string;
+  off_days?: string; // روزهای تعطیل به صورت استرینگ ذخیره شده در دیتابیس
 }
 
 export async function GET(req: NextRequest) {
@@ -50,7 +51,8 @@ export async function GET(req: NextRequest) {
         b.created_at,
         u.business_name,
         u.phone AS business_phone,
-        u.business_address
+        u.business_address,
+        u.off_days
       FROM booking b
       LEFT JOIN users u ON b.user_id = u.id
       WHERE b.customer_token = ?
@@ -67,6 +69,11 @@ export async function GET(req: NextRequest) {
     }
 
     const booking = bookings[0] as CustomerBooking;
+
+    // تبدیل روزهای تعطیل از رشته به آرایه اعداد
+const offDaysArray = booking.off_days 
+  ? JSON.parse(booking.off_days) 
+  : [];
 
     return NextResponse.json({
       success: true,
@@ -89,6 +96,7 @@ export async function GET(req: NextRequest) {
         businessAddress: booking.business_address || "",
         canCancel: booking.status === "active",
         canReschedule: booking.status === "active" && booking.change_count < 1,
+        offDays: offDaysArray
       },
     });
   } catch (error) {
@@ -137,7 +145,6 @@ export async function POST(req: NextRequest) {
     }
 
     const booking = bookings[0] as any;
-
     const persianDate = formatPersianDate(booking.booking_date);
     const timeDisplay = booking.booking_time;
 
@@ -154,6 +161,7 @@ export async function POST(req: NextRequest) {
         [booking.id]
       );
 
+      // ثبت در گزارش پیامک (در صورت نیاز به ارسال واقعی، باید وب‌سرویس فراخوانی شود)
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
@@ -190,7 +198,7 @@ export async function POST(req: NextRequest) {
 
       if (booking.change_count >= 1) {
         return NextResponse.json(
-          { success: false, message: "تعداد مجاز تغییرات تمام شده" },
+          { success: false, message: "تعداد مجاز تغییرات (۱ بار) تمام شده است" },
           { status: 400 }
         );
       }
@@ -205,6 +213,7 @@ export async function POST(req: NextRequest) {
 
       const newPersianDate = formatPersianDate(newDate);
 
+      // بررسی تداخل (مجدداً در سمت سرور)
       const conflicts = await query(
         `SELECT id FROM booking 
          WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?`,
@@ -213,7 +222,7 @@ export async function POST(req: NextRequest) {
 
       if (conflicts.length > 0) {
         return NextResponse.json(
-          { success: false, message: "این زمان قبلاً رزرو شده است" },
+          { success: false, message: "متأسفانه این زمان در همین لحظه رزرو شد" },
           { status: 400 }
         );
       }

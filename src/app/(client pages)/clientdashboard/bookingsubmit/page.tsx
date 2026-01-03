@@ -75,6 +75,7 @@ export default function NewAppointmentPage() {
     name?: string;
     phone?: string;
     job_id?: number;
+    off_days?: number[]; 
   }>({});
 
   const [unblockModal, setUnblockModal] = useState({
@@ -109,6 +110,7 @@ export default function NewAppointmentPage() {
             job_id: job_id ? job_id.toString() : null, // اگر job_id وجود نداشت null باشه، نه ""
             business_name: business_name || "",
             business_address: business_address || "",
+            off_days: data.user.off_days ? JSON.parse(data.user.off_days) : [],
           });
           setBusinessForm({
             business_name: business_name || "",
@@ -594,6 +596,7 @@ export default function NewAppointmentPage() {
       />
 
       <ModalManager
+      offDays={userProfile.off_days || []}
         modals={modals}
         setModals={setModals}
         form={form}

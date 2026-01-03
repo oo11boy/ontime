@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -15,78 +16,64 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     );
   }
 
-  // چک کردن هر دو حالت (با صفر و بدون صفر)
-  const phoneWithZero = rawPhone.startsWith("0") ? rawPhone : "0" + rawPhone;
-  const phoneWithoutZero = rawPhone.startsWith("0")
-    ? rawPhone.substring(1)
-    : rawPhone;
+  // استانداردسازی شماره تلفن (حذف ۰ اول برای جستجوی منعطف‌تر)
+  const cleanPhone = rawPhone.replace(/\D/g, "").slice(-10);
+  const phoneWithZero = "0" + cleanPhone;
+  const phoneWithoutZero = cleanPhone;
 
   try {
-    // ۱. جستجو در جدول clients
+    // ۱. جستجو در جدول clients (برای بررسی وضعیت مسدودیت و اطلاعات پایه)
     const clientResult: any = await query(
-      "SELECT id, client_name, total_bookings, last_booking_date, is_blocked FROM clients WHERE user_id = ? AND (client_phone = ? OR client_phone = ?) LIMIT 1",
+      `SELECT id, client_name, total_bookings, last_booking_date, is_blocked 
+       FROM clients 
+       WHERE user_id = ? AND (client_phone = ? OR client_phone = ?) 
+       LIMIT 1`,
       [userId, phoneWithZero, phoneWithoutZero]
     );
-    const clientFromClientsTable = Array.isArray(clientResult)
-      ? clientResult[0]
-      : clientResult;
+    
+    const clientFromTable = Array.isArray(clientResult) ? clientResult[0] : null;
 
-    // ۲. جستجو در جدول booking
-    const bookingResultRaw: any = await query(
+    // ۲. دریافت آمار لغو نوبت از جدول booking (برای نمایش هشدار مسدودیت در فرانت)
+    const bookingStats: any = await query(
       `SELECT 
-          client_name,
           COUNT(*) as total_bookings,
-          MAX(booking_date) as last_booking_date,
+          MAX(booking_date) as last_date,
           SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_count
-        FROM booking 
-        WHERE user_id = ? AND (client_phone = ? OR client_phone = ?)
-        GROUP BY client_name
-        ORDER BY MAX(created_at) DESC
-        LIMIT 1`,
+       FROM booking 
+       WHERE user_id = ? AND (client_phone = ? OR client_phone = ?)`,
       [userId, phoneWithZero, phoneWithoutZero]
     );
-    const bookingResult = Array.isArray(bookingResultRaw)
-      ? bookingResultRaw[0]
-      : bookingResultRaw;
+    
+    const stats = Array.isArray(bookingStats) ? bookingStats[0] : { total_bookings: 0, cancelled_count: 0 };
 
-    if (!clientFromClientsTable && !bookingResult) {
-      return NextResponse.json({ exists: false, message: "مشتری جدید" });
-    }
-
-    if (clientFromClientsTable) {
-      return NextResponse.json({
-        exists: true,
-        client: {
-          id: clientFromClientsTable.id,
-          name: clientFromClientsTable.client_name,
-          totalBookings: clientFromClientsTable.total_bookings,
-          lastBookingDate: clientFromClientsTable.last_booking_date,
-          isBlocked: clientFromClientsTable.is_blocked,
-          source: "clients_table",
-        },
-        message: "مشتری در سیستم یافت شد",
+    // اگر هیچ رکوردی در هیچ‌کدام نبود
+    if (!clientFromTable && stats.total_bookings === 0) {
+      return NextResponse.json({ 
+        exists: false, 
+        message: "مشتری جدید است" 
       });
     }
 
-    if (bookingResult) {
-      return NextResponse.json({
-        exists: true,
-        client: {
-          name: bookingResult.client_name,
-          totalBookings: bookingResult.total_bookings,
-          lastBookingDate: bookingResult.last_booking_date,
-          cancelledCount: bookingResult.cancelled_count,
-          source: "booking_history",
-        },
-        message: "مشتری در تاریخچه یافت شد",
-      });
-    }
+    // پاسخ هماهنگ با فرانت‌اِند
+    return NextResponse.json({
+      exists: true,
+      client: {
+        id: clientFromTable?.id || null,
+        name: clientFromTable?.client_name || "مشتری بدون نام",
+        client_name: clientFromTable?.client_name || "مشتری بدون نام", // برای هماهنگی با پروپ‌های مدال
+        total_bookings: clientFromTable?.total_bookings || stats.total_bookings,
+        last_booking_date: clientFromTable?.last_booking_date || stats.last_date,
+        is_blocked: clientFromTable?.is_blocked || 0,
+        cancelled_count: stats.cancelled_count || 0,
+        source: clientFromTable ? "clients_table" : "booking_history"
+      },
+      message: "اطلاعات مشتری بازیابی شد"
+    });
 
-    return NextResponse.json({ exists: false, message: "مشتری جدید" });
   } catch (error) {
     console.error("Error checking client:", error);
     return NextResponse.json(
-      { message: "خطای سرور", error: String(error) },
+      { message: "خطای سرور در بررسی اطلاعات مشتری" },
       { status: 500 }
     );
   }

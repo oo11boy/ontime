@@ -1,9 +1,10 @@
-// src\app\api\client\settings\route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 
-// دریافت اطلاعات فعلی کاربر (شامل نام کسب‌وکار و آدرس)
+/**
+ * دریافت اطلاعات تنظیمات کاربر
+ */
 export const GET = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
@@ -13,7 +14,9 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         business_name, 
         business_address, 
         phone, 
-        job_id 
+        job_id,
+        work_shifts,
+        off_days
        FROM users 
        WHERE id = ?`,
       [userId]
@@ -28,7 +31,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
 
     return NextResponse.json({ success: true, user: users[0] });
   } catch (error) {
-    console.error("Fetch Profile Error:", error);
+    console.error("Fetch Settings Error:", error);
     return NextResponse.json(
       { success: false, message: "خطا در دریافت اطلاعات" },
       { status: 500 }
@@ -36,14 +39,24 @@ export const GET = withAuth(async (req: NextRequest, context) => {
   }
 });
 
-// آپدیت اطلاعات کاربر (نام، نام کسب‌وکار، آدرس کسب‌وکار، تلفن و شغل)
+/**
+ * بروزرسانی تنظیمات کاربر
+ */
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
-    const { name, business_name, business_address, phone, job_id } =
-      await req.json();
+    const body = await req.json();
+    const {
+      name,
+      business_name,
+      business_address,
+      phone,
+      job_id,
+      work_shifts, // این فیلد به صورت رشته JSON دریافت می‌شود
+      off_days, // این فیلد به صورت رشته JSON دریافت می‌شود
+    } = body;
 
-    // فیلدهای الزامی
+    // اعتبار سنجی فیلدهای الزامی اصلی
     if (!name || !phone || !job_id) {
       return NextResponse.json(
         { message: "نام، شماره تماس و نوع تخصص الزامی است" },
@@ -51,7 +64,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // بررسی تکراری نبودن شماره موبایل برای کاربران دیگر
+    // بررسی تکراری نبودن شماره موبایل (اگر کاربر شماره خود را تغییر داده باشد)
     const existingUser = await query<any[]>(
       "SELECT id FROM users WHERE phone = ? AND id != ?",
       [phone, userId]
@@ -64,33 +77,37 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // بروزرسانی دیتابیس شامل ستون‌های جدید business_name و business_address
+    // بروزرسانی دیتابیس
     await query(
       `UPDATE users 
        SET name = ?, 
            business_name = ?, 
            business_address = ?, 
            phone = ?, 
-           job_id = ? 
+           job_id = ?, 
+           work_shifts = ?, 
+           off_days = ? 
        WHERE id = ?`,
       [
         name,
         business_name || null,
-        business_address || null, // آدرس اختیاریه، اگر خالی بود null ذخیره می‌شه
+        business_address || null,
         phone,
         job_id,
+        work_shifts || null,
+        off_days || null,
         userId,
       ]
     );
 
     return NextResponse.json({
       success: true,
-      message: "اطلاعات با موفقیت بروزرسانی شد",
+      message: "تنظیمات با موفقیت بروزرسانی شد",
     });
   } catch (error) {
     console.error("Settings Update Error:", error);
     return NextResponse.json(
-      { message: "خطا در بروزرسانی اطلاعات" },
+      { message: "خطا در بروزرسانی اطلاعات دیتابیس" },
       { status: 500 }
     );
   }
