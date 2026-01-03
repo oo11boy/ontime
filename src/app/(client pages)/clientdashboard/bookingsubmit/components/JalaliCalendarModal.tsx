@@ -10,6 +10,7 @@ interface JalaliCalendarModalProps {
   setSelectedDate: (date: { year: number; month: number; day: number | null }) => void;
   isCalendarOpen: boolean;
   setIsCalendarOpen: (isOpen: boolean) => void;
+  onDateSelected?: () => void;
 }
 
 // تنظیمات انیمیشن هماهنگ با بقیه مودال‌ها
@@ -34,6 +35,7 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
   setSelectedDate,
   isCalendarOpen,
   setIsCalendarOpen,
+  onDateSelected
 }) => {
   const todayJalali = useMemo(() => getTodayJalali(), []);
   const [viewYear, setViewYear] = useState(selectedDate.year);
@@ -82,6 +84,11 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
     
     setSelectedDate({ year: viewYear, month: viewMonth, day });
     setIsCalendarOpen(false);
+    // اینجا مودال ساعت باز می‌شه
+  if (onDateSelected) {
+    // کمی تأخیر برای اینکه انیمیشن بسته شدن تقویم کامل بشه
+    setTimeout(() => onDateSelected(), 300);
+  }
   };
 
   const isDateDisabled = (day: number): boolean => {

@@ -155,7 +155,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4"
+          className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center p-4"
         >
           {/* Backdrop */}
           <motion.div

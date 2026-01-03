@@ -318,7 +318,7 @@ export default function LoginPage(): JSX.Element {
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm text-gray-400 block mb-2">
-                      نام و نام‌خانوادگی (یا نام سالن)
+                      نام و نام‌ خانوادگی 
                     </label>
                     <div className="relative">
                       <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />

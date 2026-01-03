@@ -32,7 +32,7 @@ export default function Footer() {
     <div className="fixed bottom-0 inset-x-0 z-[100] flex justify-center items-end pb-4 px-4 pointer-events-none">
       <motion.nav
         initial={false}
-        className="flex items-center justify-around w-full max-w-[460px] h-[80px] bg-[#0c111d] border border-white/10 rounded-[28px] px-2 shadow-[0_25px_50px_rgba(0,0,0,0.5)] pointer-events-auto relative"
+        className="flex items-center justify-around w-full max-w-[460px] h-[80px] bg-[#0c111d] border border-white/10 rounded-[28px] px-2  pointer-events-auto relative"
       >
         {navItems.map((item, index) => {
           const active = isActive(item.href);
@@ -47,9 +47,9 @@ export default function Footer() {
               >
                 <motion.div
                   whileTap={{ scale: 0.9 }}
-                  className="w-16 h-16 bg-emerald-500 rounded-[22px] flex items-center justify-center shadow-[0_15px_30px_rgba(16,185,129,0.35)] border-[5px] border-[#0c111d]"
+                  className="w-16 h-16 bg-emerald-500 rounded-[22px] flex items-center justify-center  border-[5px] border-[#0C111D]"
                 >
-                  <Plus size={32} className="text-black stroke-[3px]" />
+                  <Plus size={32} className="text-[#0C111D] stroke-[3px]" />
                 </motion.div>
                 <span
                   className={`text-[11px] mt-2 font-bold ${

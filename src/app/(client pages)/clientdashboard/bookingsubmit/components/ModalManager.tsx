@@ -16,6 +16,7 @@ interface ModalManagerProps {
   servicesData: any;
   formatPreviewMessage: (text: string) => string;
   checkData: any;
+  onDateSelected?: () => void;
   // اضافه کردن این دو پراپ جدید برای مدیریت دقیق‌تر دکمه‌ها
   onConfirmNameChange: () => void;
   onCancelNameChange: () => void;
@@ -78,12 +79,13 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         isLoading={!servicesData}
       />
 
-      <JalaliCalendarModal
-        selectedDate={form.date}
-        setSelectedDate={(v: any) => updateForm({ date: typeof v === "function" ? v(form.date) : v })}
-        isCalendarOpen={modals.calendar}
-        setIsCalendarOpen={(v) => setModals((m: any) => ({ ...m, calendar: v }))}
-      />
+<JalaliCalendarModal
+  selectedDate={form.date}
+  setSelectedDate={(v: any) => updateForm({ date: typeof v === "function" ? v(form.date) : v })}
+  isCalendarOpen={modals.calendar}
+  setIsCalendarOpen={(v) => setModals((m: any) => ({ ...m, calendar: v }))}
+  onDateSelected={() => setModals((m: any) => ({ ...m, time: true }))} // این خط مهم
+/>
 
       <TimePickerModal
         selectedDate={form.date}
