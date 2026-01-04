@@ -16,10 +16,10 @@ const redisConnection = new Redis(
 export const smsQueue = new Queue("sms", {
   connection: redisConnection,
   defaultJobOptions: {
-    attempts: 3, // در صورت خطا تا ۳ بار تلاش مجدد انجام شود
+    attempts: 5, // افزایش تعداد تلاش‌ها برای اطمینان بیشتر
     backoff: {
       type: "exponential",
-      delay: 5000, // فاصله ۵ ثانیه‌ای بین تلاش‌ها
+      delay: 5000,
     },
   },
 });
@@ -34,6 +34,7 @@ async function sendToIPPANEL(jobData: any) {
 
   if (!IP_PANEL_API_KEY) {
     console.error("❌ API Key پیامک در تنظیمات سیستم (.env) یافت نشد.");
+    await updateLogStatus(logId, "failed", null, "Missing API Key");
     return;
   }
 
@@ -43,23 +44,30 @@ async function sendToIPPANEL(jobData: any) {
 
   try {
     console.log(
-      `🚀 [Worker] Processing SMS for: ${to_phone} (LogID: ${logId})`
+      `🚀 [Worker] Processing SMS for: ${to_phone} (LogID: ${logId}) | Template: ${template_key}`
     );
 
-    // --- استانداردسازی شماره برای IPPanel ---
-    // با توجه به اینکه شماره‌ها در دیتابیس ۱۰ رقمی (بدون صفر اول) ذخیره شده‌اند:
+    // استانداردسازی شماره
     const cleanPhone = to_phone.replace(/\D/g, "").slice(-10);
-    const recipient = `+98${cleanPhone}`; // تبدیل به فرمت +989123456789
+    if (cleanPhone.length !== 10) {
+      errorMsg = "Invalid phone number format";
+      console.error(`❌ Invalid phone: ${to_phone}`);
+      await updateLogStatus(logId, status, messageId, errorMsg);
+      return;
+    }
+    const recipient = `+98${cleanPhone}`;
 
-    // آماده‌سازی پارامترها با مقادیر پیش‌فرض برای جلوگیری از خطای پنل
+    // آماده‌سازی پارامترها – مقدار پیش‌فرض قوی‌تر برای جلوگیری از خطای پنل
     const finalParams = {
-      name: params?.name || "مشتری عزیز",
-      date: params?.date || "---",
-      time: params?.time || "---",
-      service: params?.service || "خدمات",
-      link: params?.link || "",
-      salon: params?.salon || "آن‌تایم",
+      name: params?.name?.trim() || "مشتری عزیز",
+      date: params?.date?.trim() || "---",
+      time: params?.time?.trim() || "---",
+      service: params?.service?.trim() || "خدمات",
+      link: params?.link?.trim() || "",
+      salon: params?.salon?.trim() || "آن‌تایم", // این مقدار حالا از API تک‌تک می‌آید
     };
+
+    console.log(`[Worker] Final Params:`, finalParams);
 
     const response = await fetch("https://edge.ippanel.com/v1/api/send", {
       method: "POST",
@@ -78,11 +86,12 @@ async function sendToIPPANEL(jobData: any) {
 
     const result: any = await response.json().catch(() => ({}));
 
-    // بررسی دقیق وضعیت پاسخ از IPPanel بر اساس مستندات جدید
-    if (response.ok) {
-      // IPPanel در متد Pattern معمولاً آبجکت متفاوتی برمی‌گرداند، این شرط برای پوشش حداکثری است
+    if (response.ok && result?.data) {
       messageId = String(
-        result.data?.message_outbox_ids?.[0] || result.data?.bulk_id || "sent"
+        result.data?.message_outbox_ids?.[0] ||
+          result.data?.bulk_id ||
+          result.data?.id ||
+          "sent"
       );
       status = "sent";
       console.log(`✅ SMS Sent Successfully to ${to_phone}. ID: ${messageId}`);
@@ -90,27 +99,40 @@ async function sendToIPPANEL(jobData: any) {
       errorMsg =
         result?.meta?.message ||
         result?.message ||
-        `Error Code: ${response.status}`;
-      console.error(`❌ IPPanel Rejection: ${errorMsg}`);
+        result?.error ||
+        `HTTP ${response.status}`;
+      console.error(`❌ IPPanel Rejection: ${errorMsg} | Response:`, result);
     }
   } catch (err: any) {
     status = "failed";
-    errorMsg = err.message;
-    console.error(`❌ Worker Exception for ${to_phone}: ${errorMsg}`);
+    errorMsg = err.message || "Network/Exception Error";
+    console.error(`❌ Worker Exception for ${to_phone}:`, err);
   }
 
-  // بروزرسانی وضعیت در دیتابیس smslog
+  // بروزرسانی وضعیت در دیتابیس
+  await updateLogStatus(logId, status, messageId, errorMsg);
+}
+
+// تابع کمکی برای بروزرسانی لاگ (جدا کردن برای خوانایی)
+async function updateLogStatus(
+  logId: number,
+  status: "sent" | "failed",
+  messageId: string | null,
+  errorMsg: string | null
+) {
   try {
     await query(
-      `UPDATE smslog SET status = ?, message_id = ?, error_message = ? WHERE id = ?`,
-      [status, messageId, errorMsg, logId]
+      `UPDATE smslog 
+       SET status = ?, message_id = ?, error_message = ? 
+       WHERE id = ?`,
+      [status, messageId || null, errorMsg || null, logId]
     );
   } catch (dbErr) {
     console.error(`❌ DB Update Fail (LogID: ${logId}):`, dbErr);
   }
 }
 
-// ۳. تعریف وورکر به صورت Global برای جلوگیری از تعدد Instance ها در محیط Dev (Hot Reload)
+// ۳. تعریف وورکر به صورت Global (برای جلوگیری از Hot Reload در Dev)
 const workerGlobalKey = "sms-worker-instance";
 
 if (!(global as any)[workerGlobalKey]) {
@@ -121,12 +143,22 @@ if (!(global as any)[workerGlobalKey]) {
     },
     {
       connection: redisConnection,
-      concurrency: 5, // پردازش همزمان ۵ پیامک
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 500 },
+      concurrency: 10, // افزایش concurrency برای عملکرد بهتر
+      removeOnComplete: { count: 200 },
+      removeOnFail: { count: 1000 },
     }
   );
-  console.log("🛠 SMS Worker Started with Concurrency: 5");
+
+  // لاگ‌های مفید برای دیباگ
+  (global as any)[workerGlobalKey].on("completed", (job: Job) => {
+    console.log(`✅ Job ${job.id} completed successfully`);
+  });
+
+  (global as any)[workerGlobalKey].on("failed", (job: Job, err: Error) => {
+    console.error(`❌ Job ${job?.id} failed:`, err.message);
+  });
+
+  console.log("🛠 SMS Worker Started with Concurrency: 10");
 }
 
 export const smsWorker = (global as any)[workerGlobalKey];

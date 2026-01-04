@@ -87,10 +87,11 @@ export default function LoginPage(): JSX.Element {
       });
       const data = await res.json();
       if (res.ok) {
-        if (data.signup_complete) {
-          toast.success("خوش آمدید");
-          router.push("/clientdashboard");
-        } else {
+      if (data.signup_complete) {
+  toast.success("خوش آمدید");
+  window.location.href = "/clientdashboard";
+  return; 
+}else {
           setStep("signup");
           router.replace("/login?step=signup");
         }
@@ -138,13 +139,17 @@ const handleSignupSubmit = async (e: React.FormEvent) => {
       const data = await res.json();
 
       if (res.ok) {
-        // اضافه کردن منطق مودال خوش‌آمدگویی
-        if (data.show_welcome_modal) {
-          sessionStorage.setItem("show_welcome_modal", "true");
-        }
-        
-        toast.success("ثبت‌نام با موفقیت انجام شد");
-        router.push("/clientdashboard");
+
+toast.success("ثبت‌نام با موفقیت انجام شد");
+
+// اگر مودال خوش‌آمدگویی داری، اینجا ست کن
+if (data.show_welcome_modal) {
+  sessionStorage.setItem("show_welcome_modal", "true");
+}
+
+// ریدایرکت سخت
+window.location.href = "/clientdashboard";
+return;
       } else {
         toast.error(data.message || "خطا در ثبت اطلاعات");
       }

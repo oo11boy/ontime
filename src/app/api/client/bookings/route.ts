@@ -4,6 +4,53 @@ import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 import { customAlphabet } from "nanoid";
 
+// تابع تبدیل تاریخ میلادی به شمسی
+function gregorianToJalali(g_y: number, g_m: number, g_d: number): string {
+  g_y = parseInt(g_y as any);
+  g_m = parseInt(g_m as any);
+  g_d = parseInt(g_d as any);
+  let gy = g_y - 1600;
+  let gm = g_m - 1;
+  let gd = g_d - 1;
+
+  let g_day_no = 365 * gy + Math.floor((gy + 3) / 4) - Math.floor((gy + 99) / 100) + Math.floor((gy + 399) / 400);
+
+  const g_month_days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  for (let i = 0; i < gm; ++i) {
+    g_day_no += g_month_days[i];
+  }
+
+  if (gm > 1 && ((gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0))) g_day_no++;
+  g_day_no += gd;
+
+  let j_day_no = g_day_no - 79;
+
+  let j_np = Math.floor(j_day_no / 12053);
+  j_day_no = j_day_no % 12053;
+
+  let jy = 979 + 33 * j_np + 4 * Math.floor(j_day_no / 1461);
+
+  j_day_no %= 1461;
+
+  if (j_day_no >= 366) {
+    jy += Math.floor((j_day_no - 1) / 365);
+    j_day_no = (j_day_no - 1) % 365;
+  }
+
+  const j_month_days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let i = 0;
+  let days_sum = 0;
+  while (i < 11 && j_day_no >= days_sum + j_month_days[i]) {
+    days_sum += j_month_days[i];
+    i += 1;
+  }
+
+  let jm = i + 1;
+  let jd = j_day_no - days_sum + 1;
+
+  return `${jy}/${jm.toString().padStart(2, '0')}/${jd.toString().padStart(2, '0')}`;
+}
+
 // تولید توکن ۴ رقمی برای لینک نوبت مشتری
 const nanoid = customAlphabet(
   "346789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz",
@@ -86,7 +133,6 @@ const handler = withAuth(async (req: NextRequest, context) => {
       );
 
       if (clientData && clientData.is_blocked === 1) {
-        // ارسال پاسخ ۴۰۳ با دیتای کامل برای نمایش مودال رفع بلاک در فرانت
         return NextResponse.json(
           {
             success: false,
@@ -126,7 +172,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
         else attempts++;
       }
 
-      // ۴. دریافت قالب پیامک رزرو فعال کاربر
+      // ۴. دریافت قالب پیامک رزرو فعال کاربر (برای ذخیره در booking)
       const [template]: any = await query(
         `SELECT id FROM smstemplates WHERE type = 'reserve' AND user_id = ? LIMIT 1`,
         [userId]
@@ -160,6 +206,8 @@ const handler = withAuth(async (req: NextRequest, context) => {
         ]
       );
 
+      const newBookingId = insertResult.insertId;
+
       // ۶. بروزرسانی یا ثبت در جدول مشتریان (clients)
       await query(
         `INSERT INTO clients (client_name, client_phone, user_id, total_bookings, last_booking_date, created_at, updated_at)
@@ -172,10 +220,91 @@ const handler = withAuth(async (req: NextRequest, context) => {
         [client_name.trim(), cleanedPhone, userId, booking_date]
       );
 
+      // === بخش جدید: ارسال پیامک رزرو و یادآوری ===
+      if (sms_reserve_enabled || sms_reminder_enabled) {
+        // لینک مشتری
+        const customerLink = `https://ontimeapp.ir/${customerToken}`;
+
+        // دریافت نام کسب‌وکار برای %salon%
+        const [userData]: any = await query(
+          "SELECT business_name, name FROM users WHERE id = ?",
+          [userId]
+        );
+        const salonName = userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
+
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.headers.get("origin") || "https://ontimeapp.ir";
+
+        // تبدیل تاریخ میلادی به شمسی
+        const [gy, gm, gd] = booking_date.split('-').map(Number);
+        const jalaliDate = gregorianToJalali(gy, gm, gd);
+
+        try {
+          // پیامک رزرو (فوری)
+          if (sms_reserve_enabled) {
+            const res = await fetch(`${baseUrl}/api/sms/send`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                // فوروارد کوکی‌ها برای عبور از withAuth
+                Cookie: req.headers.get("cookie") || "",
+              },
+              body: JSON.stringify({
+                to_phone: cleanedPhone,
+                sms_type: "reservation",
+                booking_id: newBookingId,
+                name: client_name.trim(),
+                date: jalaliDate, // شمسی
+                time: booking_time,
+                service: services.trim() || "خدمات",
+                link: customerLink,
+                salon: salonName,
+              }),
+            });
+
+            if (!res.ok) {
+              console.error("خطا در ارسال پیامک رزرو:", await res.text());
+            }
+          }
+
+          // پیامک یادآوری (زمان‌بندی شده)
+          if (sms_reminder_enabled) {
+            const res = await fetch(`${baseUrl}/api/sms/send`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Cookie: req.headers.get("cookie") || "",
+              },
+              body: JSON.stringify({
+                to_phone: cleanedPhone,
+                sms_type: "reminder",
+                booking_id: newBookingId,
+                booking_date,
+                booking_time,
+                sms_reminder_hours_before,
+                name: client_name.trim(),
+                date: jalaliDate, // شمسی
+                time: booking_time,
+                service: services.trim() || "خدمات",
+                link: customerLink,
+                salon: salonName,
+              }),
+            });
+
+            if (!res.ok) {
+              console.error("خطا در ارسال پیامک یادآوری:", await res.text());
+            }
+          }
+        } catch (smsError) {
+          console.error("خطای کلی در ارسال پیامک پس از ثبت نوبت:", smsError);
+          // نوبت ثبت شده باقی می‌ماند — پیامک بعداً دستی قابل ارسال است
+        }
+      }
+      // === پایان بخش ارسال پیامک ===
+
       return NextResponse.json(
         {
           success: true,
-          bookingId: insertResult.insertId,
+          bookingId: newBookingId,
           customerToken,
         },
         { status: 201 }

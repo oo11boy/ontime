@@ -1,3 +1,4 @@
+// src/app/api/sms/send/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -12,22 +13,21 @@ export const POST = withAuth(async (req, context) => {
     const {
       to_phone,
       content,
-      sms_type = "other", // مقادیر: reservation, reminder, other
+      sms_type = "other",
       booking_id = null,
       booking_date = null,
       booking_time = null,
       sms_reminder_hours_before = 24,
       template_key = null,
       name,
-      date,
-      time,
+      date: customDate, // ممکن است از جای دیگر بیاید
+      time: customTime, // ممکن است از جای دیگر بیاید
       service,
       link,
     } = body;
 
     console.log(`[SMS API] درخواست ارسال پیامک (${sms_type}):`, { to_phone });
 
-    // ۱. اعتبارسنجی داده‌های پایه
     if (!to_phone) {
       return NextResponse.json(
         { success: false, message: "شماره موبایل الزامی است" },
@@ -35,7 +35,6 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
-    // ۲. بررسی موجودی پنل پیامک کاربر
     const balance = await getSmsBalanceDetails(userId);
     if (balance.total_balance < 1) {
       return NextResponse.json(
@@ -44,7 +43,6 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
-    // ۳. کسر موجودی از دیتابیس داخلی
     const deducted = await deductSms(userId, 1);
     if (!deducted) {
       return NextResponse.json(
@@ -53,7 +51,14 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
-    // ۴. محاسبه زمان ارسال (Delay) برای یادآوری‌ها
+    const users: any = await query(
+      "SELECT business_name, name FROM users WHERE id = ?",
+      [userId]
+    );
+    const userData = Array.isArray(users) ? users[0] : users;
+    const salonName =
+      userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
+
     let delay = 0;
     if (sms_type === "reminder" && booking_date && booking_time) {
       const hoursBefore = Number(sms_reminder_hours_before) || 24;
@@ -64,13 +69,11 @@ export const POST = withAuth(async (req, context) => {
       delay = Math.max(0, sendTime.getTime() - Date.now());
     }
 
-    // ۵. تعیین هوشمند کد پترن (Today / Tomorrow)
     let finalTemplateKey = template_key;
 
     if (!finalTemplateKey) {
       try {
         if (sms_type === "reminder") {
-          // اگر زمان یادآوری کمتر از ۲۴ ساعت باشد از پترن today استفاده کن
           const hoursBefore = Number(sms_reminder_hours_before) || 24;
           const targetSubType = hoursBefore >= 24 ? "tomorrow" : "today";
 
@@ -90,7 +93,6 @@ export const POST = withAuth(async (req, context) => {
       }
     }
 
-    // Fallback نهایی اگر پترنی در دیتابیس یافت نشد
     if (!finalTemplateKey) {
       finalTemplateKey =
         sms_type === "reservation" ? "j72j4sspgse7vql" : "cl6lfpotqzrcusk";
@@ -101,7 +103,6 @@ export const POST = withAuth(async (req, context) => {
         ? `${booking_date} ${booking_time}:00`
         : null;
 
-    // ۶. ثبت لاگ در جدول smslog
     let logId: number | null = null;
     const logResult: any = await query(
       `INSERT INTO smslog (
@@ -119,7 +120,6 @@ export const POST = withAuth(async (req, context) => {
 
     logId = logResult?.insertId || logResult?.[0]?.insertId;
 
-    // ۷. اضافه کردن به صف BullMQ جهت ارسال توسط Worker
     try {
       await smsQueue.add(
         "send-sms",
@@ -130,10 +130,12 @@ export const POST = withAuth(async (req, context) => {
           template_key: finalTemplateKey,
           params: {
             name: name || "مشتری",
-            date: date || "",
-            time: time || "",
+            // اولویت: اگر customDate/time آمد (از فرانت)، استفاده کن، وگرنه از booking_date/time
+            date: customDate || booking_date || "",
+            time: customTime || booking_time || "",
             service: service || "خدمات",
             link: link || "",
+            salon: salonName,
           },
         },
         {
@@ -144,7 +146,6 @@ export const POST = withAuth(async (req, context) => {
       );
     } catch (queueError) {
       console.error("[SMS API] Queue Error:", queueError);
-      // در صورت خطا در صف، وضعیت لاگ را آپدیت می‌کنیم
       await query(
         "UPDATE smslog SET status = 'failed', error_message = 'Queue Error' WHERE id = ?",
         [logId]
