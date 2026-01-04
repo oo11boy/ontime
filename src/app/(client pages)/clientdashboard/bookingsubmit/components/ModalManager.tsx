@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import MessageTemplateModal from "./MessageTemplateModal";
 import ServicesModal from "./ServicesModal";
@@ -16,13 +17,11 @@ interface ModalManagerProps {
   servicesData: any;
   formatPreviewMessage: (text: string) => string;
   checkData: any;
-  onDateSelected?: () => void;
-  // اضافه کردن این دو پراپ جدید برای مدیریت دقیق‌تر دکمه‌ها
   onConfirmNameChange: () => void;
   onCancelNameChange: () => void;
   offDays: number[];
+  reminderTemplates: any[]; // ← اضافه شده برای فیلتر الگوهای یادآوری
 }
-
 
 const ModalManager: React.FC<ModalManagerProps> = ({
   modals,
@@ -36,10 +35,12 @@ const ModalManager: React.FC<ModalManagerProps> = ({
   checkData,
   onConfirmNameChange,
   onCancelNameChange,
-  offDays
+  offDays,
+  reminderTemplates = [], // مقدار پیش‌فرض خالی
 }) => {
   return (
     <>
+      {/* مودال تایید تغییر نام مشتری */}
       <NameChangeConfirmationModal
         isOpen={modals.nameChange}
         onClose={() => setModals((m: any) => ({ ...m, nameChange: false }))}
@@ -49,26 +50,43 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         onCancel={onCancelNameChange}
       />
 
+      {/* مودال انتخاب الگوی پیامک رزرو */}
       <MessageTemplateModal
         formatPreviewMessage={formatPreviewMessage}
         isOpen={modals.reserve}
         onClose={() => setModals((m: any) => ({ ...m, reserve: false }))}
-        templates={templatesData?.templates?.filter((t: any) => t.type === "reserve") || []}
-        onSelect={(v) => updateForm({ reserveMsg: v })}
+        templates={
+          templatesData?.templates?.filter((t: any) => t.type === "reserve") || []
+        }
+        onSelect={(data: { content: string; pattern: string; message_count?: number }) => {
+          updateForm({
+            reserveMsg: data.content,
+            reservePattern: data.pattern,
+            reserveSmsPage: data.message_count || 1,
+          });
+        }}
         title="انتخاب الگوی رزرو"
         isLoading={isLoadingTemplates}
       />
 
+      {/* مودال انتخاب الگوی پیامک یادآوری — با فیلتر هوشمند */}
       <MessageTemplateModal
         formatPreviewMessage={formatPreviewMessage}
         isOpen={modals.remind}
         onClose={() => setModals((m: any) => ({ ...m, remind: false }))}
-        templates={templatesData?.templates?.filter((t: any) => t.type === "reminder") || []}
-        onSelect={(v) => updateForm({ remindMsg: v })}
+        templates={reminderTemplates} // ← فقط الگوهای فیلتر شده (today یا tomorrow)
+        onSelect={(data: { content: string; pattern: string; message_count?: number }) => {
+          updateForm({
+            remindMsg: data.content,
+            remindPattern: data.pattern,
+            remindSmsPage: data.message_count || 1,
+          });
+        }}
         title="انتخاب الگوی یادآوری"
         isLoading={isLoadingTemplates}
       />
 
+      {/* مودال انتخاب خدمات */}
       <ServicesModal
         isOpen={modals.services}
         onClose={() => setModals((m: any) => ({ ...m, services: false }))}
@@ -82,21 +100,29 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         isLoading={!servicesData}
       />
 
-<JalaliCalendarModal
-offDays={offDays}
-  selectedDate={form.date}
-  setSelectedDate={(v: any) => updateForm({ date: typeof v === "function" ? v(form.date) : v })}
-  isCalendarOpen={modals.calendar}
-  setIsCalendarOpen={(v) => setModals((m: any) => ({ ...m, calendar: v }))}
-  onDateSelected={() => setModals((m: any) => ({ ...m, time: true }))} // این خط مهم
-/>
+      {/* مودال تقویم شمسی */}
+      <JalaliCalendarModal
+        offDays={offDays}
+        selectedDate={form.date}
+        setSelectedDate={(v: any) =>
+          updateForm({ date: typeof v === "function" ? v(form.date) : v })
+        }
+        isCalendarOpen={modals.calendar}
+        setIsCalendarOpen={(v: boolean) =>
+          setModals((m: any) => ({ ...m, calendar: v }))
+        }
+        onDateSelected={() => setModals((m: any) => ({ ...m, time: true }))}
+      />
 
+      {/* مودال انتخاب ساعت */}
       <TimePickerModal
         selectedDate={form.date}
         selectedTime={form.time}
-        setSelectedTime={(v) => updateForm({ time: v })}
+        setSelectedTime={(v: string) => updateForm({ time: v })}
         isTimePickerOpen={modals.time}
-        setIsTimePickerOpen={(v) => setModals((m: any) => ({ ...m, time: v }))}
+        setIsTimePickerOpen={(v: boolean) =>
+          setModals((m: any) => ({ ...m, time: v }))
+        }
         selectedServices={form.services}
       />
     </>

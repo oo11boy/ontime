@@ -4,7 +4,7 @@ import { withAuth } from '@/lib/auth';
 
 /**
  * @method GET
- * دریافت لیست قالب‌های پیامکی کاربر به همراه ستون هوشمند sub_type
+ * دریافت لیست قالب‌های پیامکی کاربر به همراه ستون‌های هوشمند sub_type و message_count
  */
 export const GET = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
@@ -17,7 +17,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         content,
         type,
         sub_type,
-        payamresan_id
+        payamresan_id,
+        message_count
       FROM smstemplates 
       WHERE user_id = ? OR user_id IS NULL 
       ORDER BY id ASC
@@ -39,67 +40,115 @@ export const GET = withAuth(async (req: NextRequest, context) => {
 
 /**
  * @method POST
- * ایجاد قالب جدید با پشتیبانی از هدف زمانی (امروز/فردا)
+ * ایجاد قالب جدید با پشتیبانی از هدف زمانی و تعداد پیامک دستی
  */
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
-    const { name, content, type, sub_type, payamresan_id } = await req.json();
+    const { 
+      name, 
+      content, 
+      type, 
+      sub_type, 
+      payamresan_id, 
+      message_count = 1 
+    } = await req.json();
     
+    if (!name || !payamresan_id) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'نام الگو و کد پترن الزامی هستند' 
+      }, { status: 400 });
+    }
+
     const sql = `
-      INSERT INTO smstemplates (user_id, name, content, type, sub_type, payamresan_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, NOW())
+      INSERT INTO smstemplates 
+      (user_id, name, content, type, sub_type, payamresan_id, message_count, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
     `;
     
     const result: any = await query(sql, [
       userId, 
       name, 
-      content, 
+      content || '', 
       type || 'generic', 
       sub_type || 'none', 
-      payamresan_id
+      payamresan_id,
+      message_count
     ]);
     
     return NextResponse.json({ 
       success: true, 
-      message: 'قالب جدید با موفقیت ثبت شد',
+      message: 'الگو با موفقیت ایجاد شد',
       id: result.insertId 
     });
   } catch (error) {
     console.error("POST Error:", error);
-    return NextResponse.json({ success: false, message: 'خطا در ثبت قالب' }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'خطا در ایجاد الگو' }, { status: 500 });
   }
 });
 
 /**
  * @method PUT
- * ویرایش قالب و به‌روزرسانی وضعیت هوشمند ارسال
+ * ویرایش قالب با به‌روزرسانی تمام فیلدها از جمله message_count
  */
 export const PUT = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
-    const { id, name, content, type, sub_type, payamresan_id } = await req.json();
-    
-    const sql = `
-      UPDATE smstemplates 
-      SET name = ?, content = ?, type = ?, sub_type = ?, payamresan_id = ?
-      WHERE id = ? AND (user_id = ? OR user_id IS NULL)
-    `;
-    
-    await query(sql, [
+    const { 
+      id, 
       name, 
       content, 
       type, 
-      sub_type || 'none', 
+      sub_type, 
       payamresan_id, 
+      message_count = 1 
+    } = await req.json();
+    
+    if (!id || !name || !payamresan_id) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'آیدی، نام الگو و کد پترن الزامی هستند' 
+      }, { status: 400 });
+    }
+
+    const sql = `
+      UPDATE smstemplates 
+      SET 
+        name = ?, 
+        content = ?, 
+        type = ?, 
+        sub_type = ?, 
+        payamresan_id = ?, 
+        message_count = ?
+      WHERE id = ? AND (user_id = ? OR user_id IS NULL)
+    `;
+    
+    const result: any = await query(sql, [
+      name, 
+      content || '', 
+      type || 'generic', 
+      sub_type || 'none', 
+      payamresan_id,
+      message_count,
       id, 
       userId
     ]);
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'الگو یافت نشد یا دسترسی ندارید' 
+      }, { status: 404 });
+    }
     
-    return NextResponse.json({ success: true, message: 'قالب با موفقیت بروزرسانی شد' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'الگو با موفقیت به‌روزرسانی شد' 
+    });
   } catch (error) {
     console.error("PUT Error:", error);
-    return NextResponse.json({ success: false, message: 'خطا در ویرایش قالب' }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'خطا در به‌روزرسانی الگو' }, { status: 500 });
   }
 });
 
@@ -113,14 +162,29 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
-    if (!id) return NextResponse.json({ success: false, message: 'آیدی الزامی است' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'آیدی الگو الزامی است' 
+      }, { status: 400 });
+    }
 
     const sql = `DELETE FROM smstemplates WHERE id = ? AND user_id = ?`;
-    await query(sql, [id, userId]);
+    const result: any = await query(sql, [id, userId]);
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'الگو یافت نشد یا دسترسی ندارید' 
+      }, { status: 404 });
+    }
     
-    return NextResponse.json({ success: true, message: 'قالب حذف شد' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'الگو با موفقیت حذف شد' 
+    });
   } catch (error) {
     console.error("DELETE Error:", error);
-    return NextResponse.json({ success: false, message: 'خطا در حذف قالب' }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'خطا در حذف الگو' }, { status: 500 });
   }
 });

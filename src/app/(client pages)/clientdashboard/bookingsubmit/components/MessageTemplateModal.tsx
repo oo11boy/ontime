@@ -2,20 +2,23 @@
 
 import React from "react";
 import { X, MessageCircle, Loader2, Check } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // اضافه شده برای انیمیشن
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SmsTemplate {
   id: number;
   title: string;
   content: string;
+  payamresan_id: string; // کد پترن پیام‌رسان
+  message_count?: number; // تعداد صفحات محاسبه شده در دیتابیس
 }
 
 interface MessageTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   templates: SmsTemplate[];
-  onSelect: (content: string) => void;
-  formatPreviewMessage: any;
+  // اضافه شدن message_count به خروجی برای هماهنگی با ModalManager
+  onSelect: (data: { content: string; pattern: string; message_count?: number }) => void;
+  formatPreviewMessage: (text: string) => string;
   title: string;
   isLoading?: boolean;
 }
@@ -29,8 +32,10 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
   formatPreviewMessage,
   isLoading = false,
 }) => {
-  const calculateSmsCount = (text: string): number => {
-    return Math.ceil(text.length / 70) || 1;
+  // تابع کمکی برای نمایش تعداد صفحات (اگر از سمت سرور نیامده بود)
+  const calculateSmsCount = (template: SmsTemplate): number => {
+    if (template.message_count) return template.message_count;
+    return Math.ceil(template.content.length / 70) || 1;
   };
 
   return (
@@ -117,7 +122,11 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => {
-                          onSelect(template.content);
+                          onSelect({
+                            content: template.content,
+                            pattern: template.payamresan_id,
+                            message_count: template.message_count, // ارسال تعداد صفحات به فرم اصلی
+                          });
                           onClose();
                         }}
                         className="group relative w-full text-right transition-all"
@@ -131,7 +140,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                             </span>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] text-gray-500 font-medium">
-                                {calculateSmsCount(template.content)} پیامک
+                                {calculateSmsCount(template)} پیامک
                               </span>
                               <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />
                             </div>

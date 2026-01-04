@@ -12,45 +12,37 @@ export const POST = withAuth(async (req, context) => {
     const body = await req.json();
     const {
       to_phone,
-      content,
+      content = "", // فقط برای لاگ‌گیری (در صف ارسال استفاده نمی‌شه)
       sms_type = "other",
       booking_id = null,
       booking_date = null,
       booking_time = null,
       sms_reminder_hours_before = 24,
       template_key = null,
+      message_count = 1, // ← این عدد مستقیماً از دیتابیس (smstemplates.message_count) می‌آید
       name,
-      date: customDate, // ممکن است از جای دیگر بیاید
-      time: customTime, // ممکن است از جای دیگر بیاید
+      date: customDate,
+      time: customTime,
       service,
       link,
     } = body;
 
-    console.log(`[SMS API] درخواست ارسال پیامک (${sms_type}):`, { to_phone });
+    console.log(`[SMS API] درخواست ارسال پیامک (${sms_type}):`, {
+      to_phone,
+      template_key,
+      message_count,
+      booking_id,
+    });
 
-    if (!to_phone) {
+    // اعتبارسنجی شماره موبایل
+    if (!to_phone || to_phone.replace(/\D/g, "").length < 10) {
       return NextResponse.json(
-        { success: false, message: "شماره موبایل الزامی است" },
+        { success: false, message: "شماره موبایل معتبر الزامی است" },
         { status: 400 }
       );
     }
 
-    const balance = await getSmsBalanceDetails(userId);
-    if (balance.total_balance < 1) {
-      return NextResponse.json(
-        { success: false, message: "موجودی پیامک کافی نیست" },
-        { status: 402 }
-      );
-    }
-
-    const deducted = await deductSms(userId, 1);
-    if (!deducted) {
-      return NextResponse.json(
-        { success: false, message: "خطا در کسر موجودی حساب" },
-        { status: 500 }
-      );
-    }
-
+    // دریافت نام سالن برای جایگزینی %salon%
     const users: any = await query(
       "SELECT business_name, name FROM users WHERE id = ?",
       [userId]
@@ -59,6 +51,31 @@ export const POST = withAuth(async (req, context) => {
     const salonName =
       userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
 
+    // تعیین هزینه نهایی — دقیقاً بر اساس message_count از دیتابیس
+    const finalSmsCost = Math.max(1, Number(message_count));
+
+    // بررسی موجودی
+    const balance = await getSmsBalanceDetails(userId);
+    if (balance.total_balance < finalSmsCost) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `موجودی پیامک کافی نیست — نیاز: ${finalSmsCost} پیامک، موجود: ${balance.total_balance} پیامک`,
+        },
+        { status: 402 }
+      );
+    }
+
+    // کسر موجودی بر اساس message_count دیتابیس
+    const deducted = await deductSms(userId, finalSmsCost);
+    if (!deducted) {
+      return NextResponse.json(
+        { success: false, message: "خطا در کسر موجودی پنل پیامک" },
+        { status: 500 }
+      );
+    }
+
+    // محاسبه تأخیر برای یادآوری
     let delay = 0;
     if (sms_type === "reminder" && booking_date && booking_time) {
       const hoursBefore = Number(sms_reminder_hours_before) || 24;
@@ -69,68 +86,38 @@ export const POST = withAuth(async (req, context) => {
       delay = Math.max(0, sendTime.getTime() - Date.now());
     }
 
-    let finalTemplateKey = template_key;
-
-    if (!finalTemplateKey) {
-      try {
-        if (sms_type === "reminder") {
-          const hoursBefore = Number(sms_reminder_hours_before) || 24;
-          const targetSubType = hoursBefore >= 24 ? "tomorrow" : "today";
-
-          const [tpl]: any = await query(
-            "SELECT payamresan_id FROM smstemplates WHERE type = 'reminder' AND sub_type = ? LIMIT 1",
-            [targetSubType]
-          );
-          finalTemplateKey = tpl?.payamresan_id;
-        } else if (sms_type === "reservation") {
-          const [tpl]: any = await query(
-            "SELECT payamresan_id FROM smstemplates WHERE type = 'reserve' LIMIT 1"
-          );
-          finalTemplateKey = tpl?.payamresan_id;
-        }
-      } catch (dbErr) {
-        console.error("[SMS API] Error fetching template from DB:", dbErr);
-      }
-    }
-
-    if (!finalTemplateKey) {
-      finalTemplateKey =
-        sms_type === "reservation" ? "j72j4sspgse7vql" : "cl6lfpotqzrcusk";
-    }
-
     const bookingAt =
-      booking_date && booking_time
-        ? `${booking_date} ${booking_time}:00`
-        : null;
+      booking_date && booking_time ? `${booking_date} ${booking_time}:00` : null;
 
-    let logId: number | null = null;
+    // ثبت در smslog با هزینه دقیق (از message_count)
     const logResult: any = await query(
       `INSERT INTO smslog (
         user_id, booking_id, to_phone, content, cost, sms_type, booking_at, status, created_at
-      ) VALUES (?, ?, ?, ?, 1, ?, ?, 'pending', NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
       [
         userId,
         booking_id,
         to_phone,
-        content?.trim() || `Pattern: ${finalTemplateKey}`,
+        content || `Pattern: ${template_key || "نامشخص"}`,
+        finalSmsCost,
         sms_type,
         bookingAt,
       ]
     );
 
-    logId = logResult?.insertId || logResult?.[0]?.insertId;
+    const logId = logResult?.insertId || logResult?.[0]?.insertId;
 
+    // افزودن به صف ارسال (محتوای واقعی در worker جایگزین می‌شه، فقط پترن و پارامترها مهمن)
     try {
       await smsQueue.add(
         "send-sms",
         {
           logId,
           to_phone,
-          content: content?.trim() || "",
-          template_key: finalTemplateKey,
+          content: content || null, // اگر محتوا خام بود، استفاده می‌شه، وگرنه از پترن
+          template_key,
           params: {
-            name: name || "مشتری",
-            // اولویت: اگر customDate/time آمد (از فرانت)، استفاده کن، وگرنه از booking_date/time
+            name: name || "مشتری عزیز",
             date: customDate || booking_date || "",
             time: customTime || booking_time || "",
             service: service || "خدمات",
@@ -142,25 +129,32 @@ export const POST = withAuth(async (req, context) => {
           delay: delay > 0 ? delay : undefined,
           attempts: 5,
           backoff: { type: "exponential", delay: 5000 },
+          removeOnComplete: true,
+          removeOnFail: false,
         }
       );
     } catch (queueError) {
-      console.error("[SMS API] Queue Error:", queueError);
+      console.error("[SMS API] خطا در افزودن به صف ارسال:", queueError);
       await query(
         "UPDATE smslog SET status = 'failed', error_message = 'Queue Error' WHERE id = ?",
         [logId]
       );
     }
 
+    // پاسخ نهایی
     return NextResponse.json({
       success: true,
+      deducted: finalSmsCost,
       message:
-        delay > 0 ? "یادآوری نوبت زمان‌بندی شد" : "پیامک در صف ارسال قرار گرفت",
+        delay > 0
+          ? `یادآوری نوبت با موفقیت زمان‌بندی شد (${finalSmsCost} پیامک کسر شد)`
+          : `پیامک با موفقیت در صف ارسال قرار گرفت (${finalSmsCost} پیامک کسر شد)`,
+      logId,
     });
   } catch (error: any) {
-    console.error("[SMS API] Global Error:", error);
+    console.error("[SMS API] خطای بحرانی:", error);
     return NextResponse.json(
-      { success: false, message: "خطای داخلی سرور" },
+      { success: false, message: "خطای داخلی سرور در پردازش پیامک" },
       { status: 500 }
     );
   }

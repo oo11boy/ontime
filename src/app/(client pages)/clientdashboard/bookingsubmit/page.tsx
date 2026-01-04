@@ -26,8 +26,6 @@ import ModalManager from "./components/ModalManager";
 import SubmitButton from "./components/SubmitButton";
 import UnblockCustomerModal from "./components/UnblockCustomerModal";
 
-import type { Service } from "./types";
-
 const STORAGE_KEY = "booking_form_draft";
 
 const formatPreviewMessage = (text: string) =>
@@ -38,6 +36,7 @@ const formatPreviewMessage = (text: string) =>
         .replace(/%time%/g, "21:00")
         .replace(/%services%/g, "اصلاح مو")
         .replace(/%link%/g, "ontimeapp.ir/fsdvf")
+        .replace(/%salon%/g, "آنتایم")
     : "";
 
 export default function NewAppointmentPage() {
@@ -75,7 +74,7 @@ export default function NewAppointmentPage() {
     name?: string;
     phone?: string;
     job_id?: number;
-    off_days?: number[]; 
+    off_days?: number[];
   }>({});
 
   const [unblockModal, setUnblockModal] = useState({
@@ -95,22 +94,28 @@ export default function NewAppointmentPage() {
       setNameModalShown(false);
     });
 
-  // دریافت اطلاعات فعلی کسب‌وکار
+  // همه useEffect‌ها قبل از هر early return
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await fetch("/api/client/settings");
         const data = await res.json();
         if (data.success && data.user) {
-          const { name, phone, job_id, business_name, business_address } =
-            data.user;
+          const {
+            name,
+            phone,
+            job_id,
+            business_name,
+            business_address,
+            off_days,
+          } = data.user;
           setUserProfile({
             name: name || "",
             phone: phone || "",
-            job_id: job_id ? job_id.toString() : null, // اگر job_id وجود نداشت null باشه، نه ""
+            job_id: job_id ? job_id.toString() : null,
             business_name: business_name || "",
             business_address: business_address || "",
-            off_days: data.user.off_days ? JSON.parse(data.user.off_days) : [],
+            off_days: off_days ? JSON.parse(off_days) : [],
           });
           setBusinessForm({
             business_name: business_name || "",
@@ -124,7 +129,6 @@ export default function NewAppointmentPage() {
     fetchProfile();
   }, []);
 
-  // لود فرم از localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -140,25 +144,63 @@ export default function NewAppointmentPage() {
       time: parsed.time || "",
       services: parsed.services || [],
       notes: parsed.notes || "",
-      sendReserveSms: parsed.sendReserveSms ?? true,
-      sendRemindSms: parsed.sendRemindSms ?? true,
+      sendReserveSms: parsed.sendReserveSms ?? false,
+      sendRemindSms: parsed.sendRemindSms ?? false,
       reserveMsg: parsed.reserveMsg || "",
+      reservePattern: parsed.reservePattern || "",
+      reserveSmsPage: parsed.reserveSmsPage || 1,
       remindMsg: parsed.remindMsg || "",
+      remindPattern: parsed.remindPattern || "",
+      remindSmsPage: parsed.remindSmsPage || 1,
       remindTime: parsed.remindTime || 24,
     });
   }, [today]);
 
-  // بررسی شماره تلفن
   useEffect(() => {
-    const digits = form?.phone?.replace(/\D/g, "");
-    if (digits?.length >= 10) checkCustomer(digits.slice(-10));
+    if (form?.phone) {
+      const digits = form.phone.replace(/\D/g, "");
+      if (digits.length >= 10) checkCustomer(digits.slice(-10));
+    }
   }, [form?.phone, checkCustomer]);
+
+  useEffect(() => {
+    if (form) localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+  }, [form]);
+
+  // فیلتر الگوهای یادآوری — قبل از early return
+  const reminderTemplates = useMemo(() => {
+    if (!templatesData?.templates || !form?.sendRemindSms) return [];
+    const targetSubType = form?.remindTime >= 24 ? "tomorrow" : "today";
+    return templatesData.templates.filter(
+      (t: any) => t.type === "reminder" && t.sub_type === targetSubType
+    );
+  }, [templatesData?.templates, form?.sendRemindSms, form?.remindTime]);
+
+  // محاسبه تعداد پیامک‌ها — قبل از early return
+  const reserveSmsCount = form?.sendReserveSms ? form.reserveSmsPage || 1 : 0;
+  const remindSmsCount = form?.sendRemindSms ? form.remindSmsPage || 1 : 0;
+  const totalSmsNeeded = reserveSmsCount + remindSmsCount;
+
+  // early return فقط بعد از تمام هوک‌ها
+  if (!form) {
+    return (
+      <div className="min-h-screen bg-[#1a1e26] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
+      </div>
+    );
+  }
 
   const updateForm = (updates: Partial<typeof form>) =>
     setForm((prev: any) => ({ ...prev, ...updates }));
 
+  const isBlocked = checkedCustomerData?.client?.is_blocked === 1;
+
   const handleNameBlur = () => {
-    if (!checkedCustomerData?.exists || !checkedCustomerData.client?.name)
+    if (
+      !checkedCustomerData?.exists ||
+      !checkedCustomerData.client?.name ||
+      !form
+    )
       return;
 
     const dbName = checkedCustomerData.client.name.trim();
@@ -182,6 +224,7 @@ export default function NewAppointmentPage() {
   };
 
   const handleConfirmNameChange = async () => {
+    if (!form) return;
     const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
     try {
       const res = await fetch("/api/client/customers", {
@@ -214,13 +257,13 @@ export default function NewAppointmentPage() {
   const openUnblockModal = () => {
     setUnblockModal({
       show: true,
-      clientName: checkedCustomerData?.client?.client_name || form.name,
+      clientName: checkedCustomerData?.client?.client_name || form?.name || "",
       cancelledCount: checkedCustomerData?.client?.cancelled_count || 0,
     });
   };
 
   const handleUnblockAndSubmit = async () => {
-    if (isUnblocking) return;
+    if (isUnblocking || !form) return;
     setIsUnblocking(true);
 
     const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
@@ -257,7 +300,6 @@ export default function NewAppointmentPage() {
       return;
     }
 
-    // اگر job_id وجود نداشت یا خالی بود، خطا بده (چون کاربر قبلاً باید انتخاب کرده باشه)
     if (!userProfile.job_id) {
       toast.error("نوع تخصص انتخاب نشده است. لطفاً به تنظیمات بروید.");
       return;
@@ -271,7 +313,7 @@ export default function NewAppointmentPage() {
         body: JSON.stringify({
           name: userProfile.name || "کاربر",
           phone: userProfile.phone,
-          job_id: Number(userProfile.job_id), // حتماً به عدد تبدیل کن
+          job_id: Number(userProfile.job_id),
           business_name: businessForm.business_name.trim(),
           business_address: businessForm.business_address.trim(),
         }),
@@ -296,11 +338,26 @@ export default function NewAppointmentPage() {
       setIsSavingBusiness(false);
     }
   };
-  // تابع اصلی ثبت نوبت (بعد از اطمینان از داشتن اطلاعات کسب‌وکار)
+
   const proceedWithBooking = () => {
     const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
+
+    // اعتبارسنجی اطلاعات پایه
     if (!form.name.trim() || cleanPhone.length !== 10 || !form.time) {
-      toast.error("اطلاعات ضروری را تکمیل کنید");
+      toast.error("اطلاعات ضروری (نام، شماره و زمان) را تکمیل کنید");
+      return;
+    }
+
+    // اعتبارسنجی الزامی بودن انتخاب الگو — این بار قبل از هر چیز
+    if (form.sendReserveSms && !form.reservePattern) {
+      toast.error("لطفاً الگوی پیامک تایید رزرو را انتخاب کنید");
+      setModals((prev) => ({ ...prev, reserve: true }));
+      return;
+    }
+
+    if (form.sendRemindSms && !form.remindPattern) {
+      toast.error("لطفاً الگوی پیامک یادآوری را انتخاب کنید");
+      setModals((prev) => ({ ...prev, remind: true }));
       return;
     }
 
@@ -326,17 +383,51 @@ export default function NewAppointmentPage() {
         sms_reserve_enabled: form.sendReserveSms,
         sms_reminder_enabled: form.sendRemindSms,
         sms_reminder_hours_before: form.sendRemindSms ? form.remindTime : null,
+        reserve_pattern: form.sendReserveSms ? form.reservePattern : null,
+        reminder_pattern: form.sendRemindSms ? form.remindPattern : null,
+        reserve_message_count: form.sendReserveSms ? form.reserveSmsPage : 1,
+        reminder_message_count: form.sendRemindSms ? form.remindSmsPage : 1,
       },
       {
-        onSuccess: () => {
-          toast.dismiss(loadingId);
-          localStorage.removeItem(STORAGE_KEY);
-          queryClient.invalidateQueries({
-            queryKey: ["bookings", "customers"],
-          });
-          toast.success("نوبت با موفقیت ثبت شد");
-          router.push("/clientdashboard/bookingsubmit");
-        },
+onSuccess: () => {
+  toast.dismiss(loadingId);
+
+  // ۱. پاک کردن localStorage
+  localStorage.removeItem(STORAGE_KEY);
+
+  // ۲. ریست کامل state فرم به حالت اولیه (دقیقاً مثل وقتی صفحه اول لود می‌شه)
+  setForm({
+    name: "",
+    phone: "",
+    date: {
+      year: today.year,
+      month: today.month,
+      day: today.day,
+    },
+    time: "",
+    services: [],
+    notes: "",
+    sendReserveSms: false,
+    sendRemindSms: false,
+    reserveMsg: "",
+    reservePattern: "",
+    reserveSmsPage: 1,
+    remindMsg: "",
+    remindPattern: "",
+    remindSmsPage: 1,
+    remindTime: 24,
+  });
+
+  // ۳. invalidate کوئری‌ها
+  queryClient.invalidateQueries({
+    queryKey: ["bookings", "customers"],
+  });
+
+  toast.success("نوبت با موفقیت ثبت شد");
+
+  // ۴. ریدایرکت به صفحه موفقیت
+  router.push("/clientdashboard/bookingsubmit");
+},
         onError: (error: any) => {
           toast.dismiss(loadingId);
           const data = error?.data || {};
@@ -368,17 +459,6 @@ export default function NewAppointmentPage() {
 
     proceedWithBooking();
   };
-
-  // ذخیره فرم
-  useEffect(() => {
-    if (form) localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
-  }, [form]);
-
-  if (!form) return null;
-
-  const smsNeeded =
-    (form.sendReserveSms ? 1 : 0) + (form.sendRemindSms ? 1 : 0);
-  const isBlocked = checkedCustomerData?.client?.is_blocked === 1;
 
   return (
     <div className="min-h-screen bg-[#1a1e26] text-white pb-32">
@@ -475,22 +555,22 @@ export default function NewAppointmentPage() {
           <SmsBalanceSection
             userSmsBalance={userSmsBalance}
             isLoadingBalance={isLoadingBalance}
-            sendReservationSms={form.sendReserveSms}
-            sendReminderSms={form.sendRemindSms}
-            calculateSmsNeeded={smsNeeded}
+            reserveSmsCount={reserveSmsCount}
+            remindSmsCount={remindSmsCount}
+            totalSmsNeeded={totalSmsNeeded}
             onBuySms={() => router.push("/clientdashboard/buysms")}
           />
           <SubmitButton
             isSubmitting={isSubmitting}
             isDisabled={
-              isBlocked || (smsNeeded > (userSmsBalance ?? 0) && smsNeeded > 0)
+              isBlocked ||
+              (totalSmsNeeded > (userSmsBalance ?? 0) && totalSmsNeeded > 0)
             }
             onClick={handleSubmit}
           />
         </div>
       </div>
 
-      {/* مودال تکمیل اطلاعات کسب‌وکار - داخل همین صفحه */}
       <AnimatePresence>
         {modals.businessInfoMissing && (
           <div
@@ -596,7 +676,7 @@ export default function NewAppointmentPage() {
       />
 
       <ModalManager
-      offDays={userProfile.off_days || []}
+        offDays={userProfile.off_days || []}
         modals={modals}
         setModals={setModals}
         form={form}
@@ -608,6 +688,7 @@ export default function NewAppointmentPage() {
         checkData={checkedCustomerData}
         onConfirmNameChange={handleConfirmNameChange}
         onCancelNameChange={handleCancelNameChange}
+        reminderTemplates={reminderTemplates}
       />
 
       <Footer />

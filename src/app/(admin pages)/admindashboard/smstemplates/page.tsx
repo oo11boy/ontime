@@ -9,10 +9,11 @@ import {
   Trash2,
   Loader2,
   HelpCircle,
-  Info,
   X,
   ChevronLeft,
-  CalendarDays,
+  Edit3,
+  Save,
+  AlertCircle,
 } from "lucide-react";
 
 export default function AdminTemplatesPage() {
@@ -20,14 +21,16 @@ export default function AdminTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
-  // فیلدهای فرم (اضافه شدن bulk به انواع و مدیریت متغیر salon)
   const [formData, setFormData] = useState({
+    id: null as number | null,
     name: "",
-    type: "reserve", // reserve, reminder, generic, bulk
-    sub_type: "none", // none, today, tomorrow
+    type: "reserve",
+    sub_type: "none",
     payamresan_id: "",
     content: "",
+    message_count: 1,
   });
 
   const fetchTemplates = async () => {
@@ -47,30 +50,61 @@ export default function AdminTemplatesPage() {
     fetchTemplates();
   }, []);
 
+  const openCreateModal = () => {
+    setEditingId(null);
+    setFormData({
+      id: null,
+      name: "",
+      type: "reserve",
+      sub_type: "none",
+      payamresan_id: "",
+      content: "",
+      message_count: 1,
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (tpl: any) => {
+    setEditingId(tpl.id);
+    setFormData({
+      id: tpl.id,
+      name: tpl.name,
+      type: tpl.type,
+      sub_type: tpl.sub_type || "none",
+      payamresan_id: tpl.payamresan_id,
+      content: tpl.content || "",
+      message_count: tpl.message_count || 1,
+    });
+    setShowModal(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const loadingId = toast.loading("در حال ذخیره الگو...");
+    const loadingId = toast.loading(editingId ? "در حال به‌روزرسانی..." : "در حال ذخیره الگو...");
+
     try {
-      const res = await fetch("/api/admin/smstemplates", {
-        method: "POST",
+      const url = editingId
+        ? `/api/admin/smstemplates?id=${editingId}`
+        : "/api/admin/smstemplates";
+
+      const method = editingId ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       if (res.ok) {
-        toast.success("پترن با موفقیت ساخته شد", { id: loadingId });
+        toast.success(
+          editingId ? "الگو با موفقیت به‌روزرسانی شد" : "پترن با موفقیت ساخته شد",
+          { id: loadingId }
+        );
         setShowModal(false);
-        setFormData({
-          name: "",
-          type: "reserve",
-          sub_type: "none",
-          payamresan_id: "",
-          content: "",
-        });
         fetchTemplates();
       } else {
         const error = await res.json();
-        toast.error(error.message || "خطا در ثبت الگو", { id: loadingId });
+        toast.error(error.message || "خطا در عملیات", { id: loadingId });
       }
     } catch (err) {
       toast.error("خطا در اتصال به سرور", { id: loadingId });
@@ -93,7 +127,7 @@ export default function AdminTemplatesPage() {
   };
 
   return (
-    <div className="p-6 bg-[#0f0f0f] min-h-screen text-white ">
+    <div className="p-6 bg-[#0f0f0f] min-h-screen text-white">
       <Toaster position="top-center" reverseOrder={false} />
 
       <div className="max-w-6xl mx-auto">
@@ -110,7 +144,7 @@ export default function AdminTemplatesPage() {
             </p>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreateModal}
             className="bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-2xl flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/20 font-bold"
           >
             <Plus size={22} /> تعریف پترن جدید
@@ -121,6 +155,11 @@ export default function AdminTemplatesPage() {
           <div className="flex flex-col justify-center items-center py-24 gap-4">
             <Loader2 className="animate-spin text-emerald-500" size={48} />
             <p className="text-gray-400">در حال فراخوانی اطلاعات...</p>
+          </div>
+        ) : templates.length === 0 ? (
+          <div className="text-center py-20">
+            <MessageSquare className="w-20 h-20 text-gray-700 mx-auto mb-4 opacity-30" />
+            <p className="text-gray-500">هنوز الگویی تعریف نشده است</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -152,17 +191,29 @@ export default function AdminTemplatesPage() {
                     </span>
                     {tpl.sub_type !== "none" && (
                       <span className="text-[10px] bg-white/5 text-gray-400 px-2 py-1 rounded-md w-fit border border-white/5">
-                        🎯 مخصوص نوبت‌های:{" "}
-                        {tpl.sub_type === "today" ? "امروز" : "فردا"}
+                        🎯 مخصوص نوبت‌های: {tpl.sub_type === "today" ? "امروز" : "فردا"}
                       </span>
                     )}
+                    <span className="text-[10px] bg-orange-500/10 text-orange-400 px-2 py-1 rounded-md w-fit border border-orange-500/20">
+                      💬 {tpl.message_count || 1} پیامک
+                    </span>
                   </div>
-                  <button
-                    onClick={() => handleDelete(tpl.id)}
-                    className="bg-red-500/10 p-2 rounded-lg text-gray-500 hover:text-red-500"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openEditModal(tpl)}
+                      className="bg-emerald-500/10 p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                      title="ویرایش"
+                    >
+                      <Edit3 size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(tpl.id)}
+                      className="bg-red-500/10 p-2 rounded-lg text-gray-500 hover:text-red-500 transition-all"
+                      title="حذف"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 className="font-bold text-xl mb-3 group-hover:text-emerald-400 transition-colors line-clamp-1">
@@ -175,7 +226,7 @@ export default function AdminTemplatesPage() {
                 </div>
 
                 <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-2 min-h-18">
-                  "{tpl.content}"
+                  "{tpl.content || "-"}"
                 </p>
               </div>
             ))}
@@ -183,6 +234,7 @@ export default function AdminTemplatesPage() {
         )}
       </div>
 
+      {/* مودال ایجاد/ویرایش */}
       {showModal && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 z-50">
           <div className="bg-[#181818] w-full max-w-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[95vh]">
@@ -195,22 +247,20 @@ export default function AdminTemplatesPage() {
 
             <h2 className="text-2xl font-black mb-8 text-white flex items-center gap-2">
               <div className="w-2 h-8 bg-emerald-500 rounded-full" />
-              تنظیمات هوشمند پترن
+              {editingId ? "ویرایش الگو" : "تنظیمات هوشمند پترن"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="md:col-span-2">
                   <label className="block text-sm text-gray-400 mb-2 mr-1">
-                    عنوان الگو (مثلاً: پترن همگانی کنسلی)
+                    عنوان الگو
                   </label>
                   <input
                     required
                     className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-emerald-500 transition-all"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
 
@@ -226,7 +276,7 @@ export default function AdminTemplatesPage() {
                       setFormData({
                         ...formData,
                         type: val,
-                        sub_type: val === "reminder" ? "tomorrow" : "none",
+                        sub_type: val === "reminder" ? formData.sub_type : "none",
                       });
                     }}
                   >
@@ -237,25 +287,38 @@ export default function AdminTemplatesPage() {
                   </select>
                 </div>
 
-                {/* فیلد انتخاب امروز یا فردا (فقط برای یادآوری‌ها) */}
-                <div
-                  className={
-                    formData.type === "reminder" ? "block" : "invisible"
-                  }
-                >
+                <div className={formData.type === "reminder" ? "block" : "invisible"}>
                   <label className="block text-sm text-gray-400 mb-2 mr-1">
-                    هدف زمانی (ارسال برای...)
+                    هدف زمانی
                   </label>
                   <select
                     className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-amber-500 cursor-pointer appearance-none text-amber-500 font-bold"
                     value={formData.sub_type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sub_type: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, sub_type: e.target.value })}
                   >
                     <option value="tomorrow">📅 نوبت‌های فردا</option>
                     <option value="today">🕒 نوبت‌های امروز</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2 mr-1">
+                    تعداد پیامک (دستی)
+                  </label>
+                  <select
+                    className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-orange-500 cursor-pointer"
+                    value={formData.message_count}
+                    onChange={(e) => setFormData({ ...formData, message_count: Number(e.target.value) })}
+                  >
+                    <option value={1}>۱ پیامک</option>
+                    <option value={2}>۲ پیامک</option>
+                    <option value={3}>۳ پیامک</option>
+                    <option value={4}>۴ پیامک</option>
+                    <option value={5}>۵ پیامک</option>
+                  </select>
+                  <p className="text-[10px] text-gray-500 mt-2">
+                    این عدد دقیقاً از موجودی کاربر کسر می‌شود
+                  </p>
                 </div>
               </div>
 
@@ -267,9 +330,7 @@ export default function AdminTemplatesPage() {
                   required
                   className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 font-mono text-emerald-400 outline-none focus:border-emerald-500"
                   value={formData.payamresan_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, payamresan_id: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, payamresan_id: e.target.value })}
                 />
               </div>
 
@@ -305,17 +366,21 @@ export default function AdminTemplatesPage() {
                       <code className="bg-black/40 p-1.5 rounded border border-white/5">
                         %time% : ساعت
                       </code>
+                      <code className="bg-black/40 p-1.5 rounded border border-white/5">
+                        %service% : خدمات
+                      </code>
+                      <code className="bg-black/40 p-1.5 rounded border border-white/5">
+                        %link% : لینک مدیریت
+                      </code>
                     </div>
                   </div>
                 )}
 
                 <textarea
                   required
-                  className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 h-24 resize-none text-sm outline-none focus:border-emerald-500"
+                  className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 h-32 resize-none text-sm outline-none focus:border-emerald-500"
                   value={formData.content}
-                  onChange={(e) =>
-                    setFormData({ ...formData, content: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder="مثال: سلام %name% عزیز، نوبت‌های امروز در سالن %salon% لغو گردید."
                 />
               </div>
@@ -324,15 +389,23 @@ export default function AdminTemplatesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-900 text-gray-400 py-4 rounded-2xl font-bold"
+                  className="flex-1 bg-gray-900 text-gray-400 py-4 rounded-2xl font-bold hover:bg-gray-800 transition"
                 >
                   انصراف
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2 transition-all"
                 >
-                  ذخیره تنظیمات <ChevronLeft size={20} />
+                  {editingId ? (
+                    <>
+                      <Save size={20} /> ذخیره تغییرات
+                    </>
+                  ) : (
+                    <>
+                      ذخیره تنظیمات <ChevronLeft size={20} />
+                    </>
+                  )}
                 </button>
               </div>
             </form>
