@@ -17,6 +17,16 @@ const industries = [
     hasLanding: true // فقط این مورد لندینگ دارد
   },
   {
+    title: "کاشت و خدمات ناخن",
+    seoKeyword: "نوبت دهی ناخن",
+    desc: "نظم‌دهی به نوبت‌های ترمیم و کاهش کنسلی با سیستم یادآوری هوشمند ویژه ناخن‌کاران حرفه‌ای.",
+    icon: <Sparkles className="text-rose-500" />, // تغییر آیکون به درخشش (نماد لاک و زیبایی)
+    link: "/industries/nail-artist",
+    color: "hover:border-rose-500/50",
+    badge: "تخصصی",
+    hasLanding: true 
+  },
+  {
     title: "پزشکان و کلینیک‌ها",
     seoKeyword: "مدیریت نوبت مطب",
     desc: "نظم بخشیدن به صف انتظار بیماران و ارسال خودکار اطلاعات نوبت بلافاصله پس از ثبت.",

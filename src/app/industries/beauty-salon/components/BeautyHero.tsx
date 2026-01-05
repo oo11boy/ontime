@@ -57,9 +57,9 @@ export default function BeautyHero() {
 
         <div className="relative flex justify-center lg:justify-end">
           {/* تصویر گوشی که محیط اپلیکیشن (پنل مدیریت) را نشان می‌دهد */}
-          <div className="relative w-[300px] lg:w-[350px] aspect-[12/19] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] overflow-hidden">
+          <div className="relative w-[300px] lg:w-[350px] aspect-[10/19] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] overflow-hidden">
             <Image
-              src="/images/screens/main.jpg"
+              src="/images/screens/newmain.jpg"
               fill
               alt="اپلیکیشن مدیریت آرایشگاه آنتایم"
               className=""
