@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo } from "react";
@@ -37,46 +38,70 @@ export default function ClientDashboardLayout({
   /**
    * مدیریت ریدایرکت: اگر منقضی شده بود و در صفحه خرید نبود، ریدایرکت شود
    */
-  useEffect(() => {
-    if (!isLoading && isExpired && pathname !== pricingPage) {
-      // استفاده از replace برای پاک کردن تاریخچه مرورگر و جلوگیری از برگشت کاربر
-      router.replace(`${pricingPage}?expired=true`);
-    }
-  }, [isExpired, isLoading, pathname, router]);
-
-  // --- تنظیمات پشتیبانی گفتینو ---
+  // --- لود گفتینو + مخفی کردن آیکون + فقط با کلیک باز شود ---
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const GOFTINO_ID = "wECjcJ";
 
+    const GOFTINO_ID = "wECjcJ"; // ← شناسه واقعی گفتینو خودت رو اینجا بگذار
+
+    // تنظیمات اولیه گفتینو
     window.goftinoSettings = {
-      hasIcon: false,
-      autoOpen: false,
+      hasIcon: false,          // آیکون دایره‌ای پیش‌فرض کاملاً مخفی
+      hideCloseButton: false,  // دکمه بستن فعال باشه
+      autoOpen: false,         // چت خودکار باز نشود
       widgetPosition: "bottom-right",
-      welcomeMessage: "سلام! اشتراک شما به پایان رسیده یا فعال نیست. برای تمدید از همین‌جا می‌توانید سوالات خود را بپرسید.",
+      welcomeMessage: "سلام عزیز! 👋\nبه پشتیبانی آنلاین آنتایم خوش آمدید.\nهر سؤالی داشتید، همین‌جا بپرسید.\nتیم ما آنلاین و آماده کمک است ❤️",
     };
 
+    // لود اسکریپت گفتینو
     (function () {
-      const i = GOFTINO_ID, d = document;
+      var i = GOFTINO_ID,
+        a = window,
+        d = document;
       function g() {
-        const g = d.createElement("script"), s = "https://www.goftino.com/widget/" + i;
-        g.async = !0; g.src = s;
+        var g = d.createElement("script"),
+          s = "https://www.goftino.com/widget/" + i,
+          l = localStorage.getItem("goftino_" + i);
+        g.async = !0;
+        g.src = l ? s + "?o=" + l : s;
         d.getElementsByTagName("head")[0].appendChild(g);
       }
-      "complete" === d.readyState ? g() : window.addEventListener("load", g, false);
+      "complete" === d.readyState
+        ? g()
+        : a.attachEvent
+        ? a.attachEvent("onload", g)
+        : a.addEventListener("load", g, !1);
     })();
 
+    // وقتی گفتینو آماده شد، تنظیمات نهایی رو اعمال کن
     const handleGoftinoReady = () => {
-      if (window.Goftino && dashboardData?.user) {
-        window.Goftino.setUser({
-          name: dashboardData.user.name || "کاربر آنتایم",
-          phone: dashboardData.user.phone || "",
+      if (window.Goftino) {
+        // اطمینان از مخفی بودن آیکون
+        window.Goftino.setWidget({
+          hasIcon: false,
         });
+
+        // ارسال اطلاعات کاربر
+        if (dashboardData?.user) {
+          window.Goftino.setUser({
+            name: dashboardData.user.name || "کاربر عزیز",
+            phone: dashboardData.user.phone || "",
+          });
+        }
       }
     };
+
+    // رویداد آماده شدن گفتینو
     window.addEventListener("goftino_ready", handleGoftinoReady);
-    return () => window.removeEventListener("goftino_ready", handleGoftinoReady);
+
+    // اگر گفتینو از قبل لود شده باشه (مثلاً در صفحه‌های دیگر)
+    window.Goftino && handleGoftinoReady();
+
+    return () => {
+      window.removeEventListener("goftino_ready", handleGoftinoReady);
+    };
   }, [dashboardData]);
+
 
   // ۱. حالت بارگذاری اولیه
   if (isLoading) return <Loading />;
