@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useDashboard } from "@/hooks/useDashboard";
 import Loading from "./components/Loading";
-import Footer from "./components/Footer/Footer";
 
 export default function ClientDashboardLayout({
   children,
@@ -15,102 +14,82 @@ export default function ClientDashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // --- بررسی انقضای اشتراک ---
+  const pricingPage = "/clientdashboard/pricingplan";
+
+  /**
+   * بررسی وضعیت انقضا بر اساس فیلد ended_at (مطابق دیتابیس)
+   */
+  const isExpired = useMemo(() => {
+    if (isLoading || !dashboardData?.user) return false;
+
+    const endedAt = dashboardData.user.ended_at;
+
+    // اگر فیلد ended_at خالی باشد (null)، یعنی پلنی برای کاربر ثبت نشده است
+    if (!endedAt) return true;
+
+    const now = new Date();
+    const expiryDate = new Date(endedAt);
+
+    // مقایسه زمان فعلی با زمان پایان پلن
+    return expiryDate < now;
+  }, [dashboardData, isLoading]);
+
+  /**
+   * مدیریت ریدایرکت: اگر منقضی شده بود و در صفحه خرید نبود، ریدایرکت شود
+   */
   useEffect(() => {
-    if (!isLoading && dashboardData?.user) {
-      const pricingPage = "/clientdashboard/pricingplan";
-
-      if (pathname === pricingPage) return;
-
-      const quotaEndsAt = dashboardData.user.quota_ends_at;
-
-      if (typeof quotaEndsAt === "undefined") return;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (!quotaEndsAt) {
-        router.push(`${pricingPage}?expired=true`);
-      } else {
-        const expiry = new Date(quotaEndsAt);
-        expiry.setHours(0, 0, 0, 0);
-        if (expiry < today) {
-          router.push(`${pricingPage}?expired=true`);
-        }
-      }
+    if (!isLoading && isExpired && pathname !== pricingPage) {
+      // استفاده از replace برای پاک کردن تاریخچه مرورگر و جلوگیری از برگشت کاربر
+      router.replace(`${pricingPage}?expired=true`);
     }
-  }, [dashboardData, isLoading, pathname, router]);
+  }, [isExpired, isLoading, pathname, router]);
 
-  // --- لود گفتینو + مخفی کردن آیکون + فقط با کلیک باز شود ---
+  // --- تنظیمات پشتیبانی گفتینو ---
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const GOFTINO_ID = "wECjcJ";
 
-    const GOFTINO_ID = "wECjcJ"; // ← شناسه واقعی گفتینو خودت رو اینجا بگذار
-
-    // تنظیمات اولیه گفتینو
     window.goftinoSettings = {
-      hasIcon: false,          // آیکون دایره‌ای پیش‌فرض کاملاً مخفی
-      hideCloseButton: false,  // دکمه بستن فعال باشه
-      autoOpen: false,         // چت خودکار باز نشود
+      hasIcon: false,
+      autoOpen: false,
       widgetPosition: "bottom-right",
-      welcomeMessage: "سلام عزیز! 👋\nبه پشتیبانی آنلاین آنتایم خوش آمدید.\nهر سؤالی داشتید، همین‌جا بپرسید.\nتیم ما آنلاین و آماده کمک است ❤️",
+      welcomeMessage: "سلام! اشتراک شما به پایان رسیده یا فعال نیست. برای تمدید از همین‌جا می‌توانید سوالات خود را بپرسید.",
     };
 
-    // لود اسکریپت گفتینو
     (function () {
-      var i = GOFTINO_ID,
-        a = window,
-        d = document;
+      const i = GOFTINO_ID, d = document;
       function g() {
-        var g = d.createElement("script"),
-          s = "https://www.goftino.com/widget/" + i,
-          l = localStorage.getItem("goftino_" + i);
-        g.async = !0;
-        g.src = l ? s + "?o=" + l : s;
+        const g = d.createElement("script"), s = "https://www.goftino.com/widget/" + i;
+        g.async = !0; g.src = s;
         d.getElementsByTagName("head")[0].appendChild(g);
       }
-      "complete" === d.readyState
-        ? g()
-        : a.attachEvent
-        ? a.attachEvent("onload", g)
-        : a.addEventListener("load", g, !1);
+      "complete" === d.readyState ? g() : window.addEventListener("load", g, false);
     })();
 
-    // وقتی گفتینو آماده شد، تنظیمات نهایی رو اعمال کن
     const handleGoftinoReady = () => {
-      if (window.Goftino) {
-        // اطمینان از مخفی بودن آیکون
-        window.Goftino.setWidget({
-          hasIcon: false,
+      if (window.Goftino && dashboardData?.user) {
+        window.Goftino.setUser({
+          name: dashboardData.user.name || "کاربر آنتایم",
+          phone: dashboardData.user.phone || "",
         });
-
-        // ارسال اطلاعات کاربر
-        if (dashboardData?.user) {
-          window.Goftino.setUser({
-            name: dashboardData.user.name || "کاربر عزیز",
-            phone: dashboardData.user.phone || "",
-          });
-        }
       }
     };
-
-    // رویداد آماده شدن گفتینو
     window.addEventListener("goftino_ready", handleGoftinoReady);
-
-    // اگر گفتینو از قبل لود شده باشه (مثلاً در صفحه‌های دیگر)
-    window.Goftino && handleGoftinoReady();
-
-    return () => {
-      window.removeEventListener("goftino_ready", handleGoftinoReady);
-    };
+    return () => window.removeEventListener("goftino_ready", handleGoftinoReady);
   }, [dashboardData]);
 
+  // ۱. حالت بارگذاری اولیه
   if (isLoading) return <Loading />;
 
+  // ۲. قفل کردن محتوا: اگر منقضی شده و کاربر در صفحه خرید نیست، اصلاً children را رندر نکن
+  if (isExpired && pathname !== pricingPage) {
+    return <Loading />; 
+  }
+
+  // ۳. نمایش محتوا فقط برای کاربران دارای اعتبار یا در صفحه خرید
   return (
     <main dir="rtl" className="antialiased">
       {children}
-     
     </main>
   );
 }
