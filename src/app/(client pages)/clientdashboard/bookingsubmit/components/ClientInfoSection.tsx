@@ -102,7 +102,7 @@ const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
       {/* مودال لیست مشتریان */}
       <AnimatePresence>
         {isClientListOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="fixed inset-0 z-[999] flex items-end justify-center">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}

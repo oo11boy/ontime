@@ -4,19 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { Maximize2, X, Smartphone, ChevronLeft } from "lucide-react";
 
-// لیست تصاویر را از Props می‌گیریم تا برای هر لندینگ متفاوت باشد
-interface Screenshot {
-  id: number;
-  src: string;
-  alt: string;
-  label: string;
-  desc: string;
-}
+
 
 interface GalleryProps {
   title: React.ReactNode;
   description: string;
-  accentColor?: "pink" | "blue" | "indigo"; // رنگ تم کامپوننت
+  accentColor?: "pink" | "blue" | "indigo" | "rose"; // رنگ تم کامپوننت
  
 }
 
@@ -28,11 +21,12 @@ export default function UniversalAppGallery({
 
 const screenshots = [
   
-  { id: 1, src: "/images/screens/main.jpg", alt: "صفحه ابتدایی اپلیکیشن نوبت دهی آنتایم", label:"صفحه ابتدایی اپلیکیشن", desc: "صفحه‌ابتدایی اپلیکیشن نوبت دهی" },
-  { id: 3, src: "/images/screens/service.jpg", alt: "تعریف خدمات نوبتدهی آنتایم", label: "لیست خدمات", desc: "تنظیم قیمت و زمان " },
-  { id: 4, src: "/images/screens/calender.jpg", alt: "تقویم کاری اپلیکیشن نوبت دهی آنلاین آنتایم", label: "تقویم نوبت‌دهی",  desc: "نمای کلی رزروهای روزانه " },
- { id: 5, src: "/images/screens/customers.jpg", alt: "سوابق مشتریان در اپلیکیشن نوبتدهی آنلاین آنتایم", label: "بانک مشتریان", desc: "دسترسی سریع به پرونده و شماره هر مشتری" },
- { id: 2, src: "/images/screens/add.jpg", alt: "پنل افزودن نوبت‌ها در نرم افزار نوبت دهی آنلاین آنتایم", label: "افزودن نوبت‌ها", desc: "نمای کلی از قسمت افزودن نوبت" },
+  { id: 1, src: "/images/screens/newmain.jpg", alt: "صفحه ابتدایی اپلیکیشن نوبت دهی آنتایم", label:"صفحه ابتدایی اپلیکیشن", desc: "صفحه‌ابتدایی اپلیکیشن نوبت دهی" },
+  { id: 3, src: "/images/screens/servicelistnail.jpg", alt: "تعریف خدمات نوبتدهی آنتایم", label: "لیست خدمات", desc: "تنظیم قیمت و زمان " },
+  { id: 4, src: "/images/screens/calendernail.jpg", alt: "تقویم کاری اپلیکیشن نوبت دهی آنلاین آنتایم", label: "تقویم نوبت‌دهی",  desc: "نمای کلی رزروهای روزانه " },
+ { id: 5, src: "/images/screens/customlist.jpg", alt: "سوابق مشتریان در اپلیکیشن نوبتدهی آنلاین آنتایم", label: "بانک مشتریان", desc: "دسترسی سریع به پرونده و شماره هر مشتری" },
+ { id: 6, src: "/images/screens/addnail.jpg", alt: "پنل افزودن نوبت‌ها در نرم افزار نوبت دهی آنلاین آنتایم", label: "افزودن نوبت‌ها", desc: "نمای کلی از قسمت افزودن نوبت" },
+  { id:7, src: "/images/screens/shift.jpg", alt: "تعیین شیفت و تعطیلات در نرم افزار نوبت دهی آنلاین آنتایم", label: "تعیین شیفت و تعطیلات", desc: "نمای کلی از قسمت تعیین شیفت و تعطیلات اپ نوبت دهی آنتایم " },
  
 ];
   const [activeImage, setActiveImage] = useState(screenshots[0]);
@@ -60,6 +54,13 @@ const screenshots = [
       bg: "bg-indigo-600/10",
       glow: "bg-indigo-600/10",
       buttonActive: "bg-indigo-500"
+    },
+       rose: {
+      text: "text-rose-600",
+      border: "border-rose-600",
+      bg: "bg-rose-600/10",
+      glow: "bg-rose-600/10",
+      buttonActive: "bg-rose-500"
     }
   };
 
@@ -123,7 +124,7 @@ const screenshots = [
               <div className={`absolute -inset-10 ${currentTheme.glow} blur-[120px] rounded-full`}></div>
               
               <div className="relative rounded-[3rem] overflow-hidden border-[8px] border-slate-900 shadow-[0_40px_100px_-15px_rgba(0,0,0,0.8)] ring-1 ring-slate-800">
-                <div className="aspect-[11/18.5] relative bg-slate-900">
+                <div className="aspect-[9/18] relative bg-slate-900">
                   <Image
                     key={activeImage.id + activeImage.src}
                     src={activeImage.src}
@@ -139,11 +140,7 @@ const screenshots = [
                 </div>
               </div>
 
-              <div className="absolute -bottom-6 right-1/2 translate-x-1/2 bg-slate-900 border border-slate-800 px-6 py-2 rounded-full whitespace-nowrap">
-                <span className="text-xs font-black text-slate-400">
-                  {activeImage.alt}
-                </span>
-              </div>
+            
             </div>
           </div>
 
@@ -159,7 +156,7 @@ const screenshots = [
           <button className="absolute top-10 right-10 text-white/50 hover:text-white transition-colors">
             <X size={40} />
           </button>
-          <div className="h-[90vh] aspect-[9/19] relative">
+          <div className="h-[90vh] aspect-[10/19] relative">
             <img
               src={activeImage.src}
               alt={activeImage.alt}

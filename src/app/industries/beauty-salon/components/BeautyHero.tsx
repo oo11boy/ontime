@@ -7,7 +7,7 @@ import { ArrowLeft, Smartphone, Zap } from "lucide-react";
 
 export default function BeautyHero() {
   return (
-    <section className="relative py-16 lg:py-28 overflow-hidden bg-white">
+    <section className="relative py-16 lg:py-28 mt-10 overflow-hidden bg-white">
       <div className="absolute inset-0 bg-linear-to-b from-pink-50/30 to-white -z-10"></div>
 
       <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">

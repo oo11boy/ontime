@@ -30,6 +30,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly",
         priority: 0.9,
       },
+            {
+        url: `${baseUrl}/industries/nail-artist`, // اضافه شدن لندینگ آرایشگری
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.9,
+      },
       {
         url: `${baseUrl}/blog`,
         lastModified: lastPostDate,
@@ -62,6 +68,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
       {
         url: `${baseUrl}/industries/beauty-salon`, // آدرس رزرو در صورت خطا
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.9,
+      },
+            {
+        url: `${baseUrl}/industries/nail-artist`,
         lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.9,
