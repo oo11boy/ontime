@@ -8,6 +8,8 @@ import {
   Phone,
   Send,
   ShieldCheck,
+  Sparkles,
+  Scissors,
 } from "lucide-react";
 import React from "react";
 import Link from "next/link";
@@ -23,12 +25,13 @@ export default function EnhancedFooter(): React.JSX.Element {
       className="bg-slate-950 text-slate-200 py-24 border-t border-white/5 relative overflow-hidden"
       dir="rtl"
     >
-
-
+      {/* Glow Effect background */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full -mr-48 -mb-48 pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-16 mb-24">
+          
+          {/* بخش برندینگ و درباره ما */}
           <div className="lg:col-span-2 space-y-8">
             <Link
               href="/"
@@ -53,61 +56,74 @@ export default function EnhancedFooter(): React.JSX.Element {
             </Link>
 
             <p className="max-w-sm leading-relaxed text-lg text-slate-300 font-medium">
-              ما در <strong>اپلیکیشن نوبت دهی آنتایم</strong> با هوشمندسازی
+              ما در <strong>اپلیکیشن نوبت‌دهی آنتایم</strong> با هوشمندسازی
               فرآیند رزرو، به شما کمک می‌کنیم تا زمان خود را مدیریت کرده و
               درآمدتان را افزایش دهید.
             </p>
 
-            {/* اصلاح شده: SocialIcon ها حالا لینک هستند */}
             <div className="flex gap-4">
               <SocialIcon
                 icon={<Instagram size={20} />}
                 label="اینستاگرام آنتایم"
                 hoverColor="hover:bg-pink-600"
-                href="#"
+                href="https://instagram.com/ontimeapp.ir"
               />
               <SocialIcon
                 icon={<Send size={20} />}
                 label="تلگرام آنتایم"
                 hoverColor="hover:bg-blue-500"
-                href="#"
+                href="https://t.me/ontime_sup"
               />
-              <SocialIcon
+              {/* <SocialIcon
                 icon={<Linkedin size={20} />}
                 label="لینکدین آنتایم"
                 hoverColor="hover:bg-blue-700"
                 href="#"
-              />
-              <SocialIcon
+              /> */}
+              {/* <SocialIcon
                 icon={<MessageSquare size={20} />}
                 label="واتس‌اپ آنتایم"
                 hoverColor="hover:bg-green-600"
                 href="#"
-              />
+              /> */}
             </div>
           </div>
 
+          {/* بخش محصولات و لندینگ‌های تخصصی */}
           <div>
-            <FooterHeader title="محصولات" color="bg-blue-500" />
+            <FooterHeader title="محصولات تخصصی" color="bg-blue-500" />
             <ul className="space-y-4 font-bold text-sm">
-              <FooterLink href="#">پنل مدیریت پزشکان</FooterLink>
-              <FooterLink href="#">سیستم رزرو آرایشگاه</FooterLink>
-              <FooterLink href="#">نوبت‌دهی مراکز آموزشی</FooterLink>
+              <FooterLink href="/industries/beauty-salon">
+                <div className="flex items-center gap-2">
+                  <Scissors size={14} className="text-pink-500" />
+                  مدیریت سالن زیبایی
+                </div>
+              </FooterLink>
+              <FooterLink href="/industries/nail-artist">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-rose-400" />
+                  پنل اختصاصی ناخن‌کار
+                </div>
+              </FooterLink>
+              <FooterLink href="#">نوبت‌دهی مراکز پزشکی</FooterLink>
               <FooterLink href="#">رزرو مجموعه‌های ورزشی</FooterLink>
-              <FooterLink href="#">خدمات فنی و خودرو</FooterLink>
+              <FooterLink href="#">سیستم مراکز آموزشی</FooterLink>
             </ul>
           </div>
 
+          {/* راهنما و منابع */}
           <div>
             <FooterHeader title="راهنما و منابع" color="bg-indigo-500" />
             <ul className="space-y-4 font-bold text-sm">
               <FooterLink href="#">مرکز آموزش</FooterLink>
-              <FooterLink href="#">وبلاگ</FooterLink>
+              <FooterLink href="/blog">وبلاگ و اخبار</FooterLink>
               <FooterLink href="#">سوالات متداول</FooterLink>
-              <FooterLink href="#">قوانین و حریم خصوصی</FooterLink>
+              <FooterLink href="#">قوانین و مقررات</FooterLink>
+              <FooterLink href="#">حریم خصوصی</FooterLink>
             </ul>
           </div>
 
+          {/* ارتباط با ما و نمادها */}
           <div>
             <FooterHeader title="ارتباط با ما" color="bg-emerald-500" />
             <ul className="space-y-6 font-bold text-sm">
@@ -121,26 +137,25 @@ export default function EnhancedFooter(): React.JSX.Element {
                 <div className="bg-white/5 p-2.5 rounded-xl group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
                   <Mail size={18} aria-hidden="true" />
                 </div>
-                <span className="text-sm">unicodewebdesign@gmail.com</span>
+                <span className="text-sm tracking-tight">ontimeappir@gmail.com</span>
               </li>
               <li className="pt-4 flex gap-4">
                 <Link
-              href={"../namad"}
+                  href="/namad"
                   aria-label="نماد اعتماد"
-                  className=" flex-col justify-center bg-white/5 rounded-2xl border border-white/10 flex items-center p-2 gap-4 grayscale hover:grayscale-0 transition-all cursor-pointer"
+                  className="w-full flex flex-col justify-center bg-white/5 rounded-2xl border border-white/10 items-center p-4 gap-3 grayscale hover:grayscale-0 transition-all cursor-pointer group"
                 >
-                  <ShieldCheck size={32} className="opacity-60" />
- <span>
-                نماد اعتماد الکترونیکی
-            </span>
+                  <ShieldCheck size={32} className="opacity-60 text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] text-center leading-relaxed text-slate-400 group-hover:text-white">
+                    نماد اعتماد<br />الکترونیکی
+                  </span>
                 </Link>
-          
               </li>
             </ul>
           </div>
         </div>
 
-        {/* اصلاح شده: بهبود کنتراست متن‌های کپی‌رایت */}
+        {/* بخش کپی رایت و گواهینامه‌ها */}
         <div className="pt-12 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center gap-10">
           <div className="flex flex-wrap justify-center lg:justify-start gap-4">
             <ComplianceBadge text="ISO 27001 Certified" />
@@ -158,6 +173,7 @@ export default function EnhancedFooter(): React.JSX.Element {
               <a
                 href="https://unicodewebdesign.com"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
               >
                 تیم برنامه‌نویسی یونیکد
@@ -170,7 +186,8 @@ export default function EnhancedFooter(): React.JSX.Element {
   );
 }
 
-// اصلاح شده: استفاده از تگ a به جای div برای آیکون‌های اجتماعی
+// --- Components کمکی ---
+
 function SocialIcon({
   icon,
   hoverColor,
@@ -190,7 +207,6 @@ function SocialIcon({
       aria-label={label}
       className={`w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-slate-400 transition-all duration-500 ${hoverColor} hover:text-white hover:-translate-y-2 shadow-lg shadow-black/20`}
     >
-      {/* با Cast کردن به any، مشکل محدودیت پراپ‌های aria-hidden حل می‌شود */}
       {React.isValidElement(icon)
         ? React.cloneElement(icon as React.ReactElement<any>, {
             "aria-hidden": "true",
@@ -199,6 +215,7 @@ function SocialIcon({
     </a>
   );
 }
+
 function FooterHeader({ title, color }: { title: string; color: string }) {
   return (
     <h3 className="text-white font-black text-xl mb-10 flex items-center gap-3">

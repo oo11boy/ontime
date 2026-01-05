@@ -29,7 +29,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // ساختار گراف برای اتصال موجودیت‌ها به هم و معرفی نام سایت به گوگل
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -37,7 +36,7 @@ export default function RootLayout({
         "@type": "WebSite",
         "@id": "https://ontimeapp.ir/#website",
         "url": "https://ontimeapp.ir",
-        "name": "آنتایم", // این فیلد حیاتی برای Site Name گوگل است
+        "name": "آنتایم",
         "alternateName": ["OnTime", "اپلیکیشن آنتایم", "سامانه آنتایم"],
         "publisher": { "@id": "https://ontimeapp.ir/#organization" }
       },
@@ -77,12 +76,11 @@ export default function RootLayout({
 
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
-
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="آنتایم" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="آنتایم" />
         <Script
           id="global-json-ld"
           type="application/ld+json"
@@ -96,7 +94,18 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>
+        
+        {/* کدهای تحلیلی و چت آنلاین */}
         <GoogleAnalytics gaId="G-8PVVM0N5SV" />
+        
+        {/* اسکریپت گفتینو */}
+        <Script id="goftino-widget" strategy="afterInteractive">
+          {`
+            !function(){var i="YOUR_GOFTINO_TOKEN",a=window,d=document;function t(){var g=d.createElement("script"),s="https://www.goftino.com/widget/"+i,l=localStorage.getItem("goftino_"+i);g.type="text/javascript",g.async=!0,g.src=l?s+"?o="+l:s,d.getElementsByTagName("head")[0].appendChild(g)}
+            "complete"===d.readyState?t():a.attachEvent?a.attachEvent("onload",t):a.addEventListener("load",t,!1)}();
+          `}
+        </Script>
+
         <Toaster
           position="top-center"
           toastOptions={{

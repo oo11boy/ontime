@@ -118,7 +118,7 @@ export default function SupportPage() {
 
             {/* اینستاگرام */}
             <a
-              href="https://instagram.com/ontimeappir"
+              href="https://instagram.com/ontimeapp.ir"
               target="_blank"
               rel="noopener noreferrer"
               className="group flex flex-col items-center justify-center p-6 rounded-3xl bg-[#242933] border border-white/5 hover:border-pink-500/30 transition-all"
@@ -130,7 +130,7 @@ export default function SupportPage() {
                 اینستاگرام
               </span>
               <span className="text-[10px] text-pink-400 mt-1" dir="ltr">
-                @ontimeappir
+                @ontimeapp.ir
               </span>
             </a>
           </div>

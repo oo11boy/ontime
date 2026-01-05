@@ -17,16 +17,12 @@ export default function ClientDashboardLayout({
 
   const pricingPage = "/clientdashboard/pricingplan";
 
-  /**
-   * بررسی وضعیت انقضا بر اساس فیلد ended_at (مطابق دیتابیس)
-   */
   const isExpired = useMemo(() => {
     if (isLoading || !dashboardData?.user) return false;
 
     const endedAt = dashboardData.user.ended_at;
 
-    // اگر فیلد ended_at خالی باشد (null)، یعنی پلنی برای کاربر ثبت نشده است
-    if (!endedAt) return true;
+  if (!endedAt) return true;
 
     const now = new Date();
     const expiryDate = new Date(endedAt);
@@ -35,16 +31,11 @@ export default function ClientDashboardLayout({
     return expiryDate < now;
   }, [dashboardData, isLoading]);
 
-  /**
-   * مدیریت ریدایرکت: اگر منقضی شده بود و در صفحه خرید نبود، ریدایرکت شود
-   */
-  // --- لود گفتینو + مخفی کردن آیکون + فقط با کلیک باز شود ---
-  useEffect(() => {
+ useEffect(() => {
     if (typeof window === "undefined") return;
 
     const GOFTINO_ID = "wECjcJ"; // ← شناسه واقعی گفتینو خودت رو اینجا بگذار
 
-    // تنظیمات اولیه گفتینو
     window.goftinoSettings = {
       hasIcon: false,          // آیکون دایره‌ای پیش‌فرض کاملاً مخفی
       hideCloseButton: false,  // دکمه بستن فعال باشه
@@ -53,7 +44,7 @@ export default function ClientDashboardLayout({
       welcomeMessage: "سلام عزیز! 👋\nبه پشتیبانی آنلاین آنتایم خوش آمدید.\nهر سؤالی داشتید، همین‌جا بپرسید.\nتیم ما آنلاین و آماده کمک است ❤️",
     };
 
-    // لود اسکریپت گفتینو
+ 
     (function () {
       var i = GOFTINO_ID,
         a = window,
@@ -73,10 +64,9 @@ export default function ClientDashboardLayout({
         : a.addEventListener("load", g, !1);
     })();
 
-    // وقتی گفتینو آماده شد، تنظیمات نهایی رو اعمال کن
     const handleGoftinoReady = () => {
       if (window.Goftino) {
-        // اطمینان از مخفی بودن آیکون
+
         window.Goftino.setWidget({
           hasIcon: false,
         });
@@ -91,10 +81,8 @@ export default function ClientDashboardLayout({
       }
     };
 
-    // رویداد آماده شدن گفتینو
     window.addEventListener("goftino_ready", handleGoftinoReady);
 
-    // اگر گفتینو از قبل لود شده باشه (مثلاً در صفحه‌های دیگر)
     window.Goftino && handleGoftinoReady();
 
     return () => {
@@ -103,7 +91,6 @@ export default function ClientDashboardLayout({
   }, [dashboardData]);
 
 
-  // ۱. حالت بارگذاری اولیه
   if (isLoading) return <Loading />;
 
   // ۲. قفل کردن محتوا: اگر منقضی شده و کاربر در صفحه خرید نیست، اصلاً children را رندر نکن

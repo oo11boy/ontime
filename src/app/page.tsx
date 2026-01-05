@@ -1,7 +1,6 @@
 import Navigation from "@/components/Landing/Navigation";
 import HeroSection from "@/components/Landing/HeroSection";
 import StatsSection from "@/components/Landing/StatsSection";
-import SpecificSolutions from "@/components/Landing/SpecificSolutions";
 import FeaturesSection from "@/components/Landing/FeaturesSection";
 import DetailedSMS from "@/components/Landing/DetailedSMS";
 import AnalyticsSection from "@/components/Landing/AnalyticsSection";
