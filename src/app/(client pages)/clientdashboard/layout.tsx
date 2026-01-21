@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo } from "react";
@@ -17,12 +16,16 @@ export default function ClientDashboardLayout({
 
   const pricingPage = "/clientdashboard/pricingplan";
 
+  /**
+   * بررسی وضعیت انقضا بر اساس فیلد ended_at (مطابق دیتابیس)
+   */
   const isExpired = useMemo(() => {
     if (isLoading || !dashboardData?.user) return false;
 
     const endedAt = dashboardData.user.ended_at;
 
-  if (!endedAt) return true;
+    // اگر فیلد ended_at خالی باشد (null)، یعنی پلنی برای کاربر ثبت نشده است
+    if (!endedAt) return true;
 
     const now = new Date();
     const expiryDate = new Date(endedAt);
@@ -30,6 +33,16 @@ export default function ClientDashboardLayout({
     // مقایسه زمان فعلی با زمان پایان پلن
     return expiryDate < now;
   }, [dashboardData, isLoading]);
+
+  /**
+   * مدیریت ریدایرکت: اگر منقضی شده بود و در صفحه خرید نبود، ریدایرکت شود
+   */
+  useEffect(() => {
+    if (!isLoading && isExpired && pathname !== pricingPage) {
+      // استفاده از replace برای پاک کردن تاریخچه مرورگر و جلوگیری از برگشت کاربر
+      router.replace(`${pricingPage}?expired=true`);
+    }
+  }, [isExpired, isLoading, pathname, router]);
 
  useEffect(() => {
     if (typeof window === "undefined") return;

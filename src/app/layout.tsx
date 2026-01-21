@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 import Script from "next/script";
-import { GoogleAnalytics } from "@next/third-parties/google";
+// import { GoogleAnalytics } from "@next/third-parties/google";
 
 const yekanBakh = localFont({
   src: [
@@ -96,7 +96,7 @@ export default function RootLayout({
         <Providers>{children}</Providers>
         
         {/* کدهای تحلیلی و چت آنلاین */}
-        <GoogleAnalytics gaId="G-8PVVM0N5SV" />
+        {/* <GoogleAnalytics gaId="G-8PVVM0N5SV" /> */}
         
         {/* اسکریپت گفتینو */}
         <Script id="goftino-widget" strategy="afterInteractive">
