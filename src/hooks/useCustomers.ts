@@ -28,7 +28,7 @@ interface CustomersResponse {
 export const useCustomers = (page: number = 1, search: string = "") => {
   const params = new URLSearchParams({
     page: page.toString(),
-    limit: "20",
+    limit: "500",
     ...(search && { search }),
   });
 
