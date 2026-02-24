@@ -147,7 +147,7 @@ const handlePlanSelection = (planKey: string) => {
 
       {/* مودال تایید پرداخت */}
       {selectedPlanForModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-18 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center p-4 pb-10 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[#242933] w-full max-w-sm rounded-3xl border border-white/10 overflow-hidden shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -172,9 +172,12 @@ const handlePlanSelection = (planKey: string) => {
                   <ShieldCheck className="w-4 h-4 text-emerald-500" />
                   <span>پرداخت امن از طریق درگاه رسمی زیبال</span>
                 </div>
+                 <div className="text-[12px] mt-8 text-gray-400">
+                لطفا در صورتی که فیلترشکن شما فعال است قبل از پرداخت آن را خاموش کنید.
+                  </div>
+    
               </div>
-
-              <button
+          <button
                 onClick={confirmAndPay}
                 disabled={isProcessing}
                 className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-700 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all"
@@ -183,7 +186,7 @@ const handlePlanSelection = (planKey: string) => {
                   <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
                   <>
-                    <span>{selectedPlanForModal.monthly_fee === 0 ? "فعالسازی رایگان" : "اتصال به درگاه پرداخت"}</span>
+                    <span>{selectedPlanForModal.monthly_fee === 0 ? "فعالسازی رایگان" : "تایید و پرداخت نهایی"}</span>
                     <CreditCard className="w-5 h-5" />
                   </>
                 )}

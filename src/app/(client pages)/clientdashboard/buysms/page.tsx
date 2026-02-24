@@ -64,11 +64,13 @@ export default function BuySMSPage() {
             formatPrice={formatPrice}
             currentBalance={totalBalance}
           />
+           
         </div>
+                    
       </header>
 
       {/* محتوای اصلی - اسکرول‌شونده */}
-      <main className="flex-1 overflow-auto pt-[140px] pb-[100px]">
+      <main className="flex-1 overflow-auto pt-[170px] pb-[100px]">
         <div className="max-w-md w-full mx-auto px-4">
           <PackagesGrid
             smsOptions={smsOptions}
@@ -85,6 +87,9 @@ export default function BuySMSPage() {
       {/* دکمه خرید ثابت پایین */}
       <footer className="fixed bottom-0 left-0 right-0 z-20 bg-[#1a1e26] border-t border-white/10 px-4 py-4">
         <div className="max-w-md mx-auto">
+              <div className="text-[11px] my-3 text-gray-400">
+                لطفا در صورتی که فیلترشکن شما فعال است قبل از پرداخت آن را خاموش کنید.
+                  </div>
           <PurchaseButton
             selected={selected}
             loading={isRedirectingToGateway}

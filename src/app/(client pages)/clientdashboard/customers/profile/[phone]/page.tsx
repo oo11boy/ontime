@@ -1,4 +1,3 @@
-// src/app/(client pages)/clientdashboard/customers/profile/[phone]/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -39,14 +38,14 @@ export default function CustomerProfile() {
 
   // Actions State
   const [sendCancellationSms, setSendCancellationSms] = useState(false);
-  const [cancellationMessage, setCancellationMessage] = useState("");
+  const [selectedCancellationTemplateKey, setSelectedCancellationTemplateKey] = useState<string | null>(null);
   const [generalSmsMessage, setGeneralSmsMessage] = useState("");
   const [sendingSms, setSendingSms] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [blocking, setBlocking] = useState(false);
 
   // کنسل کردن نوبت
-  const handleCancelAppointment = async (apptId: number) => {
+  const handleCancelAppointment = async (apptId: number, templateKey?: string | null) => {
     try {
       setCanceling(true);
 
@@ -56,34 +55,39 @@ export default function CustomerProfile() {
         body: JSON.stringify({ id: apptId }),
       });
 
-      if (response.ok) {
-if (sendCancellationSms && cancellationMessage.trim() && customer) {
-  try {
-    await sendSingleSmsMutation.mutateAsync({
-      to_phone: customer.phone,
-      content: cancellationMessage.trim(),
-      sms_type: "cancellation",
-      booking_id: apptId,
-    });
-
-    toast.success("پیامک کنسل کردن نوبت ارسال شد");
-  } catch (error) {
-    toast.error("ارسال پیامک کنسل نوبت با خطا مواجه شد");
-    console.error(error);
-  }
-}
-
-
-        // به‌روزرسانی داده‌ها با React Query
-        await refetch();
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "خطا در کنسل کردن نوبت");
       }
+
+      // اگر پیامک کنسلی بخواهد و template انتخاب شده باشد
+      if (sendCancellationSms && templateKey && customer) {
+        try {
+          await sendSingleSmsMutation.mutateAsync({
+            to_phone: customer.phone,
+            sms_type: "cancellation",
+            booking_id: apptId,
+            template_key: templateKey,
+          });
+
+          toast.success("پیامک کنسل کردن نوبت ارسال شد");
+        } catch (smsError) {
+          toast.error("ارسال پیامک کنسل با خطا مواجه شد");
+          console.error("SMS Error:", smsError);
+        }
+      }
+
+      // به‌روزرسانی لیست
+      await refetch();
+      toast.success("نوبت با موفقیت کنسل شد");
     } catch (error) {
       console.error("Error canceling appointment:", error);
+      toast.error("خطا در کنسل کردن نوبت");
     } finally {
       setCanceling(false);
       setShowCancelModal(null);
       setSendCancellationSms(false);
-      setCancellationMessage("");
+      setSelectedCancellationTemplateKey(null);
     }
   };
 
@@ -100,12 +104,8 @@ if (sendCancellationSms && cancellationMessage.trim() && customer) {
         sms_type: "individual",
       });
 
-   
-
       setShowGeneralSmsModal(false);
       setGeneralSmsMessage("");
-
-      // نیازی به refetch یا چیز دیگه نیست، داده‌ها قبلا آپدیت شده
     } catch (error) {
       toast.error("ارسال پیامک با خطا مواجه شد");
       console.error(error);
@@ -211,11 +211,11 @@ if (sendCancellationSms && cancellationMessage.trim() && customer) {
                 : "border-emerald-500/20"
             } overflow-hidden shadow-2xl m-4`}
           >
-            {customer.is_blocked ?(
+            {customer.is_blocked ? (
               <div className="bg-linear-to-r from-red-600 to-red-700 text-white text-center py-3.5 font-bold text-sm shadow-lg">
                 این مشتری بلاک شده است
               </div>
-            ):""}
+            ) : null}
 
             <CustomerHeader
               customer={customer}
@@ -261,17 +261,16 @@ if (sendCancellationSms && cancellationMessage.trim() && customer) {
           isOpen={showCancelModal !== null}
           appointmentId={showCancelModal}
           sendCancellationSms={sendCancellationSms}
-          cancellationMessage={cancellationMessage}
           canceling={canceling}
           onClose={() => {
             setShowCancelModal(null);
             setSendCancellationSms(false);
-            setCancellationMessage("");
+            setSelectedCancellationTemplateKey(null);
           }}
           onToggleSmsCheckbox={setSendCancellationSms}
-          onMessageChange={setCancellationMessage}
+          onTemplateSelect={setSelectedCancellationTemplateKey}
           onCancelAppointment={() =>
-            showCancelModal && handleCancelAppointment(showCancelModal)
+            showCancelModal && handleCancelAppointment(showCancelModal, selectedCancellationTemplateKey)
           }
         />
 
@@ -291,7 +290,6 @@ if (sendCancellationSms && cancellationMessage.trim() && customer) {
           onConfirm={handleUnblockCustomer}
         />
       </div>
-
     </div>
   );
 }

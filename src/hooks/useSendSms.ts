@@ -4,11 +4,12 @@ import { toast } from "react-hot-toast";
 
 // --- اینترفیس‌های مربوط به ارسال تکی ---
 interface SendSinglePayload {
-  to_phone: string;
-  content: string;
+to_phone: string;
+  content?: string;               // اختیاری شد
   sms_type?: string;
   booking_id?: number | null;
-}
+  template_key?: string | null;   // ← اضافه کن
+  }
 
 /**
  * هوک ارسال پیامک تکی
