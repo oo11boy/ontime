@@ -37,7 +37,7 @@ export default function PricingPlans() {
   const { data: dashboardData } = useDashboard();
   const { mutate: purchasePlan, isPending: isActivatingFree } = usePurchasePlan();
   const { startPayment, isPending: isRedirectingToGateway } = usePayment();
-
+const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePlanKey, setActivePlanKey] = useState<string>("");
   const [hasUsedFreeTrial, setHasUsedFreeTrial] = useState<boolean>(false);
@@ -134,7 +134,15 @@ const handlePlanSelection = (planKey: string) => {
         )}
 
         <HeaderSection />
-
+<div className="flex justify-center mb-8">
+  <button 
+    onClick={() => setShowComparisonModal(true)}
+    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm text-emerald-400 font-medium"
+  >
+    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+    تفاوت پلن‌ها در چیست؟ (راهنمای خرید)
+  </button>
+</div>
         <PlansList
           plans={processedPlans}
           activePlanKey={activePlanKey}
@@ -204,7 +212,53 @@ const handlePlanSelection = (planKey: string) => {
           </div>
         </div>
       )}
-
+{showComparisonModal && (
+  <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="bg-[#242933] w-full max-w-sm rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300">
+      <div className="p-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/20 rounded-xl">
+              <ShieldCheck className="w-6 h-6 text-emerald-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white">کدام پلن به‌صرفه‌تر است؟</h3>
+          </div>
+          <button onClick={() => setShowComparisonModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+            <X className="w-6 h-6 text-gray-400" />
+          </button>
+        </div>
+<div className="space-y-6 text-right leading-relaxed">
+          <p className="text-gray-300 text-sm">
+            خیلی ساده و خودمانی بخوام بگم، قیمت هر ۱۰۰ پیامک در تمام پلن‌ها <span className="text-white font-bold">۴۵ هزار تومنه</span>، اما راز صرفه‌جویی در <span className="text-emerald-400 font-bold">تعداد هدیه‌هاست!</span>
+          </p>
+<div className="bg-white/5 p-5 rounded-3xl border border-white/5 space-y-4">
+            <p className="text-xs text-gray-400">یک مثال واقعی:</p>
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-400 font-light">پلن پایه 150 پیامکی + خرید جداگانه 300 پیامک:</span>
+                <span className="text-red-400">۳۲۵,۰۰۰ تومان</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-bold">
+                <span className="text-gray-400 font-light">خرید مستقیم پلن طلایی دارای 450 پیامک:</span>
+                <span className="text-emerald-400 text-lg">۲۸۰,۰۰۰ تومان</span>
+              </div>
+            </div>
+          </div>
+<p className="text-gray-400 text-[13px] bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
+            💡 <span className="text-emerald-400">نتیجه‌گیری:</span> با انتخاب پلن بالاتر (مثل طلایی یا الماس)، شما پیامک‌ها را با تخفیف بسیار بالایی پیش‌خرید می‌کنید و دیگر نیازی به خرید بسته‌های گران‌قیمت شارژ مجدد ندارید.
+          </p>
+        </div>
+<button
+          onClick={() => setShowComparisonModal(false)}
+          className="w-full mt-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold text-white transition-all"
+        >
+          متوجه شدم
+        </button>
+      </div>
+    </div>
+  </div>
+  )}
+    
       <Footer />
     </div>
   );
