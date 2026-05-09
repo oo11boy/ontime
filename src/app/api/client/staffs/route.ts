@@ -48,14 +48,14 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     }
 
     // دریافت لیست همه پرسنل
-const staffs = await query<any>(
-  `SELECT s.*,
-   (SELECT COUNT(*) FROM booking WHERE staff_id = s.id AND status = 'active') as active_bookings
-   FROM staffs s
-   WHERE s.owner_user_id = ? AND s.is_active = 1
-   ORDER BY s.created_at DESC`,
-  [userId]
-);
+    const staffs = await query<any>(
+      `SELECT s.*,
+       (SELECT COUNT(*) FROM booking WHERE staff_id = s.id AND status = 'active') as active_bookings
+       FROM staffs s
+       WHERE s.owner_user_id = ? AND s.is_active = 1
+       ORDER BY s.created_at DESC`,
+      [userId]
+    );
 
     // دریافت نام سرویس‌ها برای هر پرسنل
     const staffsWithServices = await Promise.all(
@@ -101,7 +101,6 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       can_see_all_clients = false,
     } = body;
 
-    // اعتبارسنجی
     if (!name || !phone) {
       return NextResponse.json(
         { message: "نام و شماره تماس پرسنل الزامی است" },
@@ -109,17 +108,24 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // بررسی شماره تکراری
+    // بررسی شماره تکراری - حتی اگر غیرفعال باشد
     const existing = await query<any>(
-      "SELECT id FROM staffs WHERE owner_user_id = ? AND phone = ? AND is_active = 1",
-      [userId, phone],
+      "SELECT id, is_active FROM staffs WHERE owner_user_id = ? AND phone = ?",
+      [userId, phone]
     );
 
     if (existing.length > 0) {
-      return NextResponse.json(
-        { message: "این شماره قبلاً به عنوان پرسنل ثبت شده است" },
-        { status: 409 },
-      );
+      if (existing[0].is_active === 1) {
+        return NextResponse.json(
+          { message: "این شماره قبلاً به عنوان پرسنل فعال ثبت شده است" },
+          { status: 409 },
+        );
+      } else {
+        return NextResponse.json(
+          { message: "این شماره قبلاً به عنوان پرسنل ثبت شده است. در صورت نیاز با پشتیبانی تماس بگیرید." },
+          { status: 409 },
+        );
+      }
     }
 
     // بررسی مالکیت service_ids
@@ -165,9 +171,9 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       // ایجاد پرسنل
       const [result]: any = await connection.query(
         `INSERT INTO staffs 
-         (owner_user_id, name, phone, sms_balance, service_ids, calendar_type, 
+         (owner_user_id, name, phone, sms_balance, sms_used, service_ids, calendar_type, 
           can_see_all_clients, is_active, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())`,
+         VALUES (?, ?, ?, ?, 0, ?, ?, ?, 1, NOW())`,
         [
           userId,
           name.trim(),
@@ -267,6 +273,22 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
     const oldStaff = staff[0];
     const oldBalance = oldStaff.sms_balance;
+    const oldUsed = oldStaff.sms_used || 0;
+
+    // بررسی شماره تکراری هنگام تغییر شماره
+    if (phone !== undefined && phone !== oldStaff.phone) {
+      const existingPhone = await query<any>(
+        "SELECT id FROM staffs WHERE owner_user_id = ? AND phone = ? AND id != ?",
+        [userId, phone, id]
+      );
+      
+      if (existingPhone.length > 0) {
+        return NextResponse.json(
+          { message: "این شماره قبلاً به عنوان پرسنل دیگر ثبت شده است" },
+          { status: 409 },
+        );
+      }
+    }
 
     // بررسی مالکیت service_ids
     if (service_ids !== undefined && service_ids !== null) {
@@ -286,7 +308,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
       }
     }
 
-    // ساخت کوئری داینامیک
+    // ساخت کوئری داینامیک برای فیلدهای ساده
     const updates: string[] = [];
     const values: any = [];
 
@@ -315,16 +337,27 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
       values.push(can_see_all_clients ? 1 : 0);
     }
 
-    // تغییر اعتبار
-    const needBalanceUpdate =
-      sms_balance !== undefined && sms_balance !== oldBalance;
+    // محاسبه اعتبار جدید بر اساس مصرف شده
+    const needBalanceUpdate = sms_balance !== undefined;
+    let newBalance = oldBalance;
+    
+    if (needBalanceUpdate) {
+      const newTotalBalance = parseInt(String(sms_balance)) || 0;
+      newBalance = newTotalBalance - oldUsed;
+      if (newBalance < 0) {
+        return NextResponse.json(
+          { message: `اعتبار جدید نمی‌تواند کمتر از میزان مصرف شده (${oldUsed}) باشد` },
+          { status: 400 },
+        );
+      }
+    }
 
     const pool = (await import("@/lib/db")).dbPool;
     let connection;
     let useTransaction = needBalanceUpdate || updates.length > 0;
 
     try {
-      if (useTransaction && (needBalanceUpdate || updates.length > 0)) {
+      if (useTransaction) {
         connection = await pool.getConnection();
         await connection.query("START TRANSACTION");
       }
@@ -341,91 +374,83 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
       // تغییر اعتبار
       if (needBalanceUpdate) {
-        const newBalance = parseInt(String(sms_balance)) || 0;
         const balanceDiff = newBalance - oldBalance;
 
-        if (balanceDiff > 0) {
-          // افزایش اعتبار پرسنل
+        if (balanceDiff !== 0) {
           const user = await query<any>(
             "SELECT sms_balance FROM users WHERE id = ?",
             [userId],
           );
-          const userBalance = user[0]?.sms_balance || 0;
+          let userBalance = user[0]?.sms_balance || 0;
 
-          if (userBalance < balanceDiff) {
-            if (connection) await connection.query("ROLLBACK");
-            if (connection) connection.release();
-            return NextResponse.json(
-              {
-                message: `اعتبار کافی نیست. نیاز به ${balanceDiff} پیامک بیشتر`,
-              },
-              { status: 400 },
+          if (balanceDiff > 0) {
+            // افزایش اعتبار پرسنل -> از حساب رییس کم می‌شود
+            if (userBalance < balanceDiff) {
+              if (connection) await connection.query("ROLLBACK");
+              if (connection) connection.release();
+              return NextResponse.json(
+                { message: `اعتبار کافی نیست. نیاز به ${balanceDiff} پیامک بیشتر` },
+                { status: 400 },
+              );
+            }
+
+            await (connection || pool).query(
+              "UPDATE users SET sms_balance = sms_balance - ? WHERE id = ?",
+              [balanceDiff, userId],
+            );
+
+            await (connection || pool).query(
+              `INSERT INTO credit_transfer_log 
+               (from_user_id, to_user_id, amount, reason, related_staff_id, 
+                from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
+               VALUES (?, ?, ?, 'manual_increase', ?, ?, ?, ?, ?, NOW())`,
+              [
+                userId,
+                id,
+                balanceDiff,
+                id,
+                userBalance,
+                userBalance - balanceDiff,
+                oldBalance,
+                newBalance,
+              ],
+            );
+          } else if (balanceDiff < 0) {
+            // کاهش اعتبار پرسنل -> به حساب رییس برمی‌گردد
+            const refundAmount = Math.abs(balanceDiff);
+            
+            await (connection || pool).query(
+              "UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?",
+              [refundAmount, userId],
+            );
+
+            await (connection || pool).query(
+              `INSERT INTO credit_transfer_log 
+               (from_user_id, to_user_id, amount, reason, related_staff_id, 
+                from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
+               VALUES (?, ?, ?, 'manual_decrease', ?, ?, ?, ?, ?, NOW())`,
+              [
+                id,
+                userId,
+                refundAmount,
+                id,
+                oldBalance,
+                newBalance,
+                userBalance,
+                userBalance + refundAmount,
+              ],
             );
           }
 
-          await (connection || pool).query(
-            "UPDATE users SET sms_balance = sms_balance - ? WHERE id = ?",
-            [balanceDiff, userId],
-          );
+          // به‌روزرسانی sms_balance در staffs
           await (connection || pool).query(
             "UPDATE staffs SET sms_balance = ? WHERE id = ?",
             [newBalance, id],
-          );
-
-          await (connection || pool).query(
-            `INSERT INTO credit_transfer_log 
-             (from_user_id, to_user_id, amount, reason, related_staff_id, 
-              from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
-             VALUES (?, ?, ?, 'manual_increase', ?, ?, ?, ?, ?, NOW())`,
-            [
-              userId,
-              id,
-              balanceDiff,
-              id,
-              userBalance,
-              userBalance - balanceDiff,
-              oldBalance,
-              newBalance,
-            ],
-          );
-        } else if (balanceDiff < 0) {
-          // کاهش اعتبار پرسنل
-          const refundAmount = Math.abs(balanceDiff);
-          const user = await query<any>(
-            "SELECT sms_balance FROM users WHERE id = ?",
-            [userId],
-          );
-          const userBalance = user[0]?.sms_balance || 0;
-
-          await (connection || pool).query(
-            "UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?",
-            [refundAmount, userId],
-          );
-          await (connection || pool).query(
-            "UPDATE staffs SET sms_balance = ? WHERE id = ?",
-            [newBalance, id],
-          );
-
-          await (connection || pool).query(
-            `INSERT INTO credit_transfer_log 
-             (from_user_id, to_user_id, amount, reason, related_staff_id, 
-              from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
-             VALUES (?, ?, ?, 'manual_decrease', ?, ?, ?, ?, ?, NOW())`,
-            [
-              id,
-              userId,
-              refundAmount,
-              id,
-              oldBalance,
-              newBalance,
-              userBalance,
-              userBalance + refundAmount,
-            ],
           );
         }
       }
 
-      if (useTransaction && connection) {
+      if (connection) {
         await connection.query("COMMIT");
         connection.release();
       }
@@ -435,7 +460,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
         message: "پرسنل با موفقیت ویرایش شد",
       });
     } catch (err) {
-      if (useTransaction && connection) {
+      if (connection) {
         await connection.query("ROLLBACK");
         connection.release();
       }
@@ -477,7 +502,7 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
     }
 
     const staffData = staff[0];
-    const staffBalance = staffData.sms_balance;
+    const remainingBalance = staffData.sms_balance;
 
     // بررسی نوبت‌های فعال
     const activeBookings = await query<any>(
@@ -500,7 +525,7 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
     try {
       await connection.query("START TRANSACTION");
 
-      if (staffBalance > 0) {
+      if (remainingBalance > 0) {
         const user = await query<any>(
           "SELECT sms_balance FROM users WHERE id = ?",
           [userId],
@@ -509,7 +534,7 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
 
         await connection.query(
           "UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?",
-          [staffBalance, userId],
+          [remainingBalance, userId],
         );
 
         await connection.query(
@@ -520,16 +545,17 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
           [
             id,
             userId,
-            staffBalance,
+            remainingBalance,
             id,
-            staffBalance,
+            remainingBalance,
             0,
             userBalance,
-            userBalance + staffBalance,
+            userBalance + remainingBalance,
           ],
         );
       }
 
+      // حذف فیزیکی پرسنل (به جای غیرفعال کردن)
       await connection.query(
         "DELETE FROM staffs WHERE id = ? AND owner_user_id = ?",
         [id, userId],
@@ -541,7 +567,7 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
       return NextResponse.json({
         success: true,
         message: "پرسنل با موفقیت حذف شد",
-        refunded_sms: staffBalance,
+        refunded_sms: remainingBalance,
       });
     } catch (err) {
       await connection.query("ROLLBACK");

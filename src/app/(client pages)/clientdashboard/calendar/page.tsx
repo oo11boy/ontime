@@ -17,6 +17,7 @@ import { useSmsBalance } from "@/hooks/useSmsBalance";
 import { useSendBulkSms } from "@/hooks/useSendSms";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BulkSmsModal } from "../BulkSmsModal";
+import { useUserType } from "@/hooks/useUserType";
 
 interface CalendarDay {
   date: Date;
@@ -40,6 +41,7 @@ interface Service {
 }
 
 export default function CalendarPage() {
+    const { userType } = useUserType();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -246,7 +248,7 @@ export default function CalendarPage() {
           )}
         </div>
       </div>
-      <Footer />
+      <Footer userType={userType}/>
 
       {selectedAppointment && (
         <AppointmentDetailModal

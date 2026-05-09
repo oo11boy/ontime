@@ -13,6 +13,7 @@ import {
   useDeleteService,
   useToggleService,
 } from "@/hooks/useServices";
+import { useUserType } from "@/hooks/useUserType";
 
 interface Service {
   id: number;
@@ -35,6 +36,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   onRefresh,
   isLoading,
 }) => {
+    const { userType } = useUserType();
   const [isForcingSpin, setIsForcingSpin] = useState(false);
 
   const handleRefreshClick = () => {
@@ -63,7 +65,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               />
             </button>
 
-            <button
+         <button
               onClick={onAddClick}
               className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 transition text-white"
             >
@@ -78,7 +80,8 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 
 // --- کامپوننت اصلی صفحه ---
 export default function ServicesListPage() {
-  const router = useRouter();
+    const { userType } = useUserType();
+
 
   const { 
     data: servicesData, 
@@ -229,6 +232,7 @@ export default function ServicesListPage() {
 
       <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-24">
         <HeaderSection 
+      
           onAddClick={openAddModal} 
           onRefresh={() => fetchServices()} 
           isLoading={isLoading || isFetching} 
@@ -261,7 +265,7 @@ export default function ServicesListPage() {
         />
       </div>
 
-      <Footer />
+      <Footer userType={userType}/>
     </div>
   );
 }

@@ -13,6 +13,7 @@ interface DashboardStatusWidgetProps {
   planInitialSms: number;
   planSmsBalance: number;
   purchasedPackages: any[];
+  userType:"user" | "staff" | null
 }
 
 const formatFa = (num: number) => num.toLocaleString("fa-IR");
@@ -23,6 +24,7 @@ export const DashboardStatusWidget: React.FC<DashboardStatusWidgetProps> = ({
   planInitialSms,
   planSmsBalance,
   purchasedPackages,
+  userType
 }) => {
   const [showSmsDetails, setShowSmsDetails] = useState(false);
   const { balance: totalRemainingSms, isLoading } = useSmsBalance();
@@ -68,13 +70,13 @@ export const DashboardStatusWidget: React.FC<DashboardStatusWidgetProps> = ({
                 {remainingDays !== null && remainingDays > 0 ? `${formatFa(remainingDays)} روز اعتبار` : "منقضی شده"}
               </span>
             </div>
-
-            <Link href="/clientdashboard/pricingplan">
+{userType =="user" && <Link href="/clientdashboard/pricingplan">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full bg-indigo-500/10 border border-indigo-500/20 py-2.5 rounded-2xl flex items-center justify-center gap-2 group transition-all">
                 <Sparkles size={14} className="text-indigo-400 group-hover:animate-pulse" />
                 <span className="text-[11px] font-black text-indigo-100">ارتقای پلن</span>
               </motion.div>
-            </Link>
+            </Link>}
+            
           </div>
 
           {/* بخش موجودی پیامک */}
@@ -89,12 +91,12 @@ export const DashboardStatusWidget: React.FC<DashboardStatusWidgetProps> = ({
                   <span className="text-[11px] font-bold text-slate-500">پیامک</span>
                 </div>
               </div>
-              <button 
+            {userType=="user" && <button 
                 onClick={() => setShowSmsDetails(true)} 
                 className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
               >
                 <ChevronDown size={18} className="text-slate-400" />
-              </button>
+              </button>}  
             </div>
 
             {/* نوار پیشرفت هوشمند */}
@@ -122,7 +124,7 @@ export const DashboardStatusWidget: React.FC<DashboardStatusWidgetProps> = ({
               )}
             </div>
 
-            <Link href="/clientdashboard/buysms">
+         {userType =="user" &&  <Link href="/clientdashboard/buysms">
               <motion.div 
                 whileHover={{ scale: 1.02 }} 
                 whileTap={{ scale: 0.98 }} 
@@ -131,7 +133,7 @@ export const DashboardStatusWidget: React.FC<DashboardStatusWidgetProps> = ({
                 <Plus size={16} strokeWidth={4} className="text-emerald-950" />
                 <span className="text-xs font-black text-emerald-950">خرید بسته پیامک</span>
               </motion.div>
-            </Link>
+            </Link>}  
           </div>
 
         </div>

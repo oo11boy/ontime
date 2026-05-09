@@ -2,6 +2,7 @@
 import React from "react";
 import { RefreshCw, X, Scissors, PlusCircle, Edit3 } from "lucide-react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
+import { useUserType } from "@/hooks/useUserType";
 
 // --- Variants برای انیمیشن‌های استاندارد ---
 const overlayVariants: Variants = {
@@ -52,6 +53,8 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   onFormChange,
   onSubmit,
 }) => {
+
+    const { userType } = useUserType();
   return (
     <AnimatePresence>
       {isOpen && (
@@ -67,7 +70,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           />
 
           {/* Modal Content */}
-          <motion.div
+       {userType=="user" ? <motion.div
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -166,7 +169,19 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 )}
               </button>
             </div>
-          </motion.div>
+          </motion.div>:
+          <motion.div
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="relative bg-[#1a1e26] w-full max-w-sm rounded-[2.5rem] p-7 border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
+          >
+            {/* دکوراسیون پس‌زمینه (نور ملایم) */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 blur-[80px] -z-10 rounded-full" />
+برای افزودن یا ویرایش خدمات با مدیریت مجموعه ارتباط بگیرید.
+</motion.div>
+          }   
         </div>
       )}
     </AnimatePresence>

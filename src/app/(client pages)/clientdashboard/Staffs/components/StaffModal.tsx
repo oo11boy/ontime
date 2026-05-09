@@ -167,7 +167,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
               {/* اعتبار پیامک */}
               <div>
                 <label className="text-xs font-bold text-gray-400 mr-2 block mb-2">
-                  اعتبار پیامک (تعداد)
+             {editData ? "تعداد پیامک های باقیمانده" : "تعداد پیامک های اولیه"}      
                 </label>
                 <input
                   type="number"

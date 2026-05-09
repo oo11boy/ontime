@@ -25,6 +25,7 @@ import SmsBalanceSection from "./components/SmsBalanceSection";
 import ModalManager from "./components/ModalManager";
 import SubmitButton from "./components/SubmitButton";
 import UnblockCustomerModal from "./components/UnblockCustomerModal";
+import { useUserType } from "@/hooks/useUserType";
 
 const STORAGE_KEY = "booking_form_draft";
 
@@ -40,6 +41,8 @@ const formatPreviewMessage = (text: string) =>
     : "";
 
 export default function NewAppointmentPage() {
+
+    const { userType } = useUserType();
   const router = useRouter();
   const queryClient = useQueryClient();
   const today = useMemo(() => getTodayJalali(), []);
@@ -691,7 +694,7 @@ onSuccess: () => {
         reminderTemplates={reminderTemplates}
       />
 
-      <Footer />
+      <Footer userType={userType}/>
     </div>
   );
 }

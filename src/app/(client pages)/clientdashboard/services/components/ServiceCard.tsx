@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Scissors, Edit2, Trash2, Tag, Clock, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUserType } from "@/hooks/useUserType";
 
 // --- اینترفیس‌های مورد نیاز ---
 interface Service {
@@ -84,6 +85,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   onEdit,
   onDelete,
 }) => {
+
+    const { userType } = useUserType();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleConfirmDelete = () => {
@@ -138,7 +141,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
           </div>
 
           {/* دکمه فعال/غیرفعال */}
-          <button
+         {userType =="user" && <button
             onClick={() => onToggleStatus(service.id, service.is_active)}
             className={`p-2.5 rounded-[14px] transition-all active:scale-90 ${
               service.is_active 
@@ -147,13 +150,13 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
             }`}
           >
             {service.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-          </button>
+          </button>} 
         </div>
 
         {/* جداکننده */}
         <div className="my-5 border-t border-white/5" />
 
-        <div className="flex items-center justify-between relative z-10">
+       {userType=="user" && <div className="flex items-center justify-between relative z-10">
           <div className="flex gap-2.5">
             <button
               onClick={() => onEdit(service)}
@@ -176,7 +179,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
           }`}>
             {service.is_active ? "Active" : "Inactive"}
           </span>
-        </div>
+        </div>} 
       </motion.div>
 
       {/* مودال تایید حذف */}

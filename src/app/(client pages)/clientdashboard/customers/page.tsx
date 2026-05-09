@@ -12,8 +12,10 @@ import { useSendBulkSms } from "@/hooks/useSendSms";
 import { useSmsBalance } from "@/hooks/useSmsBalance";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BulkSmsModal } from "../BulkSmsModal";
+import { useUserType } from "@/hooks/useUserType";
 
 export default function CustomersList() {
+    const { userType } = useUserType();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [showBulkSmsModal, setShowBulkSmsModal] = useState(false);
@@ -138,7 +140,7 @@ export default function CustomersList() {
         </div>
       </div>
 
-      <Footer />
+      <Footer userType={userType}/>
 
       <AddClientModal
         isOpen={showAddClientModal}

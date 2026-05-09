@@ -192,7 +192,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="text-center flex-1">
-              <p className="text-[10px] text-gray-500">اعتبار اولیه</p>
+              <p className="text-[10px] text-gray-500">تعداد کل پیامک ها</p>
               <p className="text-white font-bold text-sm">
                 {formatNumber(totalSms)}
               </p>

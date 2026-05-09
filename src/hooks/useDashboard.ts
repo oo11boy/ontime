@@ -13,21 +13,35 @@ export interface PurchasedPackage {
 
 interface DashboardData {
   user: {
-    quota_ends_at: any;
-    has_used_free_trial: boolean;
+    // فیلدهای عمومی
+    id?: number;
     name: string;
     phone: string;
-    job_title: string;
+    job_title?: string;
     sms_balance: number;
     purchased_sms_credit: number;
     total_sms_balance: number;
     sms_monthly_quota: number;
     plan_title: string;
     plan_key: string;
-    ended_at:string;
+    ended_at: string | null;
+    quota_ends_at: string | null;
+    started_at?: string | null;
     trial_ends_at: string | null;
     price_per_100_sms: number;
-    purchased_packages?: PurchasedPackage[] | null; // ← اضافه شد
+    purchased_packages?: PurchasedPackage[] | null;
+    has_used_free_trial?: boolean;
+    // فیلدهای مخصوص پرسنل
+    role?: string;
+    staff_id?: number;
+    owner_id?: number;
+    owner_name?: string;
+    business_name?: string;
+    calendar_type?: string;
+    can_see_all_clients?: boolean;
+    service_ids?: string | null;
+    sms_used?: number;
+    owner_plan_active?: boolean;
   };
 }
 
