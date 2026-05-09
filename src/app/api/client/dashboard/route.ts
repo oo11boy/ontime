@@ -13,7 +13,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     // ابتدا چک می‌کنیم آیا زمان تمدید ۱۵۰ پیامک ماهانه رسیده است یا خیر
     const userStatus = await query<any>(
       "SELECT sms_monthly_quota, quota_ends_at, ended_at FROM users WHERE id = ?",
-      [userId]
+      [userId],
     );
 
     if (userStatus.length > 0) {
@@ -38,7 +38,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
                quota_starts_at = ?, 
                quota_ends_at = ? 
            WHERE id = ?`,
-          [sms_monthly_quota, todayStr, nextQuotaStr, userId]
+          [sms_monthly_quota, todayStr, nextQuotaStr, userId],
         );
 
         // ثبت یک تراکنش سیستمی برای سوابق تمدید
@@ -46,7 +46,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
           `INSERT INTO smspurchase 
            (user_id, type, amount_paid, sms_amount, valid_from, valid_until, status)
            VALUES (?, 'monthly_renewal', 0, ?, ?, ?, 'active')`,
-          [userId, sms_monthly_quota, todayStr, nextQuotaStr]
+          [userId, sms_monthly_quota, todayStr, nextQuotaStr],
         );
       }
     }
@@ -121,7 +121,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     console.error("Dashboard data error:", error);
     return NextResponse.json(
       { message: "Failed to fetch dashboard data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 });
