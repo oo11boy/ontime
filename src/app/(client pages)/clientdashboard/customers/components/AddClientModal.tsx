@@ -23,24 +23,16 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      return toast.custom((t) => (
-        <div className="bg-red-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-          <X className="w-6 h-6" />
-          <span>نام مشتری را وارد کنید</span>
-        </div>
-      ));
+      toast.error("نام مشتری را وارد کنید");
+      return;
     }
 
     const cleanPhone = phone.replace(/\D/g, "");
     const normalizedPhone = cleanPhone.slice(-10);
 
     if (normalizedPhone.length !== 10 || !/^[9][0-9]{9}$/.test(normalizedPhone)) {
-      return toast.custom((t) => (
-        <div className="bg-red-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-          <X className="w-6 h-6" />
-          <span>شماره تلفن معتبر وارد کنید (مثلاً 09123456789)</span>
-        </div>
-      ));
+      toast.error("شماره تلفن معتبر وارد کنید (مثلاً 09123456789)");
+      return;
     }
 
     setIsSubmitting(true);
@@ -54,33 +46,21 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
 
       const result = await res.json();
 
-      if (result.success) {
-        toast.custom((t) => (
-          <div className="bg-emerald-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-            <User className="w-6 h-6" />
-            <span>{result.message || "مشتری با موفقیت ثبت شد"}</span>
-          </div>
-        ));
-        onSuccess();
-        resetAndClose();
+      if (res.ok && result.success) {
+        toast.success(result.message || "مشتری با موفقیت ثبت شد");
+        // کمی تاخیر برای اطمینان از ثبت در دیتابیس
+        setTimeout(() => {
+          onSuccess();
+          resetAndClose();
+        }, 500);
       } else if (res.status === 409) {
         handleDuplicatePhone(result.existingName, normalizedPhone);
       } else {
-        toast.custom((t) => (
-          <div className="bg-red-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-            <X className="w-6 h-6" />
-            <span>{result.message || "خطا در ثبت مشتری"}</span>
-          </div>
-        ));
+        toast.error(result.message || "خطا در ثبت مشتری");
       }
     } catch (e) {
       console.error("Error:", e);
-      toast.custom((t) => (
-        <div className="bg-red-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-          <X className="w-6 h-6" />
-          <span>خطا در ارتباط با سرور</span>
-        </div>
-      ));
+      toast.error("خطا در ارتباط با سرور");
     } finally {
       setIsSubmitting(false);
     }
@@ -117,6 +97,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
   };
 
   const handleUpdateName = async (normalizedPhone: string) => {
+    setIsSubmitting(true);
     try {
       const updateRes = await fetch("/api/client/customers", {
         method: "PATCH",
@@ -126,19 +107,18 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
 
       const updateResult = await updateRes.json();
       if (updateResult.success) {
-        toast.custom((tt) => (
-          <div className="bg-emerald-600/90 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-            <User className="w-6 h-6" />
-            <span>نام مشتری با موفقیت به‌روزرسانی شد</span>
-          </div>
-        ));
-        onSuccess();
-        resetAndClose();
+        toast.success("نام مشتری با موفقیت به‌روزرسانی شد");
+        setTimeout(() => {
+          onSuccess();
+          resetAndClose();
+        }, 500);
       } else {
         toast.error(updateResult.message || "خطا در به‌روزرسانی");
       }
     } catch (e) {
       toast.error("خطا در ارتباط با سرور");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

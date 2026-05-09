@@ -1,8 +1,9 @@
+// hooks/useUserType.ts
 import { useEffect, useState } from "react";
 
-// هوک ساده برای گرفتن نوع کاربر از کوکی
 export function useUserType() {
   const [userType, setUserType] = useState<"user" | "staff" | null>(null);
+  const [staffId, setStaffId] = useState<string | null>(null);
   const [staffName, setStaffName] = useState<string>("");
 
   useEffect(() => {
@@ -17,9 +18,10 @@ export function useUserType() {
     setUserType(type);
     
     if (type === "staff") {
+      setStaffId(getCookie("staff_id"));
       setStaffName(getCookie("staff_name") || "پرسنل");
     }
   }, []);
 
-  return { userType, staffName };
+  return { userType, staffId, staffName };
 }

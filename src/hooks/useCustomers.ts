@@ -1,7 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useApiQuery, useApiMutation } from "./useApi";
+import { useUserType } from "./useUserType";
 
-// اینترفیس‌ها همان قبلی‌ها هستند
+// اینترفیس‌ها
 interface Client {
   id: string;
   name: string;
@@ -12,6 +13,7 @@ interface Client {
   is_blocked: boolean;
   last_booking_date: string;
   last_booking_time: string;
+  bookings_with_this_staff?: number; // برای پرسنل
 }
 
 interface CustomersResponse {
@@ -23,19 +25,27 @@ interface CustomersResponse {
     total: number;
     totalPages: number;
   };
+  staffInfo?: {
+    can_see_all_clients: boolean;
+  };
 }
 
 export const useCustomers = (page: number = 1, search: string = "") => {
+  const { userType, staffId } = useUserType();
+
   const params = new URLSearchParams({
     page: page.toString(),
-    limit: "500",
+    limit: "20",
     ...(search && { search }),
   });
 
+  // اضافه کردن staffId به queryKey برای ریفرش صحیح
+  const queryKey = ["customers", page, search, userType, staffId];
+
   return useApiQuery<CustomersResponse>(
-    ["customers", search],
+    queryKey,
     `/api/client/customers?${params}`,
-    { staleTime: 2 * 60 * 1000 }
+    { staleTime: 2 * 60 * 1000 },
   );
 };
 
@@ -64,21 +74,29 @@ export interface CustomerProfileResponse {
 }
 
 export const useCustomerProfile = (phone: string) => {
+  const { userType, staffId } = useUserType();
+
   return useApiQuery<CustomerProfileResponse>(
-    ["customer", phone],
+    ["customer", phone, userType, staffId],
     `/api/client/customers/${phone}`,
-    { enabled: !!phone }
+    { enabled: !!phone },
   );
 };
 
 export const useCheckCustomer = (onSuccessCallback?: (data: any) => void) => {
+  const { userType, staffId } = useUserType();
+
   return useMutation({
     mutationFn: async (phone: string) => {
-      // استخراج ۱۰ رقم آخر برای هماهنگی با دیتابیس
       const cleanedPhone = phone.replace(/\D/g, "").slice(-10);
-      const res = await fetch(
-        `/api/client/customers/checkcustomerexist?phone=${encodeURIComponent(cleanedPhone)}`
-      );
+      let url = `/api/client/customers/checkcustomerexist?phone=${encodeURIComponent(cleanedPhone)}`;
+
+      // اگر پرسنل است، staffId را هم ارسال کن
+      if (userType === "staff" && staffId) {
+        url += `&staffId=${staffId}`;
+      }
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       return res.json();
     },
@@ -89,7 +107,14 @@ export const useCheckCustomer = (onSuccessCallback?: (data: any) => void) => {
 };
 
 export const useBlockCustomer = () => {
-  return useApiMutation("POST", "/api/client/customers", [
-    ["customers"],
-  ]);
+  return useApiMutation("POST", "/api/client/customers", [["customers"]]);
+};
+
+// هوک برای دریافت مشتریان یک پرسنل خاص (برای استفاده در پنل پرسنل)
+export const useStaffCustomers = (staffId: number | null) => {
+  return useApiQuery<CustomersResponse>(
+    ["staff-customers", staffId],
+    staffId ? `/api/client/staffs/clients?staffId=${staffId}` : null,
+    { enabled: !!staffId },
+  );
 };
