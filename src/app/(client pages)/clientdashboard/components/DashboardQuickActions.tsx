@@ -27,7 +27,6 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
   userType,
 }) => {
   const [showModal, setShowModal] = useState(false);
-  
 
   const router = useRouter();
 
@@ -40,25 +39,24 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
   };
 
   const actions = [
-{
-  id: "tickets",
-  label: "ارتباط با ما",
-  icon: MessageCircle,
-  href: "/clientdashboard/support-tickets",
-  color: "#8b5cf6",
-  bg: "rgba(139,92,246,0.1)",
-},
-  
-
     {
-      id: 4,
-      label: "افزودن پرسنل",
-      icon: UserPlus,
-        href: "./clientdashboard/Staffs",
+      id: "tickets",
+      label: "ارتباط با ما",
+      icon: MessageCircle,
+      href: "/clientdashboard/support-tickets",
       color: "#8b5cf6",
       bg: "rgba(139,92,246,0.1)",
     },
-      {
+
+    {
+      id: 4,
+      label: "مدیریت پرسنل",
+      icon: UserPlus,
+      href: "./clientdashboard/Staffs",
+      color: "#8b5cf6",
+      bg: "rgba(139,92,246,0.1)",
+    },
+    {
       id: 2,
       label: "آموزش",
       icon: GraduationCap,
@@ -66,7 +64,7 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       color: "#f59e0b",
       bg: "rgba(245,158,11,0.1)",
     },
-      {
+    {
       id: 7,
       label: "اطلاعات بیزنس",
       icon: Building2,
@@ -75,13 +73,13 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       bg: "rgba(6,182,212,0.1)",
     },
     {
-  id: "sms-suggestions",
-  label: "پیشنهاد متن پیام",
-  icon: FileText,
-  href: "/clientdashboard/sms-suggestions",
-  color: "#10b981",
-  bg: "rgba(16,185,129,0.1)",
-},
+      id: "sms-suggestions",
+      label: "پیشنهاد متن پیام",
+      icon: FileText,
+      href: "/clientdashboard/sms-suggestions",
+      color: "#10b981",
+      bg: "rgba(16,185,129,0.1)",
+    },
     {
       id: 5,
       label: "تنظیم شیفت",
@@ -98,7 +96,7 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       color: "#ef4444",
       bg: "rgba(239,68,68,0.1)",
     },
-  
+
     {
       id: 8,
       label: "تقویم نوبت‌ها",
@@ -107,20 +105,16 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       color: "#10b981",
       bg: "rgba(16,185,129,0.1)",
     },
-    
-
-
   ];
 
   const staffsactions = [
     {
-      id: 1,
-      label: "پشتیبانی",
-      icon: Headset,
-      onClick: openGoftino,
-      color: "#10b981",
-      bg: "rgba(16,185,129,0.1)",
-      badge: true,
+      id: "tickets",
+      label: "ارتباط با ما",
+      icon: MessageCircle,
+      href: "/clientdashboard/support-tickets",
+      color: "#8b5cf6",
+      bg: "rgba(139,92,246,0.1)",
     },
     {
       id: 2,
@@ -131,12 +125,12 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       bg: "rgba(245,158,11,0.1)",
     },
     {
-      id: 3,
-      label: "ارتباط با ما",
-      icon: PhoneCall,
-      href: "./clientdashboard/support",
-      color: "#3b82f6",
-      bg: "rgba(59,130,246,0.1)",
+      id: "sms-suggestions",
+      label: "پیشنهاد متن پیام",
+      icon: FileText,
+      href: "/clientdashboard/sms-suggestions",
+      color: "#10b981",
+      bg: "rgba(16,185,129,0.1)",
     },
     {
       id: 8,
@@ -162,7 +156,7 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
 
       {/* Grid Container */}
       <div className="grid grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
-        {userType == "user" && 
+        {userType == "user" &&
           actions.map((action, index) => {
             const Icon = action.icon;
             const content = (
@@ -180,7 +174,6 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
                 {/* Overlay Glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-           
                 {/* Icon Container */}
                 <div
                   className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center mb-2 shadow-inner"
@@ -224,13 +217,7 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
                 {/* Overlay Glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                {/* Badge */}
-                {action.badge && (
-                  <span className="absolute top-3 right-3 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                )}
+        
 
                 {/* Icon Container */}
                 <div
@@ -257,10 +244,6 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
             );
           })}
       </div>
-
-
-
-
     </div>
   );
 };

@@ -210,20 +210,7 @@ export default function CalendarPage() {
         />
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-          {/* بنر اطلاع‌رسانی نوع تقویم برای پرسنل */}
-          {showCalendarTypeBanner && (
-            <div className={`rounded-xl p-3 text-center ${
-              staffCalendarType === "synced" 
-                ? "bg-blue-600/20 border border-blue-500/30"
-                : "bg-purple-600/20 border border-purple-500/30"
-            }`}>
-              <p className="text-sm">
-                {staffCalendarType === "synced" 
-                  ? "🔗 تقویم شما هماهنگ با تقویم اصلی بیزینس است. همه نوبت‌ها را مشاهده می‌کنید."
-                  : "📅 تقویم شما مستقل است. فقط نوبت‌های خودتان را مشاهده می‌کنید."}
-              </p>
-            </div>
-          )}
+    
 
           {isLoading ? (
             <div className="text-center py-10 opacity-50 text-sm">

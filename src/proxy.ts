@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+ const userType = request.cookies.get("user_type")?.value;
 
   // ۱. دریافت کوکی‌های احراز هویت
   const clientToken = request.cookies.get("authToken")?.value;
@@ -43,6 +44,10 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/admin-login", request.url));
     }
   }
+  if (userType === "staff" && pathname === "/clientdashboard/Staffs" || pathname === "/clientdashboard/pricingplan" ||  pathname === "/clientdashboard/buysms" ||  pathname === "/clientdashboard/settings" ) {
+    return NextResponse.redirect(new URL("/clientdashboard", request.url));
+  }
+  
 
   return NextResponse.next();
 }
