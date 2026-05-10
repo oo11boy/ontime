@@ -30,15 +30,10 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
 
   const router = useRouter();
 
-  const openGoftino = () => {
-    if (typeof window !== "undefined" && (window as any).Goftino) {
-      (window as any).Goftino.open();
-    } else {
-      alert("سیستم پشتیبانی در حال بارگذاری است.");
-    }
-  };
+
 
   const actions = [
+   
     {
       id: "tickets",
       label: "ارتباط با ما",
@@ -105,6 +100,14 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       color: "#10b981",
       bg: "rgba(16,185,129,0.1)",
     },
+     {
+  id: "scheduled-sms",
+  label: "وضعیت پیامک ها",
+  icon: Clock,
+  href: "/clientdashboard/scheduled-sms",
+  color: "#10b981",
+  bg: "rgba(16,185,129,0.1)",
+},
   ];
 
   const staffsactions = [
@@ -140,6 +143,14 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       color: "#10b981",
       bg: "rgba(16,185,129,0.1)",
     },
+     {
+  id: "scheduled-sms",
+  label: "وضعیت پیامک ها",
+  icon: Clock,
+  href: "/clientdashboard/scheduled-sms",
+  color: "#10b981",
+  bg: "rgba(16,185,129,0.1)",
+},
   ];
   return (
     <div className="w-full px-4 py-6" dir="rtl">

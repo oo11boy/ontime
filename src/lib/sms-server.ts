@@ -1,7 +1,63 @@
 // File Path: src/lib/sms-server.ts
 import "server-only"; 
 import { query } from "@/lib/db";
+// در src/lib/sms-queue.ts، تابع refundSmsCost را به این شکل اصلاح کنید:
 
+export default async function refundSmsCost(logId: number, cost: number, userId: number, staffId: number | null = null) {
+  try {
+    console.log(`💰 Refunding ${cost} SMS credits for log ${logId} (User: ${userId}, Staff: ${staffId || "N/A"})`);
+    
+    if (staffId) {
+      // بازگرداندن به حساب پرسنل
+      await query(
+        `UPDATE staffs 
+         SET sms_balance = sms_balance + ?, 
+             sms_used = sms_used - ?,
+             updated_at = NOW()
+         WHERE id = ? AND owner_user_id = ?`,
+        [cost, cost, staffId, userId]
+      );
+    } else {
+      // بازگرداندن به حساب رییس
+      // 1. ابتدا به بسته‌های خریداری شده برگردان (به صورت LIFO - آخرین بسته)
+      let remainingRefund = cost;
+      
+      const recentPackages = await query<any>(
+        `SELECT id, remaining_sms FROM smspurchase 
+         WHERE user_id = ? AND type = 'one_time_sms' AND status = 'active'
+         ORDER BY created_at DESC`,
+        [userId]
+      );
+      
+      for (const pkg of recentPackages) {
+        if (remainingRefund <= 0) break;
+        const addToPackage = Math.min(remainingRefund, pkg.remaining_sms + 10000); // حداکثر منطقی
+        await query(
+          `UPDATE smspurchase SET remaining_sms = remaining_sms + ? WHERE id = ?`,
+          [remainingRefund, pkg.id]
+        );
+        remainingRefund = 0;
+      }
+      
+      // اگر هنوز باقی مانده، به اعتبار ماهانه برگردان
+      if (remainingRefund > 0) {
+        await query(
+          `UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?`,
+          [remainingRefund, userId]
+        );
+      }
+    }
+    
+    await query(
+      `UPDATE smslog SET status = 'refunded', error_message = CONCAT(IFNULL(error_message, ''), ' - اعتبار برگشت داده شد') WHERE id = ?`,
+      [logId]
+    );
+    
+    console.log(`✅ Successfully refunded ${cost} credits for log ${logId}`);
+  } catch (refundError) {
+    console.error(`❌ Failed to refund SMS cost for log ${logId}:`, refundError);
+  }
+}
 // تابع دریافت اطلاعات پرسنل از کوکی یا پارامتر
 async function getStaffInfo(userId: number, staffId?: number | null) {
   // اگر staffId نداشته باشیم، کاربر معمولی است

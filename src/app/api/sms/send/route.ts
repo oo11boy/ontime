@@ -1,16 +1,18 @@
-// src/app/api/sms/send/route.ts - بخش مربوط به POST
-
+// src/app/api/sms/send/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
-import { deductSms, getSmsBalanceDetails, checkSmsBalance } from "@/lib/sms-server";
+import {
+  deductSms,
+  getSmsBalanceDetails,
+  checkSmsBalance,
+} from "@/lib/sms-server";
 import { smsQueue } from "@/lib/sms-queue";
 import { cookies } from "next/headers";
 
 export const POST = withAuth(async (req, context) => {
   const { userId } = context;
-  
-  // دریافت staffId از کوکی
+
   const cookieStore = await cookies();
   const staffIdFromCookie = cookieStore.get("staff_id")?.value;
   const staffId = staffIdFromCookie ? parseInt(staffIdFromCookie) : null;
@@ -40,91 +42,113 @@ export const POST = withAuth(async (req, context) => {
       message_count,
       booking_id,
       staffId,
+      booking_date,
+      booking_time,
+      sms_reminder_hours_before,
     });
 
-    // اعتبارسنجی
     if (!to_phone || to_phone.replace(/\D/g, "").length < 10) {
       return NextResponse.json(
         { success: false, message: "شماره موبایل معتبر الزامی است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // دریافت نام سالن
     const users: any = await query(
       "SELECT business_name, name FROM users WHERE id = ?",
-      [userId]
+      [userId],
     );
     const userData = Array.isArray(users) ? users[0] : users;
     const salonName =
       userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
 
-    // تعیین هزینه نهایی
     const finalSmsCost = Math.max(1, Number(message_count));
 
-    // بررسی موجودی قبل از کسر (با در نظر گرفتن staffId)
     const balanceCheck = await checkSmsBalance(userId, finalSmsCost, staffId);
     if (!balanceCheck.hasEnough) {
       return NextResponse.json(
-        {
-          success: false,
-          message: balanceCheck.message,
-        },
-        { status: 402 }
+        { success: false, message: balanceCheck.message },
+        { status: 402 },
       );
     }
 
-    // کسر موجودی (با پاس دادن staffId)
     let deducted = false;
     try {
       deducted = await deductSms(userId, finalSmsCost, staffId);
     } catch (error: any) {
       return NextResponse.json(
-        { success: false, message: error.message || "خطا در کسر موجودی پنل پیامک" },
-        { status: 500 }
+        {
+          success: false,
+          message: error.message || "خطا در کسر موجودی پنل پیامک",
+        },
+        { status: 500 },
       );
     }
 
     if (!deducted) {
       return NextResponse.json(
         { success: false, message: "خطا در کسر موجودی پنل پیامک" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    // محاسبه تأخیر برای یادآوری
+    // محاسبه زمان دقیق ارسال برای پیامک یادآوری
+    let scheduledAt: Date | null = null;
     let delay = 0;
-    if (sms_type === "reminder" && booking_date && booking_time) {
-      const hoursBefore = Number(sms_reminder_hours_before) || 24;
+
+    if (
+      sms_type === "reminder" &&
+      booking_date &&
+      booking_time &&
+      sms_reminder_hours_before
+    ) {
       const bookingDateTime = new Date(`${booking_date}T${booking_time}:00`);
       const sendTime = new Date(
-        bookingDateTime.getTime() - hoursBefore * 60 * 60 * 1000
+        bookingDateTime.getTime() - sms_reminder_hours_before * 60 * 60 * 1000,
       );
-      delay = Math.max(0, sendTime.getTime() - Date.now());
+      const now = new Date();
+
+      if (sendTime > now) {
+        scheduledAt = sendTime;
+        delay = sendTime.getTime() - now.getTime();
+      } else {
+        scheduledAt = now;
+        delay = 0;
+      }
+
+      console.log(
+        `⏰ یادآوری برنامه‌ریزی شد: نوبت ${booking_date} ${booking_time}، ارسال در ${scheduledAt.toISOString()} (${sms_reminder_hours_before} ساعت قبل)`,
+      );
     }
 
     const bookingAt =
-      booking_date && booking_time ? `${booking_date} ${booking_time}:00` : null;
+      booking_date && booking_time
+        ? `${booking_date} ${booking_time}:00`
+        : null;
 
-    // ثبت در smslog
     const logResult: any = await query(
       `INSERT INTO smslog (
-        user_id, booking_id, to_phone, content, cost, sms_type, booking_at, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+        user_id, staff_id, booking_id, booking_date, booking_time, reminder_hours_before,
+        scheduled_at, to_phone, content, cost, sms_type, booking_at, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
       [
         userId,
+        staffId,
         booking_id,
+        booking_date,
+        booking_time,
+        sms_reminder_hours_before,
+        scheduledAt,
         to_phone,
         content || `Pattern: ${template_key || "نامشخص"}`,
         finalSmsCost,
         sms_type,
         bookingAt,
-      ]
+      ],
     );
 
     const logId = logResult?.insertId || logResult?.[0]?.insertId;
 
-    // افزودن به صف ارسال
     try {
       await smsQueue.add(
         "send-sms",
@@ -141,37 +165,45 @@ export const POST = withAuth(async (req, context) => {
             link: link || "",
             salon: salonName,
           },
+          userId,
+          staffId,
+          cost: finalSmsCost,
+          scheduled_at: scheduledAt,
         },
         {
           delay: delay > 0 ? delay : undefined,
-          attempts: 5,
+          attempts: 3,
           backoff: { type: "exponential", delay: 5000 },
           removeOnComplete: true,
           removeOnFail: false,
-        }
+        },
       );
     } catch (queueError) {
       console.error("[SMS API] خطا در افزودن به صف ارسال:", queueError);
       await query(
         "UPDATE smslog SET status = 'failed', error_message = 'Queue Error' WHERE id = ?",
-        [logId]
+        [logId],
       );
     }
 
     return NextResponse.json({
       success: true,
       deducted: finalSmsCost,
+      scheduled_at: scheduledAt,
       message:
         delay > 0
-          ? `یادآوری نوبت با موفقیت زمان‌بندی شد (${finalSmsCost} پیامک کسر شد)`
+          ? `یادآوری نوبت برای ${new Date(scheduledAt!).toLocaleString("fa-IR")} برنامه‌ریزی شد (${finalSmsCost} پیامک کسر شد)`
           : `پیامک با موفقیت در صف ارسال قرار گرفت (${finalSmsCost} پیامک کسر شد)`,
       logId,
     });
   } catch (error: any) {
     console.error("[SMS API] خطای بحرانی:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "خطای داخلی سرور در پردازش پیامک" },
-      { status: 500 }
+      {
+        success: false,
+        message: error.message || "خطای داخلی سرور در پردازش پیامک",
+      },
+      { status: 500 },
     );
   }
 });

@@ -1,5 +1,4 @@
-// app/api/sms/bulk/route.ts - بخش مهم کد
-
+// app/api/sms/bulk/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -81,6 +80,13 @@ export const POST = withAuth(async (req, context) => {
       return NextResponse.json({ success: false, message: "خطا در کسر موجودی" }, { status: 500 });
     }
 
+    // ذخیره اطلاعات کسر شده برای برگشت در صورت خطا
+    const deductedInfo = {
+      totalNeeded,
+      userId,
+      staffId,
+    };
+
     // پردازش گیرنده‌ها
     const queueTasks = recipients.map(async (rec: any, idx: number) => {
       const name = rec.name?.trim() || "مشتری";
@@ -88,13 +94,13 @@ export const POST = withAuth(async (req, context) => {
 
       if (!phone || phone.length !== 10) {
         console.warn(`[BULK-SMS] شماره نامعتبر (ردیف ${idx + 1}): ${rec.phone}`);
-        return null;
+        return { success: false, reason: "invalid_phone", phone: rec.phone };
       }
 
       const [logRaw] = await query(
-        `INSERT INTO smslog (user_id, to_phone, content, cost, sms_type, status, created_at)
-         VALUES (?, ?, ?, ?, ?, 'pending', NOW())`,
-        [userId, phone, `Bulk: ${templateKey} → ${name} (${smsPerMessage} واحد)`, smsPerMessage, sms_type]
+        `INSERT INTO smslog (user_id, staff_id, to_phone, content, cost, sms_type, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+        [userId, staffId, phone, `Bulk: ${templateKey} → ${name} (${smsPerMessage} واحد)`, smsPerMessage, sms_type]
       );
 
       const log = logRaw as { insertId: number } | undefined;
@@ -102,7 +108,7 @@ export const POST = withAuth(async (req, context) => {
 
       if (!logId) {
         console.error(`[BULK-SMS] ثبت لاگ ناموفق برای ${phone}`);
-        return null;
+        return { success: false, reason: "log_failed", phone };
       }
 
       try {
@@ -114,18 +120,32 @@ export const POST = withAuth(async (req, context) => {
             template_key: templateKey,
             message_count: smsPerMessage,
             params: { name, salon: salonName },
+            userId, // اضافه شد برای برگشت اعتبار
+            staffId, // اضافه شد برای برگشت اعتبار
+            cost: smsPerMessage, // اضافه شد برای برگشت اعتبار
           },
           { attempts: 4, backoff: { type: "exponential", delay: 6000 } }
         );
-        return true;
+        return { success: true, logId, phone };
       } catch (qErr: any) {
         console.error(`[BULK-SMS] خطا در صف (Log ${logId}):`, qErr.message);
-        return false;
+        
+        // در صورت خطا در صف، اعتبار این پیامک را برگردان
+        await refundSingleSmsCost(logId, smsPerMessage, userId, staffId);
+        
+        return { success: false, reason: "queue_error", phone, error: qErr.message };
       }
     });
 
     const outcomes = await Promise.allSettled(queueTasks);
-    const successCount = outcomes.filter(r => r.status === "fulfilled" && r.value === true).length;
+    const successCount = outcomes.filter(r => r.status === "fulfilled" && r.value?.success === true).length;
+    const failedCount = recipients.length - successCount;
+
+    // اگر همه پیامک‌ها ناموفق بودند، کل اعتبار را برگردان
+    if (successCount === 0 && failedCount > 0) {
+      await refundBulkSmsCost(deductedInfo.totalNeeded, userId, staffId);
+      console.log(`💰 Bulk SMS completely failed. Refunded ${deductedInfo.totalNeeded} credits`);
+    }
 
     const newBalance = await getSmsBalanceDetails(userId, staffId);
 
@@ -135,6 +155,7 @@ export const POST = withAuth(async (req, context) => {
       count: recipients.length,
       units: totalNeeded,
       successCount,
+      failedCount,
       remainingBalance: newBalance.total_balance,
       userType: newBalance.userType,
     });
@@ -146,3 +167,54 @@ export const POST = withAuth(async (req, context) => {
     );
   }
 });
+
+// تابع برگرداندن اعتبار برای یک پیامک
+async function refundSingleSmsCost(logId: number, cost: number, userId: number, staffId: number | null) {
+  try {
+    if (staffId) {
+      await query(
+        `UPDATE staffs 
+         SET sms_balance = sms_balance + ?, 
+             sms_used = sms_used - ?
+         WHERE id = ? AND owner_user_id = ?`,
+        [cost, cost, staffId, userId]
+      );
+    } else {
+      await query(
+        `UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?`,
+        [cost, userId]
+      );
+    }
+    
+    await query(
+      `UPDATE smslog SET status = 'refunded', error_message = 'Queue error - refunded' WHERE id = ?`,
+      [logId]
+    );
+    
+    console.log(`💰 Refunded ${cost} credits for log ${logId}`);
+  } catch (error) {
+    console.error(`Failed to refund SMS cost for log ${logId}:`, error);
+  }
+}
+
+// تابع برگرداندن کل اعتبار در صورت شکست کامل
+async function refundBulkSmsCost(totalNeeded: number, userId: number, staffId: number | null) {
+  try {
+    if (staffId) {
+      await query(
+        `UPDATE staffs 
+         SET sms_balance = sms_balance + ?
+         WHERE id = ? AND owner_user_id = ?`,
+        [totalNeeded, staffId, userId]
+      );
+    } else {
+      await query(
+        `UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?`,
+        [totalNeeded, userId]
+      );
+    }
+    console.log(`💰 Refunded total ${totalNeeded} credits for failed bulk SMS`);
+  } catch (error) {
+    console.error(`Failed to refund bulk SMS cost:`, error);
+  }
+}
