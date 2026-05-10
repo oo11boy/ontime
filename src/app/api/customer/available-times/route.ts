@@ -1,4 +1,4 @@
-// src/app/api/customer/available-times/route.ts
+// src/app/api/customer/available-times/route.ts (بخش مهم)
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { getCurrentDateTime } from "@/lib/date-utils";
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   if (!token || !targetDate) {
     return NextResponse.json(
       { success: false, message: "توکن یا تاریخ ارسال نشده" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -33,26 +33,26 @@ export async function GET(req: NextRequest) {
          AND b.token_expires_at > NOW()
          AND b.status = 'active'
        LIMIT 1`,
-      [token]
+      [token],
     );
 
     if (bookingData.length === 0) {
       return NextResponse.json(
         { success: false, message: "نوبت معتبر یافت نشد" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const booking = bookingData[0];
     const userId = booking.user_id;
-    const duration = booking.duration_minutes || 30;
+    const duration = booking.duration_minutes || 30; // مدت زمان نوبت فعلی
     const staffId = booking.staff_id;
     const calendarType = booking.calendar_type;
 
     if (booking.change_count >= 1) {
       return NextResponse.json(
         { success: false, message: "تعداد تغییرات مجاز به پایان رسیده" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -60,8 +60,10 @@ export async function GET(req: NextRequest) {
     const selectedDateObj = new Date(targetDate);
     const jsDay = selectedDateObj.getDay();
     const dayIndex = jsDay === 6 ? 0 : jsDay + 1;
-    const offDays: number[] = booking.off_days ? JSON.parse(booking.off_days) : [];
-    
+    const offDays: number[] = booking.off_days
+      ? JSON.parse(booking.off_days)
+      : [];
+
     if (offDays.includes(dayIndex)) {
       return NextResponse.json({
         success: true,
@@ -81,7 +83,9 @@ export async function GET(req: NextRequest) {
     };
 
     const minutesToTime = (minutes: number): string => {
-      const h = Math.floor(minutes / 60).toString().padStart(2, "0");
+      const h = Math.floor(minutes / 60)
+        .toString()
+        .padStart(2, "0");
       const m = (minutes % 60).toString().padStart(2, "0");
       return `${h}:${m}`;
     };
@@ -94,7 +98,7 @@ export async function GET(req: NextRequest) {
         `SELECT booking_time, COALESCE(duration_minutes, 30) AS duration_minutes, client_name
          FROM booking
          WHERE user_id = ? AND staff_id = ? AND booking_date = ? AND status = 'active' AND id != ?`,
-        [userId, staffId, targetDate, booking.id]
+        [userId, staffId, targetDate, booking.id],
       );
     } else {
       let sql = `
@@ -121,50 +125,82 @@ export async function GET(req: NextRequest) {
       occupiedRecords = await query(sql, params);
     }
 
-    const occupiedIntervals = occupiedRecords.map((occ) => ({
-      start: timeToMinutes(occ.booking_time),
-      end: timeToMinutes(occ.booking_time) + occ.duration_minutes,
-      booking_time: occ.booking_time,
-      client_name: occ.client_name,
-    }));
-
-    // ========== تولید زمان‌های خالی ==========
+    // ========== تولید زمان‌های خالی با فاصله صحیح ==========
     const currentDateTime = getCurrentDateTime();
     const isToday = targetDate === currentDateTime.currentGregorianDate;
     const availableTimes: string[] = [];
     const bookedTimes: { time: string; clientName: string }[] = [];
+    const stepMinutes = duration; // فاصله بین اسلات‌ها = مدت زمان نوبت
 
-    workShifts.forEach((shift) => {
-      const startMin = timeToMinutes(shift.start);
-      const endMin = timeToMinutes(shift.end);
+    // مرتب کردن نوبت‌های رزرو شده بر اساس زمان شروع
+    occupiedRecords.sort(
+      (a, b) => timeToMinutes(a.booking_time) - timeToMinutes(b.booking_time),
+    );
 
-      for (let m = startMin; m < endMin; m += 30) {
-        const slotStart = m;
-        const slotEnd = m + duration;
-        const slotTimeString = minutesToTime(slotStart);
+    // برای هر شیفت کاری
+    for (const shift of workShifts) {
+      const shiftStartMin = timeToMinutes(shift.start);
+      const shiftEndMin = timeToMinutes(shift.end);
 
+      let currentSlotStart = shiftStartMin;
+      let occupiedIndex = 0;
+
+      while (currentSlotStart + stepMinutes <= shiftEndMin) {
+        const slotEnd = currentSlotStart + stepMinutes;
+        const slotTimeString = minutesToTime(currentSlotStart);
+
+        // فیلتر زمان گذشته (اگر امروز است)
         if (isToday) {
           const nowMin = timeToMinutes(currentDateTime.currentTimeString);
-          if (slotStart <= nowMin) continue;
+          if (currentSlotStart <= nowMin) {
+            currentSlotStart += stepMinutes;
+            continue;
+          }
         }
 
-        if (slotEnd > endMin) continue;
+        // بررسی تداخل با نوبت رزرو شده بعدی
+        let hasConflict = false;
+        let conflictingOcc = null;
 
-        // بررسی تداخل
-        const conflict = occupiedIntervals.find(
-          (occ) => slotStart < occ.end && slotEnd > occ.start
-        );
+        while (occupiedIndex < occupiedRecords.length) {
+          const occ = occupiedRecords[occupiedIndex];
+          const occStart = timeToMinutes(occ.booking_time);
+          const occEnd = occStart + occ.duration_minutes;
 
-        if (conflict) {
+          if (occEnd <= currentSlotStart) {
+            // این نوبت قبل از اسلات فعلی تمام شده، برو به نوبت بعدی
+            occupiedIndex++;
+            continue;
+          }
+
+          if (occStart >= slotEnd) {
+            // این نوبت بعد از اسلات فعلی شروع می‌شود، تداخلی ندارد
+            break;
+          }
+
+          // تداخل وجود دارد
+          if (currentSlotStart < occEnd && slotEnd > occStart) {
+            hasConflict = true;
+            conflictingOcc = occ;
+            // پرش به بعد از پایان نوبت رزرو شده
+            currentSlotStart = occEnd;
+            break;
+          }
+        }
+
+        if (hasConflict && conflictingOcc) {
           bookedTimes.push({
             time: slotTimeString,
-            clientName: conflict.client_name,
+            clientName: conflictingOcc.client_name,
           });
+          // ادامه حلقه با موقعیت جدید (currentSlotStart به‌روز شده)
+          continue;
         } else {
           availableTimes.push(slotTimeString);
+          currentSlotStart += stepMinutes;
         }
       }
-    });
+    }
 
     availableTimes.sort();
     bookedTimes.sort((a, b) => a.time.localeCompare(b.time));
@@ -179,7 +215,7 @@ export async function GET(req: NextRequest) {
     console.error("[customer/available-times] Error:", error);
     return NextResponse.json(
       { success: false, message: "خطای سرور" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -16,7 +16,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     const userType = cookieStore.get("user_type")?.value;
     const staffId = cookieStore.get("staff_id")?.value;
 
-    let services = [];
+    let services: unknown[] = [];
 
     if (userType === "staff" && staffId) {
       // ========== حالت پرسنل: فقط خدماتی که برایش تعیین شده ==========

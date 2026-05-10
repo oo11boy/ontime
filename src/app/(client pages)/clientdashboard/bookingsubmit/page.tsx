@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { Calendar, UserX, Building2, AlertCircle, Loader2 } from "lucide-react";
@@ -41,8 +41,7 @@ const formatPreviewMessage = (text: string) =>
     : "";
 
 export default function NewAppointmentPage() {
-
-    const { userType } = useUserType();
+  const { userType } = useUserType();
   const router = useRouter();
   const queryClient = useQueryClient();
   const today = useMemo(() => getTodayJalali(), []);
@@ -97,7 +96,20 @@ export default function NewAppointmentPage() {
       setNameModalShown(false);
     });
 
-  // همه useEffect‌ها قبل از هر early return
+  // ========== محاسبه مدت زمان کل بر اساس سرویس‌های انتخاب شده ==========
+  const calculateTotalDuration = useCallback((selectedServices: any[]) => {
+    if (!selectedServices || selectedServices.length === 0) return 30;
+    return selectedServices.reduce((total, service) => {
+      return total + (service.duration_minutes || 30);
+    }, 0);
+  }, []);
+
+  // ========== مقدار duration فعلی ==========
+  const currentDuration = useMemo(() => {
+    return calculateTotalDuration(form?.services || []);
+  }, [form?.services, calculateTotalDuration]);
+
+  // ========== همه useEffect‌ها ==========
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -170,7 +182,7 @@ export default function NewAppointmentPage() {
     if (form) localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
   }, [form]);
 
-  // فیلتر الگوهای یادآوری — قبل از early return
+  // فیلتر الگوهای یادآوری
   const reminderTemplates = useMemo(() => {
     if (!templatesData?.templates || !form?.sendRemindSms) return [];
     const targetSubType = form?.remindTime >= 24 ? "tomorrow" : "today";
@@ -179,12 +191,11 @@ export default function NewAppointmentPage() {
     );
   }, [templatesData?.templates, form?.sendRemindSms, form?.remindTime]);
 
-  // محاسبه تعداد پیامک‌ها — قبل از early return
+  // محاسبه تعداد پیامک‌ها
   const reserveSmsCount = form?.sendReserveSms ? form.reserveSmsPage || 1 : 0;
   const remindSmsCount = form?.sendRemindSms ? form.remindSmsPage || 1 : 0;
   const totalSmsNeeded = reserveSmsCount + remindSmsCount;
 
-  // early return فقط بعد از تمام هوک‌ها
   if (!form) {
     return (
       <div className="min-h-screen bg-[#1a1e26] flex items-center justify-center">
@@ -344,6 +355,7 @@ export default function NewAppointmentPage() {
 
   const proceedWithBooking = () => {
     const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
+    const totalDuration = calculateTotalDuration(form.services);
 
     // اعتبارسنجی اطلاعات پایه
     if (!form.name.trim() || cleanPhone.length !== 10 || !form.time) {
@@ -351,7 +363,7 @@ export default function NewAppointmentPage() {
       return;
     }
 
-    // اعتبارسنجی الزامی بودن انتخاب الگو — این بار قبل از هر چیز
+    // اعتبارسنجی الزامی بودن انتخاب الگو
     if (form.sendReserveSms && !form.reservePattern) {
       toast.error("لطفاً الگوی پیامک تایید رزرو را انتخاب کنید");
       setModals((prev) => ({ ...prev, reserve: true }));
@@ -376,11 +388,7 @@ export default function NewAppointmentPage() {
           form.date.day
         ),
         booking_time: form.time,
-        duration_minutes:
-          form.services.reduce(
-            (acc: any, s: any) => acc + (s.duration_minutes || 30),
-            0
-          ) || 30,
+        duration_minutes: totalDuration, // ✅ استفاده از مدت زمان محاسبه شده
         booking_description: form.notes.trim(),
         services: form.services.map((s: any) => s.name).join(", "),
         sms_reserve_enabled: form.sendReserveSms,
@@ -392,45 +400,36 @@ export default function NewAppointmentPage() {
         reminder_message_count: form.sendRemindSms ? form.remindSmsPage : 1,
       },
       {
-onSuccess: () => {
-  toast.dismiss(loadingId);
-
-  // ۱. پاک کردن localStorage
-  localStorage.removeItem(STORAGE_KEY);
-
-  // ۲. ریست کامل state فرم به حالت اولیه (دقیقاً مثل وقتی صفحه اول لود می‌شه)
-  setForm({
-    name: "",
-    phone: "",
-    date: {
-      year: today.year,
-      month: today.month,
-      day: today.day,
-    },
-    time: "",
-    services: [],
-    notes: "",
-    sendReserveSms: false,
-    sendRemindSms: false,
-    reserveMsg: "",
-    reservePattern: "",
-    reserveSmsPage: 1,
-    remindMsg: "",
-    remindPattern: "",
-    remindSmsPage: 1,
-    remindTime: 24,
-  });
-
-  // ۳. invalidate کوئری‌ها
-  queryClient.invalidateQueries({
-    queryKey: ["bookings", "customers"],
-  });
-
-  toast.success("نوبت با موفقیت ثبت شد");
-
-  // ۴. ریدایرکت به صفحه موفقیت
-  router.push("/clientdashboard/bookingsubmit");
-},
+        onSuccess: () => {
+          toast.dismiss(loadingId);
+          localStorage.removeItem(STORAGE_KEY);
+          setForm({
+            name: "",
+            phone: "",
+            date: {
+              year: today.year,
+              month: today.month,
+              day: today.day,
+            },
+            time: "",
+            services: [],
+            notes: "",
+            sendReserveSms: false,
+            sendRemindSms: false,
+            reserveMsg: "",
+            reservePattern: "",
+            reserveSmsPage: 1,
+            remindMsg: "",
+            remindPattern: "",
+            remindSmsPage: 1,
+            remindTime: 24,
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["bookings", "customers"],
+          });
+          toast.success("نوبت با موفقیت ثبت شد");
+          router.push("/clientdashboard/bookingsubmit");
+        },
         onError: (error: any) => {
           toast.dismiss(loadingId);
           const data = error?.data || {};
@@ -472,6 +471,8 @@ onSuccess: () => {
           <Calendar className="w-7 h-7 text-emerald-400" />
           ثبت نوبت جدید
         </h1>
+
+  
 
         {isBlocked && (
           <div className="mb-8 p-6 bg-red-900/30 border-2 border-red-600 rounded-2xl flex flex-col items-center gap-4 animate-pulse">
@@ -515,6 +516,7 @@ onSuccess: () => {
           <DateTimeSection
             selectedDate={form.date}
             selectedTime={form.time}
+            duration={currentDuration}
             onOpenCalendar={() => setModals((p) => ({ ...p, calendar: true }))}
             onOpenTimePicker={() => setModals((p) => ({ ...p, time: true }))}
           />
@@ -529,6 +531,21 @@ onSuccess: () => {
               })
             }
           />
+               {form.services.length > 0 ? (
+          <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+            <p className="text-sm text-emerald-400">
+              مدت زمان کل خدمات: {currentDuration} دقیقه
+            </p>
+          </div>
+        ):
+         (
+          <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+            <p className="text-sm text-emerald-400">
+             خدماتی انتخاب نکردید، زمان پیش فرض نوبت 30 دقیقه
+            </p>
+          </div>
+        )
+        }
           <NotesSection
             notes={form.notes}
             setNotes={(v) => updateForm({ notes: v })}
@@ -694,7 +711,7 @@ onSuccess: () => {
         reminderTemplates={reminderTemplates}
       />
 
-      <Footer userType={userType}/>
+      <Footer userType={userType} />
     </div>
   );
 }

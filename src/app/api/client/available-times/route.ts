@@ -1,3 +1,4 @@
+// src/app/api/available-times/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -23,7 +24,6 @@ const handler = withAuth(async (req: Request, context: any) => {
   const date = url.searchParams.get("date");
   const durationStr = url.searchParams.get("duration") || "30";
   const duration = parseInt(durationStr, 10);
-  const requestedStaffId = url.searchParams.get("staffId");
 
   if (!date || isNaN(new Date(date).getTime())) {
     return NextResponse.json(
@@ -48,7 +48,7 @@ const handler = withAuth(async (req: Request, context: any) => {
         ? JSON.parse(userSettings.work_shifts)
         : [{ start: "08:00", end: "23:00" }];
 
-    // ۲. بررسی اینکه آیا تاریخ انتخابی جزو روزهای تعطیل کاربر هست یا خیر
+    // ۲. بررسی روز تعطیل
     const selectedDateObj = new Date(date);
     const jsDay = selectedDateObj.getDay();
     const dayIndex = jsDay === 6 ? 0 : jsDay + 1;
@@ -80,10 +80,9 @@ const handler = withAuth(async (req: Request, context: any) => {
     };
 
     // ========== منطق دریافت نوبت‌های مسدود ==========
-    let occupiedIntervals: { start: number; end: number; booking: any }[] = [];
     let bookingRecords: any[] = [];
 
-    // ========== مورد 1: کاربر از نوع پرسنل است ==========
+    // دریافت نوبت‌های فعال در تاریخ مورد نظر
     if (userType === "staff" && staffId) {
       const staff = await query<any>(
         "SELECT calendar_type FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1",
@@ -92,22 +91,18 @@ const handler = withAuth(async (req: Request, context: any) => {
       const calendarType = staff?.[0]?.calendar_type;
 
       if (calendarType === "independent") {
-        // تقویم مستقل: فقط نوبت‌های خود پرسنل
         bookingRecords = await query(
           `SELECT id, client_name, booking_time, 
-                  COALESCE(duration_minutes, 30) AS duration_minutes, 
-                  status, services
+                  COALESCE(duration_minutes, 30) AS duration_minutes
            FROM booking
            WHERE user_id = ? AND staff_id = ? AND booking_date = ? AND status = 'active'
            ORDER BY booking_time`,
           [userId, parseInt(staffId), date],
         );
       } else {
-        // تقویم هماهنگ (synced): نوبت‌های رییس (staff_id IS NULL) + نوبت‌های خود پرسنل
         bookingRecords = await query(
           `SELECT id, client_name, booking_time, 
-                  COALESCE(duration_minutes, 30) AS duration_minutes, 
-                  status, services
+                  COALESCE(duration_minutes, 30) AS duration_minutes
            FROM booking
            WHERE user_id = ? AND booking_date = ? AND status = 'active'
              AND (staff_id IS NULL OR staff_id = ?)
@@ -115,24 +110,17 @@ const handler = withAuth(async (req: Request, context: any) => {
           [userId, date, parseInt(staffId)],
         );
       }
-    } 
-    // ========== مورد 2: کاربر از نوع رییس است ==========
-    else {
-      // رییس فقط نوبت‌های خودش را می‌بیند (staff_id IS NULL)
-      // و نوبت‌های پرسنل با تقویم مستقل را نباید ببیند
+    } else {
       bookingRecords = await query(
         `SELECT b.id, b.client_name, b.booking_time, 
-                COALESCE(b.duration_minutes, 30) AS duration_minutes, 
-                b.status, b.services
+                COALESCE(b.duration_minutes, 30) AS duration_minutes
          FROM booking b
          LEFT JOIN staffs s ON b.staff_id = s.id AND s.owner_user_id = b.user_id
          WHERE b.user_id = ? 
            AND b.booking_date = ? 
            AND b.status = 'active'
            AND (
-             -- نوبت‌های خود رییس
              b.staff_id IS NULL
-             -- یا نوبت‌های پرسنل با تقویم هماهنگ (synced)
              OR (b.staff_id IS NOT NULL AND s.calendar_type = 'synced')
            )
          ORDER BY b.booking_time`,
@@ -140,83 +128,85 @@ const handler = withAuth(async (req: Request, context: any) => {
       );
     }
 
-    // ساخت بازه‌های مسدود شده
-    for (const booking of bookingRecords) {
-      occupiedIntervals.push({
-        start: timeToMinutes(booking.booking_time),
-        end: timeToMinutes(booking.booking_time) + booking.duration_minutes,
-        booking: booking,
-      });
-    }
-
-    // ۵. ایجاد بازه‌های ممکن بر اساس شیفت‌های کاری کاربر
-    const possibleSlots: number[] = [];
-    workShifts.forEach((shift) => {
-      const startMin = timeToMinutes(shift.start);
-      const endMin = timeToMinutes(shift.end);
-
-      for (let m = startMin; m < endMin; m += 30) {
-        possibleSlots.push(m);
-      }
-    });
-
+    // ========== تولید زمان‌های خالی ==========
     const availableTimes: string[] = [];
     const bookedTimes: any[] = [];
+    const stepMinutes = duration; // فاصله بین اسلات‌ها = مدت زمان نوبت
 
-    // ۶. فیلتر کردن اسلات‌ها
-    for (const slotStart of possibleSlots) {
-      const slotEnd = slotStart + duration;
-      const slotTimeString = minutesToTime(slotStart);
+    // برای هر شیفت کاری
+    for (const shift of workShifts) {
+      const shiftStartMin = timeToMinutes(shift.start);
+      const shiftEndMin = timeToMinutes(shift.end);
 
-      // الف) فیلتر زمان‌های گذشته (اگر امروز است)
-      if (isToday) {
-        const currentTotalMinutes = timeToMinutes(
-          currentDateTime.currentTimeString,
-        );
-        if (slotStart <= currentTotalMinutes) continue;
-      }
+      // شروع از ابتدای شیفت
+      let currentSlotStart = shiftStartMin;
 
-      // ب) بررسی تداخل با رزروها
-      let isOccupied = false;
-      let overlappingBooking = null;
+      while (currentSlotStart + stepMinutes <= shiftEndMin) {
+        const slotEnd = currentSlotStart + stepMinutes;
+        const slotTimeString = minutesToTime(currentSlotStart);
 
-      for (const occ of occupiedIntervals) {
-        if (slotStart < occ.end && slotEnd > occ.start) {
-          isOccupied = true;
-          overlappingBooking = occ.booking;
-          break;
+        // بررسی زمان گذشته (اگر امروز است)
+        if (isToday) {
+          const nowMin = timeToMinutes(currentDateTime.currentTimeString);
+          if (currentSlotStart <= nowMin) {
+            currentSlotStart += stepMinutes;
+            continue;
+          }
         }
-      }
 
-      if (isOccupied && overlappingBooking) {
-        bookedTimes.push({
-          time: slotTimeString,
-          clientName: overlappingBooking.client_name,
-          startTime: overlappingBooking.booking_time,
-          endTime: minutesToTime(
-            timeToMinutes(overlappingBooking.booking_time) +
-              overlappingBooking.duration_minutes,
-          ),
-          services: overlappingBooking.services,
-        });
-      } else {
-        // ج) بررسی اینکه نوبت در انتهای شیفت از ساعت پایان شیفت فراتر نرود
-        const currentShift = workShifts.find(
-          (s) =>
-            slotStart >= timeToMinutes(s.start) &&
-            slotStart < timeToMinutes(s.end),
-        );
-        if (currentShift && slotEnd <= timeToMinutes(currentShift.end)) {
+        // بررسی تداخل با نوبت‌های رزرو شده
+        let hasConflict = false;
+        let conflictingBooking = null;
+
+        for (const booking of bookingRecords) {
+          const bookingStart = timeToMinutes(booking.booking_time);
+          const bookingEnd = bookingStart + booking.duration_minutes;
+
+          // اگر اسلات فعلی با نوبت رزرو شده تداخل دارد
+          if (currentSlotStart < bookingEnd && slotEnd > bookingStart) {
+            hasConflict = true;
+            conflictingBooking = booking;
+
+            // مهم: اگر نوبت رزرو شده طولانی است، اسلات بعدی باید بعد از پایان آن باشد
+            // این کار باعث می‌شود نوبت بعدی در زمان صحیح (مثلاً 9:40 به جای 10:00) قرار گیرد
+            const newStartAfterBooking = bookingEnd;
+            if (newStartAfterBooking > currentSlotStart) {
+              currentSlotStart = newStartAfterBooking;
+            }
+            break;
+          }
+        }
+
+        if (hasConflict && conflictingBooking) {
+          bookedTimes.push({
+            time: slotTimeString,
+            clientName: conflictingBooking.client_name,
+            startTime: conflictingBooking.booking_time,
+            endTime: minutesToTime(
+              timeToMinutes(conflictingBooking.booking_time) +
+                conflictingBooking.duration_minutes,
+            ),
+          });
+          // ادامه حلقه با موقعیت جدید (currentSlotStart قبلاً به‌روز شده)
+          continue;
+        } else {
+          // اسلات خالی است
           availableTimes.push(slotTimeString);
+          currentSlotStart += stepMinutes;
         }
       }
     }
+
+    // مرتب کردن زمان‌ها
+    availableTimes.sort();
+    bookedTimes.sort((a, b) => a.time.localeCompare(b.time));
 
     return NextResponse.json({
       success: true,
       availableTimes,
       bookedTimes,
       isToday,
+      duration, // برگرداندن duration برای دیباگ
     });
   } catch (error) {
     console.error("[available-times] Error:", error);
