@@ -8,26 +8,27 @@ export async function GET() {
     const cookieStore = await cookies();
     const token = cookieStore.get("authToken")?.value;
     const userTypeCookie = cookieStore.get("user_type")?.value;
+    const staffIdCookie = cookieStore.get("staff_id")?.value;
 
     if (!token) {
       return NextResponse.json({ userType: "none" });
     }
 
-    const payload = verifyToken(token);
+    const userId = verifyToken(token);
     
-    if (!payload) {
+    if (!userId) {
       return NextResponse.json({ userType: "none" });
     }
 
-    // اگر payload حاوی staffId باشد
-    if (payload.staffId && userTypeCookie === "staff") {
+    // اگر user_type کوکی staff است و staff_id دارد
+    if (userTypeCookie === "staff" && staffIdCookie) {
       const staff = await query<any[]>(
-        `SELECT s.id, s.name, s.role, s.owner_user_id, s.can_see_all_clients, s.calendar_type, s.sms_balance, s.sms_used,
+        `SELECT s.id, s.name, s.owner_user_id, s.can_see_all_clients, s.calendar_type, s.sms_balance, s.sms_used,
          u.business_name as owner_business
          FROM staffs s
          JOIN users u ON s.owner_user_id = u.id
          WHERE s.id = ? AND s.is_active = 1`,
-        [payload.staffId]
+        [parseInt(staffIdCookie)]
       );
       
       if (staff.length > 0) {
@@ -39,9 +40,9 @@ export async function GET() {
     }
     
     // کاربر عادی
-    const user = await query<any[]>(
+    const user = await query<any>(
       "SELECT id, name, plan_key FROM users WHERE id = ?",
-      [payload.userId]
+      [userId]
     );
     
     if (user.length > 0) {
