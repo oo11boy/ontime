@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 
 export const GET = withAuth(async (req: Request, context: any) => {
   const { userId } = context;
-
+  
   const cookieStore = await cookies();
   const userType = cookieStore.get("user_type")?.value;
   const staffId = cookieStore.get("staff_id")?.value;
@@ -18,18 +18,8 @@ export const GET = withAuth(async (req: Request, context: any) => {
   const offset = (page - 1) * limit;
 
   try {
-    // ========== ابتدا ID پرسنل‌های هماهنگ را جداگانه بگیرید ==========
-    let syncedStaffIds: number[] = [];
-    if (userType !== "staff") {
-      const syncedStaff = await query<any>(
-        "SELECT id FROM staffs WHERE owner_user_id = ? AND calendar_type = 'synced' AND is_active = 1",
-        [userId],
-      );
-      syncedStaffIds = syncedStaff.map((s: any) => s.id);
-    }
-
-    // ========== ساخت کوئری اصلی بدون Subquery ==========
-    let baseSql = `
+    // ========== ساخت کوئری اصلی ==========
+    let sql = `
       SELECT 
         sl.id,
         sl.to_phone,
@@ -52,60 +42,69 @@ export const GET = withAuth(async (req: Request, context: any) => {
       LEFT JOIN staffs s ON b.staff_id = s.id
       WHERE sl.user_id = ? AND sl.status = ?
     `;
-
+    
     const params: any[] = [userId, status];
 
-    // ========== اعمال فیلتر بر اساس نوع کاربر (بدون Subquery) ==========
+    // ========== اعمال فیلتر بر اساس نوع کاربر ==========
     if (userType === "staff" && staffId) {
       const staff = await query<any>(
         "SELECT calendar_type FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1",
-        [parseInt(staffId), userId],
+        [parseInt(staffId), userId]
       );
       const calendarType = staff?.[0]?.calendar_type;
 
       if (calendarType === "independent") {
-        baseSql += " AND b.staff_id = ?";
+        sql += " AND b.staff_id = ?";
         params.push(parseInt(staffId));
       } else {
-        baseSql += " AND b.staff_id = ?";
+        sql += " AND b.staff_id = ?";
         params.push(parseInt(staffId));
       }
     } else {
-      // رییس: فقط نوبت‌های خودش + پرسنل هماهنگ
-      if (syncedStaffIds.length > 0) {
-        const placeholders = syncedStaffIds.map(() => "?").join(",");
-        baseSql += ` AND (b.staff_id IS NULL OR b.staff_id IN (${placeholders}))`;
-        params.push(...syncedStaffIds);
-      } else {
-        baseSql += ` AND b.staff_id IS NULL`;
-      }
+      // رییس: فقط نوبت‌های خودش
+      sql += " AND b.staff_id IS NULL";
     }
 
-    // ========== دریافت تعداد کل (بدون LIMIT و OFFSET) ==========
-    let total = 0;
-    try {
-      const countSql = `SELECT COUNT(*) as total FROM (${baseSql}) as sub`;
-      const countResult = await query<any>(countSql, params);
-      total = countResult[0]?.total || 0;
-    } catch (countError) {
-      // روش جایگزین برای MySQL 8
-      const countResult = await query<any>(
-        `SELECT COUNT(*) as total FROM smslog sl WHERE sl.user_id = ? AND sl.status = ?`,
-        [userId, status],
+    // ========== اضافه کردن ORDER BY و LIMIT ==========
+    sql += ` ORDER BY sl.created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    console.log("SQL:", sql);
+    console.log("Params:", params);
+
+    const scheduledSms = await query<any>(sql, params);
+
+    // ========== دریافت تعداد کل (کوئری جداگانه) ==========
+    let countSql = `
+      SELECT COUNT(*) as total
+      FROM smslog sl
+      LEFT JOIN booking b ON sl.booking_id = b.id
+      WHERE sl.user_id = ? AND sl.status = ?
+    `;
+    const countParams: any[] = [userId, status];
+
+    if (userType === "staff" && staffId) {
+      const staff = await query<any>(
+        "SELECT calendar_type FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1",
+        [parseInt(staffId), userId]
       );
-      total = countResult[0]?.total || 0;
+      const calendarType = staff?.[0]?.calendar_type;
+
+      if (calendarType === "independent") {
+        countSql += " AND b.staff_id = ?";
+        countParams.push(parseInt(staffId));
+      } else {
+        countSql += " AND b.staff_id = ?";
+        countParams.push(parseInt(staffId));
+      }
+    } else {
+      countSql += " AND b.staff_id IS NULL";
     }
 
-    // ========== اضافه کردن ORDER BY و LIMIT به کوئری اصلی ==========
-    const finalSql = `${baseSql} ORDER BY sl.created_at DESC LIMIT ? OFFSET ?`;
-    const finalParams = [...params, limit, offset];
+    const countResult = await query<any>(countSql, countParams);
+    const total = countResult[0]?.total || 0;
 
-    console.log("Final SQL:", finalSql);
-    console.log("Final Params:", finalParams);
-
-    const scheduledSms = await query<any>(finalSql, finalParams);
-
-    // فرمت کردن تاریخ‌ها
+    // ========== فرمت کردن تاریخ‌ها ==========
     const formattedSms = scheduledSms.map((sms: any) => {
       let scheduledAtPersian = "بلافاصله";
       if (sms.scheduled_at) {
@@ -118,17 +117,14 @@ export const GET = withAuth(async (req: Request, context: any) => {
           minute: "2-digit",
         }).format(date);
       }
-
+      
       return {
         ...sms,
         scheduled_at_persian: scheduledAtPersian,
-        created_at_persian: new Date(sms.created_at).toLocaleDateString(
-          "fa-IR",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-          },
-        ),
+        created_at_persian: new Date(sms.created_at).toLocaleDateString("fa-IR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
     });
 
@@ -144,16 +140,13 @@ export const GET = withAuth(async (req: Request, context: any) => {
     });
   } catch (error: any) {
     console.error("Error fetching scheduled SMS:", error);
-    console.error("SQL Error:", error.sqlMessage);
-    console.error("SQL State:", error.sqlState);
-
+    
     return NextResponse.json(
-      {
-        success: false,
-        message: "خطا در دریافت پیامک‌های زمان‌بندی شده",
-        debug: error.sqlMessage || error.message,
+      { 
+        success: false, 
+        message: "خطا در دریافت پیامک‌های زمان‌بندی شده"
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 });
