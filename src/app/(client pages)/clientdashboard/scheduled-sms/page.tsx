@@ -76,25 +76,27 @@ export default function ScheduledSmsPage() {
   const [cancelingSms, setCancelingSms] = useState<ScheduledSms | null>(null);
   const [isCanceling, setIsCanceling] = useState(false);
 
-  const fetchScheduledSms = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/client/sms-scheduled?status=${statusFilter}&page=${pagination.page}`
-      );
-      const data = await res.json();
-      if (data.success) {
-        setScheduledSms(data.scheduledSms);
-        setPagination(data.pagination);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("خطا در دریافت اطلاعات");
-    } finally {
-      setLoading(false);
+const fetchScheduledSms = useCallback(async () => {
+  setLoading(true);
+  try {
+    const res = await fetch(
+      `/api/client/sms-scheduled?status=${statusFilter}&page=${pagination.page}`
+    );
+    const data = await res.json();
+    if (data.success) {
+      setScheduledSms(data.scheduledSms);
+      setPagination(data.pagination);
+    } else {
+      console.error("API Error:", data);
+      toast.error(data.message || "خطا در دریافت اطلاعات");
     }
-  }, [statusFilter, pagination.page]);
+  } catch (error) {
+    console.error("Fetch error:", error);
+    toast.error("خطا در دریافت اطلاعات");
+  } finally {
+    setLoading(false);
+  }
+}, [statusFilter, pagination.page]);
 
   useEffect(() => {
     fetchScheduledSms();
