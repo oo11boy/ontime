@@ -110,24 +110,54 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // بررسی شماره تکراری - حتی اگر غیرفعال باشد
-    const existing = await query<any>(
-      "SELECT id, is_active FROM staffs WHERE owner_user_id = ? AND phone = ?",
-      [userId, phone],
+    // ========== بررسی شماره در کل جدول staffs (پرسنل سایر کسب‌وکارها) ==========
+    const existingStaffGlobal = await query<any>(
+      "SELECT id, owner_user_id, is_active, name FROM staffs WHERE phone = ?",
+      [phone],
     );
 
-    if (existing.length > 0) {
-      if (existing[0].is_active === 1) {
+    if (existingStaffGlobal.length > 0) {
+      const existingStaff = existingStaffGlobal[0];
+      
+      if (existingStaff.owner_user_id === userId) {
+        if (existingStaff.is_active === 1) {
+          return NextResponse.json(
+            { message: "این شماره قبلاً به عنوان پرسنل فعال شما ثبت شده است" },
+            { status: 409 },
+          );
+        } else {
+          return NextResponse.json(
+            { message: "این شماره قبلاً به عنوان پرسنل شما ثبت شده است. در صورت نیاز با پشتیبانی تماس بگیرید." },
+            { status: 409 },
+          );
+        }
+      } else {
         return NextResponse.json(
-          { message: "این شماره قبلاً به عنوان پرسنل فعال ثبت شده است" },
+          { message: "این شماره قبلاً به عنوان پرسنل یک کسب‌وکار دیگر ثبت شده است. لطفاً شماره دیگری وارد کنید." },
+          { status: 409 },
+        );
+      }
+    }
+
+    // ========== بررسی شماره در جدول users (رییس‌های دیگر) ==========
+    const existingUser = await query<any>(
+      "SELECT id, name, phone FROM users WHERE phone = ?",
+      [phone],
+    );
+
+    if (existingUser.length > 0) {
+      const user = existingUser[0];
+      
+      // اگر شماره متعلق به خود این رییس باشد
+      if (user.id === userId) {
+        return NextResponse.json(
+          { message: "این شماره متعلق به حساب اصلی شما (رییس) است. نمی‌توانید آن را به عنوان پرسنل ثبت کنید." },
           { status: 409 },
         );
       } else {
+        // شماره متعلق به رییس دیگری است
         return NextResponse.json(
-          {
-            message:
-              "این شماره قبلاً به عنوان پرسنل ثبت شده است. در صورت نیاز با پشتیبانی تماس بگیرید.",
-          },
+          { message: "این شماره قبلاً به عنوان حساب اصلی (رییس) یک کسب‌وکار دیگر ثبت شده است. لطفاً شماره دیگری وارد کنید." },
           { status: 409 },
         );
       }
@@ -308,16 +338,46 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
     // بررسی شماره تکراری هنگام تغییر شماره
     if (phone !== undefined && phone !== oldStaff.phone) {
-      const existingPhone = await query<any>(
-        "SELECT id FROM staffs WHERE owner_user_id = ? AND phone = ? AND id != ?",
-        [userId, phone, id],
+      // بررسی در جدول staffs (پرسنل دیگر)
+      const existingStaffGlobal = await query<any>(
+        "SELECT id, owner_user_id FROM staffs WHERE phone = ? AND id != ?",
+        [phone, id],
       );
 
-      if (existingPhone.length > 0) {
-        return NextResponse.json(
-          { message: "این شماره قبلاً به عنوان پرسنل دیگر ثبت شده است" },
-          { status: 409 },
-        );
+      if (existingStaffGlobal.length > 0) {
+        const existing = existingStaffGlobal[0];
+        if (existing.owner_user_id === userId) {
+          return NextResponse.json(
+            { message: "این شماره قبلاً به عنوان پرسنل دیگر شما ثبت شده است" },
+            { status: 409 },
+          );
+        } else {
+          return NextResponse.json(
+            { message: "این شماره قبلاً به عنوان پرسنل یک کسب‌وکار دیگر ثبت شده است" },
+            { status: 409 },
+          );
+        }
+      }
+
+      // بررسی در جدول users (رییس‌ها)
+      const existingUser = await query<any>(
+        "SELECT id, name FROM users WHERE phone = ?",
+        [phone],
+      );
+
+      if (existingUser.length > 0) {
+        const user = existingUser[0];
+        if (user.id === userId) {
+          return NextResponse.json(
+            { message: "این شماره متعلق به حساب اصلی شما (رییس) است. نمی‌توانید آن را به عنوان پرسنل ثبت کنید." },
+            { status: 409 },
+          );
+        } else {
+          return NextResponse.json(
+            { message: "این شماره قبلاً به عنوان حساب اصلی (رییس) یک کسب‌وکار دیگر ثبت شده است." },
+            { status: 409 },
+          );
+        }
       }
     }
 
@@ -401,9 +461,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
             if (connection) await connection.query("ROLLBACK");
             if (connection) connection.release();
             return NextResponse.json(
-              {
-                message: `اعتبار کافی نیست. نیاز به ${balanceDiff} پیامک بیشتر`,
-              },
+              { message: `اعتبار کافی نیست. نیاز به ${balanceDiff} پیامک بیشتر` },
               { status: 400 },
             );
           }
@@ -571,7 +629,7 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
           [id],
         );
 
-        // 2. برای هر نوبت لغو شده، یک لاگ ثبت کن (اختیاری)
+        // 2. برای هر نوبت لغو شده، یک لاگ ثبت کن
         for (const booking of activeBookings) {
           await connection.query(
             `INSERT INTO notifications 
@@ -632,7 +690,6 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
       await connection.query("COMMIT");
       connection.release();
 
-      // پیام بازگشتی بر اساس نوع حذف
       let message = "پرسنل با موفقیت حذف شد";
       if (force && activeBookings.length > 0) {
         message = `پرسنل با موفقیت حذف شد. ${activeBookings.length} نوبت فعال این پرسنل نیز لغو گردید.`;
