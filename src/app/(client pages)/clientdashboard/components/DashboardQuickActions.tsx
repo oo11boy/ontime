@@ -63,7 +63,7 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       id: 4,
       label: "افزودن پرسنل",
       icon: UserPlus,
-      onClick: () => setShowModal(true),
+        href: "./clientdashboard/Staffs",
       color: "#8b5cf6",
       bg: "rgba(139,92,246,0.1)",
     },
@@ -254,52 +254,7 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
           })}
       </div>
 
-      {/* Modern Modal / Bottom Sheet */}
-      <AnimatePresence>
-        {showModal && (
-          <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#060910]/80 backdrop-blur-md"
-              onClick={() => setShowModal(false)}
-            />
 
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative bg-[#161b26] border-t border-white/10 w-full max-w-md rounded-t-[2.5rem] sm:rounded-[3rem] p-8 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] text-center overflow-hidden"
-            >
-              {/* Decorative Background Element */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] rounded-full" />
-
-              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
-
-              <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
-                <Info size={40} className="text-emerald-500" />
-              </div>
-
-              <h3 className="text-2xl font-black text-white mb-3">
-                به زودی...
-              </h3>
-              <p className="text-gray-400 text-sm mb-10 leading-relaxed px-6 font-medium">
-                ما در حال کار روی این قابلیت جذاب هستیم. در نسخه‌های آینده منتظر
-                فعال شدن آن باشید!
-              </p>
-
-              <button
-                onClick={() => setShowModal(false)}
-                className="w-full h-16 bg-white text-black font-black rounded-2xl transition-all active:scale-[0.96] shadow-xl hover:bg-emerald-400"
-              >
-                متوجه شدم
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

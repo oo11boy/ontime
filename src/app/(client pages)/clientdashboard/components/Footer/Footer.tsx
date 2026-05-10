@@ -23,7 +23,6 @@ export default function Footer({ userType = "user" }: FooterProps) {
       isCenter: true,
     },
     { href: "/clientdashboard/calendar", icon: Calendar, label: "تقویم" },
-    { href: "/clientdashboard/Staffs", icon: ListCheck, label: "پرسنل" },
     { href: "/clientdashboard/services", icon: ListCheck, label: "خدمات" },
   ];
 
