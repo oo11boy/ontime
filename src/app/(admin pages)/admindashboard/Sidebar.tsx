@@ -17,7 +17,8 @@ import {
   CalendarCheck,
   X, 
   MessageSquareIcon,
-  MessageCircle
+  MessageCircle,
+  Bell
 } from "lucide-react";
 import toast from "react-hot-toast"; // برای نمایش پیام‌های خروج
 
@@ -33,7 +34,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const menuItems = [
     { href: "/admindashboard", icon: LayoutDashboard, label: "داشبورد اصلی" },
-        { title: "مدیریت پیامک" },
+      { title: "مدیریت محتوا" },  // دسته‌بندی جدید
+  { href: "/admindashboard/announcements", icon: Bell, label: "اطلاعیه‌ها" },  // اضافه شده
+    { title: "مدیریت پیامک" },
     { href: "/admindashboard/systemstatus", icon: MessageSquareIcon, label: "سیستم پیامکی" },
      { href: "/admindashboard/smstemplates", icon: MessageCircle, label: "پترن های پیامکی" },
     { title: "مدیریت کاربران" },

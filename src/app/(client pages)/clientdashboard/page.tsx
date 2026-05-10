@@ -15,6 +15,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import InstallPWA from "./components/InstallPWA";
 import IosInstallPrompt from "./components/IosInstallPrompt";
 import { useUserType } from "@/hooks/useUserType";
+import AnnouncementBanner from "./components/AnnouncementBanner";
 
 export default function DashboardPage() {
   const { data: dashboardData, isLoading, error, refetch } = useDashboard();
@@ -57,25 +58,8 @@ export default function DashboardPage() {
 
         <main className="flex-1 overflow-y-auto pb-32 pt-4 px-4">
           <div className="max-w-md mx-auto space-y-6">
-            {/* بنر تشخیص پرسنل */}
-            {userType === "staff" && showStaffBanner && (
-              <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">👤</span>
-                  <div>
-                    <p className="text-xs text-gray-300">وارد شده با نقش</p>
-                    <p className="font-bold text-white">پرسنل</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowStaffBanner(false)}
-                  className="text-gray-400 hover:text-white text-sm px-2"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
+     
+<AnnouncementBanner />
             <div className="space-y-2">
               <InstallPWA />
               <IosInstallPrompt />
