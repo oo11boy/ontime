@@ -58,8 +58,7 @@ export default function DashboardPage() {
 
         <main className="flex-1 overflow-y-auto pb-32 pt-4 px-4">
           <div className="max-w-md mx-auto space-y-6">
-     
-<AnnouncementBanner />
+            <AnnouncementBanner />
             <div className="space-y-2">
               <InstallPWA />
               <IosInstallPrompt />
