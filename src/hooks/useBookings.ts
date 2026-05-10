@@ -1,5 +1,6 @@
 import { Appointment } from "@/types";
 import { useApiQuery, useApiMutation } from "./useApi";
+import { useUserType } from "./useUserType";
 
 // --- Interfaces ---
 interface BookingsResponse {
@@ -34,7 +35,12 @@ interface SingleBookingResponse {
 // --- Hooks ---
 
 export const useBookings = () => {
-  return useApiQuery<BookingsResponse>(["bookings"], "/api/client/bookings");
+  const { userType, staffId } = useUserType();
+  
+  return useApiQuery<BookingsResponse>(
+    ["bookings", userType, staffId],
+    "/api/client/bookings"
+  );
 };
 
 export const useRecentBookings = () => {
@@ -54,7 +60,6 @@ export const useBookingById = (id?: number) => {
 };
 
 export const useCreateBooking = () => {
-  // اصلاح شد: حالا دو آرگومان تایپی قبول می‌کند
   return useApiMutation<CreateBookingResponse, any>(
     "POST",
     "/api/client/bookings",
@@ -80,7 +85,7 @@ export const useUpdateBooking = () => {
 export const useCustomerBooking = (token: string) => {
   return useApiQuery<{
     success: boolean;
-    booking: any; // می‌توانید این را با جزئیات دقیق‌تر تایپ کنید
+    booking: any;
   }>(
     ["customer-booking", token],
     token ? `/api/customer-booking?token=${token}` : null,
@@ -135,22 +140,28 @@ export const useCustomerBookingActions = () => {
   };
 };
 
+// hooks/useBookings.ts - بخش useAvailableTimes
+
 export const useAvailableTimes = (date?: string, duration?: number) => {
-  // اصلاح شد: آدرس URL فقط در صورت وجود مقادیر ساخته می‌شود
-  const url =
-    date && duration
-      ? `/api/available-times?date=${encodeURIComponent(
-          date
-        )}&duration=${duration}`
-      : null;
+  const { userType, staffId } = useUserType();
+  
+  let url = date && duration
+    ? `/api/available-times?date=${encodeURIComponent(date)}&duration=${duration}`
+    : null;
+  
+  // اگر پرسنل است، staffId را هم ارسال کن
+  if (userType === "staff" && staffId && url) {
+    url += `&staffId=${staffId}`;
+  }
 
   return useApiQuery<{
     success: boolean;
     availableTimes: string[];
     bookedTimes: any[];
+    allTimes: string[];
     currentTime: string;
     isToday: boolean;
-  }>(["available-times", date, duration], url, {
+  }>(["available-times", date, duration, userType, staffId], url, {
     enabled: !!date && !!duration,
     staleTime: 30 * 1000,
   });

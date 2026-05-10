@@ -1,8 +1,10 @@
+// src/app/api/client/bookings/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 import { customAlphabet } from "nanoid";
+import { cookies } from "next/headers";
 
 // تابع تبدیل تاریخ میلادی به شمسی
 function gregorianToJalali(g_y: number, g_m: number, g_d: number): string {
@@ -57,19 +59,25 @@ function gregorianToJalali(g_y: number, g_m: number, g_d: number): string {
 
 const nanoid = customAlphabet(
   "346789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz",
-  4
+  4,
 );
 
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
+  const cookieStore = await cookies();
+  const userType = cookieStore.get("user_type")?.value;
+  const staffId = cookieStore.get("staff_id")?.value;
+
+  // ==================== GET: دریافت نوبت‌ها ====================
   if (req.method === "GET") {
     try {
+      // به‌روزرسانی خودکار نوبت‌های گذشته به done
       await query(
         `UPDATE booking SET status = 'done', updated_at = NOW()
          WHERE user_id = ? AND status = 'active'
            AND ((booking_date < CURDATE()) OR (booking_date = CURDATE() AND booking_time < CURTIME()))`,
-        [userId]
+        [userId],
       );
 
       const url = new URL(req.url);
@@ -84,6 +92,33 @@ const handler = withAuth(async (req: NextRequest, context) => {
       `;
       const params: any[] = [userId, statusFilter];
 
+      // منطق دسترسی بر اساس نوع کاربر
+      if (userType === "staff" && staffId) {
+        const staff = await query<any>(
+          "SELECT calendar_type FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1",
+          [parseInt(staffId), userId],
+        );
+
+        const calendarType = staff?.[0]?.calendar_type;
+
+        if (calendarType === "independent") {
+          // تقویم مستقل: فقط نوبت‌های خود پرسنل
+          sql += " AND b.staff_id = ?";
+          params.push(parseInt(staffId));
+        }
+        // اگر calendar_type = "synced" باشد: همه نوبت‌ها را نشان بده
+      } else {
+        // رییس (user): فقط نوبت‌های خودش + نوبت‌های پرسنل با تقویم هماهنگ (synced)
+        sql += ` AND (
+          b.staff_id IS NULL 
+          OR b.staff_id IN (
+            SELECT id FROM staffs 
+            WHERE owner_user_id = ? AND calendar_type = 'synced' AND is_active = 1
+          )
+        )`;
+        params.push(userId);
+      }
+
       if (dateFilter) {
         sql += " AND b.booking_date = ?";
         params.push(dateFilter);
@@ -94,13 +129,15 @@ const handler = withAuth(async (req: NextRequest, context) => {
 
       return NextResponse.json({ bookings });
     } catch (error) {
+      console.error("[BOOKINGS GET] Error:", error);
       return NextResponse.json(
         { message: "خطا در دریافت لیست" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }
 
+  // ==================== POST: ثبت نوبت جدید ====================
   if (req.method === "POST") {
     try {
       const body = await req.json();
@@ -117,39 +154,74 @@ const handler = withAuth(async (req: NextRequest, context) => {
         sms_reminder_hours_before = 24,
         reserve_pattern = null,
         reminder_pattern = null,
-        reserve_message_count = 1,   // تعداد صفحات پیامک رزرو (از فرانت می‌آید)
-        reminder_message_count = 1, // تعداد صفحات پیامک یادآوری (از فرانت می‌آید)
+        reserve_message_count = 1,
+        reminder_message_count = 1,
+        staff_id = null,
       } = body;
 
       if (!client_name || !client_phone || !booking_date || !booking_time) {
         return NextResponse.json(
           { message: "اطلاعات ضروری ناقص است" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       const cleanedPhone = client_phone.replace(/\D/g, "").slice(-10);
 
+      // بررسی مسدودیت مشتری
       const [clientData]: any = await query(
         "SELECT id, is_blocked, cancelled_count, client_name FROM clients WHERE user_id = ? AND client_phone = ? LIMIT 1",
-        [userId, cleanedPhone]
+        [userId, cleanedPhone],
       );
 
       if (clientData?.is_blocked === 1) {
         return NextResponse.json(
           { success: false, isBlocked: true, message: "مشتری مسدود شده است" },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
-      const conflicts: any = await query(
-        "SELECT id FROM booking WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active'",
-        [userId, booking_date, booking_time]
-      );
+      // بررسی تداخل زمانی
+      let conflictCheckSql = `
+        SELECT id, staff_id FROM booking 
+        WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active'
+      `;
+      let conflictParams: any[] = [userId, booking_date, booking_time];
+
+      // اگر کاربر از نوع رییس است
+      if (userType !== "staff") {
+        // رییس: فقط تداخل با نوبت‌های خودش (staff_id IS NULL) و نوبت‌های پرسنل هماهنگ (synced)
+        conflictCheckSql += ` AND (
+          staff_id IS NULL 
+          OR staff_id IN (
+            SELECT id FROM staffs 
+            WHERE owner_user_id = ? AND calendar_type = 'synced' AND is_active = 1
+          )
+        )`;
+        conflictParams.push(userId);
+      }
+      // اگر کاربر از نوع پرسنل است
+      else if (userType === "staff" && staffId) {
+        const staff = await query<any>(
+          "SELECT calendar_type FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1",
+          [parseInt(staffId), userId],
+        );
+        const calendarType = staff?.[0]?.calendar_type;
+
+        if (calendarType === "independent") {
+          // پرسنل با تقویم مستقل: فقط تداخل با نوبت‌های خودش
+          conflictCheckSql += " AND staff_id = ?";
+          conflictParams.push(parseInt(staffId));
+        }
+        // پرسنل با تقویم هماهنگ (synced): تداخل با نوبت‌های رییس و خودش (همان کوئری اصلی)
+        // نیازی به شرط اضافی نیست چون قبلاً همه نوبت‌ها را می‌گیرد
+      }
+
+      const conflicts: any = await query(conflictCheckSql, conflictParams);
       if (conflicts.length > 0) {
         return NextResponse.json(
           { message: "این زمان قبلاً رزرو شده است" },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
@@ -159,18 +231,27 @@ const handler = withAuth(async (req: NextRequest, context) => {
 
       const [defaultReserveTemplate]: any = await query(
         "SELECT id, payamresan_id FROM smstemplates WHERE type = 'reserve' AND (user_id = ? OR user_id IS NULL) ORDER BY user_id DESC LIMIT 1",
-        [userId]
+        [userId],
       );
+
+      // تعیین staff_id نهایی برای نوبت
+      let finalStaffId = null;
+      if (staff_id) {
+        finalStaffId = staff_id;
+      } else if (userType === "staff" && staffId) {
+        finalStaffId = parseInt(staffId);
+      }
 
       const insertResult: any = await query(
         `INSERT INTO booking
-        (user_id, client_name, client_phone, booking_date, booking_time, duration_minutes,
+        (user_id, staff_id, client_name, client_phone, booking_date, booking_time, duration_minutes,
          booking_description, services, status, sms_reserve_enabled, sms_reserve_template_id,
          sms_reserve_pattern, sms_reminder_enabled, sms_reminder_hours_before,
          sms_reminder_pattern, customer_token, token_expires_at, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           userId,
+          finalStaffId,
           client_name.trim(),
           cleanedPhone,
           booking_date,
@@ -186,24 +267,47 @@ const handler = withAuth(async (req: NextRequest, context) => {
           reminder_pattern || null,
           customerToken,
           tokenExpiresAt,
-        ]
+        ],
       );
 
-      const newBookingId = insertResult.insertId;
+      // اصلاح: دسترسی صحیح به insertId
+      let newBookingId;
+      if (Array.isArray(insertResult) && insertResult.length > 0) {
+        newBookingId = insertResult[0].insertId;
+      } else if (insertResult && typeof insertResult === "object") {
+        newBookingId = insertResult.insertId;
+      } else {
+        newBookingId = insertResult;
+      }
 
+      // به‌روزرسانی یا ایجاد مشتری در جدول clients
       await query(
         `INSERT INTO clients (client_name, client_phone, user_id, total_bookings, last_booking_date, created_at, updated_at)
          VALUES (?, ?, ?, 1, ?, NOW(), NOW())
          ON DUPLICATE KEY UPDATE client_name = VALUES(client_name), total_bookings = total_bookings + 1, last_booking_date = VALUES(last_booking_date), updated_at = NOW()`,
-        [client_name.trim(), cleanedPhone, userId, booking_date]
+        [client_name.trim(), cleanedPhone, userId, booking_date],
       );
 
-      // فقط اگر حداقل یکی از پیامک‌ها فعال باشد، پردازش پیامک انجام شود
+      // اگر پرسنل است و مشتری جدید است، ارتباط ثبت شود
+      if (userType === "staff" && staffId && finalStaffId) {
+        const [newClient]: any = await query(
+          "SELECT id FROM clients WHERE user_id = ? AND client_phone = ?",
+          [userId, cleanedPhone],
+        );
+        if (newClient) {
+          await query(
+            "INSERT IGNORE INTO staff_client_relation (staff_id, client_id) VALUES (?, ?)",
+            [parseInt(staffId), newClient.id],
+          );
+        }
+      }
+
+      // ارسال پیامک (در صورت فعال بودن)
       if (sms_reserve_enabled || sms_reminder_enabled) {
         const customerLink = `https://ontimeapp.ir/${customerToken}`;
         const [userData]: any = await query(
           "SELECT business_name, name FROM users WHERE id = ?",
-          [userId]
+          [userId],
         );
         const salonName =
           userData?.business_name?.trim() ||
@@ -218,7 +322,6 @@ const handler = withAuth(async (req: NextRequest, context) => {
         const [gy, gm, gd] = booking_date.split("-").map(Number);
         const jalaliDate = gregorianToJalali(gy, gm, gd);
 
-        // پیامک تایید رزرو
         if (sms_reserve_enabled) {
           await fetch(`${baseUrl}/api/sms/send`, {
             method: "POST",
@@ -236,13 +339,13 @@ const handler = withAuth(async (req: NextRequest, context) => {
               service: services.trim() || "خدمات",
               link: customerLink,
               salon: salonName,
-              template_key: reserve_pattern || defaultReserveTemplate?.payamresan_id,
-              message_count: reserve_message_count, // دقیقاً همون مقداری که از فرانت اومده
+              template_key:
+                reserve_pattern || defaultReserveTemplate?.payamresan_id,
+              message_count: reserve_message_count,
             }),
           });
         }
 
-        // پیامک یادآوری
         if (sms_reminder_enabled) {
           await fetch(`${baseUrl}/api/sms/send`, {
             method: "POST",
@@ -264,7 +367,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
               link: customerLink,
               salon: salonName,
               template_key: reminder_pattern,
-              message_count: reminder_message_count, // دقیقاً همون مقداری که از فرانت اومده
+              message_count: reminder_message_count,
             }),
           });
         }
@@ -272,7 +375,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
 
       return NextResponse.json(
         { success: true, bookingId: newBookingId, customerToken },
-        { status: 201 }
+        { status: 201 },
       );
     } catch (error: any) {
       console.error("[BOOKINGS POST] Error:", error);
@@ -280,12 +383,13 @@ const handler = withAuth(async (req: NextRequest, context) => {
     }
   }
 
+  // ==================== DELETE: لغو نوبت ====================
   if (req.method === "DELETE") {
     try {
       const { id } = await req.json();
       const result: any = await query(
         "UPDATE booking SET status = 'cancelled', customer_token = NULL WHERE id = ? AND user_id = ?",
-        [id, userId]
+        [id, userId],
       );
       if (result.affectedRows === 0)
         return NextResponse.json({ message: "نوبت یافت نشد" }, { status: 404 });
@@ -294,11 +398,92 @@ const handler = withAuth(async (req: NextRequest, context) => {
         message: "نوبت با موفقیت لغو شد",
       });
     } catch (error) {
+      console.error("[BOOKINGS DELETE] Error:", error);
       return NextResponse.json({ message: "خطا در لغو نوبت" }, { status: 500 });
+    }
+  }
+
+  // ==================== PATCH: ویرایش نوبت ====================
+  if (req.method === "PATCH") {
+    try {
+      const body = await req.json();
+      const { id, ...updateData } = body;
+
+      if (!id) {
+        return NextResponse.json(
+          { message: "شناسه نوبت الزامی است" },
+          { status: 400 },
+        );
+      }
+
+      const fields: string[] = [];
+      const values: any[] = [];
+
+      if (updateData.client_name !== undefined) {
+        fields.push("client_name = ?");
+        values.push(updateData.client_name.trim());
+      }
+      if (updateData.client_phone !== undefined) {
+        const cleanedPhone = updateData.client_phone
+          .replace(/\D/g, "")
+          .slice(-10);
+        fields.push("client_phone = ?");
+        values.push(cleanedPhone);
+      }
+      if (updateData.booking_date !== undefined) {
+        fields.push("booking_date = ?");
+        values.push(updateData.booking_date);
+      }
+      if (updateData.booking_time !== undefined) {
+        fields.push("booking_time = ?");
+        values.push(updateData.booking_time);
+      }
+      if (updateData.duration_minutes !== undefined) {
+        fields.push("duration_minutes = ?");
+        values.push(updateData.duration_minutes);
+      }
+      if (updateData.booking_description !== undefined) {
+        fields.push("booking_description = ?");
+        values.push(updateData.booking_description.trim());
+      }
+      if (updateData.services !== undefined) {
+        fields.push("services = ?");
+        values.push(updateData.services.trim());
+      }
+      if (updateData.status !== undefined) {
+        fields.push("status = ?");
+        values.push(updateData.status);
+      }
+
+      if (fields.length === 0) {
+        return NextResponse.json(
+          { message: "هیچ فیلدی برای به‌روزرسانی ارسال نشده است" },
+          { status: 400 },
+        );
+      }
+
+      fields.push("updated_at = NOW()");
+      values.push(id, userId);
+
+      await query(
+        `UPDATE booking SET ${fields.join(", ")} WHERE id = ? AND user_id = ?`,
+        values,
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "نوبت با موفقیت ویرایش شد",
+      });
+    } catch (error) {
+      console.error("[BOOKINGS PATCH] Error:", error);
+      return NextResponse.json(
+        { message: "خطا در ویرایش نوبت" },
+        { status: 500 },
+      );
     }
   }
 
   return NextResponse.json({ message: "متد مجاز نیست" }, { status: 405 });
 });
 
-export { handler as GET, handler as POST, handler as DELETE };
+export { handler as GET, handler as POST, handler as DELETE, handler as PATCH };

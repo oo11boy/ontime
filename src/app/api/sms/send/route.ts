@@ -1,25 +1,32 @@
-// src/app/api/sms/send/route.ts
+// src/app/api/sms/send/route.ts - بخش مربوط به POST
+
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
-import { deductSms, getSmsBalanceDetails } from "@/lib/sms-server";
+import { deductSms, getSmsBalanceDetails, checkSmsBalance } from "@/lib/sms-server";
 import { smsQueue } from "@/lib/sms-queue";
+import { cookies } from "next/headers";
 
 export const POST = withAuth(async (req, context) => {
   const { userId } = context;
+  
+  // دریافت staffId از کوکی
+  const cookieStore = await cookies();
+  const staffIdFromCookie = cookieStore.get("staff_id")?.value;
+  const staffId = staffIdFromCookie ? parseInt(staffIdFromCookie) : null;
 
   try {
     const body = await req.json();
     const {
       to_phone,
-      content = "", // فقط برای لاگ‌گیری (در صف ارسال استفاده نمی‌شه)
+      content = "",
       sms_type = "other",
       booking_id = null,
       booking_date = null,
       booking_time = null,
       sms_reminder_hours_before = 24,
       template_key = null,
-      message_count = 1, // ← این عدد مستقیماً از دیتابیس (smstemplates.message_count) می‌آید
+      message_count = 1,
       name,
       date: customDate,
       time: customTime,
@@ -32,9 +39,10 @@ export const POST = withAuth(async (req, context) => {
       template_key,
       message_count,
       booking_id,
+      staffId,
     });
 
-    // اعتبارسنجی شماره موبایل
+    // اعتبارسنجی
     if (!to_phone || to_phone.replace(/\D/g, "").length < 10) {
       return NextResponse.json(
         { success: false, message: "شماره موبایل معتبر الزامی است" },
@@ -42,7 +50,7 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
-    // دریافت نام سالن برای جایگزینی %salon%
+    // دریافت نام سالن
     const users: any = await query(
       "SELECT business_name, name FROM users WHERE id = ?",
       [userId]
@@ -51,23 +59,32 @@ export const POST = withAuth(async (req, context) => {
     const salonName =
       userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
 
-    // تعیین هزینه نهایی — دقیقاً بر اساس message_count از دیتابیس
+    // تعیین هزینه نهایی
     const finalSmsCost = Math.max(1, Number(message_count));
 
-    // بررسی موجودی
-    const balance = await getSmsBalanceDetails(userId);
-    if (balance.total_balance < finalSmsCost) {
+    // بررسی موجودی قبل از کسر (با در نظر گرفتن staffId)
+    const balanceCheck = await checkSmsBalance(userId, finalSmsCost, staffId);
+    if (!balanceCheck.hasEnough) {
       return NextResponse.json(
         {
           success: false,
-          message: `موجودی پیامک کافی نیست — نیاز: ${finalSmsCost} پیامک، موجود: ${balance.total_balance} پیامک`,
+          message: balanceCheck.message,
         },
         { status: 402 }
       );
     }
 
-    // کسر موجودی بر اساس message_count دیتابیس
-    const deducted = await deductSms(userId, finalSmsCost);
+    // کسر موجودی (با پاس دادن staffId)
+    let deducted = false;
+    try {
+      deducted = await deductSms(userId, finalSmsCost, staffId);
+    } catch (error: any) {
+      return NextResponse.json(
+        { success: false, message: error.message || "خطا در کسر موجودی پنل پیامک" },
+        { status: 500 }
+      );
+    }
+
     if (!deducted) {
       return NextResponse.json(
         { success: false, message: "خطا در کسر موجودی پنل پیامک" },
@@ -89,7 +106,7 @@ export const POST = withAuth(async (req, context) => {
     const bookingAt =
       booking_date && booking_time ? `${booking_date} ${booking_time}:00` : null;
 
-    // ثبت در smslog با هزینه دقیق (از message_count)
+    // ثبت در smslog
     const logResult: any = await query(
       `INSERT INTO smslog (
         user_id, booking_id, to_phone, content, cost, sms_type, booking_at, status, created_at
@@ -107,14 +124,14 @@ export const POST = withAuth(async (req, context) => {
 
     const logId = logResult?.insertId || logResult?.[0]?.insertId;
 
-    // افزودن به صف ارسال (محتوای واقعی در worker جایگزین می‌شه، فقط پترن و پارامترها مهمن)
+    // افزودن به صف ارسال
     try {
       await smsQueue.add(
         "send-sms",
         {
           logId,
           to_phone,
-          content: content || null, // اگر محتوا خام بود، استفاده می‌شه، وگرنه از پترن
+          content: content || null,
           template_key,
           params: {
             name: name || "مشتری عزیز",
@@ -141,7 +158,6 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
-    // پاسخ نهایی
     return NextResponse.json({
       success: true,
       deducted: finalSmsCost,
@@ -154,7 +170,7 @@ export const POST = withAuth(async (req, context) => {
   } catch (error: any) {
     console.error("[SMS API] خطای بحرانی:", error);
     return NextResponse.json(
-      { success: false, message: "خطای داخلی سرور در پردازش پیامک" },
+      { success: false, message: error.message || "خطای داخلی سرور در پردازش پیامک" },
       { status: 500 }
     );
   }

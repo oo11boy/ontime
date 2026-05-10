@@ -1,7 +1,8 @@
-// components/Services/ServicesList.tsx
+"use client";
 import React from "react";
 import { ServiceCard } from "./ServiceCard";
-import { Plus, Scissors } from "lucide-react";
+import { Plus, Scissors, Lock } from "lucide-react";
+import { useUserType } from "@/hooks/useUserType";
 
 interface Service {
   id: number;
@@ -29,8 +30,12 @@ export const ServicesList: React.FC<ServicesListProps> = ({
   onToggleStatus,
   onEdit,
   onDelete,
+  
   onOpenAddModal,
 }) => {
+  const { userType } = useUserType();
+  const isStaff = userType === "staff";
+
   if (isLoading) {
     return (
       <>
@@ -53,7 +58,23 @@ export const ServicesList: React.FC<ServicesListProps> = ({
     );
   }
 
-  if (services.length === 0) {
+  // حالت پرسنل بدون خدمات مجاز
+  if (isStaff && services.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Lock className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-gray-400 mb-2">
+          هیچ خدمت مجازی برای شما تعریف نشده
+        </h3>
+        <p className="text-gray-500 text-sm">
+          لطفاً با مدیریت مجموعه تماس بگیرید تا خدمات مجاز شما را تعیین کند
+        </p>
+      </div>
+    );
+  }
+
+  // حالت رییس بدون خدمات
+  if (!isStaff && services.length === 0) {
     return (
       <div className="text-center py-12">
         <Scissors className="w-16 h-16 text-gray-500 mx-auto mb-4" />
@@ -65,7 +86,7 @@ export const ServicesList: React.FC<ServicesListProps> = ({
         </p>
         <button
           onClick={onOpenAddModal}
-          className="bg-linear-to-r from-emerald-500 to-emerald-600 rounded-xl px-6 py-3 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all flex items-center gap-2 mx-auto"
+          className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl px-6 py-3 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all flex items-center gap-2 mx-auto"
         >
           <Plus className="w-5 h-5" />
           افزودن اولین خدمت

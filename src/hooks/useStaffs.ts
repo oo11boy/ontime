@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
 
 interface Service {
   id: number;
@@ -9,8 +10,8 @@ interface Staff {
   id: number;
   name: string;
   phone: string;
-  sms_balance: number;  // اعتبار باقی‌مانده
-  sms_used: number;     // اضافه شد - پیامک مصرف شده
+  sms_balance: number;
+  sms_used: number;
   service_ids: string | null;
   services: Service[];
   calendar_type: "synced" | "independent";
@@ -100,6 +101,7 @@ export const useCreateStaff = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staffs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 };
@@ -122,27 +124,58 @@ export const useUpdateStaff = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["staffs"] });
       queryClient.invalidateQueries({ queryKey: ["staff", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 };
 
-// حذف پرسنل
+// حذف پرسنل (با پشتیبانی از حذف اجباری)
 export const useDeleteStaff = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async ({ id, force = false }: { id: number; force?: boolean }) => {
       const res = await fetch("/api/client/staffs", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, force }),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "خطا در حذف پرسنل");
+      if (!res.ok) {
+        // اگر خطای 409 (نوبت فعال دارد) باشد، داده‌های نوبت‌ها را برگردان
+        if (res.status === 409 && result.hasActiveBookings) {
+          throw new Error(JSON.stringify(result));
+        }
+        throw new Error(result.message || "خطا در حذف پرسنل");
+      }
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      if (variables.force && data.cancelled_bookings_count > 0) {
+        toast.success(
+          `پرسنل با موفقیت حذف شد. ${data.cancelled_bookings_count} نوبت فعال لغو گردید.`,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success(data.message || "پرسنل با موفقیت حذف شد");
+      }
+      if (data.refunded_sms && data.refunded_sms > 0) {
+        toast.success(`${data.refunded_sms} پیامک به حساب اصلی برگشت`);
+      }
       queryClient.invalidateQueries({ queryKey: ["staffs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (error: any) => {
+      try {
+        const errorData = JSON.parse(error.message);
+        if (errorData.hasActiveBookings) {
+          // این خطا باید در کامپوننت مدیریت شود
+          throw new Error(JSON.stringify({ ...errorData, needForceDelete: true }));
+        }
+        toast.error(errorData.message || "خطا در حذف پرسنل");
+      } catch {
+        toast.error(error.message || "خطا در حذف پرسنل");
+      }
     },
   });
 };

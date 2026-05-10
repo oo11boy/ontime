@@ -38,10 +38,10 @@ interface Staff {
 interface StaffCardProps {
   staff: Staff;
   onEdit: (staff: Staff) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number, force?: boolean) => void;
 }
 
-// مودال تایید حذف (همان قبلی)
+// مودال تایید حذف عادی
 const DeleteConfirmModal = ({
   isOpen,
   onClose,
@@ -83,19 +83,85 @@ const DeleteConfirmModal = ({
           {activeBookings && activeBookings > 0 && (
             <p className="text-amber-400 text-xs mb-4 bg-amber-500/10 p-2 rounded-xl">
               ⚠️ این پرسنل {activeBookings} نوبت فعال دارد.
+              <br />
+              ابتدا نوبت‌ها را لغو کنید یا از حذف اجباری استفاده نمایید.
             </p>
           )}
           <div className="flex flex-col gap-2">
             <button
               onClick={onConfirm}
-              disabled={!!activeBookings}
-              className={`w-full py-4 rounded-2xl font-bold transition-all active:scale-95 ${
-                activeBookings
-                  ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                  : "bg-red-600 hover:bg-red-500 text-white"
-              }`}
+              className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-red-600 hover:bg-red-500 text-white"
             >
               بله، حذف شود
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full py-4 rounded-2xl bg-white/5 text-gray-400 font-semibold hover:bg-white/10 transition-all"
+            >
+              انصراف
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+);
+
+// مودال حذف اجباری
+const ForceDeleteModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  name,
+  activeBookings,
+  isDeleting,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  name: string;
+  activeBookings: number;
+  isDeleting: boolean;
+}) => (
+  <AnimatePresence>
+    {isOpen && (
+      <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-black/85 backdrop-blur-md"
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="relative bg-[#1a1e26] border border-red-500/30 w-full max-w-[320px] rounded-[32px] p-6 shadow-2xl text-center"
+        >
+          <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-white font-bold text-lg mb-2">حذف اجباری پرسنل</h3>
+          <p className="text-gray-400 text-sm mb-4 leading-relaxed">
+            پرسنل <span className="text-red-400 font-bold">"{name}"</span> دارای{" "}
+            <span className="text-yellow-400 font-bold">{activeBookings}</span>{" "}
+            نوبت فعال است.
+          </p>
+          <p className="text-yellow-400 text-xs mb-4 bg-yellow-500/10 p-2 rounded-xl">
+            ⚠️ با حذف اجباری، تمام نوبت‌های فعال این پرسنل لغو خواهند شد.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={onConfirm}
+              disabled={isDeleting}
+              className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-red-600 hover:bg-red-500 text-white disabled:bg-red-800/50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isDeleting ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                "بله، حذف اجباری شود"
+              )}
             </button>
             <button
               onClick={onClose}
@@ -116,10 +182,31 @@ export const StaffCard: React.FC<StaffCardProps> = ({
   onDelete,
 }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isForceDeleteModalOpen, setIsForceDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleConfirmDelete = () => {
-    onDelete(staff.id);
+  const handleNormalDelete = () => {
+    setIsDeleting(true);
+    onDelete(staff.id, false);
     setIsDeleteModalOpen(false);
+    setTimeout(() => setIsDeleting(false), 500);
+  };
+
+  const handleForceDelete = () => {
+    setIsDeleting(true);
+    onDelete(staff.id, true);
+    setIsForceDeleteModalOpen(false);
+    setTimeout(() => setIsDeleting(false), 500);
+  };
+
+  const handleDeleteClick = () => {
+    if (staff.active_bookings && staff.active_bookings > 0) {
+      // اگر نوبت فعال دارد، مودال حذف اجباری را نشان بده
+      setIsForceDeleteModalOpen(true);
+    } else {
+      // اگر نوبت فعال ندارد، مودال عادی را نشان بده
+      setIsDeleteModalOpen(true);
+    }
   };
 
   const getCalendarLabel = (type: string) => {
@@ -164,7 +251,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
 
         <div className="my-4 border-t border-white/5" />
 
-        {/* آمار پیامک - جدید */}
+        {/* آمار پیامک */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-gray-400 flex items-center gap-1">
@@ -183,8 +270,8 @@ export const StaffCard: React.FC<StaffCardProps> = ({
                 usagePercent > 80
                   ? "bg-red-500"
                   : usagePercent > 50
-                    ? "bg-yellow-500"
-                    : "bg-emerald-500"
+                  ? "bg-yellow-500"
+                  : "bg-emerald-500"
               }`}
               style={{ width: `${Math.min(usagePercent, 100)}%` }}
             />
@@ -218,7 +305,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           </div>
         </div>
 
-        {/* آمار ساده قبلی (اختیاری - می‌تونی حذف کنی) */}
+        {/* آمار ساده */}
         <div className="grid grid-cols-2 gap-2 mb-4">
           <div className="bg-white/5 rounded-xl p-2 text-center">
             <Calendar className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
@@ -271,7 +358,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
             ویرایش
           </button>
           <button
-            onClick={() => setIsDeleteModalOpen(true)}
+            onClick={handleDeleteClick}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-red-400 text-sm font-bold transition-all border border-transparent hover:border-red-500/30"
           >
             <Trash2 className="w-4 h-4" />
@@ -296,12 +383,22 @@ export const StaffCard: React.FC<StaffCardProps> = ({
         </div>
       </motion.div>
 
+      {/* مودال‌ها */}
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         name={staff.name}
         activeBookings={staff.active_bookings}
         onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
+        onConfirm={handleNormalDelete}
+      />
+
+      <ForceDeleteModal
+        isOpen={isForceDeleteModalOpen}
+        name={staff.name}
+        activeBookings={staff.active_bookings || 0}
+        isDeleting={isDeleting}
+        onClose={() => setIsForceDeleteModalOpen(false)}
+        onConfirm={handleForceDelete}
       />
     </>
   );

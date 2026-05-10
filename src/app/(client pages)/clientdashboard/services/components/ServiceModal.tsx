@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { RefreshCw, X, Scissors, PlusCircle, Edit3 } from "lucide-react";
+import { RefreshCw, X, Scissors, PlusCircle, Edit3, AlertTriangle, Lock } from "lucide-react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useUserType } from "@/hooks/useUserType";
 
@@ -170,17 +170,72 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
               </button>
             </div>
           </motion.div>:
-          <motion.div
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="relative bg-[#1a1e26] w-full max-w-sm rounded-[2.5rem] p-7 border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
-          >
-            {/* دکوراسیون پس‌زمینه (نور ملایم) */}
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 blur-[80px] -z-10 rounded-full" />
-برای افزودن یا ویرایش خدمات با مدیریت مجموعه ارتباط بگیرید.
-</motion.div>
+       <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="relative bg-[#1a1e26] w-full max-w-sm rounded-[2.5rem] p-7 border border-amber-500/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
+            >
+              {/* دکوراسیون پس‌زمینه (نور ملایم) */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/5 blur-[80px] -z-10 rounded-full" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                    <Lock size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-white">
+                      دسترسی محدود
+                    </h2>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">
+                      Access Denied
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={onClose} 
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* پیام اصلی */}
+              <div className="text-center py-6">
+                <div className="w-20 h-20 rounded-full bg-emerald-500/10  flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="w-10 h-10 text-emerald-400" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-white mb-2">
+                  ویرایش خدمات مجاز نیست
+                </h3>
+                
+                <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                  شما به عنوان پرسنل، مجوز افزودن، ویرایش یا حذف خدمات را ندارید.
+                </p>
+                
+                <div className="bg-emerald-500/10 rounded-xl p-4 border border-amber-500/20">
+               
+                  <p className="text-gray-400 text-xs">
+                    لطفاً برای افزودن یا ویرایش خدمات، با مدیریت مجموعه خود تماس بگیرید.  
+                    مدیریت می‌تواند خدمات مجاز شما را در پنل مدیریتی خود تنظیم کند.
+                  </p>
+                </div>
+              </div>
+
+              {/* دکمه بستن */}
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={onClose}
+                  className="w-full py-4 rounded-2xl bg-emerald-600 text-white font-bold transition-all active:scale-95"
+                >
+                  متوجه شدم
+                </button>
+              </div>
+            </motion.div>
           }   
         </div>
       )}

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Scissors, Edit2, Trash2, Tag, Clock, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { Scissors, Edit2, Trash2, Tag, Clock, Eye, EyeOff, AlertTriangle, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserType } from "@/hooks/useUserType";
 
@@ -22,7 +22,7 @@ interface ServiceCardProps {
   onDelete: (id: number) => void;
 }
 
-// --- کامپوننت داخلی مودال تایید حذف (برای زیبایی بیشتر در همین فایل) ---
+// --- کامپوننت داخلی مودال تایید حذف ---
 const DeleteConfirmModal = ({ 
   isOpen, 
   onClose, 
@@ -85,8 +85,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   onEdit,
   onDelete,
 }) => {
-
-    const { userType } = useUserType();
+  const { userType } = useUserType();
+  const isStaff = userType === "staff";
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleConfirmDelete = () => {
@@ -123,9 +123,17 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
             </div>
 
             <div className="text-right">
-              <h3 className="font-bold text-lg text-white group-hover:text-emerald-400 transition-colors">
-                {service.name}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-lg text-white group-hover:text-emerald-400 transition-colors">
+                  {service.name}
+                </h3>
+                {isStaff && (
+                  <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    فقط مشاهده
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3 mt-1.5">
                 <span className="flex items-center gap-1 text-emerald-400 font-medium text-sm">
                   <Tag className="w-3.5 h-3.5" />
@@ -140,55 +148,78 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
             </div>
           </div>
 
-          {/* دکمه فعال/غیرفعال */}
-         {userType =="user" && <button
-            onClick={() => onToggleStatus(service.id, service.is_active)}
-            className={`p-2.5 rounded-[14px] transition-all active:scale-90 ${
-              service.is_active 
-                ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 shadow-lg shadow-emerald-950/20" 
-                : "bg-white/5 text-gray-500 hover:bg-white/10"
-            }`}
-          >
-            {service.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-          </button>} 
+          {/* دکمه فعال/غیرفعال - فقط برای رییس قابل تغییر */}
+          {!isStaff && (
+            <button
+              onClick={() => onToggleStatus(service.id, service.is_active)}
+              className={`p-2.5 rounded-[14px] transition-all active:scale-90 ${
+                service.is_active 
+                  ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 shadow-lg shadow-emerald-950/20" 
+                  : "bg-white/5 text-gray-500 hover:bg-white/10"
+              }`}
+            >
+              {service.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+            </button>
+          )}
+
+          {/* برای پرسنل، یک جای خالی برای هم‌ترازی */}
+          {isStaff && (
+            <div className="w-10 h-10" />
+          )}
         </div>
 
         {/* جداکننده */}
         <div className="my-5 border-t border-white/5" />
 
-       {userType=="user" && <div className="flex items-center justify-between relative z-10">
-          <div className="flex gap-2.5">
-            <button
-              onClick={() => onEdit(service)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 text-xs font-bold transition-all border border-transparent hover:border-blue-500/30 active:scale-95"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              ویرایش
-            </button>
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-red-400 text-xs font-bold transition-all border border-transparent hover:border-red-500/30 active:scale-95"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              حذف
-            </button>
-          </div>
+        {/* دکمه‌های اقدام - فقط برای رییس نمایش داده شود */}
+        {!isStaff && (
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => onEdit(service)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 text-xs font-bold transition-all border border-transparent hover:border-blue-500/30 active:scale-95"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                ویرایش
+              </button>
+              <button
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-red-400 text-xs font-bold transition-all border border-transparent hover:border-red-500/30 active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                حذف
+              </button>
+            </div>
 
-          <span className={`text-[10px] uppercase tracking-[0.1em] font-black px-2.5 py-1.5 rounded-lg ${
-            service.is_active ? "text-emerald-500/60 bg-emerald-500/5 border border-emerald-500/10" : "text-gray-500 bg-white/5 border border-white/5"
-          }`}>
-            {service.is_active ? "Active" : "Inactive"}
-          </span>
-        </div>} 
+            <span className={`text-[10px] uppercase tracking-[0.1em] font-black px-2.5 py-1.5 rounded-lg ${
+              service.is_active ? "text-emerald-500/60 bg-emerald-500/5 border border-emerald-500/10" : "text-gray-500 bg-white/5 border border-white/5"
+            }`}>
+              {service.is_active ? "Active" : "Inactive"}
+            </span>
+          </div>
+        )}
+
+        {/* برای پرسنل: فقط وضعیت نمایش داده شود */}
+        {isStaff && (
+          <div className="flex items-center justify-end relative z-10">
+            <span className={`text-[10px] uppercase tracking-[0.1em] font-black px-2.5 py-1.5 rounded-lg ${
+              service.is_active ? "text-emerald-500/60 bg-emerald-500/5 border border-emerald-500/10" : "text-gray-500 bg-white/5 border border-white/5"
+            }`}>
+              {service.is_active ? "فعال" : "غیرفعال"}
+            </span>
+          </div>
+        )}
       </motion.div>
 
-      {/* مودال تایید حذف */}
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        title={service.name}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-      />
+      {/* مودال تایید حذف - فقط برای رییس */}
+      {!isStaff && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          title={service.name}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </>
   );
 };

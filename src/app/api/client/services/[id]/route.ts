@@ -1,9 +1,10 @@
-// File Path: src\app\api\services\[id]\route.ts
+// File Path: src/app/api/client/services/[id]/route.ts
 
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 
 // PUT - ویرایش سرویس
 export async function PUT(
@@ -16,6 +17,17 @@ export async function PUT(
     const id = params.id;
     
     try {
+      // بررسی: پرسنل نمی‌تواند سرویس ویرایش کند
+      const cookieStore = await cookies();
+      const userType = cookieStore.get("user_type")?.value;
+      
+      if (userType === "staff") {
+        return NextResponse.json(
+          { success: false, message: "شما مجوز ویرایش سرویس را ندارید" },
+          { status: 403 }
+        );
+      }
+
       const { name, price, duration_minutes } = await req.json();
 
       if (!name || !name.trim()) {
@@ -96,6 +108,17 @@ export async function DELETE(
     const id = params.id;
 
     try {
+      // بررسی: پرسنل نمی‌تواند سرویس حذف کند
+      const cookieStore = await cookies();
+      const userType = cookieStore.get("user_type")?.value;
+      
+      if (userType === "staff") {
+        return NextResponse.json(
+          { success: false, message: "شما مجوز حذف سرویس را ندارید" },
+          { status: 403 }
+        );
+      }
+
       // بررسی مالکیت سرویس
       const [service]: any = await query(
         "SELECT id FROM user_services WHERE id = ? AND user_id = ?",
@@ -112,7 +135,7 @@ export async function DELETE(
       // بررسی استفاده در booking
       const [bookings]: any = await query(
         "SELECT id FROM booking WHERE user_id = ? AND services LIKE ?",
-        [userId, `%${id}%`] // تغییر: از parseInt استفاده نکن چون services رشته است
+        [userId, `%${id}%`]
       );
 
       if (bookings && bookings.length > 0) {
@@ -158,6 +181,17 @@ export async function PATCH(
     const id = params.id;
 
     try {
+      // بررسی: پرسنل نمی‌تواند وضعیت سرویس را تغییر دهد
+      const cookieStore = await cookies();
+      const userType = cookieStore.get("user_type")?.value;
+      
+      if (userType === "staff") {
+        return NextResponse.json(
+          { success: false, message: "شما مجوز تغییر وضعیت سرویس را ندارید" },
+          { status: 403 }
+        );
+      }
+
       const { is_active } = await req.json();
 
       // بررسی مالکیت سرویس

@@ -2,18 +2,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 
-// --- اینترفیس‌های مربوط به ارسال تکی ---
 interface SendSinglePayload {
-to_phone: string;
-  content?: string;               // اختیاری شد
+  to_phone: string;
+  content?: string;
   sms_type?: string;
   booking_id?: number | null;
-  template_key?: string | null;   // ← اضافه کن
-  }
+  template_key?: string | null;
+}
 
-/**
- * هوک ارسال پیامک تکی
- */
 export const useSendSingleSms = () => {
   const queryClient = useQueryClient();
 
@@ -28,6 +24,10 @@ export const useSendSingleSms = () => {
 
       const data = await res.json();
       if (!res.ok) {
+        // اگر خطای 402 (موجودی ناکافی) باشد، پیام خاص برگردان
+        if (res.status === 402) {
+          throw new Error(data.message || "موجودی پیامک شما کافی نیست");
+        }
         throw new Error(data.message || "خطا در ارسال پیامک");
       }
       return data;
@@ -43,7 +43,6 @@ export const useSendSingleSms = () => {
   });
 };
 
-// --- اینترفیس‌های مربوط به ارسال گروهی ---
 interface BulkRecipient {
   phone: string;
   name?: string;
@@ -52,19 +51,15 @@ interface BulkRecipient {
 
 interface SendBulkPayload {
   recipients: BulkRecipient[];
-  templateKey: string; // اصلاح شد: تغییر از message به templateKey برای هماهنگی با API و Page
+  templateKey: string;
   sms_type?: string;
 }
 
-/**
- * هوک ارسال پیامک گروهی
- */
 export const useSendBulkSms = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (payload: SendBulkPayload) => {
-      // دقت کنید آدرس API باید با فایلی که ساختید (api/sms/bulk) یکی باشد
       const res = await fetch("/api/sms/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,13 +68,15 @@ export const useSendBulkSms = () => {
 
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 402) {
+          throw new Error(data.message || "موجودی پیامک کافی نیست");
+        }
         throw new Error(data.message || "خطا در ارسال گروهی");
       }
       return data;
     },
     onSuccess: (data) => {
       toast.success(data.message || "ارسال گروهی با موفقیت انجام شد");
-      // به‌روزرسانی موجودی در تمام بخش‌های اپلیکیشن
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["sms-balance"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });

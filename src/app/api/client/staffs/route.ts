@@ -1,3 +1,4 @@
+// src/app/api/client/staffs/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -50,11 +51,12 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     // دریافت لیست همه پرسنل
     const staffs = await query<any>(
       `SELECT s.*,
-       (SELECT COUNT(*) FROM booking WHERE staff_id = s.id AND status = 'active') as active_bookings
+       (SELECT COUNT(*) FROM booking WHERE staff_id = s.id AND status = 'active') as active_bookings,
+       (SELECT COUNT(*) FROM booking WHERE staff_id = s.id) as total_bookings
        FROM staffs s
        WHERE s.owner_user_id = ? AND s.is_active = 1
        ORDER BY s.created_at DESC`,
-      [userId]
+      [userId],
     );
 
     // دریافت نام سرویس‌ها برای هر پرسنل
@@ -111,7 +113,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     // بررسی شماره تکراری - حتی اگر غیرفعال باشد
     const existing = await query<any>(
       "SELECT id, is_active FROM staffs WHERE owner_user_id = ? AND phone = ?",
-      [userId, phone]
+      [userId, phone],
     );
 
     if (existing.length > 0) {
@@ -122,7 +124,10 @@ export const POST = withAuth(async (req: NextRequest, context) => {
         );
       } else {
         return NextResponse.json(
-          { message: "این شماره قبلاً به عنوان پرسنل ثبت شده است. در صورت نیاز با پشتیبانی تماس بگیرید." },
+          {
+            message:
+              "این شماره قبلاً به عنوان پرسنل ثبت شده است. در صورت نیاز با پشتیبانی تماس بگیرید.",
+          },
           { status: 409 },
         );
       }
@@ -273,15 +278,41 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
     const oldStaff = staff[0];
     const oldBalance = oldStaff.sms_balance;
-    const oldUsed = oldStaff.sms_used || 0;
+
+    // اعتبارسنجی مقدار sms_balance
+    let newBalance = oldBalance;
+    let needBalanceUpdate = false;
+    let balanceDiff = 0;
+
+    if (sms_balance !== undefined) {
+      let newTotalBalance = parseInt(String(sms_balance));
+
+      if (isNaN(newTotalBalance)) {
+        newTotalBalance = oldBalance;
+      }
+
+      if (newTotalBalance < 0) {
+        return NextResponse.json(
+          { message: "مقدار پیامک نمی‌تواند منفی باشد" },
+          { status: 400 },
+        );
+      }
+
+      newBalance = newTotalBalance;
+      balanceDiff = newBalance - oldBalance;
+
+      if (balanceDiff !== 0) {
+        needBalanceUpdate = true;
+      }
+    }
 
     // بررسی شماره تکراری هنگام تغییر شماره
     if (phone !== undefined && phone !== oldStaff.phone) {
       const existingPhone = await query<any>(
         "SELECT id FROM staffs WHERE owner_user_id = ? AND phone = ? AND id != ?",
-        [userId, phone, id]
+        [userId, phone, id],
       );
-      
+
       if (existingPhone.length > 0) {
         return NextResponse.json(
           { message: "این شماره قبلاً به عنوان پرسنل دیگر ثبت شده است" },
@@ -337,21 +368,6 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
       values.push(can_see_all_clients ? 1 : 0);
     }
 
-    // محاسبه اعتبار جدید بر اساس مصرف شده
-    const needBalanceUpdate = sms_balance !== undefined;
-    let newBalance = oldBalance;
-    
-    if (needBalanceUpdate) {
-      const newTotalBalance = parseInt(String(sms_balance)) || 0;
-      newBalance = newTotalBalance - oldUsed;
-      if (newBalance < 0) {
-        return NextResponse.json(
-          { message: `اعتبار جدید نمی‌تواند کمتر از میزان مصرف شده (${oldUsed}) باشد` },
-          { status: 400 },
-        );
-      }
-    }
-
     const pool = (await import("@/lib/db")).dbPool;
     let connection;
     let useTransaction = needBalanceUpdate || updates.length > 0;
@@ -374,80 +390,84 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
       // تغییر اعتبار
       if (needBalanceUpdate) {
-        const balanceDiff = newBalance - oldBalance;
+        const user = await query<any>(
+          "SELECT sms_balance FROM users WHERE id = ?",
+          [userId],
+        );
+        let userBalance = user[0]?.sms_balance || 0;
 
-        if (balanceDiff !== 0) {
-          const user = await query<any>(
-            "SELECT sms_balance FROM users WHERE id = ?",
-            [userId],
-          );
-          let userBalance = user[0]?.sms_balance || 0;
-
-          if (balanceDiff > 0) {
-            // افزایش اعتبار پرسنل -> از حساب رییس کم می‌شود
-            if (userBalance < balanceDiff) {
-              if (connection) await connection.query("ROLLBACK");
-              if (connection) connection.release();
-              return NextResponse.json(
-                { message: `اعتبار کافی نیست. نیاز به ${balanceDiff} پیامک بیشتر` },
-                { status: 400 },
-              );
-            }
-
-            await (connection || pool).query(
-              "UPDATE users SET sms_balance = sms_balance - ? WHERE id = ?",
-              [balanceDiff, userId],
-            );
-
-            await (connection || pool).query(
-              `INSERT INTO credit_transfer_log 
-               (from_user_id, to_user_id, amount, reason, related_staff_id, 
-                from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
-               VALUES (?, ?, ?, 'manual_increase', ?, ?, ?, ?, ?, NOW())`,
-              [
-                userId,
-                id,
-                balanceDiff,
-                id,
-                userBalance,
-                userBalance - balanceDiff,
-                oldBalance,
-                newBalance,
-              ],
-            );
-          } else if (balanceDiff < 0) {
-            // کاهش اعتبار پرسنل -> به حساب رییس برمی‌گردد
-            const refundAmount = Math.abs(balanceDiff);
-            
-            await (connection || pool).query(
-              "UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?",
-              [refundAmount, userId],
-            );
-
-            await (connection || pool).query(
-              `INSERT INTO credit_transfer_log 
-               (from_user_id, to_user_id, amount, reason, related_staff_id, 
-                from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
-               VALUES (?, ?, ?, 'manual_decrease', ?, ?, ?, ?, ?, NOW())`,
-              [
-                id,
-                userId,
-                refundAmount,
-                id,
-                oldBalance,
-                newBalance,
-                userBalance,
-                userBalance + refundAmount,
-              ],
+        if (balanceDiff > 0) {
+          if (userBalance < balanceDiff) {
+            if (connection) await connection.query("ROLLBACK");
+            if (connection) connection.release();
+            return NextResponse.json(
+              {
+                message: `اعتبار کافی نیست. نیاز به ${balanceDiff} پیامک بیشتر`,
+              },
+              { status: 400 },
             );
           }
 
-          // به‌روزرسانی sms_balance در staffs
           await (connection || pool).query(
-            "UPDATE staffs SET sms_balance = ? WHERE id = ?",
-            [newBalance, id],
+            "UPDATE users SET sms_balance = sms_balance - ? WHERE id = ?",
+            [balanceDiff, userId],
+          );
+
+          await (connection || pool).query(
+            `INSERT INTO credit_transfer_log 
+             (from_user_id, to_user_id, amount, reason, related_staff_id, 
+              from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
+             VALUES (?, ?, ?, 'manual_increase', ?, ?, ?, ?, ?, NOW())`,
+            [
+              userId,
+              id,
+              balanceDiff,
+              id,
+              userBalance,
+              userBalance - balanceDiff,
+              oldBalance,
+              newBalance,
+            ],
+          );
+        } else if (balanceDiff < 0) {
+          const refundAmount = Math.abs(balanceDiff);
+
+          if (refundAmount > oldBalance) {
+            if (connection) await connection.query("ROLLBACK");
+            if (connection) connection.release();
+            return NextResponse.json(
+              { message: `امکان کاهش بیش از موجودی فعلی پرسنل وجود ندارد` },
+              { status: 400 },
+            );
+          }
+
+          await (connection || pool).query(
+            "UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?",
+            [refundAmount, userId],
+          );
+
+          await (connection || pool).query(
+            `INSERT INTO credit_transfer_log 
+             (from_user_id, to_user_id, amount, reason, related_staff_id, 
+              from_balance_before, from_balance_after, to_balance_before, to_balance_after, created_at)
+             VALUES (?, ?, ?, 'manual_decrease', ?, ?, ?, ?, ?, NOW())`,
+            [
+              id,
+              userId,
+              refundAmount,
+              id,
+              oldBalance,
+              newBalance,
+              userBalance,
+              userBalance + refundAmount,
+            ],
           );
         }
+
+        await (connection || pool).query(
+          "UPDATE staffs SET sms_balance = ? WHERE id = ?",
+          [newBalance, id],
+        );
       }
 
       if (connection) {
@@ -476,14 +496,15 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 });
 
 /**
- * DELETE: حذف پرسنل
+ * DELETE: حذف پرسنل (عادی)
+ * DELETE با پارامتر force=true: حذف اجباری پرسنل
  */
 export const DELETE = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
   try {
     const body = await req.json();
-    const { id } = body;
+    const { id, force = false } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -492,6 +513,7 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
       );
     }
 
+    // دریافت اطلاعات پرسنل
     const staff = await query<any>(
       "SELECT * FROM staffs WHERE id = ? AND owner_user_id = ?",
       [id, userId],
@@ -506,16 +528,25 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
 
     // بررسی نوبت‌های فعال
     const activeBookings = await query<any>(
-      "SELECT COUNT(*) as count FROM booking WHERE staff_id = ? AND status = 'active'",
+      "SELECT id, booking_date, booking_time, client_name FROM booking WHERE staff_id = ? AND status = 'active'",
       [id],
     );
 
-    if (activeBookings[0].count > 0) {
+    // اگر نوبت فعال دارد و حذف اجباری نیست، خطا بده
+    if (activeBookings.length > 0 && !force) {
       return NextResponse.json(
         {
-          message: `این پرسنل ${activeBookings[0].count} نوبت فعال دارد. ابتدا نوبت‌ها را لغو یا انجام دهید.`,
+          message: `این پرسنل ${activeBookings.length} نوبت فعال دارد.`,
+          hasActiveBookings: true,
+          activeBookings: activeBookings.map((b: any) => ({
+            id: b.id,
+            client_name: b.client_name,
+            booking_date: b.booking_date,
+            booking_time: b.booking_time,
+          })),
+          canForceDelete: true,
         },
-        { status: 400 },
+        { status: 409 },
       );
     }
 
@@ -525,6 +556,37 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
     try {
       await connection.query("START TRANSACTION");
 
+      // ========== حذف اجباری ==========
+      if (force && activeBookings.length > 0) {
+        // 1. لغو تمام نوبت‌های فعال این پرسنل
+        const bookingIds = activeBookings.map((b: any) => b.id);
+        const placeholders = bookingIds.map(() => "?").join(",");
+
+        await connection.query(
+          `UPDATE booking SET 
+            status = 'cancelled', 
+            customer_token = NULL, 
+            updated_at = NOW() 
+           WHERE staff_id = ? AND status = 'active'`,
+          [id],
+        );
+
+        // 2. برای هر نوبت لغو شده، یک لاگ ثبت کن (اختیاری)
+        for (const booking of activeBookings) {
+          await connection.query(
+            `INSERT INTO notifications 
+             (user_id, booking_id, type, message, is_read, created_at)
+             VALUES (?, ?, 'cancel', ?, 0, NOW())`,
+            [
+              userId,
+              booking.id,
+              `نوبت ${booking.client_name} در تاریخ ${booking.booking_date} ساعت ${booking.booking_time} به دلیل حذف پرسنل لغو شد`,
+            ],
+          );
+        }
+      }
+
+      // ========== برگرداندن اعتبار باقیمانده پرسنل به حساب رییس ==========
       if (remainingBalance > 0) {
         const user = await query<any>(
           "SELECT sms_balance FROM users WHERE id = ?",
@@ -555,7 +617,13 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
         );
       }
 
-      // حذف فیزیکی پرسنل (به جای غیرفعال کردن)
+      // ========== حذف روابط پرسنل با مشتریان ==========
+      await connection.query(
+        "DELETE FROM staff_client_relation WHERE staff_id = ?",
+        [id],
+      );
+
+      // ========== حذف فیزیکی پرسنل ==========
       await connection.query(
         "DELETE FROM staffs WHERE id = ? AND owner_user_id = ?",
         [id, userId],
@@ -564,10 +632,17 @@ export const DELETE = withAuth(async (req: NextRequest, context) => {
       await connection.query("COMMIT");
       connection.release();
 
+      // پیام بازگشتی بر اساس نوع حذف
+      let message = "پرسنل با موفقیت حذف شد";
+      if (force && activeBookings.length > 0) {
+        message = `پرسنل با موفقیت حذف شد. ${activeBookings.length} نوبت فعال این پرسنل نیز لغو گردید.`;
+      }
+
       return NextResponse.json({
         success: true,
-        message: "پرسنل با موفقیت حذف شد",
+        message,
         refunded_sms: remainingBalance,
+        cancelled_bookings_count: force ? activeBookings.length : 0,
       });
     } catch (err) {
       await connection.query("ROLLBACK");

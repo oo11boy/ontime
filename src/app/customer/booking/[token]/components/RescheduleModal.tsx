@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { X, Clock, Calendar as CalendarIcon, ChevronLeft } from "lucide-react";
+import { X, Clock, Calendar as CalendarIcon, ChevronLeft, Lock } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import {
@@ -14,12 +14,17 @@ import {
 import JalaliCalendarModal from "@/app/(client pages)/clientdashboard/bookingsubmit/components/JalaliCalendarModal";
 
 interface RescheduleModalProps {
-  currentDate: string; // YYYY-MM-DD
-  currentTime: string; // HH:mm
+  currentDate: string;
+  currentTime: string;
   customerToken: string;
   offDays?: number[];
   onClose: () => void;
   onConfirm: (newDate: string, newTime: string) => Promise<void>;
+}
+
+interface BookedTime {
+  time: string;
+  clientName: string;
 }
 
 export default function RescheduleModal({
@@ -40,11 +45,12 @@ export default function RescheduleModal({
   }>({
     year: currentPersian.year,
     month: currentPersian.month,
-    day: currentPersian.day, // پیش‌فرض روی روز فعلی نوبت
+    day: currentPersian.day,
   });
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [bookedTimes, setBookedTimes] = useState<BookedTime[]>([]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -61,6 +67,9 @@ export default function RescheduleModal({
   const fetchAvailableTimes = async (date: string) => {
     setIsFetching(true);
     setSelectedTime(null);
+    setAvailableTimes([]);
+    setBookedTimes([]);
+    
     try {
       const res = await fetch(
         `/api/customer/available-times?token=${customerToken}&date=${date}`
@@ -69,10 +78,10 @@ export default function RescheduleModal({
 
       if (!data.success) throw new Error(data.message);
 
-      setAvailableTimes(data.availableTimes);
+      setAvailableTimes(data.availableTimes || []);
+      setBookedTimes(data.bookedTimes || []);
     } catch (err: any) {
       toast.error(err.message || "خطا در دریافت زمان‌ها");
-      setAvailableTimes([]);
     } finally {
       setIsFetching(false);
     }
@@ -84,18 +93,27 @@ export default function RescheduleModal({
     }
   }, [selectedGregorianDate]);
 
-  const filteredTimes = useMemo(() => {
-    if (!selectedGregorianDate) return [];
-
-    // فیلتر زمان‌های گذشته برای امروز
+  // فیلتر زمان‌های گذشته برای امروز
+  const filteredAvailableTimes = useMemo(() => {
     let times = availableTimes;
     if (selectedGregorianDate === currentGregorianDate) {
-      times = availableTimes.filter(
+      times = times.filter(
         (time) => !isTimeInPast(selectedGregorianDate, time)
       );
     }
     return times;
   }, [availableTimes, selectedGregorianDate, currentGregorianDate]);
+
+  // بررسی آیا یک زمان رزرو شده است
+  const isTimeBooked = (time: string): boolean => {
+    return bookedTimes.some((bt) => bt.time === time);
+  };
+
+  // دریافت نام مشتری برای زمان رزرو شده
+  const getBookedClientName = (time: string): string | null => {
+    const booked = bookedTimes.find((bt) => bt.time === time);
+    return booked?.clientName || null;
+  };
 
   const handleSubmit = async () => {
     if (!selectedGregorianDate || !selectedTime) {
@@ -116,6 +134,12 @@ export default function RescheduleModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  // تبدیل روز هفته به فارسی
+  const getWeekDayName = (date: Date): string => {
+    const weekDays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"];
+    return weekDays[date.getDay()];
   };
 
   return (
@@ -159,7 +183,7 @@ export default function RescheduleModal({
               </button>
             </div>
 
-            {/* Time Grid (Exactly like the picker) */}
+            {/* Time Grid */}
             <div className="space-y-3">
               <label className="text-xs font-bold text-gray-500 mr-1 flex items-center gap-1">
                 <Clock size={14} /> انتخاب ساعت حضور
@@ -170,30 +194,51 @@ export default function RescheduleModal({
                   <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
                   <p className="text-sm text-gray-500">در حال بررسی ظرفیت...</p>
                 </div>
-              ) : filteredTimes.length === 0 ? (
+              ) : filteredAvailableTimes.length === 0 && bookedTimes.length === 0 ? (
                 <div className="py-10 bg-white/[0.02] rounded-2xl border border-dashed border-white/10 text-center">
                   <p className="text-sm text-gray-500">
                     ظرفیتی برای این تاریخ یافت نشد
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
-                  {filteredTimes.map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => setSelectedTime(time)}
-                      className={`h-12 rounded-xl text-sm font-bold transition-all
-                        ${
-                          selectedTime === time
-                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-95"
-                            : "bg-[#1a1d24] text-gray-400 border border-white/5 hover:bg-white/5"
-                        }`}
-                    >
-                      {time}
-                    </button>
-                  ))}
-                </div>
+                <>
+        
+
+                  {/* نمایش زمان‌های خالی (قابل انتخاب) */}
+                  {filteredAvailableTimes.length > 0 && (
+                    <>
+                 
+                      <div className="grid grid-cols-4 gap-2">
+                        {filteredAvailableTimes.map((time) => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedTime(time)}
+                            className={`h-12 rounded-xl text-sm font-bold transition-all
+                              ${
+                                selectedTime === time
+                                  ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-95"
+                                  : "bg-[#1a1d24] text-gray-400 border border-white/5 hover:bg-white/5 hover:text-white"
+                              }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
               )}
+            </div>
+
+            {/* نمایش زمان فعلی نوبت */}
+            <div className="pt-2 border-t border-white/5">
+              <p className="text-xs text-gray-500 text-center">
+                زمان فعلی نوبت شما:{" "}
+                <span className="text-emerald-400 font-bold">
+                  {gregorianToPersian(currentDate).day}{" "}
+                  {persianMonths[gregorianToPersian(currentDate).month - 1]} ساعت {currentTime}
+                </span>
+              </p>
             </div>
           </div>
 
@@ -210,7 +255,14 @@ export default function RescheduleModal({
               disabled={!selectedTime || loading || isFetching}
               className="flex-[2] h-14 bg-emerald-500 text-white rounded-2xl font-black text-lg disabled:opacity-30 disabled:grayscale transition-all shadow-lg shadow-emerald-500/10"
             >
-              {loading ? "در حال ثبت..." : "تأیید نوبت جدید"}
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  در حال ثبت...
+                </div>
+              ) : (
+                "تأیید نوبت جدید"
+              )}
             </button>
           </div>
         </div>

@@ -13,6 +13,7 @@ interface Staff {
   name: string;
   phone: string;
   sms_balance: number;
+  sms_used:number;
   service_ids: string | null;
   services: Service[];
   calendar_type: string;

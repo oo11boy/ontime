@@ -15,7 +15,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     // ========== حالت پرسنل ==========
     if (userType === "staff" && staffId) {
       // 1. اطلاعات پرسنل
-      const staffInfo = await query<any[]>(
+      const staffInfo = await query<any>(
         `SELECT s.*, u.id as owner_id, u.name as owner_name, u.business_name
          FROM staffs s
          JOIN users u ON s.owner_user_id = u.id
@@ -30,7 +30,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
       const staff = staffInfo[0];
 
       // 2. اطلاعات اشتراک رییس (برای تعیین پایان زمان)
-      const ownerPlan = await query<any[]>(
+      const ownerPlan = await query<any>(
         `SELECT u.ended_at, u.started_at, u.plan_key, p.title as plan_title,
          u.sms_monthly_quota, u.sms_balance as owner_sms_balance
          FROM users u

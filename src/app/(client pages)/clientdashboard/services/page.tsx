@@ -1,8 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
-import { Settings, Plus, RefreshCw } from "lucide-react";
+import { Settings, Plus, RefreshCw, Lock } from "lucide-react";
 import { ServicesList } from "./components/ServicesList";
 import { ServiceModal } from "./components/ServiceModal";
 import Footer from "../components/Footer/Footer";
@@ -24,19 +23,19 @@ interface Service {
   created_at: string;
 }
 
-// --- کامپوننت داخلی هدر برای یکپارچگی ---
 interface HeaderSectionProps {
   onAddClick: () => void;
   onRefresh: () => void;
   isLoading: boolean;
+  userType: "user" | "staff" | null;
 }
 
 const HeaderSection: React.FC<HeaderSectionProps> = ({
   onAddClick,
   onRefresh,
   isLoading,
+  userType,
 }) => {
-    const { userType } = useUserType();
   const [isForcingSpin, setIsForcingSpin] = useState(false);
 
   const handleRefreshClick = () => {
@@ -45,14 +44,24 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
     setTimeout(() => setIsForcingSpin(false), 1000);
   };
 
+  const isStaff = userType === "staff";
+
   return (
     <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30 text-white">
       <div className="max-w-2xl mx-auto p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-md font-bold flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Settings className="w-7 h-7 text-emerald-400" />
-            مدیریت خدمات
-          </h1>
+            <div>
+              <h1 className="text-md font-bold">مدیریت خدمات</h1>
+              {isStaff && (
+                <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                  <Lock className="w-3 h-3" />
+                  فقط خدمات مجاز شما نمایش داده می‌شود
+                </p>
+              )}
+            </div>
+          </div>
 
           <div className="flex items-center gap-2">
             <button
@@ -65,12 +74,14 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
               />
             </button>
 
-         <button
-              onClick={onAddClick}
-              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 transition text-white"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            {!isStaff && (
+              <button
+                onClick={onAddClick}
+                className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 transition text-white"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -78,10 +89,9 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   );
 };
 
-// --- کامپوننت اصلی صفحه ---
 export default function ServicesListPage() {
-    const { userType } = useUserType();
-
+  const { userType } = useUserType();
+  const isStaff = userType === "staff";
 
   const { 
     data: servicesData, 
@@ -116,12 +126,20 @@ export default function ServicesListPage() {
   };
 
   const openAddModal = () => {
+    if (isStaff) {
+      toast.error("شما مجوز اضافه کردن سرویس جدید را ندارید");
+      return;
+    }
     setEditData(null);
     setForm({ name: "", price: "", duration_minutes: "30" });
     setModalOpen(true);
   };
 
   const openEditModal = (service: Service) => {
+    if (isStaff) {
+      toast.error("شما مجوز ویرایش سرویس را ندارید");
+      return;
+    }
     setEditData(service);
     setForm({
       name: service.name,
@@ -183,6 +201,10 @@ export default function ServicesListPage() {
   };
 
   const handleDelete = (id: number) => {
+    if (isStaff) {
+      toast.error("شما مجوز حذف سرویس را ندارید");
+      return;
+    }
     if (!confirm("آیا از حذف این خدمت اطمینان دارید؟")) return;
 
     deleteService.mutate(
@@ -199,6 +221,10 @@ export default function ServicesListPage() {
   };
 
   const handleToggleStatus = (id: number, currentStatus: boolean) => {
+    if (isStaff) {
+      toast.error("شما مجوز تغییر وضعیت سرویس را ندارید");
+      return;
+    }
     toggleService.mutate(
       {
         url: `/api/client/services/${id}`,
@@ -215,6 +241,44 @@ export default function ServicesListPage() {
     );
   };
 
+  // اگر پرسنل است و هیچ خدمتی ندارد، پیام مناسب نمایش بده
+  if (isStaff && !isLoading && services.length === 0) {
+    return (
+      <div className="h-screen text-white overflow-auto max-w-md m-auto">
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#1a1e26",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "12px",
+            },
+          }}
+        />
+        <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933] text-white pb-24">
+          <HeaderSection
+            onAddClick={openAddModal}
+            onRefresh={() => fetchServices()}
+            isLoading={isLoading || isFetching}
+            userType={userType}
+          />
+          <div className="px-4 mt-6 text-center py-12">
+            <Lock className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-400 mb-2">
+              هیچ خدمتی برای شما تعریف نشده است
+            </h3>
+            <p className="text-gray-500 text-sm">
+              لطفاً با مدیریت مجموعه تماس بگیرید تا خدمات مجاز شما را تعیین کند
+            </p>
+          </div>
+        </div>
+        <Footer userType={userType} />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen text-white overflow-auto max-w-md m-auto">
       <Toaster
@@ -230,12 +294,12 @@ export default function ServicesListPage() {
         }}
       />
 
-      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-24">
-        <HeaderSection 
-      
-          onAddClick={openAddModal} 
-          onRefresh={() => fetchServices()} 
-          isLoading={isLoading || isFetching} 
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933] text-white pb-24">
+        <HeaderSection
+          onAddClick={openAddModal}
+          onRefresh={() => fetchServices()}
+          isLoading={isLoading || isFetching}
+          userType={userType}
         />
 
         <div className="px-4 mt-6 space-y-3">
@@ -247,6 +311,7 @@ export default function ServicesListPage() {
             onEdit={openEditModal}
             onDelete={handleDelete}
             onOpenAddModal={openAddModal}
+        
           />
         </div>
 
@@ -265,7 +330,7 @@ export default function ServicesListPage() {
         />
       </div>
 
-      <Footer userType={userType}/>
+      <Footer userType={userType} />
     </div>
   );
 }

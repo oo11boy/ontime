@@ -18,6 +18,7 @@ interface Staff {
   name: string;
   phone: string;
   sms_balance: number;
+  sms_used: number;
   service_ids: string | null;
   services: { id: number; name: string }[];
   calendar_type: string;
@@ -122,19 +123,20 @@ export default function StaffsPage() {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    deleteStaff.mutate(id, {
-      onSuccess: (result) => {
-        toast.success(result.message || "پرسنل با موفقیت حذف شد");
-        if (result.refunded_sms) {
-          toast.success(`${result.refunded_sms} پیامک به حساب اصلی برگشت`);
-        }
-        refetch();
-      },
-      onError: (error: any) => {
-        toast.error(error.message || "خطا در حذف پرسنل");
-      },
-    });
+  const handleDelete = async (id: number, force?: boolean) => {
+    deleteStaff.mutate(
+      { id, force: force || false },
+      {
+        onSuccess: (result) => {
+          // پیام موفقیت در خود هوک نمایش داده می‌شود
+          refetch();
+        },
+        onError: (error: any) => {
+          // خطاها در هوک مدیریت می‌شوند
+          console.error("Delete error:", error);
+        },
+      }
+    );
   };
 
   const handleModalSubmit = (data: any) => {
@@ -161,10 +163,10 @@ export default function StaffsPage() {
       />
 
       <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933] text-white pb-24">
-        <HeaderSection 
-          onAddClick={openAddModal} 
-          onRefresh={() => refetch()} 
-          isLoading={isLoading} 
+        <HeaderSection
+          onAddClick={openAddModal}
+          onRefresh={() => refetch()}
+          isLoading={isLoading}
         />
 
         <div className="px-4 mt-6">

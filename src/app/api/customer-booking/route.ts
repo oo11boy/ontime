@@ -1,3 +1,4 @@
+// src/app/api/customer/booking/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { formatPersianDate } from "@/lib/date-utils";
@@ -19,7 +20,10 @@ interface CustomerBooking {
   business_name?: string;
   business_phone?: string;
   business_address?: string;
-  off_days?: string; // روزهای تعطیل به صورت استرینگ ذخیره شده در دیتابیس
+  off_days?: string;
+  work_shifts?: string;
+  staff_id?: number | null;
+  calendar_type?: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -49,12 +53,16 @@ export async function GET(req: NextRequest) {
         b.customer_token,
         b.token_expires_at,
         b.created_at,
+        b.staff_id,
         u.business_name,
         u.phone AS business_phone,
         u.business_address,
-        u.off_days
+        u.off_days,
+        u.work_shifts,
+        s.calendar_type
       FROM booking b
       LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN staffs s ON b.staff_id = s.id
       WHERE b.customer_token = ?
         AND b.token_expires_at > NOW()
         AND b.status IN ('active', 'done', 'cancelled')`,
@@ -70,10 +78,12 @@ export async function GET(req: NextRequest) {
 
     const booking = bookings[0] as CustomerBooking;
 
-    // تبدیل روزهای تعطیل از رشته به آرایه اعداد
-const offDaysArray = booking.off_days 
-  ? JSON.parse(booking.off_days) 
-  : [];
+    const offDaysArray = booking.off_days 
+      ? JSON.parse(booking.off_days) 
+      : [];
+
+    // محاسبه حداکثر تعداد تغییرات مجاز (برای پرسنل مستقل شاید متفاوت باشد)
+    const maxChangeCount = 1;
 
     return NextResponse.json({
       success: true,
@@ -88,6 +98,7 @@ const offDaysArray = booking.off_days
         services: booking.services ? booking.services.split(", ") : [],
         status: booking.status,
         changeCount: booking.change_count,
+        maxChangeCount: maxChangeCount,
         token: booking.customer_token,
         expiresAt: booking.token_expires_at,
         createdAt: booking.created_at,
@@ -95,8 +106,10 @@ const offDaysArray = booking.off_days
         businessPhone: booking.business_phone || "",
         businessAddress: booking.business_address || "",
         canCancel: booking.status === "active",
-        canReschedule: booking.status === "active" && booking.change_count < 1,
-        offDays: offDaysArray
+        canReschedule: booking.status === "active" && booking.change_count < maxChangeCount,
+        offDays: offDaysArray,
+        staffId: booking.staff_id,
+        calendarType: booking.calendar_type,
       },
     });
   } catch (error) {
@@ -120,6 +133,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // دریافت اطلاعات نوبت با جزئیات بیشتر (شامل staff_id و calendar_type)
     const bookings = await query(
       `SELECT 
         b.id,
@@ -128,9 +142,16 @@ export async function POST(req: NextRequest) {
         b.user_id,
         b.client_name,
         b.client_phone,
+        b.staff_id,
         DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,
-        TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time
+        TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time,
+        b.duration_minutes,
+        u.work_shifts,
+        u.off_days,
+        s.calendar_type
       FROM booking b
+      INNER JOIN users u ON b.user_id = u.id
+      LEFT JOIN staffs s ON b.staff_id = s.id
       WHERE b.customer_token = ?
         AND b.token_expires_at > NOW()
         AND b.status IN ('active', 'done')`,
@@ -148,6 +169,7 @@ export async function POST(req: NextRequest) {
     const persianDate = formatPersianDate(booking.booking_date);
     const timeDisplay = booking.booking_time;
 
+    // ==================== عملیات لغو نوبت ====================
     if (action === "cancel") {
       if (booking.status !== "active") {
         return NextResponse.json(
@@ -157,11 +179,10 @@ export async function POST(req: NextRequest) {
       }
 
       await query(
-        `UPDATE booking SET status = 'cancelled', updated_at = NOW() WHERE id = ?`,
+        `UPDATE booking SET status = 'cancelled', customer_token = NULL, updated_at = NOW() WHERE id = ?`,
         [booking.id]
       );
 
-      // ثبت در گزارش پیامک (در صورت نیاز به ارسال واقعی، باید وب‌سرویس فراخوانی شود)
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
@@ -188,6 +209,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // ==================== عملیات تغییر زمان نوبت ====================
     if (action === "reschedule") {
       if (booking.status !== "active") {
         return NextResponse.json(
@@ -213,12 +235,36 @@ export async function POST(req: NextRequest) {
 
       const newPersianDate = formatPersianDate(newDate);
 
-      // بررسی تداخل (مجدداً در سمت سرور)
-      const conflicts = await query(
-        `SELECT id FROM booking 
-         WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?`,
-        [booking.user_id, newDate, newTime, booking.id]
-      );
+      // ========== بررسی تداخل بر اساس نوع تقویم ==========
+      let conflictCheckSql = `
+        SELECT id FROM booking 
+        WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?
+      `;
+      let conflictParams: any[] = [booking.user_id, newDate, newTime, booking.id];
+
+      // اگر نوبت متعلق به پرسنل است
+      if (booking.staff_id) {
+        const calendarType = booking.calendar_type;
+        
+        if (calendarType === "independent") {
+          // پرسنل مستقل: فقط تداخل با نوبت‌های خودش
+          conflictCheckSql += " AND staff_id = ?";
+          conflictParams.push(booking.staff_id);
+        }
+        // پرسنل هماهنگ (synced): تداخل با نوبت‌های رییس و خودش (همان شرط اصلی)
+      } else {
+        // نوبت متعلق به رییس: فقط تداخل با نوبت‌های رییس و پرسنل هماهنگ
+        conflictCheckSql += ` AND (
+          staff_id IS NULL 
+          OR staff_id IN (
+            SELECT id FROM staffs 
+            WHERE owner_user_id = ? AND calendar_type = 'synced' AND is_active = 1
+          )
+        )`;
+        conflictParams.push(booking.user_id);
+      }
+
+      const conflicts = await query(conflictCheckSql, conflictParams);
 
       if (conflicts.length > 0) {
         return NextResponse.json(
@@ -227,6 +273,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // به‌روزرسانی نوبت
       await query(
         `UPDATE booking 
          SET booking_date = ?, booking_time = ?, change_count = change_count + 1, updated_at = NOW()
@@ -234,6 +281,7 @@ export async function POST(req: NextRequest) {
         [newDate, newTime, booking.id]
       );
 
+      // ثبت در لاگ پیامک
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'reschedule', 'sent', NOW())`,
@@ -244,6 +292,7 @@ export async function POST(req: NextRequest) {
         ]
       );
 
+      // ثبت نوتیفیکیشن برای رییس
       await query(
         `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
          VALUES (?, ?, 'reschedule', ?, NOW())`,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import { Calendar } from "lucide-react";
@@ -18,6 +18,13 @@ import { useSendBulkSms } from "@/hooks/useSendSms";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BulkSmsModal } from "../BulkSmsModal";
 import { useUserType } from "@/hooks/useUserType";
+import { useDashboard } from "@/hooks/useDashboard";
+
+interface Service {
+  id: number;
+  name: string;
+  is_active: boolean;
+}
 
 interface CalendarDay {
   date: Date;
@@ -26,6 +33,7 @@ interface CalendarDay {
     month: number;
     day: number;
     monthName: string;
+    weekDay: string;
   };
   isToday: boolean;
   isPast: boolean;
@@ -34,17 +42,14 @@ interface CalendarDay {
   hasAppointments: boolean;
 }
 
-interface Service {
-  id: number;
-  name: string;
-  is_active: boolean;
-}
-
 export default function CalendarPage() {
-    const { userType } = useUserType();
+  const { userType, staffId, staffName } = useUserType();
+  const { data: dashboardData } = useDashboard();
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const staffCalendarType = dashboardData?.user?.calendar_type;
+  
   const {
     data: bookingsData,
     isLoading,
@@ -52,8 +57,7 @@ export default function CalendarPage() {
     refetch: refetchAppointments,
   } = useBookings();
   const { data: servicesData } = useServices();
-  const { balance: userSmsBalance, isLoading: isLoadingBalance } =
-    useSmsBalance();
+  const { balance: userSmsBalance, isLoading: isLoadingBalance } = useSmsBalance();
   const { mutateAsync: sendBulkSms } = useSendBulkSms();
 
   const { data: userData } = useQuery({
@@ -74,8 +78,7 @@ export default function CalendarPage() {
   );
 
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
-  const [selectedAppointment, setSelectedAppointment] =
-    useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showBulkSmsModal, setShowBulkSmsModal] = useState(false);
   const [selectedDayForSms, setSelectedDayForSms] = useState<Date | null>(null);
@@ -83,7 +86,9 @@ export default function CalendarPage() {
 
   const todayJalali = useMemo(() => getTodayJalali(), []);
 
-  // تابع اصلاح شده برای هماهنگی با مودال جدید (دریافت نام و آدرس)
+  // بنر اطلاع‌رسانی برای پرسنل
+  const showCalendarTypeBanner = userType === "staff" && staffCalendarType;
+
   const handleUpdateBusinessProfile = async (newName: string, newAddress: string) => {
     try {
       const response = await fetch("/api/client/settings", {
@@ -116,7 +121,6 @@ export default function CalendarPage() {
           : Array.isArray(app.services)
           ? (app.services as any[]).map((s: any) => String(s).trim())
           : [];
-
       return serviceList.some((s: string) => s === selectedService.trim());
     });
   }, [allAppointments, selectedService]);
@@ -142,8 +146,7 @@ export default function CalendarPage() {
             date,
             jalaliDate: { ...persian },
             isToday: date.toDateString() === today.toDateString(),
-            isPast:
-              date < today && date.toDateString() !== today.toDateString(),
+            isPast: date < today && date.toDateString() !== today.toDateString(),
             isWeekend: persian.weekDay === "جمعه",
             appointments: dayApps,
             hasAppointments: dayApps.length > 0,
@@ -154,10 +157,7 @@ export default function CalendarPage() {
     generateCalendar();
   }, [filteredAppointments]);
 
-  const handleSendBulkSms = async (
-    templateKey: string,
-    appointmentIds: (string | number)[]
-  ) => {
+  const handleSendBulkSms = async (templateKey: string, appointmentIds: (string | number)[]) => {
     const recipients = appointmentIds
       .map((id) => {
         const app = allAppointments.find((a) => a.id === id);
@@ -179,8 +179,8 @@ export default function CalendarPage() {
       (d) => d.date.toDateString() === selectedDayForSms.toDateString()
     );
     return (day?.appointments || [])
-      .filter((app) => app.status === "active")
-      .map((app) => ({
+      .filter((app: Appointment) => app.status === "active")
+      .map((app: Appointment) => ({
         id: app.id,
         name: app.client_name,
         details: `${app.booking_time} - ${app.services}`,
@@ -202,9 +202,7 @@ export default function CalendarPage() {
           onAddAppointment={() =>
             router.push(
               `/clientdashboard/bookingsubmit?date=${encodeURIComponent(
-                `${todayJalali.year}/${todayJalali.month + 1}/${
-                  todayJalali.day
-                }`
+                `${todayJalali.year}/${todayJalali.month + 1}/${todayJalali.day}`
               )}`
             )
           }
@@ -212,6 +210,21 @@ export default function CalendarPage() {
         />
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+          {/* بنر اطلاع‌رسانی نوع تقویم برای پرسنل */}
+          {showCalendarTypeBanner && (
+            <div className={`rounded-xl p-3 text-center ${
+              staffCalendarType === "synced" 
+                ? "bg-blue-600/20 border border-blue-500/30"
+                : "bg-purple-600/20 border border-purple-500/30"
+            }`}>
+              <p className="text-sm">
+                {staffCalendarType === "synced" 
+                  ? "🔗 تقویم شما هماهنگ با تقویم اصلی بیزینس است. همه نوبت‌ها را مشاهده می‌کنید."
+                  : "📅 تقویم شما مستقل است. فقط نوبت‌های خودتان را مشاهده می‌کنید."}
+              </p>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="text-center py-10 opacity-50 text-sm">
               در حال بارگذاری نوبت‌ها...
@@ -232,9 +245,7 @@ export default function CalendarPage() {
                 onAddAppointment={() =>
                   router.push(
                     `/clientdashboard/bookingsubmit?date=${encodeURIComponent(
-                      `${day.jalaliDate.year}/${day.jalaliDate.month + 1}/${
-                        day.jalaliDate.day
-                      }`
+                      `${day.jalaliDate.year}/${day.jalaliDate.month + 1}/${day.jalaliDate.day}`
                     )}`
                   )
                 }
@@ -248,7 +259,7 @@ export default function CalendarPage() {
           )}
         </div>
       </div>
-      <Footer userType={userType}/>
+      <Footer userType={userType} />
 
       {selectedAppointment && (
         <AppointmentDetailModal
