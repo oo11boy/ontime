@@ -18,6 +18,7 @@ import {
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion"; // اضافه شدن برای انیمیشن‌های حرفه‌ای
 import { useDashboard } from "@/hooks/useDashboard";
+import { useUserType } from "@/hooks/useUserType";
 
 interface Notification {
   id: number;
@@ -29,6 +30,7 @@ interface Notification {
 
 export default function Header() {
   const router = useRouter();
+  const {userType}=useUserType()
   const { data: dashboardData, isLoading: isDashLoading } = useDashboard();
   const [loading, setLoading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -265,16 +267,16 @@ export default function Header() {
                       <span className="text-[10px] text-gray-500 mt-1 font-medium">پنل مدیریت هوشمند</span>
                     </div>
                   </div>
-                  
+            
                   <div className="space-y-1">
-                    <button onClick={() => { router.push("/clientdashboard/settings"); setIsProfileOpen(false); }} className="w-full flex items-center justify-between p-3.5 text-sm text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all" dir="rtl">
+              
+                          {userType=="user" &&       <button onClick={() => { router.push("/clientdashboard/settings"); setIsProfileOpen(false); }} className="w-full flex items-center justify-between p-3.5 text-sm text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all" dir="rtl">
                       <div className="flex items-center gap-3">
                         <Settings className="w-5 h-5 text-gray-500" />
                         <span className="font-bold">تنظیمات حساب</span>
                       </div>
                       <ChevronDown className="-rotate-90 w-4 h-4 opacity-30" />
-                    </button>
-                    
+                    </button>}
                     <div className="h-px bg-white/5 my-2 mx-2" />
                     
                     <button onClick={handleLogout} disabled={loading} className="w-full flex items-center gap-3 p-3.5 text-sm text-red-400 hover:bg-red-400/10 rounded-xl transition-all font-bold" dir="rtl">
