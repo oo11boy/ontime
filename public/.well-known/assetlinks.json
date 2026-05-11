@@ -4,7 +4,9 @@
     "target": {
       "namespace": "android_app",
       "package_name": "ir.ontime.app",
-      "sha256_cert_fingerprints": ["SHA256_FINGERPRINT_اینجا_قرار_گیرد"]
+      "sha256_cert_fingerprints": [
+        "F6:98:95:A5:FD:14:FF:62:EE:A4:87:E8:F3:86:11:7B:06:E6:43:F4:39:B9:63:FD:6D:FB:B2:4D:F4:80:E5:4A"
+      ]
     }
   },
   {
