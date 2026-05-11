@@ -8,6 +8,12 @@
   /* تعریف متغیر فونت برای هماهنگی با layout.tsx */
   --font-yekan: "Yekan Bakh", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
+/* تنظیم فونت برای WebView */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 #box-widget-icon{
   display: none!important;
 }
