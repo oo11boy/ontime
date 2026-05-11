@@ -1,11 +1,13 @@
+// src/app/clientdashboard/payment/result/page.tsx
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { CheckCircle, XCircle, ArrowRight, ReceiptText } from "lucide-react";
+import { CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import Footer from "../../../components/Footer/Footer";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardHeader } from "../../../components/DashboardHeader";
+import Footer from "../../../components/Footer/Footer";
 
+// ✅ استفاده از default export به جای named export
 export default function PaymentResultPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -16,8 +18,8 @@ export default function PaymentResultPage() {
 
   return (
     <div className="min-h-screen text-white max-w-md mx-auto relative">
-     <DashboardHeader/>
-      <div className=" bg-[#1a1e26] flex items-center justify-center p-4 ">
+      <DashboardHeader />
+      <div className="bg-[#1a1e26] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-[#242933] rounded-3xl p-8 border border-white/5 shadow-2xl text-center">
           {isSuccess ? (
             <div className="flex flex-col items-center">
@@ -40,8 +42,7 @@ export default function PaymentResultPage() {
                 پرداخت ناموفق بود
               </h1>
               <p className="text-gray-400 text-sm mb-8">
-                اگر مبلغی از حساب شما کسر شده، ظرف ۷۲ ساعت آینده بازگشت داده
-                خواهد شد.
+                اگر مبلغی از حساب شما کسر شده، ظرف ۷۲ ساعت آینده بازگشت داده خواهد شد.
               </p>
             </div>
           )}
@@ -64,7 +65,7 @@ export default function PaymentResultPage() {
           <div className="grid grid-cols-1 gap-3">
             <Link
               href="/clientdashboard"
-              className="flex items-center justify-center gap-2 w-full bg-[#07A375]  text-white py-4 rounded-2xl font-bold transition-all"
+              className="flex items-center justify-center gap-2 w-full bg-[#07A375] text-white py-4 rounded-2xl font-bold transition-all"
             >
               ورود به میز کار
               <ArrowRight size={18} />

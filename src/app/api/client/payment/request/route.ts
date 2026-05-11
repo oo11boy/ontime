@@ -1,10 +1,11 @@
+// src/app/api/client/payment/request/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
-  const { type, item_id, description } = await req.json();
+  const { type, item_id, description, platform } = await req.json();
 
   const connection = await dbPool.getConnection();
 
@@ -23,7 +24,6 @@ export const POST = withAuth(async (req: NextRequest, context) => {
 
     // ۲. اگر قصد خرید بسته پیامکی (sms) را دارد
     else if (type === "sms") {
-      // ابتدا پلن فعلی کاربر را پیدا می‌کنیم تا نرخ پیامک را استخراج کنیم
       const userPlanSql = `
         SELECT p.price_per_100_sms 
         FROM users u 
@@ -37,49 +37,72 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       }
 
       const pricePer100 = results[0].price_per_100_sms;
-      // محاسبه مبلغ: (تعداد پیامک ارسالی کلاینت / 100) * نرخ پیامک پلن کاربر
       finalAmountToman = Math.round((Number(item_id) / 100) * pricePer100);
     }
 
     if (finalAmountToman <= 0) throw new Error("مبلغ تراکنش محاسبه نشد.");
-
     const amountInRial = finalAmountToman * 10;
 
-    // ۳. ثبت تراکنش در جدول لاگ پرداخت‌ها
+    // ۳. ثبت تراکنش در جدول لاگ پرداخت‌ها (با اضافه کردن فیلد gateway)
     const [res]: any = await connection.execute(
-      "INSERT INTO payments (user_id, amount, type, item_id, status) VALUES (?, ?, ?, ?, 'pending')",
-      [userId, amountInRial, type, item_id]
+      "INSERT INTO payments (user_id, amount, type, item_id, status, gateway) VALUES (?, ?, ?, ?, 'pending', ?)",
+      [userId, amountInRial, type, item_id, platform === 'bazaar_webview' ? 'cafebazaar' : 'zibal']
     );
     const localPaymentId = res.insertId;
 
-    // ۴. ارسال درخواست به زیبال
-    const zibalResponse = await fetch("https://gateway.zibal.ir/v1/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        merchant: process.env.ZIBAL_CODE,
-        amount: amountInRial,
-        callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/client/payment/verify`,
-        description: description || `خرید ${type === "sms" ? "پیامک" : "پلن"}`,
-        orderId: localPaymentId.toString(),
-      }),
-    });
-
-    const zibalData = await zibalResponse.json();
-
-    if (zibalData.result === 100) {
+    // ========== درگاه کافه بازار ==========
+    if (platform === 'bazaar_webview') {
+      const trackId = localPaymentId.toString();
       await connection.execute(
         "UPDATE payments SET track_id = ? WHERE id = ?",
-        [zibalData.trackId, localPaymentId]
+        [trackId, localPaymentId]
       );
 
+      // ساخت SKU بر اساس نوع و آیتم
+      let sku = '';
+      if (type === 'sms') sku = `sms_package_${item_id}`;
+      if (type === 'plan') sku = `plan_${item_id}`;
+
       return NextResponse.json({
-        trackId: zibalData.trackId,
-        gatewayUrl: `https://gateway.zibal.ir/start/${zibalData.trackId}`,
+        gateway: 'cafebazaar',
+        trackId: trackId,
+        sku: sku,
+        packageName: process.env.NEXT_PUBLIC_BAZAAR_PACKAGE_NAME || 'ir.ontime.app',
       });
-    } else {
-      throw new Error("خطا در ایجاد تراکنش در زیبال.");
     }
+
+    // ========== درگاه زیبال ==========
+    else {
+      const zibalResponse = await fetch("https://gateway.zibal.ir/v1/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          merchant: process.env.ZIBAL_CODE,
+          amount: amountInRial,
+          callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/client/payment/verify`,
+          description: description || `خرید ${type === "sms" ? "پیامک" : "پلن"}`,
+          orderId: localPaymentId.toString(),
+        }),
+      });
+
+      const zibalData = await zibalResponse.json();
+
+      if (zibalData.result === 100) {
+        await connection.execute(
+          "UPDATE payments SET track_id = ? WHERE id = ?",
+          [zibalData.trackId, localPaymentId]
+        );
+
+        return NextResponse.json({
+          gateway: 'zibal',
+          trackId: zibalData.trackId,
+          gatewayUrl: `https://gateway.zibal.ir/start/${zibalData.trackId}`,
+        });
+      } else {
+        throw new Error("خطا در ایجاد تراکنش در زیبال.");
+      }
+    }
+
   } catch (error: any) {
     console.error("Payment Error:", error.message);
     return NextResponse.json({ message: error.message }, { status: 500 });
