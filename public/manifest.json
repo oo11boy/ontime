@@ -2,8 +2,7 @@
   "name": "اپلیکیشن نوبت دهی آنتایم",
   "short_name": "آنتایم",
   "description": "سامانه مدیریت هوشمند نوبت‌دهی و مشتریان آنتایم",
-  "id": "/clientdashboard",
-  "start_url": "/clientdashboard?utm_source=pwa",
+  "start_url": "/clientdashboard",
   "scope": "/",
   "display": "standalone",
   "background_color": "#1D222A",
@@ -14,30 +13,15 @@
   "icons": [
     {
       "src": "/icons/icon-192.png",
-      "sizes": "1024x1024",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],"screenshots": [
-    {
-      "src": "/images/screens/main.jpg",
-      "sizes": "584x980",
-      "type": "image/jpg",
-      "form_factor": "narrow",
-      "label": "داشبورد آنتایم"
-    },
-    {
-      "src": "/images/app.jpg",
-      "sizes": "1184x864",
-      "type": "image/jpg",
-      "form_factor": "wide",
-      "label": "نمای دسکتاپ اپلیکیشن آنتایم"
+      "purpose": "any maskable"
     }
   ]
 }
