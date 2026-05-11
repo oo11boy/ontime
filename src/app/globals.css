@@ -4,18 +4,56 @@
   /* بهبود کنتراست برای تم روشن */
   --background: #ffffff;
   --foreground: #0f172a; /* تیره تر برای بهبود Accessibility */
-  
+
   /* تعریف متغیر فونت برای هماهنگی با layout.tsx */
-  --font-yekan: "Yekan Bakh", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-yekan:
+    "Yekan Bakh", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 /* تنظیم فونت برای WebView */
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
+/* قفل نهایی فونت برای تمام دستگاه‌های اندرویدی */
+html,
+body,
+* {
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
 
-#box-widget-icon{
-  display: none!important;
+body {
+  font-size: 14px !important;
+}
+
+/* تنظیمات خاص برای WebView اندروید */
+@media (-webkit-min-device-pixel-ratio: 0) {
+  html {
+    -webkit-text-size-adjust: 100% !important;
+  }
+}
+html, body, * {
+  touch-action: pan-y pan-x;  /* جلوگیری از زوم با دو انگشت */
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+body {
+  font-size: 14px !important;
+}
+input,
+textarea,
+select {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100% !important;
+}
+
+.no-zoom {
+  touch-action: manipulation;
+}
+#box-widget-icon {
+  display: none !important;
 }
 
 @media (prefers-color-scheme: dark) {

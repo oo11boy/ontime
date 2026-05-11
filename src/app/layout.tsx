@@ -35,54 +35,62 @@ export default function RootLayout({
       {
         "@type": "WebSite",
         "@id": "https://ontimeapp.ir/#website",
-        "url": "https://ontimeapp.ir",
-        "name": "آنتایم",
-        "alternateName": ["OnTime", "اپلیکیشن آنتایم", "سامانه آنتایم"],
-        "publisher": { "@id": "https://ontimeapp.ir/#organization" }
+        url: "https://ontimeapp.ir",
+        name: "آنتایم",
+        alternateName: ["OnTime", "اپلیکیشن آنتایم", "سامانه آنتایم"],
+        publisher: { "@id": "https://ontimeapp.ir/#organization" },
       },
       {
         "@type": "SoftwareApplication",
         "@id": "https://ontimeapp.ir/#software",
-        "name": "آنتایم (OnTime)",
-        "operatingSystem": "Web, Android, iOS",
-        "applicationCategory": "BusinessApplication",
-        "url": "https://ontimeapp.ir",
-        "description": "اپلیکیشن نوبت دهی آنلاین برای آرایشگاه‌ها، پزشکان و مراکز خدماتی",
-        "offers": {
+        name: "آنتایم (OnTime)",
+        operatingSystem: "Web, Android, iOS",
+        applicationCategory: "BusinessApplication",
+        url: "https://ontimeapp.ir",
+        description:
+          "اپلیکیشن نوبت دهی آنلاین برای آرایشگاه‌ها، پزشکان و مراکز خدماتی",
+        offers: {
           "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "IRR",
-          "availability": "https://schema.org/InStock",
-          "description": "۲ ماه اشتراک رایگان برای شروع"
+          price: "0",
+          priceCurrency: "IRR",
+          availability: "https://schema.org/InStock",
+          description: "۲ ماه اشتراک رایگان برای شروع",
         },
-        "aggregateRating": {
+        aggregateRating: {
           "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "reviewCount": "1240"
-        }
+          ratingValue: "4.9",
+          reviewCount: "1240",
+        },
       },
       {
         "@type": "Organization",
         "@id": "https://ontimeapp.ir/#organization",
-        "name": "آنتایم",
-        "url": "https://ontimeapp.ir",
-        "logo": {
+        name: "آنتایم",
+        url: "https://ontimeapp.ir",
+        logo: {
           "@type": "ImageObject",
-          "url": "https://ontimeapp.ir/icons/icon-512.png"
-        }
-      }
-    ]
+          url: "https://ontimeapp.ir/icons/icon-512.png",
+        },
+      },
+    ],
   };
 
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
-        
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="آنتایم" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover"
+        />
+
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
         <Script
           id="global-json-ld"
           type="application/ld+json"
@@ -96,10 +104,10 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>
-        
+
         {/* کدهای تحلیلی و چت آنلاین */}
         {/* <GoogleAnalytics gaId="G-8PVVM0N5SV" /> */}
-        
+
         {/* اسکریپت گفتینو */}
         <Script id="goftino-widget" strategy="afterInteractive">
           {`
