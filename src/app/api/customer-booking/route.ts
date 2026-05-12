@@ -19,6 +19,8 @@ interface CustomerBooking {
   created_at: string;
   business_name?: string;
   business_phone?: string;
+  staff_phone?:string
+  
   business_address?: string;
   off_days?: string;
   work_shifts?: string;
@@ -33,54 +35,53 @@ export async function GET(req: NextRequest) {
   if (!token) {
     return NextResponse.json(
       { success: false, message: "توکن الزامی است" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   try {
     const bookings = await query(
       `SELECT 
-        b.id,
-        b.client_name,
-        b.client_phone,
-        DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,
-        TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time,
-        b.duration_minutes,
-        b.booking_description,
-        b.services,
-        b.status,
-        b.change_count,
-        b.customer_token,
-        b.token_expires_at,
-        b.created_at,
-        b.staff_id,
-        u.business_name,
-        u.phone AS business_phone,
-        u.business_address,
-        u.off_days,
-        u.work_shifts,
-        s.calendar_type
-      FROM booking b
-      LEFT JOIN users u ON b.user_id = u.id
-      LEFT JOIN staffs s ON b.staff_id = s.id
-      WHERE b.customer_token = ?
-        AND b.token_expires_at > NOW()
-        AND b.status IN ('active', 'done', 'cancelled')`,
-      [token]
+    b.id,
+    b.client_name,
+    b.client_phone,
+    DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,
+    TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time,
+    b.duration_minutes,
+    b.booking_description,
+    b.services,
+    b.status,
+    b.change_count,
+    b.customer_token,
+    b.token_expires_at,
+    b.created_at,
+    b.staff_id,
+    s.phone AS staff_phone,       
+    u.phone AS business_phone,    
+    u.business_name,
+    u.business_address,
+    u.off_days,
+    u.work_shifts,
+    s.calendar_type
+  FROM booking b
+  LEFT JOIN users u ON b.user_id = u.id
+  LEFT JOIN staffs s ON b.staff_id = s.id
+  WHERE b.customer_token = ?
+    AND b.token_expires_at > NOW()
+    AND b.status IN ('active', 'done', 'cancelled')`,
+      [token],
     );
 
     if (bookings.length === 0) {
       return NextResponse.json(
         { success: false, message: "نوبت یافت نشد یا منقضی شده" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const booking = bookings[0] as CustomerBooking;
 
-    const offDaysArray = booking.off_days 
-      ? JSON.parse(booking.off_days) 
-      : [];
+    const offDaysArray = booking.off_days ? JSON.parse(booking.off_days) : [];
 
     // محاسبه حداکثر تعداد تغییرات مجاز (برای پرسنل مستقل شاید متفاوت باشد)
     const maxChangeCount = 1;
@@ -106,17 +107,19 @@ export async function GET(req: NextRequest) {
         businessPhone: booking.business_phone || "",
         businessAddress: booking.business_address || "",
         canCancel: booking.status === "active",
-        canReschedule: booking.status === "active" && booking.change_count < maxChangeCount,
+        canReschedule:
+          booking.status === "active" && booking.change_count < maxChangeCount,
         offDays: offDaysArray,
         staffId: booking.staff_id,
         calendarType: booking.calendar_type,
+        contactPhone: booking.staff_phone || booking.business_phone || "",
       },
     });
   } catch (error) {
     console.error("خطا در دریافت اطلاعات نوبت:", error);
     return NextResponse.json(
       { success: false, message: "خطای سرور" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -129,7 +132,7 @@ export async function POST(req: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { success: false, message: "توکن الزامی است" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -155,13 +158,13 @@ export async function POST(req: NextRequest) {
       WHERE b.customer_token = ?
         AND b.token_expires_at > NOW()
         AND b.status IN ('active', 'done')`,
-      [token]
+      [token],
     );
 
     if (bookings.length === 0) {
       return NextResponse.json(
         { success: false, message: "توکن نامعتبر یا منقضی شده" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -174,13 +177,13 @@ export async function POST(req: NextRequest) {
       if (booking.status !== "active") {
         return NextResponse.json(
           { success: false, message: "این نوبت قابل لغو نیست" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       await query(
         `UPDATE booking SET status = 'cancelled', customer_token = NULL, updated_at = NOW() WHERE id = ?`,
-        [booking.id]
+        [booking.id],
       );
 
       await query(
@@ -190,7 +193,7 @@ export async function POST(req: NextRequest) {
           booking.user_id,
           booking.client_phone,
           `نوبت شما لغو شد. تاریخ: ${persianDate} - زمان: ${timeDisplay}`,
-        ]
+        ],
       );
 
       await query(
@@ -200,7 +203,7 @@ export async function POST(req: NextRequest) {
           booking.user_id,
           booking.id,
           `مشتری (${booking.client_name}) نوبت خود را برای تاریخ ${persianDate} ساعت ${timeDisplay} لغو کرد.`,
-        ]
+        ],
       );
 
       return NextResponse.json({
@@ -214,14 +217,17 @@ export async function POST(req: NextRequest) {
       if (booking.status !== "active") {
         return NextResponse.json(
           { success: false, message: "این نوبت قابل تغییر نیست" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (booking.change_count >= 1) {
         return NextResponse.json(
-          { success: false, message: "تعداد مجاز تغییرات (۱ بار) تمام شده است" },
-          { status: 400 }
+          {
+            success: false,
+            message: "تعداد مجاز تغییرات (۱ بار) تمام شده است",
+          },
+          { status: 400 },
         );
       }
 
@@ -229,7 +235,7 @@ export async function POST(req: NextRequest) {
       if (!newDate || !newTime) {
         return NextResponse.json(
           { success: false, message: "تاریخ و زمان جدید الزامی است" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -240,12 +246,17 @@ export async function POST(req: NextRequest) {
         SELECT id FROM booking 
         WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?
       `;
-      let conflictParams: any[] = [booking.user_id, newDate, newTime, booking.id];
+      let conflictParams: any[] = [
+        booking.user_id,
+        newDate,
+        newTime,
+        booking.id,
+      ];
 
       // اگر نوبت متعلق به پرسنل است
       if (booking.staff_id) {
         const calendarType = booking.calendar_type;
-        
+
         if (calendarType === "independent") {
           // پرسنل مستقل: فقط تداخل با نوبت‌های خودش
           conflictCheckSql += " AND staff_id = ?";
@@ -269,7 +280,7 @@ export async function POST(req: NextRequest) {
       if (conflicts.length > 0) {
         return NextResponse.json(
           { success: false, message: "متأسفانه این زمان در همین لحظه رزرو شد" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -278,7 +289,7 @@ export async function POST(req: NextRequest) {
         `UPDATE booking 
          SET booking_date = ?, booking_time = ?, change_count = change_count + 1, updated_at = NOW()
          WHERE id = ?`,
-        [newDate, newTime, booking.id]
+        [newDate, newTime, booking.id],
       );
 
       // ثبت در لاگ پیامک
@@ -289,7 +300,7 @@ export async function POST(req: NextRequest) {
           booking.user_id,
           booking.client_phone,
           `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newPersianDate} - زمان جدید: ${newTime}`,
-        ]
+        ],
       );
 
       // ثبت نوتیفیکیشن برای رییس
@@ -300,7 +311,7 @@ export async function POST(req: NextRequest) {
           booking.user_id,
           booking.id,
           `مشتری (${booking.client_name}) زمان نوبت خود را به ${newPersianDate} ساعت ${newTime} تغییر داد.`,
-        ]
+        ],
       );
 
       return NextResponse.json({
@@ -311,13 +322,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { success: false, message: "عملیات نامعتبر" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (error: any) {
     console.error("خطا در پردازش درخواست:", error);
     return NextResponse.json(
       { success: false, message: error.message || "خطای سرور" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

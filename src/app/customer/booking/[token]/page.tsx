@@ -30,6 +30,7 @@ interface BookingData {
   description: string;
   services: string[];
   status: string;
+  contactPhone: string;
   changeCount: number;
   token: string;
   expiresAt: string;
@@ -199,11 +200,24 @@ export default function CustomerBookingPage() {
               <h2 className="text-xl font-black text-white">
                 {booking.businessName || "نام کسب‌وکار"}
               </h2>
+        
               <div className="flex items-center gap-1 text-gray-400 text-sm mt-1">
                 <MapPin className="w-3.5 h-3.5" />
                 <span className="truncate max-w-[200px]">
                   {booking.businessAddress || "آدرس ثبت نشده"}
                 </span>
+              </div>
+                    <div className="flex items-center py-2 justify-between">
+                <span className="text-gray-400 pl-2 text-sm">
+                  شماره تماس مجموعه:
+                </span>
+                <a
+                  href={`tel:${booking.contactPhone}`}
+                  className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+                  dir="ltr"
+                >
+                  {booking.contactPhone}
+                </a>
               </div>
             </div>
           </div>
@@ -218,8 +232,8 @@ export default function CustomerBookingPage() {
               booking.status === "active" && !isPast
                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
                 : booking.status === "cancelled"
-                ? "bg-red-500/10 border-red-500/20 text-red-400"
-                : "bg-gray-500/10 border-gray-500/20 text-gray-400"
+                  ? "bg-red-500/10 border-red-500/20 text-red-400"
+                  : "bg-gray-500/10 border-gray-500/20 text-gray-400"
             }`}
           >
             <div
@@ -388,7 +402,7 @@ export default function CustomerBookingPage() {
           currentDate={booking.date}
           currentTime={booking.time}
           customerToken={booking.token}
-       offDays={booking.offDays} // ارسال روزهای تعطیل به مدال تقویم
+          offDays={booking.offDays} // ارسال روزهای تعطیل به مدال تقویم
           onClose={() => setShowRescheduleModal(false)}
           onConfirm={handleReschedule}
         />

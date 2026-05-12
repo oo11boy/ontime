@@ -104,16 +104,6 @@ export default function RescheduleModal({
     return times;
   }, [availableTimes, selectedGregorianDate, currentGregorianDate]);
 
-  // بررسی آیا یک زمان رزرو شده است
-  const isTimeBooked = (time: string): boolean => {
-    return bookedTimes.some((bt) => bt.time === time);
-  };
-
-  // دریافت نام مشتری برای زمان رزرو شده
-  const getBookedClientName = (time: string): string | null => {
-    const booked = bookedTimes.find((bt) => bt.time === time);
-    return booked?.clientName || null;
-  };
 
   const handleSubmit = async () => {
     if (!selectedGregorianDate || !selectedTime) {
@@ -136,11 +126,6 @@ export default function RescheduleModal({
     }
   };
 
-  // تبدیل روز هفته به فارسی
-  const getWeekDayName = (date: Date): string => {
-    const weekDays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"];
-    return weekDays[date.getDay()];
-  };
 
   return (
     <>
@@ -175,7 +160,7 @@ export default function RescheduleModal({
                 <span className="text-white font-bold">
                   {selectedJalaliDate.day
                     ? `${selectedJalaliDate.day} ${
-                        persianMonths[selectedJalaliDate.month - 1]
+                        persianMonths[selectedJalaliDate.month ]
                       } ${selectedJalaliDate.year}`
                     : "انتخاب از تقویم"}
                 </span>
