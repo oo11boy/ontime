@@ -2,7 +2,7 @@
   "name": "اپلیکیشن نوبت دهی آنتایم",
   "short_name": "آنتایم",
   "description": "سامانه مدیریت هوشمند نوبت‌دهی و مشتریان آنتایم",
-  "start_url": "/clientdashboard",
+"start_url": "/clientdashboard",
   "scope": "/",
   "display": "standalone",
   "background_color": "#1D222A",
