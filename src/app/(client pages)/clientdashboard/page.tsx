@@ -16,6 +16,7 @@ import InstallPWA from "./components/InstallPWA";
 import IosInstallPrompt from "./components/IosInstallPrompt";
 import { useUserType } from "@/hooks/useUserType";
 import AnnouncementBanner from "./components/AnnouncementBanner";
+import DownloadAppBanner from "./components/DownloadAppBanner";
 
 export default function DashboardPage() {
   const { data: dashboardData, isLoading, error, refetch } = useDashboard();
@@ -59,7 +60,7 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-y-auto pb-32 pt-4 px-4">
           <div className="max-w-md mx-auto space-y-6">
             <AnnouncementBanner />
-
+<DownloadAppBanner />
             <div className="space-y-2">
               <InstallPWA />
               <IosInstallPrompt />
