@@ -14,10 +14,19 @@ export const POST = withAuth(async (req: NextRequest, context) => {
 
     // ۱. اگر قصد خرید پلن (ارتقای اشتراک) را دارد
     if (type === "plan") {
-      const [plans]: any = await connection.execute(
-        "SELECT monthly_fee FROM plans WHERE id = ?",
-        [item_id]
-      );
+      // پشتیبانی از هر دو نوع (id عددی یا plan_key رشته)
+      let query = "";
+      let params: any[] = [];
+      
+      if (typeof item_id === "number" || !isNaN(Number(item_id))) {
+        query = "SELECT monthly_fee FROM plans WHERE id = ?";
+        params = [Number(item_id)];
+      } else {
+        query = "SELECT monthly_fee FROM plans WHERE plan_key = ?";
+        params = [item_id];
+      }
+      
+      const [plans]: any = await connection.execute(query, params);
       if (!plans || plans.length === 0) throw new Error("پلن معتبر نیست.");
       finalAmountToman = plans[0].monthly_fee;
     }
@@ -43,7 +52,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     if (finalAmountToman <= 0) throw new Error("مبلغ تراکنش محاسبه نشد.");
     const amountInRial = finalAmountToman * 10;
 
-    // ۳. ثبت تراکنش در جدول لاگ پرداخت‌ها (با اضافه کردن فیلد gateway)
+    // ۳. ثبت تراکنش در جدول لاگ پرداخت‌ها
     const [res]: any = await connection.execute(
       "INSERT INTO payments (user_id, amount, type, item_id, status, gateway) VALUES (?, ?, ?, ?, 'pending', ?)",
       [userId, amountInRial, type, item_id, platform === 'bazaar_webview' ? 'cafebazaar' : 'zibal']
@@ -61,7 +70,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       // ساخت SKU بر اساس نوع و آیتم
       let sku = '';
       if (type === 'sms') sku = `sms_package_${item_id}`;
-      if (type === 'plan') sku = `plan_${item_id}`;
+      if (type === 'plan') sku = `${item_id}`;  // می‌تواند basic, gold, diamond باشد
 
       return NextResponse.json({
         gateway: 'cafebazaar',

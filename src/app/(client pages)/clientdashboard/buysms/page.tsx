@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
-import Footer from "../components/Footer/Footer";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { HeaderSection } from "./components/HeaderSection";
 import { PackagesGrid } from "./components/PackagesGrid";
@@ -35,21 +34,19 @@ export default function BuySMSPage() {
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
- const handlePurchase = async () => {
+const handlePurchase = async () => {
   if (!selected) {
     toast.error("لطفاً یک بسته انتخاب کنید.");
     return;
   }
   
-  // ما دیگر قیمت را حساب نمی‌کنیم، فقط می‌گوییم چه بسته‌ای (مثلا ۵۰۰ تایی)
   await startPayment(
-    0, // مبلغ توسط سرور جایگزین می‌شود
+    0, // مبلغ توسط سرور محاسبه می‌شود
     "sms",
-    selected, // مقدار عددی بسته مثل 100, 300, 500
+    selected, // مثال: 100, 200, 500
     `خرید بسته ${selected.toLocaleString("fa-IR")} عددی پیامک`
   );
 };
-
   if (isDashboardLoading || isPacksLoading) {
     return <LoadingScreen />;
   }

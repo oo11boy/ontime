@@ -15,18 +15,21 @@ export async function GET(req: NextRequest) {
     connection = await dbPool.getConnection();
 
     // ۱. تماس با سرور کافه بازار برای تأیید نهایی
-    const verifyRes = await fetch("https://developer.cafebazaar.ir/api/v1/purchase/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.BAZAAR_API_KEY}`,
+    const verifyRes = await fetch(
+      "https://developer.cafebazaar.ir/api/v1/purchase/verify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.BAZAAR_API_KEY}`,
+        },
+        body: JSON.stringify({
+          purchaseToken: purchaseToken,
+          orderId: orderId,
+          packageName: process.env.BAZAAR_PACKAGE_NAME || "ir.ontime.app",
+        }),
       },
-      body: JSON.stringify({
-        purchaseToken: purchaseToken,
-        orderId: orderId,
-        packageName: process.env.BAZAAR_PACKAGE_NAME || "ir.ontime.app",
-      }),
-    });
+    );
 
     const verifyData = await verifyRes.json();
 
@@ -35,7 +38,7 @@ export async function GET(req: NextRequest) {
 
       const [payInfo]: any = await connection.execute(
         "SELECT * FROM payments WHERE track_id = ? LIMIT 1",
-        [trackId]
+        [trackId],
       );
 
       if (!payInfo || payInfo.length === 0) {
@@ -47,7 +50,7 @@ export async function GET(req: NextRequest) {
 
       await connection.execute(
         "UPDATE payments SET status = 'success', ref_number = ? WHERE track_id = ?",
-        [orderId, trackId]
+        [orderId, trackId],
       );
 
       // پردازش خرید (sms یا plan)
@@ -57,21 +60,33 @@ export async function GET(req: NextRequest) {
           `INSERT INTO smspurchase 
             (user_id, type, amount_paid, ref_number, sms_amount, remaining_sms, valid_from, expires_at, status) 
             VALUES (?, 'one_time_sms', ?, ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'active')`,
-          [userId, payment.amount / 10, orderId, smsCount, smsCount]
+          [userId, payment.amount / 10, orderId, smsCount, smsCount],
         );
 
         await connection.execute(
           "UPDATE users SET purchased_sms_credit = purchased_sms_credit + ? WHERE id = ?",
-          [smsCount, userId]
+          [smsCount, userId],
         );
-      } 
-      else if (payment.type === "plan") {
-        const planId = payment.item_id;
-        const [plans]: any = await connection.execute(
-          "SELECT * FROM plans WHERE id = ?",
-          [planId]
-        );
-        const plan = plans[0];
+      } else if (payment.type === "plan") {
+        // پیدا کردن پلن (با پشتیبانی از id عددی و plan_key رشته)
+        let plan = null;
+
+        if (
+          typeof payment.item_id === "number" ||
+          !isNaN(Number(payment.item_id))
+        ) {
+          const [plans]: any = await connection.execute(
+            "SELECT * FROM plans WHERE id = ?",
+            [payment.item_id],
+          );
+          plan = plans?.[0];
+        } else {
+          const [plans]: any = await connection.execute(
+            "SELECT * FROM plans WHERE plan_key = ?",
+            [payment.item_id],
+          );
+          plan = plans?.[0];
+        }
 
         if (plan) {
           const durationMonths = plan.plan_key === "free_trial" ? 2 : 1;
@@ -104,7 +119,7 @@ export async function GET(req: NextRequest) {
               startedAt,
               quotaEndsAt,
               userId,
-            ]
+            ],
           );
 
           await connection.execute(
@@ -118,30 +133,29 @@ export async function GET(req: NextRequest) {
               plan.free_sms_month,
               plan.free_sms_month,
               endedAt,
-            ]
+            ],
           );
         }
       }
 
       await connection.commit();
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=success&trackId=${trackId}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=success&trackId=${trackId}`,
       );
-    } 
-    else {
+    } else {
       await connection.execute(
         "UPDATE payments SET status = 'failed' WHERE track_id = ?",
-        [trackId]
+        [trackId],
       );
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`,
       );
     }
   } catch (error: any) {
     if (connection) await connection.rollback();
     console.error("Bazaar Verify Error:", error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`,
     );
   } finally {
     if (connection) connection.release();
