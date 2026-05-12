@@ -96,7 +96,7 @@ const DownloadAppBanner: React.FC<DownloadAppBannerProps> = ({ onDownloadComplet
   return (
     <>
       {isVisible && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm md:max-w-md animate-slide-up">
+        <div className=" z-50 w-[96%] mx-auto max-w-sm md:max-w-md animate-slide-up">
           <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-emerald-100 p-3">
             <div className="flex items-center gap-3">
               {/* آیکون اپلیکیشن */}
