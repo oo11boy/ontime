@@ -9,8 +9,21 @@ export const usePayment = () => {
   const startPayment = async (amount: number, type: 'plan' | 'sms', itemId: number | string, desc: string) => {
     setIsPending(true);
     
-    // تشخیص پلتفرم (وب یا کافه بازار)
+    // تشخیص پلتفرم (حالا sync شده)
     const platform = detectPlatform();
+    
+    // اگر در اپ هستیم ولی کافه بازار نصب نیست، پیام بده
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isWebView = userAgent.includes('wv');
+    const hasCafeBazaar = userAgent.includes('cafebazaar') || userAgent.includes('com.farsitel.bazaar');
+    
+    if (isWebView && !hasCafeBazaar) {
+      toast.error(
+        "برای خرید درون برنامه‌ای، لطفاً کافه بازار را روی گوشی خود نصب کنید. در غیر این صورت از درگاه زیبال استفاده خواهد شد.",
+        { duration: 5000 }
+      );
+      // ادامه می‌دهیم تا زیبال باز شود
+    }
     
     try {
       const res = await fetch("/api/client/payment/request", {
@@ -27,16 +40,20 @@ export const usePayment = () => {
       
       const data = await res.json();
       
-      // ========== درگاه کافه بازار (فقط در اپ) ==========
+      // درگاه کافه بازار (فقط اگر کافه بازار نصب باشد می‌آید)
       if (data.gateway === 'cafebazaar') {
         if ((window as any).bazaarPaymentHandler) {
           (window as any).bazaarPaymentHandler.initiatePayment(data.sku, data.trackId);
         } else {
-          toast.error("پرداخت در این محیط پشتیبانی نمی‌شود.");
+          // fallback به زیبال اگر هندلر وجود نداشت
+          toast.error("درگاه کافه بازار در دسترس نیست. به درگاه زیبال هدایت می‌شوید.");
+          if (data.trackId || data.gatewayUrl) {
+            window.location.href = data.gatewayUrl || `https://gateway.zibal.ir/start/${data.trackId}`;
+          }
           setIsPending(false);
         }
       } 
-      // ========== درگاه زیبال (وب عادی) ==========
+      // درگاه زیبال
       else if (data.trackId) {
         window.location.href = `https://gateway.zibal.ir/start/${data.trackId}`;
       } 
