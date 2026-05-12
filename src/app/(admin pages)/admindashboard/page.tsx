@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { TopBusinessesSection } from "./Components/TopBusinessesSection";
+import AppInstallStats from "./Components/AppInstallStats";
 
 interface StatsData {
   title: string;
@@ -273,7 +274,7 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
-
+<AppInstallStats />
       {/* 3. جدول نوبت‌های اخیر */}
       <section className="bg-[#242933] border border-emerald-500/20 rounded-2xl shadow-xl overflow-hidden">
         <div className="p-6 border-b border-emerald-500/10 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -396,6 +397,7 @@ export default function DashboardPage() {
       )}
 
       <section className="bg-[#242933] border border-emerald-500/20 rounded-2xl p-6">
+
   <TopBusinessesSection />
 </section>
     </div>
