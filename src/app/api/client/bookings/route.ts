@@ -303,75 +303,79 @@ const handler = withAuth(async (req: NextRequest, context) => {
       }
 
       // ارسال پیامک (در صورت فعال بودن)
-      if (sms_reserve_enabled || sms_reminder_enabled) {
-        const customerLink = `https://ontimeapp.ir/${customerToken}`;
-        const [userData]: any = await query(
-          "SELECT business_name, name FROM users WHERE id = ?",
-          [userId],
-        );
-        const salonName =
-          userData?.business_name?.trim() ||
-          userData?.name?.trim() ||
-          "آن‌تایم";
 
-        const baseUrl =
-          process.env.NEXT_PUBLIC_BASE_URL ||
-          req.headers.get("origin") ||
-          "https://ontimeapp.ir";
+// ارسال پیامک (در صورت فعال بودن)
+if (sms_reserve_enabled || sms_reminder_enabled) {
+  const customerLink = `https://ontimeapp.ir/${customerToken}`;
+  const [userData]: any = await query(
+    "SELECT business_name, name, business_address, phone FROM users WHERE id = ?",
+    [userId],
+  );
+  const salonName = userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
+  const salonAddress = userData?.business_address?.trim() || "";
+  const salonPhone = userData?.phone?.trim() || "";  // شماره شخصی کاربر
 
-        const [gy, gm, gd] = booking_date.split("-").map(Number);
-        const jalaliDate = gregorianToJalali(gy, gm, gd);
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    req.headers.get("origin") ||
+    "https://ontimeapp.ir";
 
-        if (sms_reserve_enabled) {
-          await fetch(`${baseUrl}/api/sms/send`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Cookie: req.headers.get("cookie") || "",
-            },
-            body: JSON.stringify({
-              to_phone: cleanedPhone,
-              sms_type: "reservation",
-              booking_id: newBookingId,
-              name: client_name.trim(),
-              date: jalaliDate,
-              time: booking_time,
-              service: services.trim() || "خدمات",
-              link: customerLink,
-              salon: salonName,
-              template_key:
-                reserve_pattern || defaultReserveTemplate?.payamresan_id,
-              message_count: reserve_message_count,
-            }),
-          });
-        }
+  const [gy, gm, gd] = booking_date.split("-").map(Number);
+  const jalaliDate = gregorianToJalali(gy, gm, gd);
 
-        if (sms_reminder_enabled) {
-          await fetch(`${baseUrl}/api/sms/send`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Cookie: req.headers.get("cookie") || "",
-            },
-            body: JSON.stringify({
-              to_phone: cleanedPhone,
-              sms_type: "reminder",
-              booking_id: newBookingId,
-              booking_date,
-              booking_time,
-              sms_reminder_hours_before,
-              name: client_name.trim(),
-              date: jalaliDate,
-              time: booking_time,
-              service: services.trim() || "خدمات",
-              link: customerLink,
-              salon: salonName,
-              template_key: reminder_pattern,
-              message_count: reminder_message_count,
-            }),
-          });
-        }
-      }
+  if (sms_reserve_enabled) {
+    await fetch(`${baseUrl}/api/sms/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: req.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({
+        to_phone: cleanedPhone,
+        sms_type: "reservation",
+        booking_id: newBookingId,
+        name: client_name.trim(),
+        date: jalaliDate,
+        time: booking_time,
+        service: services.trim() || "خدمات",
+        link: customerLink,
+        salon: salonName,
+        address: salonAddress,
+        business_phone: salonPhone,
+        template_key: reserve_pattern || defaultReserveTemplate?.payamresan_id,
+        message_count: reserve_message_count,
+      }),
+    });
+  }
+
+  if (sms_reminder_enabled) {
+    await fetch(`${baseUrl}/api/sms/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: req.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({
+        to_phone: cleanedPhone,
+        sms_type: "reminder",
+        booking_id: newBookingId,
+        booking_date,
+        booking_time,
+        sms_reminder_hours_before,
+        name: client_name.trim(),
+        date: jalaliDate,
+        time: booking_time,
+        service: services.trim() || "خدمات",
+        link: customerLink,
+        salon: salonName,
+        address: salonAddress,
+        business_phone: salonPhone,
+        template_key: reminder_pattern,
+        message_count: reminder_message_count,
+      }),
+    });
+  }
+}
 
       return NextResponse.json(
         { success: true, bookingId: newBookingId, customerToken },

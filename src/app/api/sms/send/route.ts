@@ -1,4 +1,3 @@
-// src/app/api/sms/send/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -34,6 +33,8 @@ export const POST = withAuth(async (req, context) => {
       time: customTime,
       service,
       link,
+      address,
+      business_phone,
     } = body;
 
     console.log(`[SMS API] درخواست ارسال پیامک (${sms_type}):`, {
@@ -54,13 +55,15 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
+    // دریافت اطلاعات کاربر (business_name, business_address, phone)
     const users: any = await query(
-      "SELECT business_name, name FROM users WHERE id = ?",
+      "SELECT business_name, name, business_address, phone FROM users WHERE id = ?",
       [userId],
     );
     const userData = Array.isArray(users) ? users[0] : users;
-    const salonName =
-      userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
+    const salonName = userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
+    const salonAddress = userData?.business_address?.trim() || "";
+    const salonPhone = userData?.phone?.trim() || "";  // شماره شخصی کاربر
 
     const finalSmsCost = Math.max(1, Number(message_count));
 
@@ -164,11 +167,14 @@ export const POST = withAuth(async (req, context) => {
             service: service || "خدمات",
             link: link || "",
             salon: salonName,
+            address: address || salonAddress,
+            phone: business_phone || salonPhone,  // اولویت با business_phone ارسالی، در غیر این صورت phone کاربر
           },
           userId,
           staffId,
           cost: finalSmsCost,
           scheduled_at: scheduledAt,
+          reminder_hours_before: sms_reminder_hours_before,
         },
         {
           delay: delay > 0 ? delay : undefined,

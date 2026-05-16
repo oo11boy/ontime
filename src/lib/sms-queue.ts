@@ -1,4 +1,3 @@
-// src/lib/sms-queue.ts
 import { Queue, Worker, Job } from "bullmq";
 import Redis from "ioredis";
 import { query } from "@/lib/db";
@@ -16,7 +15,7 @@ const redisConnection = new Redis(
 export const smsQueue = new Queue("sms", {
   connection: redisConnection,
   defaultJobOptions: {
-    attempts: 3, // کاهش به 3 تلاش
+    attempts: 3,
     backoff: {
       type: "exponential",
       delay: 5000,
@@ -30,7 +29,6 @@ async function refundSmsCost(logId: number, cost: number, userId: number, staffI
     console.log(`💰 Refunding ${cost} SMS credits for log ${logId} (User: ${userId}, Staff: ${staffId || "N/A"})`);
     
     if (staffId) {
-      // بازگرداندن به حساب پرسنل
       await query(
         `UPDATE staffs 
          SET sms_balance = sms_balance + ?, 
@@ -40,7 +38,6 @@ async function refundSmsCost(logId: number, cost: number, userId: number, staffI
         [cost, cost, staffId, userId]
       );
       
-      // ثبت در لاگ انتقال اعتبار
       await query(
         `INSERT INTO credit_transfer_log 
          (from_user_id, to_user_id, amount, reason, related_staff_id, created_at)
@@ -48,11 +45,8 @@ async function refundSmsCost(logId: number, cost: number, userId: number, staffI
         [userId, staffId, cost, staffId]
       );
     } else {
-      // بازگرداندن به حساب رییس - اولویت با بسته‌های خریداری شده
-      // 1. ابتدا به بسته‌های خریداری شده برگردان
       let remainingRefund = cost;
       
-      // دریافت آخرین بسته‌های خریداری شده (برای برگرداندن به آخرین بسته)
       const recentPackages = await query<any>(
         `SELECT id, remaining_sms FROM smspurchase 
          WHERE user_id = ? AND type = 'one_time_sms' AND status = 'active'
@@ -70,7 +64,6 @@ async function refundSmsCost(logId: number, cost: number, userId: number, staffI
         remainingRefund = 0;
       }
       
-      // اگر هنوز باقی مانده، به اعتبار ماهانه برگردان
       if (remainingRefund > 0) {
         await query(
           `UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?`,
@@ -79,7 +72,6 @@ async function refundSmsCost(logId: number, cost: number, userId: number, staffI
       }
     }
     
-    // بروزرسانی لاگ پیامک با وضعیت refunded
     await query(
       `UPDATE smslog SET status = 'refunded', error_message = CONCAT(error_message, ' - اعتبار برگشت داده شد') WHERE id = ?`,
       [logId]
@@ -94,21 +86,23 @@ async function refundSmsCost(logId: number, cost: number, userId: number, staffI
 // تابع اصلی ارسال پیامک از طریق IPPanel
 async function sendToIPPANEL(jobData: any) {
   const { logId, to_phone, template_key, params, userId, staffId, cost, scheduled_at } = jobData;
-    if (scheduled_at) {
+  
+  if (scheduled_at) {
     console.log(`⏰ Executing scheduled SMS at ${new Date(scheduled_at).toISOString()}`);
   }
+  
   const IP_PANEL_API_KEY = process.env.IP_PANEL_API_KEY;
   const SENDER_NUMBER = process.env.SENDER_NUMBER || "+983000505";
 
   if (!IP_PANEL_API_KEY) {
     console.error("❌ API Key پیامک در تنظیمات سیستم (.env) یافت نشد.");
     await updateLogStatus(logId, "failed", null, "Missing API Key");
-    // بازگرداندن اعتبار
     await refundSmsCost(logId, cost, userId, staffId);
     return;
   }
-// در تابع sendToIPPANEL، می‌توانید reminder_hours_before را در لاگ‌ها ثبت کنید
-console.log(`⏰ Reminder: ${jobData.reminder_hours_before || 0} hours before booking`);
+
+  console.log(`⏰ Reminder: ${jobData.reminder_hours_before || 0} hours before booking`);
+  
   let status: "sent" | "failed" = "failed";
   let messageId: string | null = null;
   let errorMsg: string | null = null;
@@ -127,7 +121,7 @@ console.log(`⏰ Reminder: ${jobData.reminder_hours_before || 0} hours before bo
     }
     const recipient = `+98${cleanPhone}`;
 
-    // آماده‌سازی پارامترها
+    // آماده‌سازی پارامترها - با اضافه شدن address و phone
     const finalParams = {
       name: params?.name?.trim() || "مشتری عزیز",
       date: params?.date?.trim() || "---",
@@ -135,6 +129,8 @@ console.log(`⏰ Reminder: ${jobData.reminder_hours_before || 0} hours before bo
       service: params?.service?.trim() || "خدمات",
       link: params?.link?.trim() || "",
       salon: params?.salon?.trim() || "آن‌تایم",
+      address: params?.address?.trim() || "",
+      phone: params?.phone?.trim() || "",  // شماره تلفن کسب و کار
     };
 
     const response = await fetch("https://edge.ippanel.com/v1/api/send", {
@@ -177,10 +173,8 @@ console.log(`⏰ Reminder: ${jobData.reminder_hours_before || 0} hours before bo
     console.error(`❌ Worker Exception for ${to_phone}:`, err);
   }
 
-  // بروزرسانی وضعیت در دیتابیس
   await updateLogStatus(logId, status, messageId, errorMsg);
   
-  // اگر ارسال ناموفق بود، اعتبار را برگردان
   if (status === "failed") {
     await refundSmsCost(logId, cost, userId, staffId);
   }
@@ -229,7 +223,6 @@ if (!(global as any)[workerGlobalKey]) {
   (global as any)[workerGlobalKey].on("failed", async (job: Job, err: Error) => {
     console.error(`❌ Job ${job?.id} failed after all retries:`, err.message);
     
-    // اگر همه تلاش‌ها ناموفق بود، اعتبار را برگردان
     if (job) {
       const { logId, cost, userId, staffId } = job.data;
       await refundSmsCost(logId, cost, userId, staffId);
