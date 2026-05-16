@@ -248,6 +248,7 @@ const handlePlanSelection = (planKey: string) => {
             💡 <span className="text-emerald-400">نتیجه‌گیری:</span> با انتخاب پلن بالاتر (مثل طلایی یا الماس)، شما پیامک‌ها را با تخفیف بسیار بالایی پیش‌خرید می‌کنید و دیگر نیازی به خرید بسته‌های گران‌قیمت شارژ مجدد ندارید.
           </p>
         </div>
+
 <button
           onClick={() => setShowComparisonModal(false)}
           className="w-full mt-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold text-white transition-all"

@@ -20,12 +20,13 @@ interface DbPost {
 export async function GET(request: NextRequest) {
     const adminProtectedGET = withAdminAuth(async () => {
         try {
-            const posts = await query<DbPost>(
-                `SELECT id, title, slug, description, content, created_at, 
-                        author, category, reading_time, views, likes, toc
-                 FROM blog_posts
-                 ORDER BY created_at DESC`
-            );
+     // در بخش GET، مقالات را با اطلاعات کامل برگردانید
+const posts = await query<DbPost>(
+  `SELECT id, title, slug, description, content, created_at, 
+          author, category, reading_time, views, likes, toc
+   FROM blog_posts
+   ORDER BY created_at DESC`
+);
             return NextResponse.json({
                 message: 'مقالات با موفقیت دریافت شدند',
                 posts: posts,
