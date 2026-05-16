@@ -1,3 +1,4 @@
+import { freetime } from "@/lib/freetime";
 import { Metadata } from "next";
 
 /**
@@ -10,7 +11,7 @@ export const mainmetadata: Metadata = {
     template: "%s | آنتایم",
   },
   description:
-    "هوشمندترین سامانه و اپلیکیشن نوبت دهی برای پزشکان، آرایشگاه‌ها و مراکز خدماتی. همین حالا با ۲ ماه اشتراک رایگان و ۱۵۰ پیامک هدیه ماهانه شروع کنید.",
+    `هوشمندترین سامانه و اپلیکیشن نوبت دهی برای پزشکان، آرایشگاه‌ها و مراکز خدماتی. همین حالا با ${freetime.plan} اشتراک رایگان و ${freetime.sms} پیامک هدیه ماهانه شروع کنید.`,
   keywords: [
     "نوبت دهی آنلاین",
     "مدیریت آرایشگاه",
@@ -28,7 +29,7 @@ export const mainmetadata: Metadata = {
   },
   openGraph: {
     title: "آنتایم - تحولی در مدیریت نوبت‌دهی کسب‌وکار شما",
-    description: "۲ ماه استفاده رایگان از تمامی امکانات پنل مدیریت و نوبت‌دهی آنتایم",
+    description: `${freetime.plan} استفاده رایگان از تمامی امکانات پنل مدیریت و نوبت‌دهی آنتایم`,
     url: "https://ontimeapp.ir",
     siteName: "آنتایم",
     images: [
@@ -45,7 +46,7 @@ export const mainmetadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "آنتایم | اپلیکیشن نوبت‌دهی آنلاین",
-    description: "۲ ماه رایگان نوبت‌های خود را هوشمند مدیریت کنید.",
+    description: `${freetime.plan} رایگان نوبت‌های خود را هوشمند مدیریت کنید.`,
     images: ["/icons/icon-512.png"],
   },
   robots: {

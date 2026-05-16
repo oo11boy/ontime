@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Script from "next/script";
+import { freetime } from "@/lib/freetime";
 
 export default function PricingSection(): React.JSX.Element {
   const { data: plansData, isLoading: plansLoading } = usePlans();
@@ -128,7 +129,7 @@ export default function PricingSection(): React.JSX.Element {
                     <div className="absolute -top-6 inset-x-0 flex justify-center">
                       <span className="bg-emerald-600 text-white px-6 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-200 animate-bounce">
                         <Gift size={16} />
-                        هدیه شروع ( ۲ ماه رایگان)
+                        هدیه شروع ( {freetime.plan} رایگان)
                       </span>
                     </div>
                   ) : isProfessional ? (
@@ -148,10 +149,10 @@ export default function PricingSection(): React.JSX.Element {
                     {isFreeTrial ? (
                       <div className="bg-emerald-700 text-white p-8 rounded-[2.5rem] shadow-xl shadow-emerald-200/50 transform -rotate-1 group-hover:rotate-0 transition-transform">
                         <div className="text-4xl font-black mb-1 tracking-tighter">
-                          ۲ ماه رایگان
+                     {freetime.plan} رایگان
                         </div>
                         <div className="text-sm font-bold  border-t border-white/20 mt-3 pt-3">
-                          ۱۵۰ پیامک هدیه / ماهانه
+                          {freetime.sms} پیامک هدیه 
                         </div>
                       </div>
                     ) : (
@@ -200,7 +201,7 @@ export default function PricingSection(): React.JSX.Element {
                       }`}
                   >
                     {isFreeTrial
-                      ? "فعالسازی هدیه ۲ ماهه"
+                      ? `فعال سازی پلن رایگان`
                       : "شروع اشتراک حرفه‌ای"}
                     <ArrowLeft className="group-hover/btn:-translate-x-2 transition-transform" />
                   </Link>

@@ -3,6 +3,7 @@
 import { Gift, Phone, Sparkles, Zap, ArrowLeft, Users, CheckCircle2 } from "lucide-react";
 import React from "react";
 import Link from "next/link";
+import { freetime } from "@/lib/freetime";
 
 export default function NailFinalCTA() {
   return (
@@ -36,12 +37,12 @@ export default function NailFinalCTA() {
             <div className="grid md:grid-cols-3 gap-6 mb-20 max-w-5xl mx-auto">
               <BenefitCard
                 icon={<Gift className="text-rose-400" size={32} />}
-                title="۲ ماه پنل رایگان"
+                title={`${freetime.plan} پنل رایگان`}
                 desc="تمام امکانات مدیریت نوبت و مشتری بدون هزینه"
               />
               <BenefitCard
                 icon={<Zap className="text-emerald-400" size={32} />}
-                title="300 پیامک رایگان برای 2 ماه"
+                title={`${freetime.sms} پیامک رایگان`}
                 desc="ارسال خودکار زمان ترمیم برای مشتریان شما"
               />
               <BenefitCard

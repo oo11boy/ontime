@@ -10,6 +10,7 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
+import { freetime } from "@/lib/freetime";
 export default function FreeTrialPromo(): React.JSX.Element {
   return (
     <section className="py-24 relative overflow-hidden bg-white" dir="rtl">
@@ -37,7 +38,7 @@ export default function FreeTrialPromo(): React.JSX.Element {
                 <h2 className="text-4xl lg:text-7xl font-black text-white leading-[1.15]">
                   شروع هوشمندانه <br />
                   <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-blue-400">
-                    با ۲ ماه اشتراک رایگان
+                    با {freetime.plan} اشتراک رایگان
                   </span>
                 </h2>
 
@@ -45,18 +46,18 @@ export default function FreeTrialPromo(): React.JSX.Element {
                   ما به کارایی <strong>نرم‌افزار نوبت‌دهی آنتایم</strong> ایمان
                   داریم. به همین دلیل اجازه می‌دهیم{" "}
                   <span className="text-white font-bold underline decoration-emerald-500 decoration-2">
-                    ۶۰ روز کامل
+                    {freetime.plan} کامل
                   </span>{" "}
-                  از تمام امکانات حرفه‌ای استفاده کنید و هر ماه{" "}
+                  از تمام امکانات حرفه‌ای استفاده کنید و{" "} 
                   <span className="text-emerald-400 font-bold">
-                    ۱۵۰ پیامک هدیه
+                    {freetime.sms} پیامک هدیه
                   </span>{" "}
                   برای یادآوری نوبت‌ها از ما بگیرید.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                   <BenefitItem text="دسترسی به تمام امکانات پنل مدیریت" />
-                  <BenefitItem text="ارسال ۱۵۰ پیامک هدیه در هر ماه" />
+                  <BenefitItem text={`ارسال ${freetime.sms} پیامک هدیه`} />
                   <BenefitItem text="بدون نیاز به ثبت کارت بانکی" />
                   <BenefitItem text="پشتیبانی ویژه راه اندازی اولیه" />
                   <BenefitItem text="قابلیت لغو اشتراک در هر لحظه" />
@@ -85,7 +86,7 @@ export default function FreeTrialPromo(): React.JSX.Element {
                           رایگان
                         </span>
                         <span className="text-emerald-400 font-bold text-lg mt-2">
-                          برای ۶۰ روز اول
+                          برای {freetime.plan} اول
                         </span>
                       </div>
                     </div>
@@ -95,7 +96,7 @@ export default function FreeTrialPromo(): React.JSX.Element {
                         href="/clientdashboard"
                         className="group relative flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-6 rounded-3xl font-black text-xl transition-all shadow-[0_20px_50px_-12px_rgba(16,185,129,0.5)] active:translate-y-1"
                       >
-                        فعالسازی هدیه ۲ ماهه
+                   شروع با {freetime.plan} رایگان
                         <ArrowLeft
                           className="group-hover:-translate-x-2 transition-transform"
                           strokeWidth={3}

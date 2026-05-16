@@ -1,5 +1,6 @@
 "use client";
 
+import { freetime } from '@/lib/freetime';
 import { Smartphone, ShieldCheck, Zap, UserCheck, MessageSquare, History, ArrowLeft } from 'lucide-react'
 import Link from 'next/link';
 import Script from 'next/script';
@@ -91,7 +92,7 @@ export default function AppCoreValues(): React.JSX.Element {
                 آماده‌اید به نوبت‌های خود نظم بدهید؟
               </h3>
               <p className="text-white font-bold text-lg">
-                همین حالا با <strong>ثبت نام در سامانه نوبت دهی آنتایم</strong>، ۲ ماه اشتراک رایگان هدیه بگیرید و مدیریت نوبت‌ها را خودکار کنید.
+                همین حالا با <strong>ثبت نام در سامانه نوبت دهی آنتایم</strong>، {freetime.plan} اشتراک رایگان هدیه بگیرید و مدیریت نوبت‌ها را خودکار کنید.
               </p>
             </div>
             

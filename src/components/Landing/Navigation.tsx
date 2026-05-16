@@ -1,5 +1,6 @@
 "use client";
 
+import { freetime } from "@/lib/freetime";
 import {
   Building,
   CreditCard,
@@ -91,7 +92,8 @@ export default function Navigation(): React.JSX.Element {
             className="hidden sm:flex bg-emerald-800 text-white px-6 py-3.5 rounded-2xl font-black text-sm hover:bg-emerald-500 transition-all items-center gap-2 group relative overflow-hidden"
           >
             <span className="relative z-10 flex items-center gap-2">
-              شروع ۲ ماه رایگان
+          
+              شروع {freetime.plan} رایگان
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
             </span>
           </Link>
@@ -156,7 +158,7 @@ export default function Navigation(): React.JSX.Element {
               onClick={() => setIsOpen(false)}
               className="bg-emerald-600 text-white p-6 rounded-4xl font-black text-xl text-center shadow-xl shadow-emerald-100 flex items-center justify-center gap-3 active:scale-95 transition-transform"
             >
-              ۲ ماه رایگان شروع کنید
+                   شروع {freetime.plan} رایگان
               <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
             </Link>
             <p className="text-center text-slate-500 text-xs font-bold py-4">

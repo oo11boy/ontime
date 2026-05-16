@@ -51,12 +51,16 @@ export default function OnTimeLandingPage() {
 
         {/* ۲. اعتبار سنجی (Social Proof) و آمار موفقیت */}
         <StatsSection />
-<UniversalAppGallery
-  accentColor="blue"
-  title={<>مدیریت نوبت دهی در <span className="text-blue-500">دستان شما</span></>}
-  description="محیط کاربری اپلیکیشن نوبت دهی آنتایم ساده، سریع و متناسب با نیاز تمام کسب‌وکارهای نوبت‌محور طراحی شده است."
-
-/>
+        <UniversalAppGallery
+          accentColor="blue"
+          title={
+            <>
+              مدیریت نوبت دهی در{" "}
+              <span className="text-blue-500">دستان شما</span>
+            </>
+          }
+          description="محیط کاربری اپلیکیشن نوبت دهی آنتایم ساده، سریع و متناسب با نیاز تمام کسب‌وکارهای نوبت‌محور طراحی شده است."
+        />
 
         {/* ۱۱. انتخاب سریع صنف و دعوت به اقدام نهایی */}
         <IndustrySelector />

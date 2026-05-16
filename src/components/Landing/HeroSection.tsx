@@ -10,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import Image from "next/image";
+import { freetime } from "@/lib/freetime";
 
 
 export default function HeroSection() {
@@ -56,7 +57,7 @@ export default function HeroSection() {
                 title="ثبت نام در سامانه نوبت دهی آنلاین آنتایم"
                 className="px-10 py-5 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-3xl font-black text-xl hover:shadow-2xl transition-all hover:scale-105 flex items-center gap-4 shadow-xl shadow-blue-200"
               >
-                ۲ ماه رایگان شروع کنید
+               {freetime.plan} رایگان شروع کنید
                 <ArrowLeft size={24} />
               </Link>
             </div>

@@ -134,7 +134,7 @@ export default function NailArtistLanding() {
         {/* ۹. سوالات متداول ناخن‌کاران (FAQ) */}
         <NailFAQ />
 
-        {/* ۱۰. بخش پایانی و دعوت به شروع رایگان */}
+      
         <NailFinalCTA />
       </main>
 

@@ -4,6 +4,7 @@ import { Gift, Phone, Sparkles, Zap, ArrowLeft, Users } from "lucide-react";
 import React from "react";
 import Link from "next/link";
 import Script from "next/script";
+import { freetime } from "@/lib/freetime";
 
 export default function FinalCTA(): React.JSX.Element {
   return (
@@ -37,12 +38,12 @@ export default function FinalCTA(): React.JSX.Element {
             <div className="grid md:grid-cols-3 gap-6 mb-20 max-w-5xl mx-auto">
               <BenefitCard
                 icon={<Gift className="text-emerald-400" size={32} />}
-                title="۲ ماه اشتراک هدیه"
+                title={`${freetime.plan} اشتراک هدیه`}
                 desc="دسترسی نامحدود به تمام امکانات بدون هزینه"
               />
               <BenefitCard
                 icon={<Zap className="text-blue-400" size={32} />}
-                title="۱۵۰ پیامک رایگان"
+                title={`${freetime.sms} پیامک رایگان`}
                 desc="هر ماه، هدیه آنتایم برای نوبت‌دهی شما"
               />
               <BenefitCard
@@ -58,7 +59,7 @@ export default function FinalCTA(): React.JSX.Element {
                 href="/clientdashboard"
                 className="group relative w-full sm:w-auto px-12 py-7 bg-emerald-500 text-slate-950 rounded-[2.5rem] font-black text-2xl hover:bg-emerald-400 transition-all transform hover:scale-[1.03] active:scale-95 shadow-[0_20px_40px_-10px_rgba(16,185,129,0.4)] flex items-center justify-center gap-4"
               >
-                ۲ ماه رایگان شروع کنید
+                {freetime.plan} رایگان شروع کنید
                 <ArrowLeft
                   className="group-hover:-translate-x-2 transition-transform"
                   strokeWidth={3}

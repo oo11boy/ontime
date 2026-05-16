@@ -1,5 +1,6 @@
 "use client";
 
+import { freetime } from "@/lib/freetime";
 import { Wallet, Clock, Share2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useMemo } from "react";
@@ -141,7 +142,7 @@ export default function CalculatorEnhanced(): React.JSX.Element {
                   href="/register"
                   className="w-full block py-5 bg-white text-blue-700 rounded-2xl font-black text-lg hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-95 shadow-xl"
                 >
-                  ۲ ماه رایگان شروع کنید
+                  {freetime.plan} رایگان شروع کنید
                 </Link>
               </div>
             </div>

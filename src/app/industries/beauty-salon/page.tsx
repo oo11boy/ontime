@@ -110,7 +110,6 @@ export default function BeautySalonLanding() {
         {/* ۹. رفع ابهامات نهایی */}
         <BeautyFAQ />
 
-        {/* ۱۰. دعوت به اقدام نهایی با تاکید بر ۶۰ روز رایگان */}
         <FinalCTA />
       </main>
 

@@ -1,6 +1,7 @@
 // components/BeautySalon/BeautyNavigation.tsx
 "use client";
 
+import { freetime } from "@/lib/freetime";
 import {
   CreditCard,
   HelpCircle,
@@ -95,7 +96,7 @@ export default function BeautyNavigation(): React.JSX.Element {
             href="/clientdashboard"
             className="hidden sm:flex bg-pink-600 text-white px-6 py-3.5 rounded-2xl font-black text-sm hover:bg-pink-700 transition-all items-center gap-2 group relative shadow-xl shadow-pink-100"
           >
-            شروع تست ۲ ماه رایگان
+            شروع تست {freetime.plan} رایگان
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           </Link>
 
@@ -157,7 +158,7 @@ export default function BeautyNavigation(): React.JSX.Element {
               onClick={() => setIsOpen(false)}
               className="bg-pink-600 text-white p-6 rounded-[2rem] font-black text-xl text-center shadow-2xl shadow-pink-200 flex items-center justify-center gap-3 active:scale-95 transition-transform"
             >
-              فعالسازی ۲ ماه رایگان
+              فعالسازی {freetime.plan} رایگان
               <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
             </Link>
             <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">

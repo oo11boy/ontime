@@ -4,12 +4,10 @@ import {
   Scale,
   Sparkles,
   Car,
-  Clock,
   Check,
   Smartphone,
   MessageSquare,
 } from "lucide-react";
-import Script from "next/script";
 import React from "react";
 
 interface Industry {

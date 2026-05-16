@@ -1,5 +1,6 @@
 "use client";
 
+import { freetime } from "@/lib/freetime";
 import {
   CreditCard,
   HelpCircle,
@@ -93,7 +94,7 @@ export default function NailNavigation(): React.JSX.Element {
             href="/clientdashboard"
             className="hidden sm:flex bg-slate-900 text-white px-7 py-3.5 rounded-2xl font-black text-sm hover:bg-rose-600 transition-all items-center gap-3 group shadow-xl shadow-slate-200"
           >
-          شروع 2 ماه رایگان
+          شروع {freetime.plan} رایگان
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform text-rose-400" />
           </Link>
 
