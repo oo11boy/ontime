@@ -102,6 +102,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { href: "/admindashboard/sms", icon: Smartphone, label: "پلن‌های پیامکی" },
 
     { title: "اطلاعات و سیستم" },
+    { href: "/admindashboard/freesettings", icon: Settings, label: "تنظیمات سیستم" },
     { href: "/admindashboard/reports", icon: BarChart4, label: "گزارشات و آمار" },
     { href: "/admindashboard/comments", icon: MessageSquare, label: "دیدگاه‌ها", badge: "5" },
     { href: "/admindashboard/settings", icon: Settings, label: "تنظیمات" },

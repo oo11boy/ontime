@@ -1,5 +1,5 @@
 // src/app/(client pages)/clientdashboard/components/DashboardWelcomeModal.tsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, X } from "lucide-react";
 
@@ -8,10 +8,44 @@ interface DashboardWelcomeModalProps {
   onClose: () => void;
 }
 
+interface WelcomeSettings {
+  free_trial_duration_text: string;
+  free_trial_sms_quota: number;
+  free_trial_sms_duration_text: string;
+}
+
 export const DashboardWelcomeModal: React.FC<DashboardWelcomeModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const [settings, setSettings] = useState<WelcomeSettings>({
+    free_trial_duration_text: "2 ماه",
+    free_trial_sms_quota: 150,
+    free_trial_sms_duration_text: "3 ماه",
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch("/api/client/auth/welcome-settings");
+        const data = await response.json();
+        if (data.success) {
+          setSettings({
+            free_trial_duration_text: data.free_trial_duration_text,
+            free_trial_sms_quota: data.free_trial_sms_quota,
+            free_trial_sms_duration_text: data.free_trial_sms_duration_text,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching welcome settings:", error);
+      }
+    };
+
+    if (isOpen) {
+      fetchSettings();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -46,18 +80,17 @@ export const DashboardWelcomeModal: React.FC<DashboardWelcomeModalProps> = ({
                 </div>
               </div>
 
-              <h2 className="text-2xl text-white font-bold mb-4">خوش آمدید! 🎉</h2>
-              
+              <h2 className="text-2xl text-white font-bold mb-4">
+                خوش آمدید! 🎉
+              </h2>
+
               <div className="space-y-4 text-lg leading-relaxed text-gray-200">
-                <p>
-                  ثبت‌نام شما با موفقیت انجام شد.
-                </p>
+                <p>ثبت‌نام شما با موفقیت انجام شد.</p>
                 <p className="text-emerald-400 font-bold text-xl">
-                  شما ۲ ماه استفاده رایگان از تمام امکانات اپلیکیشن نوبت‌دهی دریافت کردید!
+                  شما {settings.free_trial_duration_text} استفاده رایگان به همراه           {settings.free_trial_sms_quota.toLocaleString("fa-IR")}{" "} پیامک رایگان از تمام
+                  امکانات اپلیکیشن نوبت‌دهی دریافت کردید!
                 </p>
-                <p>
-                  همچنین هر ماه <span className="text-emerald-400 font-bold">۱۵۰ پیامک رایگان</span> به مدت سه ماه برایتان فعال شد.
-                </p>
+        
               </div>
 
               <button

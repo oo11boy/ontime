@@ -1,8 +1,37 @@
+// src/app/api/client/auth/signup-complete/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
+
+// تابع کمکی برای دریافت تنظیمات سیستم
+async function getSystemSetting(key: string, defaultValue: string): Promise<string> {
+  try {
+    const result = await query<{ setting_value: string }>(
+      'SELECT setting_value FROM system_settings WHERE setting_key = ?',
+      [key]
+    );
+    if (result && result.length > 0 && result[0].setting_value) {
+      return result[0].setting_value;
+    }
+    return defaultValue;
+  } catch (error) {
+    console.error(`Error fetching setting ${key}:`, error);
+    return defaultValue;
+  }
+}
+
+// تابع محاسبه تاریخ بر اساس واحد (ماه یا هفته)
+function addDuration(date: Date, amount: number, unit: string): Date {
+  const result = new Date(date);
+  if (unit === 'week') {
+    result.setDate(result.getDate() + (amount * 7));
+  } else {
+    result.setMonth(result.getMonth() + amount);
+  }
+  return result;
+}
 
 const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
   const { userId } = context;
@@ -25,6 +54,13 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
       );
     }
 
+    // دریافت تنظیمات از دیتابیس
+    const trialDuration = parseInt(await getSystemSetting('free_trial_duration', '2'));
+    const trialDurationUnit = await getSystemSetting('free_trial_duration_unit', 'month');
+    const freeTrialSmsQuota = parseInt(await getSystemSetting('free_trial_sms_quota', '150'));
+    const smsDuration = parseInt(await getSystemSetting('free_trial_sms_duration', '3'));
+    const smsDurationUnit = await getSystemSetting('free_trial_sms_duration_unit', 'month');
+
     // ۱. بررسی وضعیت فعلی کاربر
     const userResult = await query<{
       started_at: string | null;
@@ -38,18 +74,15 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
     let showWelcomeModal = false;
 
     if (isFirstTimeCompletingSignup) {
-      const MONTHLY_SMS_QUOTA = 150;
-      const PLAN_DURATION_MONTHS = 2;
-
       const today = new Date();
       const todayStr = today.toISOString().split("T")[0];
 
-      const endDate = new Date();
-      endDate.setMonth(today.getMonth() + PLAN_DURATION_MONTHS);
+      // محاسبه تاریخ پایان پلن رایگان
+      const endDate = addDuration(today, trialDuration, trialDurationUnit);
       const endedAtStr = endDate.toISOString().split("T")[0];
 
-      const quotaEndDate = new Date();
-      quotaEndDate.setMonth(today.getMonth() + 1);
+      // محاسبه تاریخ پایان پیامک‌های رایگان
+      const quotaEndDate = addDuration(today, smsDuration, smsDurationUnit);
       const quotaEndsAtStr = quotaEndDate.toISOString().split("T")[0];
 
       // ۲. بروزرسانی اطلاعات کاربر و فعال‌سازی پلن
@@ -69,8 +102,8 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
         [
           name.trim(),
           jobIdNumber,
-          MONTHLY_SMS_QUOTA,
-          MONTHLY_SMS_QUOTA,
+          freeTrialSmsQuota,
+          freeTrialSmsQuota,
           todayStr,
           endedAtStr,
           todayStr,
@@ -84,7 +117,7 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
         `INSERT INTO smspurchase 
           (user_id, type, amount_paid, sms_amount, valid_from, valid_until, status)
           VALUES (?, 'trial_quota', 0, ?, ?, ?, 'active')`,
-        [userId, MONTHLY_SMS_QUOTA, todayStr, endedAtStr]
+        [userId, freeTrialSmsQuota, todayStr, endedAtStr]
       );
 
       // ۴. افزایش آمار کسب‌وکار
@@ -117,7 +150,6 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
     }
 
     // ۵. آپدیت کردن کوکی برای Middleware
-    // این بخش بسیار حیاتی است تا Middleware بلافاصله اجازه ورود به داشبورد را بدهد
     (await cookies()).set("is_registered", "true", {
       maxAge: 7 * 24 * 60 * 60,
       path: "/",
@@ -125,7 +157,7 @@ const POST = withAuth(async (req: NextRequest, context: { userId: number }) => {
     });
 
     return NextResponse.json({
-      message: "ثبت‌نام با موفقیت تکمیل شد و پلن ۲ ماهه فعال گردید.",
+      message: "ثبت‌نام با موفقیت تکمیل شد و پلن رایگان فعال گردید.",
       show_welcome_modal: showWelcomeModal,
     });
   } catch (error) {
