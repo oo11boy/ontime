@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardHeader } from "../../../components/DashboardHeader";
 import Footer from "../../../components/Footer/Footer";
 
-// ✅ استفاده از default export به جای named export
 export default function PaymentResultPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -23,7 +22,7 @@ export default function PaymentResultPage() {
         <div className="max-w-md w-full bg-[#242933] rounded-3xl p-8 border border-white/5 shadow-2xl text-center">
           {isSuccess ? (
             <div className="flex flex-col items-center">
-              <div className="w-20 h-20 bg-[#07A375] rounded-full flex items-center justify-center mb-6 animate-bounce">
+              <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-6 animate-bounce">
                 <CheckCircle className="text-white w-12 h-12" />
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
@@ -36,7 +35,7 @@ export default function PaymentResultPage() {
           ) : (
             <div className="flex flex-col items-center">
               <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
-                <XCircle className="text-white w-12 h-12" />
+                <XCircle className="text-red-500 w-12 h-12" />
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
                 پرداخت ناموفق بود
@@ -56,7 +55,7 @@ export default function PaymentResultPage() {
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">وضعیت تراکنش:</span>
-              <span className={isSuccess ? "text-[#07A375]" : "text-red-500"}>
+              <span className={isSuccess ? "text-emerald-500" : "text-red-500"}>
                 {isSuccess ? "موفق" : "ناموفق / لغو شده"}
               </span>
             </div>
@@ -65,7 +64,7 @@ export default function PaymentResultPage() {
           <div className="grid grid-cols-1 gap-3">
             <Link
               href="/clientdashboard"
-              className="flex items-center justify-center gap-2 w-full bg-[#07A375] text-white py-4 rounded-2xl font-bold transition-all"
+              className="flex items-center justify-center gap-2 w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold transition-all hover:bg-emerald-600"
             >
               ورود به میز کار
               <ArrowRight size={18} />

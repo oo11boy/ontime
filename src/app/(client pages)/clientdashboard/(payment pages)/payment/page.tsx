@@ -3,11 +3,9 @@
 
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { detectPlatform } from "@/lib/platform";
 import { DashboardHeader } from "../../components/DashboardHeader";
 import Footer from "../../components/Footer/Footer";
 
-// کامپوننت اصلی صفحه پرداخت
 export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
@@ -18,7 +16,6 @@ export default function PaymentPage() {
 
   const handlePayment = async () => {
     setLoading(true);
-    const platform = detectPlatform();
     
     try {
       const res = await fetch("/api/client/payment/request", {
@@ -27,28 +24,17 @@ export default function PaymentPage() {
         body: JSON.stringify({ 
           type: type, 
           item_id: parseInt(itemId), 
-          platform,
           description: `خرید ${type === "sms" ? "پیامک" : "پلن"}`
         }),
       });
       
       const data = await res.json();
 
-      if (data.gateway === 'cafebazaar') {
-        // پرداخت از طریق کافه بازار
-        if ((window as any).bazaarPaymentHandler) {
-          (window as any).bazaarPaymentHandler.initiatePayment(data.sku, data.trackId);
-        } else {
-          alert("پرداخت در این محیط پشتیبانی نمی‌شود. لطفاً از نسخه وب استفاده کنید.");
-          setLoading(false);
-        }
-      } 
-      else if (data.gateway === 'zibal') {
-        // پرداخت از طریق زیبال
+      if (data.success && data.trackId) {
+        // هدایت به درگاه زیبال
         window.location.href = data.gatewayUrl;
-      }
-      else {
-        alert("خطا در ارتباط با درگاه پرداخت");
+      } else {
+        alert(data.message || "خطا در ارتباط با درگاه پرداخت");
         setLoading(false);
       }
     } catch (error) {
@@ -73,9 +59,9 @@ export default function PaymentPage() {
           <button
             onClick={handlePayment}
             disabled={loading}
-            className="w-full bg-[#07A375] text-white py-4 rounded-2xl font-bold transition-all hover:bg-[#059669] disabled:opacity-50"
+            className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold transition-all hover:bg-emerald-600 disabled:opacity-50"
           >
-            {loading ? "در حال اتصال به درگاه..." : "پرداخت"}
+            {loading ? "در حال اتصال به درگاه..." : "پرداخت از طریق زیبال"}
           </button>
           
           <button
@@ -90,4 +76,3 @@ export default function PaymentPage() {
     </div>
   );
 }
-
