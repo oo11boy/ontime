@@ -207,6 +207,7 @@ const handler = withAuth(async (req: Request, context: any) => {
       bookedTimes,
       isToday,
       duration, // برگرداندن duration برای دیباگ
+        workShifts,
     });
   } catch (error) {
     console.error("[available-times] Error:", error);

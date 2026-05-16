@@ -98,7 +98,7 @@ export default function NewAppointmentPage() {
 
   // ========== محاسبه مدت زمان کل بر اساس سرویس‌های انتخاب شده ==========
   const calculateTotalDuration = useCallback((selectedServices: any[]) => {
-    if (!selectedServices || selectedServices.length === 0) return 30;
+    if (!selectedServices || selectedServices.length === 0) return 1;
     return selectedServices.reduce((total, service) => {
       return total + (service.duration_minutes || 30);
     }, 0);
