@@ -1,6 +1,9 @@
 // src/lib/ai-service.ts
 
-const ARVAN_API_URL = "https://arvancloudai.ir/gateway/models/DeepSeek-V3.2/hLyayptROELRzkXadTzskOHL1U9nq5_C-URFyo2unQ0LKziT8Z-u9FVV6m2bVpxxuibg6MSe0OaREcoEnfi0p7fkpEAA8SDmxboCukokz5ErJ0zMDL_BGYUYlTtTMMiT4z6FxyN1ht8XrQdnf0GVNy-09aY4NSe8xaFuX9F8nOtgUElc0uPjrs3raK9mQPMa_jQEgrOiDmU903cb1rzKs9IOGWhFXt5ImXEJmYVGefOcfMDv--46gnL9KSTpfaXt/v1/chat/completions";
+const ARVAN_API_URL =
+  "https://arvancloudai.ir/gateway/models/DeepSeek-V3.2/hLyayptROELRzkXadTzskOHL1U9nq5_C-URFyo2unQ0LKziT8Z-u9FVV6m2bVpxxuibg6MSe0OaREcoEnfi0p7fkpEAA8SDmxboCukokz5ErJ0zMDL_BGYUYlTtTMMiT4z6FxyN1ht8XrQdnf0GVNy-09aY4NSe8xaFuX9F8nOtgUElc0uPjrs3raK9mQPMa_jQEgrOiDmU903cb1rzKs9IOGWhFXt5ImXEJmYVGefOcfMDv--46gnL9KSTpfaXt/v1/chat/completions";
+
+// نکته امنیتی: بهتر است در آینده این کلید را به env. منتقل کنید.
 const ARVAN_API_KEY = "6d78125c-0779-50f6-b9cb-5e78eb5cb807";
 
 interface GeneratePostParams {
@@ -73,7 +76,7 @@ export const categorizedTopics = {
   ],
   "آموزش و راه‌اندازی": [
     "چگونه نوبت دهی آرایشگاه خود را آنلاین کنیم؟",
-    "بهترین اپلیکیشن مدیریت مطب پزشکی کدام است؟",
+    "بهترین اپلیکیشن مدیریت مطب پزشکی کدام است？",
     "آموزش راه‌اندازی سیستم نوبت‌دهی برای سالن زیبایی",
     "هزینه راه‌اندازی سیستم نوبت‌دهی آنلاین چقدر است؟",
   ],
@@ -89,7 +92,6 @@ export const categorizedTopics = {
   ],
 };
 
-// حافظه موضوعات استفاده شده (برای عدم تکرار)
 let usedTopics: string[] = [];
 
 export function resetUsedTopics(): void {
@@ -145,17 +147,22 @@ function normalizeEnglishSlug(slug: string): string {
     .replace(/^-|-$/g, ""); // حذف خط تیره اول و آخر
 }
 
-// تابع کمکی برای استخراج JSON از پاسخ
+// تابع هوشمند و ضد خطا برای استخراج امن JSON از پاسخ مدل
 function extractJSON(text: string): any {
-  text = text.trim();
-  const firstBrace = text.indexOf("{");
-  const lastBrace = text.lastIndexOf("}");
+  let cleanedText = text.trim();
+  
+  if (cleanedText.startsWith("```")) {
+    cleanedText = cleanedText.replace(/^```json/i, "").replace(/```$/, "").trim();
+  }
+
+  const firstBrace = cleanedText.indexOf("{");
+  const lastBrace = cleanedText.lastIndexOf("}");
 
   if (firstBrace === -1 || lastBrace === -1) {
     throw new Error("JSON structure not found in response");
   }
 
-  const jsonStr = text.substring(firstBrace, lastBrace + 1);
+  const jsonStr = cleanedText.substring(firstBrace, lastBrace + 1);
   return JSON.parse(jsonStr);
 }
 
@@ -164,38 +171,46 @@ export async function generateBlogPostWithAI(
 ): Promise<GeneratedPost> {
   const { topic, category = "مدیریت کسب‌وکار" } = params;
 
-  const prompt = `شما یک نویسنده حرفه‌ای محتوای سئو شده برای وبلاگ سایت ontimeapp.ir هستید. آنتایم (ontimeapp.ir) یک اپلیکیشن نوبت‌دهی و مدیریت کسب‌وکار است.
+  // پرامپت مهندسی‌شده با درک کامل از ویژگی‌های پلتفرم آنتایم
+  const prompt = `شما یک کارشناس ارشد سئو و نویسنده محتوای تخصصی هستید. وظیفه شما نگارش یک مقاله جامع، عمیق و کاملاً انسان‌گونه (Human-like) برای وبلاگ سایت "آنتایم" (ontimeapp.ir) درباره موضوع "${topic}" در دسته‌بندی "${category}" است.
 
-لطفاً یک مقاله کامل و ارزشمند درباره موضوع "${topic}" بنویسید.
+[پایگاه دانش - ویژگی‌های کلیدی پلتفرم آنتایم]:
+هنگام نوشتن مقاله، در بخش‌های مرتبط حتماً از این ویژگی‌های واقعی و دقیق آنتایم استفاده کن تا متن کاملاً تخصصی و گره‌گشا باشد:
+۱. مدیریت هوشمند نوبت‌دهی آنلاین: ثبت نوبت آنلاین توسط مشتریان بدون تماس تلفنی، نمایش زنده و Real-time زمان‌های خالی، و جلوگیری ۱۰۰٪ از تداخل نوبت‌ها.
+۲. ارسال خودکار پیامک یادآوری: ارسال پیامک تایید بلافاصله پس از ثبت نوبت، ارسال پیامک یادآوری چند ساعت قبل از موعد (قابل تنظیم توسط مدیر) که باعث کاهش تا ۸۰ درصدی کنسلی نوبت‌ها می‌شود.
+۳. مدیریت پیشرفته پرسنل: تعریف چندین پرسنل با دسترسی‌های مجزا، پشتیبانی از دو نوع تقویم کاری (مستقل: برنامه جدا برای هر پرسنل / هماهنگ: برنامه واحد برای کل مجموعه)، اختصاص خدمات تخصصی و همچنین تخصیص اعتبار پیامک مجزا به هر پرسنل.
+۴. مدیریت مشتریان (CRM اختصاصی): ذخیره تاریخچه کامل مراجعات، پایش تعداد کنسلی‌ها و سنجش میزان وفاداری مشتری، امکان لیست سیاه یا بلاک کردن مشتریان بدقول، و سیستم جستجو و فیلتر پیشرفته مشتریان.
+۵. پورتال و نسخه وب مشتری: نمایش اطلاعات نوبت در قالب یک صفحه وب ساده و شکیل، امکان لغو یا تغییر زمان نوبت توسط خود مشتری (با رعایت محدودیت‌های زمانی که مدیر تعیین می‌کند).
+۶. گزارش‌گیری حرفه‌ای و داشبورد تحلیلی: تحلیل دقیق عملکرد پرسنل، آمار زنده نوبت‌ها (فعال، تکمیل‌شده، لغو شده) و سیستم حسابداری ساده برای مشاهده درآمدها و هزینه‌ها.
 
-نکات بسیار مهم سئو و لینک‌دهی داخلی:
-1. در متن مقاله، حتماً لینک‌های داخلی طبیعی به صفحات زیر اضافه کنید:
-   - صفحه اصلی: https://ontimeapp.ir
-   - صفحه ثبت‌نام: https://ontimeapp.ir با متن "ثبت‌نام در آنتایم"
-   - صفحه تعرفه‌ها: https://ontimeapp.ir/#pricing با متن "مشاهده تعرفه‌ها"
-   - صفحه دانلود اپلیکیشن: https://ontimeapp.ir/dl با متن "دانلود اپلیکیشن آنتایم"
-2. از کلمات کلیدی اصلی مثل "سیستم نوبت‌دهی"، "اپلیکیشن نوبت‌دهی"، "مدیریت کسب‌وکار" استفاده کنید
-3. عنوان مقاله جذاب و سئو شده باشد (بین 50 تا 70 کاراکتر)
-4. توضیحات متا (description) جذاب و بین 150 تا 160 کاراکتر باشد
-5. محتوای مقاله حداقل 1200 کلمه باشد
-6. شامل تیترهای h2 و h3 مناسب باشد
-7. در انتها یک بخش نتیجه‌گیری و دعوت به اقدام (CTA) داشته باشد
-8. نویسنده را "آنتایم" بنویسید
+اصول سئوی پیشرفته و ساختاری که باید دقیقاً رعایت کنی:
+۱. الگوریتم Helpful Content گوگل: متن نباید لحن هوش مصنوعی، تکراری یا کلیشه‌ای داشته باشد. از اصطلاحات واقعی بازار کار، مثال‌های ملموس و چالش‌های صاحبان کسب‌وکار استفاده کن.
+۲. ساختار و تگ‌های HTML: متن مقاله باید ساختاریافته و با تگ‌های <h2> و <h3> باشد. از لیست‌های نشانه‌دار (<ul> و <li>) استفاده کن.
+۳. طول مقاله و عمق محتوا: موضوع را به‌صورت عمیق و جامع (Comprehensive) بررسی کن تا کاربر پاسخ تمام سوالاتش را دریافت کند. متن باید طولانی، ارزشمند و غنی باشد.
+۴. چگالی کلمات کلیدی (Keyword Density): کلمات کلیدی مثل "سیستم نوبت دهی"، "اپلیکیشن نوبت دهی" و "مدیریت کسب‌وکار" را به‌صورت کاملاً طبیعی در متن پخش کن (از Keyword Stuffing خودداری شود).
+۵. بخش سوالات متداول (FAQ): در انتهای مقاله (قبل از نتیجه‌گیری)، ۳ سوال متداول و مهم کاربران درباره این موضوع را با تگ <h3> بنویس و پاسخ‌های کوتاه و قاطع بده (برای ساختار اسکیما و گرفتن Rich Snippets).
+۶. متن مقاله اصلاً نباید حس یک بیانیه تبلیغاتی مستقیم را بدهد، بلکه باید با حل چالش کاربر، پلتفرم "آنتایم" را به عنوان بهترین راهکار معرفی کند.
 
-**مهم: برای سئوی بهتر، یک اسلاگ انگلیسی (URL-friendly) برای مقاله تولید کن. اسلاگ باید:
-   - کاملاً به انگلیسی باشد (نه فینگلیش)
-   - شامل کلمات کلیدی اصلی مقاله باشد
-   - بین 3 تا 6 کلمه باشد
-   - با خط تیره (-) جدا شده باشد
-   - مثال: "best-appointment-system-for-salons"
+قوانین سخت‌گیرانه لینک‌سازی داخلی (بین ۲ تا ۴ لینک در کل متن به صورت کاملاً طبیعی توزیع شود):
+- هر لینک را فقط و فقط روی "متن دقیقاً مشخص شده" در تگ <a href="..."> قرار بده.
+- [متن لینک]: "ثبت‌نام در آنتایم" -> [آدرس]: [https://ontimeapp.ir](https://ontimeapp.ir)
+- [متن لینک]: "مشاهده تعرفه‌ها" -> [آدرس]: [https://ontimeapp.ir/#pricing](https://ontimeapp.ir/#pricing)
+- [متن لینک]: "دانلود اپلیکیشن آنتایم" -> [آدرس]: [https://ontimeapp.ir/dl](https://ontimeapp.ir/dl)
+- [متن لینک]: "اپلیکیشن نوبت‌دهی آرایشگاه و سالن زیبایی آنتایم" -> [آدرس]: [https://ontimeapp.ir/industries/beauty-salon](https://ontimeapp.ir/industries/beauty-salon)
+- [متن لینک]: "اپلیکیشن اختصاصی مدیریت نوبت برای ناخن‌کاران حرفه‌ای" -> [آدرس]: [https://ontimeapp.ir/industries/nail-artist](https://ontimeapp.ir/industries/nail-artist)
 
-خروجی را در قالب JSON زیر برگردان (فقط JSON، بدون هیچ توضیح اضافه):
+مشخصات بخش‌های خروجی در قالب JSON:
+- title: عنوان جذاب، کلیک‌خور (Title Tag) بین ۵۰ تا ۷۰ کاراکتر که شامل کلمه کلیدی اصلی باشد.
+- description: توضیحات متا (Meta Description) ترغیب‌کننده برای افزایش CTR، بین ۱۴۰ تا ۱۶۰ کاراکتر، دارای یک دعوت به اقدام کوتاه.
+- slug: یک اسلاگ انگلیسی کوتاه، معنادار، تماماً حروف کوچک، کاملاً مرتبط با موضوع، بدون فینگلیش، جدا شده با خط تیره (مثال: best-salon-booking-software).
+- content: کل محتوای مقاله به همراه تگ‌های HTML (شامل h2, h3, p, ul, li, a) و بخش FAQ و CTA نهایی.
 
+خروجی را "فقط و فقط" در قالب ساختار JSON زیر برگردان. هیچ حرف، توضیح، یا تگ \`\`\`json اضافه در ابتدا و انتهای پاسخ قرار نده:
 {
   "title": "عنوان مقاله به فارسی",
   "slug": "english-url-slug-here",
-  "description": "توضیح کوتاه متا برای سئو در 160 کاراکتر",
-  "content": "محتوای کامل مقاله با تگ‌های html که شامل لینک‌های داخلی طبیعی است"
+  "description": "توضیح کوتاه متا برای سئو",
+  "content": "محتوای کامل مقاله با تگ‌های html"
 }`;
 
   try {
@@ -213,7 +228,7 @@ export async function generateBlogPostWithAI(
             content: prompt,
           },
         ],
-        temperature: 0.7,
+        temperature: 0.6, // تعادل عالی بین خلاقیت متن سئو و ساختار فرمت JSON
         max_tokens: 4500,
       }),
     });
@@ -240,9 +255,10 @@ export async function generateBlogPostWithAI(
 
     // نرمال‌سازی اسلاگ انگلیسی
     const slug = normalizeEnglishSlug(parsed.slug || parsed.title);
-    
-    const wordCount = (parsed.content || "").replace(/<[^>]*>/g, "").length / 5;
-    const readingTime = Math.max(5, Math.ceil(wordCount / 200));
+
+    // محاسبه زمان مطالعه تقریبی (بر اساس تعداد کلمات واقعی متن بدون تگ‌های HTML)
+    const wordCount = (parsed.content || "").replace(/<[^>]*>/g, "").split(/\s+/).length;
+    const readingTime = Math.max(3, Math.ceil(wordCount / 250));
 
     return {
       title: parsed.title,
@@ -253,6 +269,6 @@ export async function generateBlogPostWithAI(
     };
   } catch (error) {
     console.error("Error generating post with AI:", error);
-    throw new Error("خطا در تولید محتوا با هوش مصنوعی");
+    throw new Error("خطا در تولید محتوای سئو شده با هوش مصنوعی");
   }
 }

@@ -17,6 +17,9 @@ const staticLinks: InternalLink[] = [
   { title: "دانلود اپلیکیشن", url: "https://ontimeapp.ir/dl", type: "download", anchor: "دانلود اپلیکیشن اندروید آنتایم" },
   { title: "صفحه اصلی", url: "https://ontimeapp.ir", type: "home", anchor: "سامانه نوبت‌دهی آنتایم" },
   { title: "وبلاگ آنتایم", url: "https://ontimeapp.ir/blog", type: "blog", anchor: "مقالات آموزشی آنتایم" },
+ { title: "اپلیکیشن اختصاصی مدیریت نوبت برای ناخن‌کاران حرفه‌ای", url: "https://ontimeapp.ir/industries/nail-artist", type: "page", anchor: "اپلیکیشن اختصاصی مدیریت نوبت برای ناخن‌کاران حرفه‌ای" },
+  { title: "تخصصی‌ ترین اپلیکیشن مدیریت نوبت و مشتری ویژه آرایشگران و سالن های زیبایی" , url: "https://ontimeapp.ir/industries/beauty-salon", type: "page", anchor: "تخصصی‌ ترین اپلیکیشن مدیریت نوبت و مشتری ویژه آرایشگران و سالن های زیبایی" },
+ 
 ];
 
 // کلمات کلیدی و لینک مرتبط (ثابت)
