@@ -1,8 +1,39 @@
+// src/app/api/client/customers/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
+
+// تعریف تایپ‌ها
+interface Client {
+  id: number;
+  client_name: string;
+  client_phone: string;
+  user_id: number;
+  last_booking_date: string | null;
+  total_bookings: number;
+  cancelled_count: number;
+  is_blocked: number;
+}
+
+interface Staff {
+  calendar_type: string;
+  can_see_all_clients: number;
+}
+
+interface StaffClientRelation {
+  id: number;
+  staff_id: number;
+  client_id: number;
+}
+
+interface Booking {
+  id: number;
+  booking_date: string;
+  booking_time: string;
+  status: string;
+}
 
 const handler = withAuth(async (req: NextRequest, context) => {
   const { userId: rawUserId } = context;
@@ -15,7 +46,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     );
   }
 
-  // GET: دریافت لیست مشتریان
+  // ==================== GET: دریافت لیست مشتریان ====================
   if (req.method === "GET") {
     try {
       const url = new URL(req.url);
@@ -31,14 +62,15 @@ const handler = withAuth(async (req: NextRequest, context) => {
       const userType = cookieStore.get("user_type")?.value;
       const staffId = cookieStore.get("staff_id")?.value;
 
-      // حالت پرسنل
+      // ========== حالت پرسنل ==========
       if (userType === "staff" && staffId) {
         const staffInfo = await query<any>(
-          "SELECT can_see_all_clients FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1",
+          "SELECT can_see_all_clients, calendar_type FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1",
           [parseInt(staffId), userId],
         );
 
         const canSeeAllClients = staffInfo?.[0]?.can_see_all_clients === 1;
+        const calendarType = staffInfo?.[0]?.calendar_type;
 
         let sql = "";
         let mainParams: any[] = [];
@@ -107,7 +139,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
         });
       }
 
-      // حالت کاربر عادی
+      // ========== حالت کاربر عادی (رییس) ==========
       const mainParams: any[] = [userId];
       let searchCondition = "";
       if (search.trim()) {
@@ -153,7 +185,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     }
   }
 
-  // POST: افزودن مشتری
+  // ==================== POST: افزودن مشتری ====================
   if (req.method === "POST") {
     try {
       const body = await req.json();
@@ -213,7 +245,6 @@ const handler = withAuth(async (req: NextRequest, context) => {
         [name.trim(), phone, userId],
       );
 
-      // دسترسی صحیح به insertId
       let clientId_result;
       if (Array.isArray(insertResult) && insertResult.length > 0) {
         clientId_result = insertResult[0].insertId;
@@ -248,7 +279,7 @@ const handler = withAuth(async (req: NextRequest, context) => {
     }
   }
 
-  // PATCH: به‌روزرسانی
+  // ==================== PATCH: به‌روزرسانی ====================
   if (req.method === "PATCH") {
     try {
       const body = await req.json();
@@ -309,7 +340,135 @@ const handler = withAuth(async (req: NextRequest, context) => {
     }
   }
 
+  // ==================== DELETE: حذف مشتری به همراه تمام نوبت‌ها ====================
+  if (req.method === "DELETE") {
+    try {
+      const body = await req.json();
+      const { clientId, forceDelete = false } = body;
+
+      if (!clientId) {
+        return NextResponse.json(
+          { success: false, message: "شناسه مشتری الزامی است" },
+          { status: 400 },
+        );
+      }
+
+      // دریافت اطلاعات مشتری با تایپ صحیح
+      const clientResult = await query<Client>(
+        `SELECT id, client_name, client_phone FROM clients WHERE id = ? AND user_id = ?`,
+        [clientId, userId],
+      );
+      
+      const client = clientResult?.[0];
+      if (!client) {
+        return NextResponse.json(
+          { success: false, message: "مشتری یافت نشد" },
+          { status: 404 },
+        );
+      }
+
+      // بررسی دسترسی پرسنل (اگر کاربر پرسنل است)
+      const cookieStore = await cookies();
+      const userType = cookieStore.get("user_type")?.value;
+      const staffId = cookieStore.get("staff_id")?.value;
+
+      if (userType === "staff" && staffId) {
+        // دریافت اطلاعات پرسنل
+        const staffResult = await query<Staff>(
+          `SELECT calendar_type FROM staffs WHERE id = ? AND owner_user_id = ? AND is_active = 1`,
+          [parseInt(staffId), userId],
+        );
+
+        const staff = staffResult?.[0];
+        const calendarType = staff?.calendar_type;
+
+        if (calendarType === "synced") {
+          // تقویم هماهنگ: پرسنل فقط می‌تواند مشتریان خودش را حذف کند
+          const relationResult = await query<StaffClientRelation[]>(
+            `SELECT * FROM staff_client_relation WHERE staff_id = ? AND client_id = ?`,
+            [parseInt(staffId), clientId],
+          );
+
+          if (!relationResult || relationResult.length === 0) {
+            return NextResponse.json(
+              { success: false, message: "شما دسترسی حذف این مشتری را ندارید" },
+              { status: 403 },
+            );
+          }
+        }
+        // تقویم مستقل: پرسنل می‌تواند همه مشتریان خودش را حذف کند
+      }
+
+      // بررسی نوبت‌های فعال
+      const activeBookings = await query<Booking>(
+        `SELECT id, booking_date, booking_time, status FROM booking 
+         WHERE user_id = ? AND client_phone = ? AND status = 'active'`,
+        [userId, client.client_phone],
+      );
+
+      if (activeBookings && activeBookings.length > 0 && !forceDelete) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: `این مشتری ${activeBookings.length} نوبت فعال دارد. برای حذف اجباری، گزینه حذف اجباری را انتخاب کنید.`,
+            hasActiveBookings: true,
+            activeBookingsCount: activeBookings.length
+          },
+          { status: 400 },
+        );
+      }
+
+      // حذف اجباری: ابتدا نوبت‌ها را لغو می‌کنیم
+      if (forceDelete && activeBookings && activeBookings.length > 0) {
+        // آپدیت وضعیت نوبت‌های فعال به cancelled
+        await query(
+          `UPDATE booking 
+           SET status = 'cancelled', 
+               customer_token = NULL,
+               updated_at = NOW()
+           WHERE user_id = ? AND client_phone = ? AND status = 'active'`,
+          [userId, client.client_phone],
+        );
+
+        // ثبت نوتیفیکیشن برای هر نوبت لغو شده
+        for (const booking of activeBookings) {
+          await query(
+            `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
+             VALUES (?, ?, 'cancel', CONCAT('نوبت مشتری حذف شده (', ?, ') لغو شد'), NOW())`,
+            [userId, booking.id, client.client_name],
+          );
+        }
+      }
+
+      // حذف روابط مشتری با پرسنل
+      await query(
+        "DELETE FROM staff_client_relation WHERE client_id = ?",
+        [clientId],
+      );
+
+      // حذف مشتری
+      await query(
+        "DELETE FROM clients WHERE id = ? AND user_id = ?",
+        [clientId, userId],
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: forceDelete && activeBookings?.length > 0
+          ? `مشتری و ${activeBookings.length} نوبت فعال او با موفقیت حذف شدند`
+          : "مشتری با موفقیت حذف شد",
+        deletedBookingsCount: activeBookings?.length || 0
+      });
+    } catch (error) {
+      console.error("DELETE error:", error);
+      return NextResponse.json(
+        { success: false, message: "خطا در حذف مشتری" },
+        { status: 500 },
+      );
+    }
+  }
+
   return NextResponse.json({ message: "متد مجاز نیست" }, { status: 405 });
 });
 
-export { handler as GET, handler as POST, handler as PATCH };
+export { handler as GET, handler as POST, handler as PATCH, handler as DELETE };

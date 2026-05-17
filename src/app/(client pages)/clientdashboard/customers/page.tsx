@@ -1,3 +1,4 @@
+// app/clientdashboard/customers/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -15,7 +16,7 @@ import { BulkSmsModal } from "../BulkSmsModal";
 import { useUserType } from "@/hooks/useUserType";
 
 export default function CustomersList() {
-    const { userType } = useUserType();
+  const { userType } = useUserType();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [showBulkSmsModal, setShowBulkSmsModal] = useState(false);
@@ -23,7 +24,6 @@ export default function CustomersList() {
 
   const queryClient = useQueryClient();
   
-  // استخراج isFetching برای ردیابی رفرش‌ها
   const {
     data: customersData,
     isLoading,
@@ -45,7 +45,6 @@ export default function CustomersList() {
   const clients = customersData?.clients || [];
   const pagination = customersData?.pagination || { page: 1, totalPages: 1 };
 
-  // اصلاح تابع برای دریافت هر دو پارامتر نام و آدرس
   const handleUpdateBusinessProfile = async (newName: string, newAddress: string) => {
     try {
       const response = await fetch("/api/client/settings", {
@@ -54,12 +53,11 @@ export default function CustomersList() {
         body: JSON.stringify({
           ...userData?.user,
           business_name: newName,
-          business_address: newAddress, // اضافه شدن آدرس به بدنه درخواست
+          business_address: newAddress,
         }),
       });
 
       if (response.ok) {
-        // بروزرسانی کش کوئری برای نمایش آنی تغییرات
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         toast.success("اطلاعات بیزنس بروزرسانی شد");
         return true;
@@ -109,10 +107,18 @@ export default function CustomersList() {
     }
   };
 
+  // تابع حذف مشتری - رفرش لیست بعد از حذف
+  const handleClientDelete = async (clientId: string) => {
+    // رفرش لیست بعد از حذف
+    await refetch();
+    // همچنین می‌توانید کش کوئری را نیز بروزرسانی کنید
+    queryClient.invalidateQueries({ queryKey: ["customers"] });
+  };
+
   return (
     <div className="min-h-screen text-white max-w-md mx-auto relative">
       <Toaster position="top-center" containerClassName="!top-0" />
-      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933]">
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933]">
         <HeaderSection
           isLoading={isLoading || isFetching}
           searchQuery={searchQuery}
@@ -135,6 +141,7 @@ export default function CustomersList() {
               totalPages: pagination.totalPages,
             }}
             onPageChange={handlePageChange}
+            onClientDelete={handleClientDelete}
             formatPhone={(p) => p}
           />
         </div>
@@ -163,7 +170,7 @@ export default function CustomersList() {
         businessName={userData?.user?.business_name || null}
         businessAddress={userData?.user?.business_address || null}
         onSend={handleSendBulkSms}
-        onUpdateBusinessProfile={handleUpdateBusinessProfile} // نام پراپ اصلاح شد
+        onUpdateBusinessProfile={handleUpdateBusinessProfile}
       />
     </div>
   );
