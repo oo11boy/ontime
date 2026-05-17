@@ -32,12 +32,14 @@ const STORAGE_KEY = "booking_form_draft";
 const formatPreviewMessage = (text: string) =>
   text
     ? text
-        .replace(/%name%/g, "مشتری عزیز")
+        .replace(/%name%/g, "فاطمه محمدی")
         .replace(/%date%/g, "1404/02/21")
         .replace(/%time%/g, "21:00")
-        .replace(/%services%/g, "اصلاح مو")
+        .replace(/%service%/g, "اصلاح مو")
         .replace(/%link%/g, "ontimeapp.ir/fsdvf")
-        .replace(/%salon%/g, "آنتایم")
+        .replace(/%salon%/g, "مجموعه آنتایم")
+        .replace(/%address%/g, "تهران میدان آزادی تقاطع کارگر پلاک 15")
+        .replace(/%phone%/g, "09123456788")
     : "";
 
 export default function NewAppointmentPage() {
