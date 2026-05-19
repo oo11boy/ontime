@@ -61,18 +61,7 @@ const DateTimeSection: React.FC<DateTimeSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* مدت زمان کل */}
-      <div className="bg-emerald-500/10 rounded-xl p-3 border border-emerald-500/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Timer className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm text-gray-300">مدت زمان کل:</span>
-          </div>
-          <span className="text-sm font-bold text-emerald-400">
-            {formatDuration(duration)}
-          </span>
-        </div>
-      </div>
+
 
       {/* تاریخ و ساعت */}
       <div className="grid grid-cols-2 gap-4">

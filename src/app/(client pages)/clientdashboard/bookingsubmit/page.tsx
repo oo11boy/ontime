@@ -32,14 +32,14 @@ const STORAGE_KEY = "booking_form_draft";
 const formatPreviewMessage = (text: string) =>
   text
     ? text
-        .replace(/%name%/g, "فاطمه محمدی")
-        .replace(/%date%/g, "1404/02/21")
-        .replace(/%time%/g, "21:00")
-        .replace(/%service%/g, "اصلاح مو")
+        .replace(/%name%/g, "[نام مشتری]")
+        .replace(/%date%/g, "[تاریخ نوبت]")
+        .replace(/%time%/g, "[ساعت نوبت]")
+        .replace(/%service%/g, "[نام خدمت]")
         .replace(/%link%/g, "ontimeapp.ir/fsdvf")
-        .replace(/%salon%/g, "مجموعه آنتایم")
-        .replace(/%address%/g, "تهران میدان آزادی تقاطع کارگر پلاک 15")
-        .replace(/%phone%/g, "09123456788")
+        .replace(/%salon%/g, "[نام کسب و کار]")
+        .replace(/%address%/g, "[آدرس کسب و کار]")
+        .replace(/%phone%/g, "[شماره تماس کسب و کار]")
     : "";
 
 export default function NewAppointmentPage() {
@@ -189,7 +189,7 @@ export default function NewAppointmentPage() {
     if (!templatesData?.templates || !form?.sendRemindSms) return [];
     const targetSubType = form?.remindTime >= 24 ? "tomorrow" : "today";
     return templatesData.templates.filter(
-      (t: any) => t.type === "reminder" && t.sub_type === targetSubType
+      (t: any) => t.type === "reminder" && t.sub_type === targetSubType,
     );
   }, [templatesData?.templates, form?.sendRemindSms, form?.remindTime]);
 
@@ -387,7 +387,7 @@ export default function NewAppointmentPage() {
         booking_date: jalaliToGregorian(
           form.date.year,
           form.date.month,
-          form.date.day
+          form.date.day,
         ),
         booking_time: form.time,
         duration_minutes: totalDuration, // ✅ استفاده از مدت زمان محاسبه شده
@@ -448,7 +448,7 @@ export default function NewAppointmentPage() {
 
           toast.error(data.message || "خطا در ثبت نوبت");
         },
-      }
+      },
     );
   };
 
@@ -473,8 +473,6 @@ export default function NewAppointmentPage() {
           <Calendar className="w-7 h-7 text-emerald-400" />
           ثبت نوبت جدید
         </h1>
-
-  
 
         {isBlocked && (
           <div className="mb-8 p-6 bg-red-900/30 border-2 border-red-600 rounded-2xl flex flex-col items-center gap-4 animate-pulse">
@@ -533,21 +531,7 @@ export default function NewAppointmentPage() {
               })
             }
           />
-               {form.services.length > 0 ? (
-          <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-            <p className="text-sm text-emerald-400">
-              مدت زمان کل خدمات: {currentDuration} دقیقه
-            </p>
-          </div>
-        ):
-         (
-          <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-            <p className="text-sm text-emerald-400">
-             خدماتی انتخاب نکردید، زمان پیش فرض نوبت 30 دقیقه
-            </p>
-          </div>
-        )
-        }
+
           <NotesSection
             notes={form.notes}
             setNotes={(v) => updateForm({ notes: v })}
