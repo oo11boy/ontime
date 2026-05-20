@@ -1,4 +1,3 @@
-// src/app/(client pages)/clientdashboard/support-tickets/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -110,27 +109,26 @@ export default function SupportTicketsPage() {
   };
 
   return (
- <div className="h-screen text-white overflow-auto max-w-md m-auto ">
-  
+    <div className="h-screen overflow-auto max-w-md m-auto bg-slate-50 dark:bg-[#1a1e26] transition-colors">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
+      <div className="sticky top-0 z-50 bg-white/90 dark:bg-[#1a1e26]/90 backdrop-blur-xl border-b border-slate-200 dark:border-emerald-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.back()}
-                className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/20 transition"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 text-slate-700 dark:text-white" />
               </button>
               <div>
-                <h1 className="text-lg font-bold text-white">تیکت‌های پشتیبانی</h1>
-                <p className="text-xs text-gray-400">پیگیری و پاسخگویی به درخواست‌ها</p>
+                <h1 className="text-lg font-bold text-slate-800 dark:text-white">تیکت‌های پشتیبانی</h1>
+                <p className="text-xs text-slate-500 dark:text-gray-400">پیگیری و پاسخگویی به درخواست‌ها</p>
               </div>
             </div>
             <button
               onClick={() => router.push("/clientdashboard/support-tickets/new")}
-              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 transition text-white"
+              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition text-white"
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -141,21 +139,21 @@ export default function SupportTicketsPage() {
       <div className="max-w-2xl mx-auto px-4 pb-36 pt-6 space-y-6">
         {/* آمار */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-white/5 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-white">{stats.total}</p>
-            <p className="text-[10px] text-gray-500">کل تیکت‌ها</p>
+          <div className="bg-white dark:bg-white/5 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.total}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">کل تیکت‌ها</p>
           </div>
-          <div className="bg-yellow-500/10 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-yellow-400">{stats.open}</p>
-            <p className="text-[10px] text-gray-500">باز</p>
+          <div className="bg-yellow-50 dark:bg-yellow-500/10 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.open}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">باز</p>
           </div>
-          <div className="bg-emerald-500/10 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-emerald-400">{stats.answered}</p>
-            <p className="text-[10px] text-gray-500">پاسخ داده شده</p>
+          <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.answered}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">پاسخ داده شده</p>
           </div>
-          <div className="bg-red-500/10 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-red-400">{stats.urgent}</p>
-            <p className="text-[10px] text-gray-500">فوری</p>
+          <div className="bg-red-50 dark:bg-red-500/10 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.urgent}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">فوری</p>
           </div>
         </div>
 
@@ -165,8 +163,8 @@ export default function SupportTicketsPage() {
             onClick={() => setFilterStatus("all")}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${
               filterStatus === "all"
-                ? "bg-emerald-500 text-white"
-                : "bg-white/5 text-gray-400 hover:bg-white/10"
+                ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
             }`}
           >
             همه
@@ -178,7 +176,7 @@ export default function SupportTicketsPage() {
               className={`px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${
                 filterStatus === key
                   ? `${config.color} bg-white/10`
-                  : "bg-white/5 text-gray-400 hover:bg-white/10"
+                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
               }`}
             >
               {config.label}
@@ -189,21 +187,21 @@ export default function SupportTicketsPage() {
         {/* لیست تیکت‌ها */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
+            <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
           </div>
         ) : filteredTickets.length === 0 ? (
           <div className="text-center py-20">
-            <MessageCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500">هیچ تیکتی یافت نشد</p>
+            <MessageCircle className="w-16 h-16 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-slate-500 dark:text-gray-500">هیچ تیکتی یافت نشد</p>
             <button
               onClick={() => router.push("/clientdashboard/support-tickets/new")}
-              className="mt-4 px-6 py-2 bg-emerald-500 rounded-xl text-white font-bold"
+              className="mt-4 px-6 py-2 bg-emerald-600 dark:bg-emerald-500 rounded-xl text-white font-bold"
             >
               ایجاد تیکت جدید
             </button>
           </div>
         ) : (
-          <div className="space-y-3 ">
+          <div className="space-y-3">
             {filteredTickets.map((ticket) => {
               const categoryInfo = categoryConfig[ticket.category];
               const priorityInfo = priorityConfig[ticket.priority];
@@ -217,14 +215,14 @@ export default function SupportTicketsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => router.push(`/clientdashboard/support-tickets/${ticket.id}`)}
-                  className={`bg-white/5 rounded-2xl p-4 border transition-all cursor-pointer ${
-                    isUrgent ? "border-red-500/40" : "border-white/10 hover:border-emerald-500/40"
+                  className={`bg-white dark:bg-white/5 rounded-2xl p-4 border transition-all cursor-pointer ${
+                    isUrgent ? "border-red-300 dark:border-red-500/40" : "border-slate-200 dark:border-white/10 hover:border-emerald-400 dark:hover:border-emerald-500/40"
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="font-bold text-white text-base">{ticket.subject}</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-white text-base">{ticket.subject}</h3>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${categoryInfo.color}`}>
                           {categoryInfo.icon} {categoryInfo.label}
                         </span>
@@ -232,10 +230,10 @@ export default function SupportTicketsPage() {
                           اولویت: {priorityInfo.label}
                         </span>
                       </div>
-                      <p className="text-gray-400 text-sm line-clamp-2 mb-2">
+                      <p className="text-slate-500 dark:text-gray-400 text-sm line-clamp-2 mb-2">
                         {ticket.message}
                       </p>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-gray-500">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {formatDate(ticket.created_at)}
@@ -247,7 +245,7 @@ export default function SupportTicketsPage() {
                       </div>
                     </div>
                     <div className="shrink-0 mr-3">
-                      <Eye className="w-5 h-5 text-gray-500" />
+                      <Eye className="w-5 h-5 text-slate-400 dark:text-gray-500" />
                     </div>
                   </div>
                 </motion.div>
@@ -256,7 +254,7 @@ export default function SupportTicketsPage() {
           </div>
         )}
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 }

@@ -63,25 +63,25 @@ const DeleteConfirmModal = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-md"
         />
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative bg-[#1a1e26] border border-white/10 w-full max-w-[320px] rounded-[32px] p-6 shadow-2xl text-center"
+          className="relative bg-white dark:bg-[#1a1e26] border border-slate-200 dark:border-white/10 w-full max-w-[320px] rounded-[32px] p-6 shadow-xl dark:shadow-2xl text-center"
         >
-          <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-500" />
           </div>
-          <h3 className="text-white font-bold text-lg mb-2">حذف پرسنل؟</h3>
-          <p className="text-gray-400 text-sm mb-4 leading-relaxed">
+          <h3 className="text-slate-800 dark:text-white font-bold text-lg mb-2">حذف پرسنل؟</h3>
+          <p className="text-slate-500 dark:text-gray-400 text-sm mb-4 leading-relaxed">
             آیا از حذف{" "}
-            <span className="text-white font-semibold">"{name}"</span> اطمینان
+            <span className="text-slate-800 dark:text-white font-semibold">"{name}"</span> اطمینان
             دارید؟
           </p>
           {activeBookings && activeBookings > 0 && (
-            <p className="text-amber-400 text-xs mb-4 bg-amber-500/10 p-2 rounded-xl">
+            <p className="text-amber-600 dark:text-amber-400 text-xs mb-4 bg-amber-50 dark:bg-amber-500/10 p-2 rounded-xl">
               ⚠️ این پرسنل {activeBookings} نوبت فعال دارد.
               <br />
               ابتدا نوبت‌ها را لغو کنید یا از حذف اجباری استفاده نمایید.
@@ -90,13 +90,13 @@ const DeleteConfirmModal = ({
           <div className="flex flex-col gap-2">
             <button
               onClick={onConfirm}
-              className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-red-600 hover:bg-red-500 text-white"
+              className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white"
             >
               بله، حذف شود
             </button>
             <button
               onClick={onClose}
-              className="w-full py-4 rounded-2xl bg-white/5 text-gray-400 font-semibold hover:bg-white/10 transition-all"
+              className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 font-semibold hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
             >
               انصراف
             </button>
@@ -131,31 +131,31 @@ const ForceDeleteModal = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/85 backdrop-blur-md"
+          className="absolute inset-0 bg-black/50 dark:bg-black/85 backdrop-blur-md"
         />
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative bg-[#1a1e26] border border-red-500/30 w-full max-w-[320px] rounded-[32px] p-6 shadow-2xl text-center"
+          className="relative bg-white dark:bg-[#1a1e26] border border-red-300 dark:border-red-500/30 w-full max-w-[320px] rounded-[32px] p-6 shadow-xl dark:shadow-2xl text-center"
         >
-          <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-500" />
           </div>
-          <h3 className="text-white font-bold text-lg mb-2">حذف اجباری پرسنل</h3>
-          <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-            پرسنل <span className="text-red-400 font-bold">"{name}"</span> دارای{" "}
-            <span className="text-yellow-400 font-bold">{activeBookings}</span>{" "}
+          <h3 className="text-slate-800 dark:text-white font-bold text-lg mb-2">حذف اجباری پرسنل</h3>
+          <p className="text-slate-500 dark:text-gray-400 text-sm mb-4 leading-relaxed">
+            پرسنل <span className="text-red-600 dark:text-red-400 font-bold">"{name}"</span> دارای{" "}
+            <span className="text-amber-600 dark:text-yellow-400 font-bold">{activeBookings}</span>{" "}
             نوبت فعال است.
           </p>
-          <p className="text-yellow-400 text-xs mb-4 bg-yellow-500/10 p-2 rounded-xl">
+          <p className="text-amber-600 dark:text-yellow-400 text-xs mb-4 bg-amber-50 dark:bg-yellow-500/10 p-2 rounded-xl">
             ⚠️ با حذف اجباری، تمام نوبت‌های فعال این پرسنل لغو خواهند شد.
           </p>
           <div className="flex flex-col gap-2">
             <button
               onClick={onConfirm}
               disabled={isDeleting}
-              className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-red-600 hover:bg-red-500 text-white disabled:bg-red-800/50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl font-bold transition-all active:scale-95 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white disabled:bg-red-800/50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isDeleting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -165,7 +165,7 @@ const ForceDeleteModal = ({
             </button>
             <button
               onClick={onClose}
-              className="w-full py-4 rounded-2xl bg-white/5 text-gray-400 font-semibold hover:bg-white/10 transition-all"
+              className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 font-semibold hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
             >
               انصراف
             </button>
@@ -201,10 +201,8 @@ export const StaffCard: React.FC<StaffCardProps> = ({
 
   const handleDeleteClick = () => {
     if (staff.active_bookings && staff.active_bookings > 0) {
-      // اگر نوبت فعال دارد، مودال حذف اجباری را نشان بده
       setIsForceDeleteModalOpen(true);
     } else {
-      // اگر نوبت فعال ندارد، مودال عادی را نشان بده
       setIsDeleteModalOpen(true);
     }
   };
@@ -220,7 +218,6 @@ export const StaffCard: React.FC<StaffCardProps> = ({
   const displayServices = staff.services?.slice(0, 3) || [];
   const remainingCount = (staff.services?.length || 0) - 3;
 
-  // محاسبه درصد مصرف پیامک
   const totalSms = staff.sms_balance + staff.sms_used;
   const usagePercent = totalSms > 0 ? (staff.sms_used / totalSms) * 100 : 0;
 
@@ -230,18 +227,18 @@ export const StaffCard: React.FC<StaffCardProps> = ({
         layout
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/[0.03] border border-white/10 rounded-[28px] p-5 transition-all duration-300 hover:border-emerald-500/40 hover:bg-white/[0.05]"
+        className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-[28px] p-5 transition-all duration-300 hover:border-emerald-400 dark:hover:border-emerald-500/40 hover:bg-slate-50 dark:hover:bg-white/[0.05]"
       >
         <div className="flex items-start justify-between">
           <div className="flex gap-4 items-center">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <Users className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">{staff.name}</h3>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">{staff.name}</h3>
               <div className="flex items-center gap-2 mt-1">
-                <Phone className="w-3.5 h-3.5 text-gray-500" />
-                <span className="text-gray-400 text-sm dir-ltr">
+                <Phone className="w-3.5 h-3.5 text-slate-500 dark:text-gray-500" />
+                <span className="text-slate-500 dark:text-gray-400 text-sm dir-ltr">
                   {staff.phone}
                 </span>
               </div>
@@ -249,22 +246,21 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           </div>
         </div>
 
-        <div className="my-4 border-t border-white/5" />
+        <div className="my-4 border-t border-slate-200 dark:border-white/5" />
 
         {/* آمار پیامک */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-gray-400 flex items-center gap-1">
+            <p className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1">
               <Database className="w-3 h-3" />
               وضعیت پیامک
             </p>
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-slate-500 dark:text-gray-500">
               مصرف {usagePercent.toFixed(0)}%
             </span>
           </div>
 
-          {/* نوار پیشرفت */}
-          <div className="w-full bg-white/10 rounded-full h-2 mb-3">
+          <div className="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2 mb-3">
             <div
               className={`h-2 rounded-full transition-all duration-500 ${
                 usagePercent > 80
@@ -279,26 +275,26 @@ export const StaffCard: React.FC<StaffCardProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="text-center flex-1">
-              <p className="text-[10px] text-gray-500">تعداد کل پیامک ها</p>
-              <p className="text-white font-bold text-sm">
+              <p className="text-[10px] text-slate-500 dark:text-gray-500">تعداد کل پیامک ها</p>
+              <p className="text-slate-800 dark:text-white font-bold text-sm">
                 {formatNumber(totalSms)}
               </p>
             </div>
-            <div className="text-center flex-1 border-x border-white/10">
-              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                <TrendingDown className="w-3 h-3 text-red-400" />
+            <div className="text-center flex-1 border-x border-slate-200 dark:border-white/10">
+              <p className="text-[10px] text-slate-500 dark:text-gray-500 flex items-center justify-center gap-1">
+                <TrendingDown className="w-3 h-3 text-red-500" />
                 مصرف شده
               </p>
-              <p className="text-red-400 font-bold text-sm">
+              <p className="text-red-600 dark:text-red-400 font-bold text-sm">
                 {formatNumber(staff.sms_used)}
               </p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                <TrendingUp className="w-3 h-3 text-emerald-400" />
+              <p className="text-[10px] text-slate-500 dark:text-gray-500 flex items-center justify-center gap-1">
+                <TrendingUp className="w-3 h-3 text-emerald-500" />
                 باقی‌مانده
               </p>
-              <p className="text-emerald-400 font-bold text-sm">
+              <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                 {formatNumber(staff.sms_balance)}
               </p>
             </div>
@@ -307,17 +303,17 @@ export const StaffCard: React.FC<StaffCardProps> = ({
 
         {/* آمار ساده */}
         <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className="bg-white/5 rounded-xl p-2 text-center">
-            <Calendar className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-            <p className="text-[10px] text-gray-400">تقویم</p>
-            <p className="font-bold text-white text-xs">
+          <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-2 text-center">
+            <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
+            <p className="text-[10px] text-slate-500 dark:text-gray-400">تقویم</p>
+            <p className="font-bold text-slate-800 dark:text-white text-xs">
               {getCalendarLabel(staff.calendar_type)}
             </p>
           </div>
-          <div className="bg-white/5 rounded-xl p-2 text-center">
-            <Eye className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-            <p className="text-[10px] text-gray-400">دسترسی</p>
-            <p className="font-bold text-white text-[10px]">
+          <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-2 text-center">
+            <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
+            <p className="text-[10px] text-slate-500 dark:text-gray-400">دسترسی</p>
+            <p className="font-bold text-slate-800 dark:text-white text-[10px]">
               {staff.can_see_all_clients ? "همه مشتریان" : "مشتریان خود"}
             </p>
           </div>
@@ -326,7 +322,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
         {/* خدمات مجاز */}
         {staff.services && staff.services.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+            <p className="text-xs text-slate-500 dark:text-gray-400 mb-2 flex items-center gap-1">
               <Scissors className="w-3 h-3" />
               خدمات مجاز:
             </p>
@@ -334,13 +330,13 @@ export const StaffCard: React.FC<StaffCardProps> = ({
               {displayServices.map((service) => (
                 <span
                   key={service.id}
-                  className="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full"
+                  className="text-xs bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full"
                 >
                   {service.name}
                 </span>
               ))}
               {remainingCount > 0 && (
-                <span className="text-xs bg-white/5 px-2.5 py-1 rounded-full text-gray-400">
+                <span className="text-xs bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-full text-slate-500 dark:text-gray-400">
                   +{remainingCount} مورد
                 </span>
               )}
@@ -352,14 +348,14 @@ export const StaffCard: React.FC<StaffCardProps> = ({
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={() => onEdit(staff)}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 text-sm font-bold transition-all border border-transparent hover:border-blue-500/30"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 text-slate-600 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400 text-sm font-bold transition-all border border-transparent hover:border-blue-300 dark:hover:border-blue-500/30"
           >
             <Edit2 className="w-4 h-4" />
             ویرایش
           </button>
           <button
             onClick={handleDeleteClick}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-red-400 text-sm font-bold transition-all border border-transparent hover:border-red-500/30"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-red-100 dark:hover:bg-red-500/10 text-slate-600 dark:text-gray-300 hover:text-red-700 dark:hover:text-red-400 text-sm font-bold transition-all border border-transparent hover:border-red-300 dark:hover:border-red-500/30"
           >
             <Trash2 className="w-4 h-4" />
             حذف
@@ -368,14 +364,14 @@ export const StaffCard: React.FC<StaffCardProps> = ({
 
         {/* وضعیت و تاریخ */}
         <div className="mt-3 flex justify-between items-center">
-          <span className="text-[10px] uppercase tracking-wider text-gray-500">
+          <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-gray-500">
             ثبت شده در {new Date(staff.created_at).toLocaleDateString("fa-IR")}
           </span>
           <span
             className={`text-[10px] uppercase font-bold px-2 py-1 rounded-lg ${
               staff.is_active
-                ? "text-emerald-500 bg-emerald-500/10"
-                : "text-gray-500 bg-white/5"
+                ? "text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-500/10"
+                : "text-slate-500 dark:text-gray-500 bg-slate-100 dark:bg-white/5"
             }`}
           >
             {staff.is_active ? "فعال" : "غیرفعال"}
@@ -383,7 +379,6 @@ export const StaffCard: React.FC<StaffCardProps> = ({
         </div>
       </motion.div>
 
-      {/* مودال‌ها */}
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         name={staff.name}

@@ -30,7 +30,6 @@ export const ServicesList: React.FC<ServicesListProps> = ({
   onToggleStatus,
   onEdit,
   onDelete,
-  
   onOpenAddModal,
 }) => {
   const { userType } = useUserType();
@@ -42,15 +41,15 @@ export const ServicesList: React.FC<ServicesListProps> = ({
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={index}
-            className="bg-white/5 border border-white/10 rounded-xl p-4 animate-pulse"
+            className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-4 animate-pulse"
           >
             <div className="flex justify-between items-center">
               <div className="space-y-2 flex-1 mr-3">
-                <div className="h-4 bg-white/10 rounded w-24"></div>
-                <div className="h-3 bg-white/10 rounded w-16"></div>
-                <div className="h-3 bg-white/10 rounded w-20"></div>
+                <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-24"></div>
+                <div className="h-3 bg-slate-200 dark:bg-white/10 rounded w-16"></div>
+                <div className="h-3 bg-slate-200 dark:bg-white/10 rounded w-20"></div>
               </div>
-              <div className="w-20 h-20 bg-white/10 rounded-xl"></div>
+              <div className="w-20 h-20 bg-slate-200 dark:bg-white/10 rounded-xl"></div>
             </div>
           </div>
         ))}
@@ -58,35 +57,33 @@ export const ServicesList: React.FC<ServicesListProps> = ({
     );
   }
 
-  // حالت پرسنل بدون خدمات مجاز
   if (isStaff && services.length === 0) {
     return (
       <div className="text-center py-12">
-        <Lock className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-gray-400 mb-2">
+        <Lock className="w-16 h-16 text-slate-400 dark:text-gray-500 mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-slate-500 dark:text-gray-400 mb-2">
           هیچ خدمت مجازی برای شما تعریف نشده
         </h3>
-        <p className="text-gray-500 text-sm">
+        <p className="text-slate-400 dark:text-gray-500 text-sm">
           لطفاً با مدیریت مجموعه تماس بگیرید تا خدمات مجاز شما را تعیین کند
         </p>
       </div>
     );
   }
 
-  // حالت رییس بدون خدمات
   if (!isStaff && services.length === 0) {
     return (
       <div className="text-center py-12">
-        <Scissors className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-gray-400 mb-2">
+        <Scissors className="w-16 h-16 text-slate-400 dark:text-gray-500 mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-slate-500 dark:text-gray-400 mb-2">
           هنوز خدمتی اضافه نکرده‌اید
         </h3>
-        <p className="text-gray-500 text-sm mb-6">
+        <p className="text-slate-400 dark:text-gray-500 text-sm mb-6">
           خدمات خود را اضافه کنید تا در هنگام رزرو نوبت در دسترس باشند
         </p>
         <button
           onClick={onOpenAddModal}
-          className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl px-6 py-3 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all flex items-center gap-2 mx-auto"
+          className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl px-6 py-3 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all flex items-center gap-2 mx-auto text-white"
         >
           <Plus className="w-5 h-5" />
           افزودن اولین خدمت

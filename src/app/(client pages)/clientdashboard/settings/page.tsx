@@ -41,7 +41,6 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   return `${hour}:${min}`;
 });
 
-// تعریف interface برای تَب‌های اکاردئونی
 interface AccordionTab {
   id: number;
   title: string;
@@ -56,7 +55,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const searchParams = useSearchParams(); // اضافه شد
+  const searchParams = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
@@ -70,6 +69,7 @@ export default function SettingsPage() {
     work_shifts: [] as { start: string; end: string }[],
     off_days: [] as number[],
   });
+
   useEffect(() => {
     const tab = searchParams.get("tab");
     let targetId: string | null = null;
@@ -92,12 +92,12 @@ export default function SettingsPage() {
             behavior: "smooth",
             block: "start",
           });
-          // جبران هدر ثابت (sticky header)
           window.scrollBy(0, -100);
         }
       }, 400);
     }
   }, [searchParams]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -215,19 +215,18 @@ export default function SettingsPage() {
     }
   };
 
-  // محتوای تَب‌ها
   const accordionTabs: AccordionTab[] = [
     {
       id: 1,
       title: "هویت و اطلاعات تماس",
       icon: <Building2 size={18} />,
       color: "text-emerald-400",
-      bgColor: "bg-emerald-500/10",
-      borderColor: "border-emerald-500/20",
+      bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
+      borderColor: "border-emerald-200 dark:border-emerald-500/20",
       content: (
         <div className="space-y-4 p-2">
           <div className="relative group">
-            <User className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 size-4" />
+            <User className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 size-4" />
             <input
               type="text"
               placeholder="نام و نام خانوادگی"
@@ -235,17 +234,17 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl pr-12 pl-6 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all font-bold backdrop-blur-sm"
+              className="w-full bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-xl pr-12 pl-6 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all font-bold backdrop-blur-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
 
           <div className="relative opacity-70">
-            <Phone className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 size-4" />
+            <Phone className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 size-4" />
             <input
               type="tel"
               value={formData.phone}
               readOnly
-              className="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl pr-12 pl-6 py-3 text-sm font-mono tracking-widest cursor-not-allowed"
+              className="w-full bg-slate-100 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] rounded-xl pr-12 pl-6 py-3 text-sm font-mono tracking-widest cursor-not-allowed text-slate-600 dark:text-white"
             />
           </div>
 
@@ -256,11 +255,11 @@ export default function SettingsPage() {
             onChange={(e) =>
               setFormData({ ...formData, business_name: e.target.value })
             }
-            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-6 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all font-bold backdrop-blur-sm"
+            className="w-full bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-xl px-6 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all font-bold backdrop-blur-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
 
           <div className="relative">
-            <MapPin className="absolute right-5 top-4 text-slate-500 size-4" />
+            <MapPin className="absolute right-5 top-4 text-slate-400 dark:text-slate-500 size-4" />
             <textarea
               placeholder="آدرس دقیق جهت ارسال پیامک به مشتری..."
               value={formData.business_address}
@@ -268,7 +267,7 @@ export default function SettingsPage() {
                 setFormData({ ...formData, business_address: e.target.value })
               }
               rows={2}
-              className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl pr-12 pl-6 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all resize-none backdrop-blur-sm"
+              className="w-full bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-xl pr-12 pl-6 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all resize-none backdrop-blur-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
 
@@ -278,7 +277,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setFormData({ ...formData, job_id: e.target.value })
               }
-              className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-6 py-3 text-sm appearance-none focus:border-emerald-500/50 outline-none font-bold text-slate-300 backdrop-blur-sm"
+              className="w-full bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-xl px-6 py-3 text-sm appearance-none focus:border-emerald-500/50 outline-none font-bold text-slate-700 dark:text-slate-300 backdrop-blur-sm"
             >
               <option value="" disabled>
                 انتخاب تخصص...
@@ -287,7 +286,7 @@ export default function SettingsPage() {
                 <option
                   key={j.id}
                   value={j.id.toString()}
-                  className="bg-[#0c111d] text-white"
+                  className="bg-white dark:bg-[#0c111d] text-slate-800 dark:text-white"
                 >
                   {j.name}
                 </option>
@@ -303,16 +302,16 @@ export default function SettingsPage() {
       title: "زمان‌بندی فعالیت",
       icon: <Clock size={18} />,
       color: "text-blue-400",
-      bgColor: "bg-blue-500/10",
-      borderColor: "border-blue-500/20",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
+      borderColor: "border-blue-200 dark:border-blue-500/20",
       content: (
         <div className="space-y-4 p-2">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-500">مدیریت شیفت‌های کاری</span>
+            <span className="text-xs text-slate-500 dark:text-slate-500">مدیریت شیفت‌های کاری</span>
             <button
               type="button"
               onClick={addShift}
-              className="text-[10px] font-black bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/20 flex items-center gap-1 hover:bg-blue-500 hover:text-black transition-all"
+              className="text-[10px] font-black bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-500/20 flex items-center gap-1 hover:bg-blue-200 dark:hover:bg-blue-500 hover:text-white dark:hover:text-white transition-all"
             >
               <Plus size={12} /> شیفت جدید
             </button>
@@ -324,11 +323,11 @@ export default function SettingsPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="p-4 border border-dashed border-white/10 rounded-xl text-center bg-white/[0.01]"
+                  className="p-4 border border-dashed border-slate-200 dark:border-white/10 rounded-xl text-center bg-white dark:bg-white/[0.01]"
                 >
-                  <p className="text-[11px] text-slate-500 italic">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-500 italic">
                     شیفت دستی انتخاب نشده؛ نوبت‌دهی خودکار{" "}
-                    <span className="text-blue-400 font-bold">
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">
                       ۰۸:۰۰ الی ۲۲:۰۰
                     </span>
                   </p>
@@ -341,7 +340,7 @@ export default function SettingsPage() {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.9, opacity: 0 }}
-                    className="bg-white/[0.03] p-3 rounded-xl border border-white/10 flex items-center gap-3 backdrop-blur-sm"
+                    className="bg-slate-100 dark:bg-white/[0.03] p-3 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3 backdrop-blur-sm"
                   >
                     <div className="flex-1 grid grid-cols-2 gap-2">
                       <select
@@ -349,7 +348,7 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           updateShift(index, "start", e.target.value)
                         }
-                        className="bg-[#0a0c10] border border-white/5 rounded-lg py-2 text-center text-xs font-bold outline-none"
+                        className="bg-white dark:bg-[#0a0c10] border border-slate-200 dark:border-white/5 rounded-lg py-2 text-center text-xs font-bold outline-none text-slate-700 dark:text-white"
                       >
                         {TIME_OPTIONS.map((t) => (
                           <option key={t} value={t}>
@@ -362,7 +361,7 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           updateShift(index, "end", e.target.value)
                         }
-                        className="bg-[#0a0c10] border border-white/5 rounded-lg py-2 text-center text-xs font-bold outline-none"
+                        className="bg-white dark:bg-[#0a0c10] border border-slate-200 dark:border-white/5 rounded-lg py-2 text-center text-xs font-bold outline-none text-slate-700 dark:text-white"
                       >
                         {TIME_OPTIONS.map((t) => (
                           <option key={t} value={t}>
@@ -374,7 +373,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => removeShift(index)}
-                      className="p-1.5 text-red-500/50 hover:text-red-500 transition-colors hover:bg-red-500/10 rounded-lg"
+                      className="p-1.5 text-rose-500/50 hover:text-rose-600 dark:text-red-500/50 dark:hover:text-red-500 transition-colors hover:bg-rose-100 dark:hover:bg-red-500/10 rounded-lg"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -391,12 +390,12 @@ export default function SettingsPage() {
       title: "تعطیلات هفتگی",
       icon: <CalendarOff size={18} />,
       color: "text-rose-400",
-      bgColor: "bg-rose-500/10",
-      borderColor: "border-rose-500/20",
+      bgColor: "bg-rose-50 dark:bg-rose-500/10",
+      borderColor: "border-rose-200 dark:border-rose-500/20",
       content: (
         <div className="space-y-4 p-2">
           <div className="mb-2">
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-500">
               روزهای غیرفعال هفته را انتخاب کنید
             </span>
           </div>
@@ -410,8 +409,8 @@ export default function SettingsPage() {
                   onClick={() => toggleOffDay(day.id)}
                   className={`py-2.5 rounded-lg text-[10px] font-black transition-all border ${
                     isOff
-                      ? "bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-lg shadow-rose-500/10"
-                      : "bg-white/[0.02] text-slate-500 border-white/[0.08] hover:bg-white/[0.05]"
+                      ? "bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-500/40 shadow-lg shadow-rose-500/10"
+                      : "bg-white dark:bg-white/[0.02] text-slate-600 dark:text-slate-500 border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05]"
                   }`}
                 >
                   {day.name}
@@ -419,7 +418,7 @@ export default function SettingsPage() {
               );
             })}
           </div>
-          <p className="text-[10px] text-slate-600 text-center pt-2">
+          <p className="text-[10px] text-slate-500 dark:text-slate-600 text-center pt-2">
             روزهای انتخاب شده به عنوان تعطیل نمایش داده می‌شوند
           </p>
         </div>
@@ -429,7 +428,7 @@ export default function SettingsPage() {
 
   if (isPageLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#05070a]">
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-[#05070a]">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1 }}
@@ -441,27 +440,26 @@ export default function SettingsPage() {
 
   return (
     <div
-      className="min-h-screen text-slate-200 max-w-lg mx-auto bg-[#05070a] font-sans pb-32"
+      className="min-h-screen text-slate-800 dark:text-slate-200 max-w-lg mx-auto bg-white dark:bg-[#05070a] font-sans pb-32 transition-colors"
       dir="rtl"
     >
-      {/* Header */}
-      <header className="sticky top-0 z-[100] bg-[#05070a]/80 backdrop-blur-2xl border-b border-white/[0.03] px-6 py-5 flex items-center justify-between">
+      <header className="sticky top-0 z-[100] bg-white/80 dark:bg-[#05070a]/80 backdrop-blur-2xl border-b border-slate-200 dark:border-white/[0.03] px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center border border-white/[0.08]">
-            <UserCircle className="w-6 h-6 text-emerald-400" />
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
+            <UserCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-lg font-black text-white">تنظیمات پیشرفته</h1>
-            <p className="text-[10px] text-emerald-500/60 font-bold tracking-[2px]">
+            <h1 className="text-lg font-black text-slate-800 dark:text-white">تنظیمات پیشرفته</h1>
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-500/60 font-bold tracking-[2px]">
               CONFIG 2026
             </p>
           </div>
         </div>
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center transition-all hover:bg-white/10 hover:border-white/20"
+          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 flex items-center justify-center transition-all hover:bg-slate-200 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-5 h-5 text-slate-600 dark:text-white" />
         </button>
       </header>
 
@@ -472,16 +470,15 @@ export default function SettingsPage() {
         className="px-6 py-8"
       >
         <div className="mb-6">
-          <h2 className="text-sm font-bold text-slate-500 mb-2">
+          <h2 className="text-sm font-bold text-slate-500 dark:text-slate-500 mb-2">
             مدیریت تنظیمات
           </h2>
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-slate-500 dark:text-slate-600">
             هر بخش را باز کرده و تنظیمات مورد نظر را ویرایش کنید
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* تَب‌های اکاردئونی */}
           {accordionTabs.map((tab) => (
             <motion.div
               key={tab.id}
@@ -504,10 +501,10 @@ export default function SettingsPage() {
                     <span className={tab.color}>{tab.icon}</span>
                   </div>
                   <div className="text-right">
-                    <h3 className="text-sm font-black text-white">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-white">
                       {tab.title}
                     </h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
                       {openTabs.includes(tab.id)
                         ? "برای بستن کلیک کنید"
                         : "برای باز کردن کلیک کنید"}
@@ -539,14 +536,13 @@ export default function SettingsPage() {
             </motion.div>
           ))}
 
-          {/* دکمه ذخیره */}
-          <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#05070a] via-[#05070a]/90 to-transparent z-[110]">
+          <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-[#05070a] dark:via-[#05070a]/90 dark:to-transparent z-[110]">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isSaving}
-              className="w-full max-w-md mx-auto h-16 bg-emerald-500  text-black font-black rounded-2xl flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_25px_50px_-12px_rgba(16,185,129,0.4)] transition-all"
+              className="w-full max-w-md mx-auto h-16 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_25px_50px_-12px_rgba(16,185,129,0.4)] transition-all"
             >
               {isSaving ? (
                 <>

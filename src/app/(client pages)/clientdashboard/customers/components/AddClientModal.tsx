@@ -48,7 +48,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
 
       if (res.ok && result.success) {
         toast.success(result.message || "مشتری با موفقیت ثبت شد");
-        // کمی تاخیر برای اطمینان از ثبت در دیتابیس
         setTimeout(() => {
           onSuccess();
           resetAndClose();
@@ -68,17 +67,17 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
 
   const handleDuplicatePhone = (existingName: string, normalizedPhone: string) => {
     toast.custom((t) => (
-      <div className="bg-[#1a1e26]/95 backdrop-blur-md border border-white/20 text-white px-6 py-5 rounded-2xl shadow-2xl max-w-md">
+      <div className="bg-white dark:bg-[#1a1e26]/95 backdrop-blur-md border border-slate-200 dark:border-white/20 text-slate-800 dark:text-white px-6 py-5 rounded-2xl shadow-xl dark:shadow-2xl max-w-md">
         <p className="text-center mb-4">
-          شماره <span className="font-bold text-emerald-400">0{normalizedPhone}</span> قبلاً برای مشتری{" "}
-          <span className="font-bold text-emerald-400">{existingName}</span> ثبت شده است.
+          شماره <span className="font-bold text-emerald-600 dark:text-emerald-400">0{normalizedPhone}</span> قبلاً برای مشتری{" "}
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">{existingName}</span> ثبت شده است.
           <br />
-          آیا می‌خواهید نام را به <span className="font-bold text-emerald-400">{name}</span> تغییر دهید؟
+          آیا می‌خواهید نام را به <span className="font-bold text-emerald-600 dark:text-emerald-400">{name}</span> تغییر دهید؟
         </p>
         <div className="flex gap-3 mt-4">
           <button
             onClick={() => toast.dismiss(t.id)}
-            className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium transition-colors"
+            className="flex-1 py-3 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-xl text-sm font-medium transition-colors"
           >
             خیر
           </button>
@@ -137,16 +136,14 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center p-4"
         >
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={resetAndClose}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
           />
 
-          {/* Modal Content */}
           <motion.div
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -157,33 +154,33 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
               stiffness: 300,
               mass: 0.8,
             }}
-            className="relative w-full max-w-md bg-gradient-to-b from-[#1a1e26] to-[#242933] rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md bg-white dark:bg-gradient-to-b dark:from-[#1a1e26] dark:to-[#242933] rounded-t-3xl sm:rounded-3xl border border-slate-200/60 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-hidden"
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white">افزودن مشتری جدید</h3>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">افزودن مشتری جدید</h3>
                 <button
                   onClick={resetAndClose}
-                  className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
+                  className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center justify-center"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 text-slate-600 dark:text-gray-400" />
                 </button>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">نام مشتری</label>
+                  <label className="text-sm text-slate-600 dark:text-gray-400 mb-2 block">نام مشتری</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="مثال: علی محمدی"
-                    className="w-full py-3.5 px-4 bg-[#14171d] border border-white/5 rounded-xl text-white placeholder-gray-500 focus:border-emerald-500/50 outline-none transition-all"
+                    className="w-full py-3.5 px-4 bg-slate-50 dark:bg-[#14171d] border border-slate-200 dark:border-white/5 rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">شماره تلفن</label>
+                  <label className="text-sm text-slate-600 dark:text-gray-400 mb-2 block">شماره تلفن</label>
                   <input
                     type="tel"
                     value={phone}
@@ -191,7 +188,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                     placeholder="09123456789"
                     maxLength={11}
                     dir="ltr"
-                    className="w-full py-3.5 px-4 bg-[#14171d] border border-white/5 rounded-xl text-white placeholder-gray-500 focus:border-emerald-500/50 outline-none transition-all font-mono text-left"
+                    className="w-full py-3.5 px-4 bg-slate-50 dark:bg-[#14171d] border border-slate-200 dark:border-white/5 rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-mono text-left"
                   />
                 </div>
               </div>
@@ -200,7 +197,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                 <button
                   onClick={resetAndClose}
                   disabled={isSubmitting}
-                  className="flex-1 py-4 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-colors disabled:opacity-50"
+                  className="flex-1 py-4 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-slate-700 dark:text-white transition-colors disabled:opacity-50"
                 >
                   انصراف
                 </button>

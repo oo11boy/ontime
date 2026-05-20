@@ -120,47 +120,46 @@ export const StaffModal: React.FC<StaffModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            className="absolute inset-0 bg-black/50 dark:bg-black/85 backdrop-blur-md"
           />
 
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
-            className="relative bg-[#1a1e26] w-full max-w-sm rounded-[2.5rem] p-6 border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]"
+            className="relative bg-white dark:bg-[#1a1e26] w-full max-w-sm rounded-[2.5rem] p-6 border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-y-auto max-h-[90vh]"
           >
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 blur-[80px] -z-10 rounded-full" />
 
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                   {editData ? <Edit3 size={22} /> : <Users size={22} />}
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-white">
+                  <h2 className="text-xl font-black text-slate-800 dark:text-white">
                     {editData ? "ویرایش پرسنل" : "پرسنل جدید"}
                   </h2>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">
+                  <p className="text-[10px] text-slate-500 dark:text-gray-500 font-bold uppercase tracking-widest mt-0.5">
                     Staff Management
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
             <div className="space-y-5">
-              {/* نام و نام خانوادگی */}
               <div>
-                <label className="text-xs font-bold text-gray-400 mr-2 block mb-2">
+                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 mr-2 block mb-2">
                   نام و نام خانوادگی
                 </label>
                 <input
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all"
                   placeholder="مثال: مریم احمدی"
                   value={form.name}
                   onChange={(e) =>
@@ -169,13 +168,12 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                 />
               </div>
 
-              {/* شماره تماس */}
               <div>
-                <label className="text-xs font-bold text-gray-400 mr-2 block mb-2">
+                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 mr-2 block mb-2">
                   شماره تماس
                 </label>
                 <input
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all dir-ltr"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all dir-ltr"
                   placeholder="09123456789"
                   value={form.phone}
                   onChange={(e) =>
@@ -184,16 +182,15 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                 />
               </div>
 
-              {/* اعتبار پیامک */}
               <div>
-                <label className="text-xs font-bold text-gray-400 mr-2 block mb-2">
+                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 mr-2 block mb-2">
                   {editData
                     ? "تعداد پیامک های باقیمانده"
                     : "تعداد پیامک های اولیه"}
                 </label>
                 <input
                   type="number"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-500/50 transition-all"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-slate-800 dark:text-white focus:outline-none focus:border-emerald-500/50 transition-all"
                   placeholder="0"
                   min="0"
                   max="10000"
@@ -208,16 +205,15 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     }
                   }}
                 />
-                <p className="text-xs text-gray-500 mt-1 mr-2">
+                <p className="text-xs text-slate-500 dark:text-gray-500 mt-1 mr-2">
                   {editData
                     ? "با تغییر این مقدار، تفاوت آن از/به حساب اصلی منتقل می‌شود"
                     : "این مبلغ از اعتبار اصلی شما کم خواهد شد"}
                 </p>
               </div>
 
-              {/* نوع تقویم - در حالت ویرایش غیرفعال */}
               <div>
-                <label className="text-xs font-bold text-gray-400 mr-2 block mb-2">
+                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 mr-2 block mb-2">
                   نوع تقویم
                 </label>
                 <div className="flex gap-3">
@@ -230,8 +226,8 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     disabled={isEditMode}
                     className={`flex-1 py-3 rounded-xl font-bold transition-all ${
                       form.calendar_type === "synced"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white/5 text-gray-400 hover:bg-white/10"
+                        ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                        : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10"
                     } ${isEditMode ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <Calendar className="w-4 h-4 inline ml-1" />
@@ -249,8 +245,8 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     disabled={isEditMode}
                     className={`flex-1 py-3 rounded-xl font-bold transition-all ${
                       form.calendar_type === "independent"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white/5 text-gray-400 hover:bg-white/10"
+                        ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                        : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10"
                     } ${isEditMode ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <Calendar className="w-4 h-4 inline ml-1" />
@@ -258,24 +254,23 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                   </button>
                 </div>
                 {isEditMode && (
-                  <p className="text-xs text-amber-500 mt-2 mr-2">
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-2 mr-2">
                     ⚠️ نوع تقویم قابل تغییر نیست
                   </p>
                 )}
               </div>
 
-              {/* دسترسی به مشتریان */}
-              <div className="bg-white/5 rounded-xl p-4">
-                <label className="text-xs font-bold text-gray-400 block mb-3">
+              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
+                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 block mb-3">
                   دسترسی به مشتریان
                 </label>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-white text-sm font-medium">
+                    <p className="text-slate-800 dark:text-white text-sm font-medium">
                       دسترسی به همه مشتریان
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-slate-500 dark:text-gray-500">
                       پرسنل می‌تواند لیست همه مشتریان را ببیند
                     </p>
                   </div>
@@ -290,11 +285,11 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     className={`w-12 h-6 rounded-full transition-all ${
                       form.can_see_all_clients
                         ? "bg-emerald-500"
-                        : "bg-white/20"
+                        : "bg-slate-300 dark:bg-white/20"
                     }`}
                   >
                     <div
-                      className={`w-5 h-5 rounded-full bg-white transform transition-transform  ${
+                      className={`w-5 h-5 rounded-full bg-white transform transition-transform ${
                         form.can_see_all_clients
                           ? "-translate-x-6"
                           : "-translate-x-1"
@@ -304,17 +299,16 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                 </div>
               </div>
 
-              {/* خدمات مجاز */}
               <div>
-                <label className="text-xs font-bold text-gray-400 mr-2 block mb-3">
+                <label className="text-xs font-bold text-slate-600 dark:text-gray-400 mr-2 block mb-3">
                   خدمات مجاز
                 </label>
                 {servicesLoading ? (
-                  <div className="text-center py-4 text-gray-500">
+                  <div className="text-center py-4 text-slate-500 dark:text-gray-500">
                     در حال بارگذاری...
                   </div>
                 ) : services.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500 text-sm">
+                  <div className="text-center py-4 text-slate-500 dark:text-gray-500 text-sm">
                     ابتدا در بخش خدمات، خدماتی تعریف کنید
                   </div>
                 ) : (
@@ -322,9 +316,9 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     {services.map((service: any) => (
                       <label
                         key={service.id}
-                        className="flex items-center justify-between p-3 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition"
+                        className="flex items-center justify-between p-3 bg-slate-100 dark:bg-white/5 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-white/10 transition"
                       >
-                        <span className="text-white text-sm">
+                        <span className="text-slate-800 dark:text-white text-sm">
                           {service.name}
                         </span>
                         <input
@@ -333,16 +327,15 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                             service.id.toString(),
                           )}
                           onChange={() => handleServiceToggle(service.id)}
-                          className="w-5 h-5 rounded-lg border-white/20 bg-white/5 checked:bg-emerald-500"
+                          className="w-5 h-5 rounded-lg border-slate-300 dark:border-white/20 bg-white dark:bg-white/5 checked:bg-emerald-500"
                         />
                       </label>
                     ))}
                   </div>
                 )}
                 {form.service_ids.length === 0 && (
-                  <p className="text-xs text-amber-500 mt-2 mr-2">
-                    اگر هیچ خدمتی انتخاب نکنید، پرسنل به هیچ خدمتی دسترسی نخواهد
-                    داشت
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-2 mr-2">
+                    اگر هیچ خدمتی انتخاب نکنید، پرسنل به هیچ خدمتی دسترسی نخواهد داشت
                   </p>
                 )}
               </div>
@@ -351,14 +344,14 @@ export const StaffModal: React.FC<StaffModalProps> = ({
             <div className="flex gap-3 mt-8">
               <button
                 onClick={onClose}
-                className="flex-1 py-4 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-all"
+                className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
               >
                 انصراف
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-[2] py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-black shadow-lg transition-all flex items-center justify-center gap-2"
+                className="flex-[2] py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 disabled:bg-slate-300 dark:disabled:bg-gray-800 disabled:text-slate-500 dark:disabled:text-gray-600 text-white font-black shadow-lg transition-all flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <RefreshCw className="w-5 h-5 animate-spin" />

@@ -107,18 +107,45 @@ export default function CustomersList() {
     }
   };
 
-  // تابع حذف مشتری - رفرش لیست بعد از حذف
   const handleClientDelete = async (clientId: string) => {
-    // رفرش لیست بعد از حذف
     await refetch();
-    // همچنین می‌توانید کش کوئری را نیز بروزرسانی کنید
     queryClient.invalidateQueries({ queryKey: ["customers"] });
   };
 
+  // تنظیمات Toaster برای هر دو حالت
+  const toastOptions = {
+    style: {
+      background: 'var(--toast-bg, #fff)',
+      color: 'var(--toast-color, #1a1e26)',
+      borderRadius: '16px',
+      padding: '12px 16px',
+      fontSize: '14px',
+      fontWeight: '500',
+      direction: 'rtl' as const,
+    },
+    success: {
+      iconTheme: {
+        primary: '#10b981',
+        secondary: '#fff',
+      },
+    },
+    error: {
+      iconTheme: {
+        primary: '#ef4444',
+        secondary: '#fff',
+      },
+    },
+  };
+
   return (
-    <div className="min-h-screen text-white max-w-md mx-auto relative">
-      <Toaster position="top-center" containerClassName="!top-0" />
-      <div className="min-h-screen bg-gradient-to-br from-[#1a1e26] to-[#242933]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-[#1a1e26] dark:to-[#242933] text-slate-800 dark:text-white max-w-md mx-auto relative transition-colors duration-300">
+      <Toaster 
+        position="top-center" 
+        containerClassName="!top-0"
+        toastOptions={toastOptions}
+      />
+      
+      <div className="min-h-screen">
         <HeaderSection
           isLoading={isLoading || isFetching}
           searchQuery={searchQuery}

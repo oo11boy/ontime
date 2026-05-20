@@ -12,7 +12,7 @@ interface ClientInfoSectionProps {
   setPhone: (phone: string) => void;
   isCheckingClient: boolean;
   existingClient: ExistingClient | null;
-  onNameBlur?: () => void; // ← اضافه شد: برای چک کردن تغییر نام بعد از خروج از فیلد
+  onNameBlur?: () => void;
 }
 
 const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
@@ -41,20 +41,18 @@ const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
     <>
       <div className="flex items-end gap-4">
         <div className="flex-1 space-y-4">
-          {/* نام مشتری */}
           <div className="relative">
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onBlur={onNameBlur} // ← مهم: وقتی کاربر از فیلد خارج شد، چک می‌کنیم
+              onBlur={onNameBlur}
               placeholder="نام و نام خانوادگی"
-              className="w-full bg-white/10 border border-white/10 rounded-xl pr-12 px-4 py-3.5 text-right placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm"
+              className="w-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-xl pr-12 px-4 py-3.5 text-right placeholder:text-slate-400 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm text-slate-800 dark:text-white"
             />
-            <User className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
+            <User className="absolute right-4 top-4 w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
 
-          {/* شماره موبایل */}
           <div className="relative">
             <input
               type="text"
@@ -74,92 +72,85 @@ const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
               }}
               placeholder="9123456789"
               dir="ltr"
-              className="w-full bg-white/10 border border-white/10 rounded-xl text-right px-4 py-3.5 pr-12 placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm font-mono"
+              className="w-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-xl text-right px-4 py-3.5 pr-12 placeholder:text-slate-400 dark:placeholder-gray-400 focus:outline-none focus:border-emerald-500/50 transition backdrop-blur-sm font-mono text-slate-800 dark:text-white"
             />
-            <Phone className="absolute right-4 top-4 w-5 h-5 text-emerald-400" />
+            <Phone className="absolute right-4 top-4 w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             {isCheckingClient && (
               <div className="absolute left-4 top-4">
-                <div className="w-5 h-5 border-2 border-emerald-400/50 border-t-emerald-400 rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-emerald-500/50 border-t-emerald-500 rounded-full animate-spin"></div>
               </div>
             )}
           </div>
         </div>
 
-        {/* دکمه انتخاب از لیست مشتریان */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsClientListOpen(true)}
-          className="w-[120px] h-[120px] bg-white/10 backdrop-blur-sm rounded-2xl border border-emerald-500/30 flex flex-col items-center justify-center gap-3 hover:bg-white/15 transition-all hover:border-emerald-400"
+          className="w-[120px] h-[120px] bg-slate-100 dark:bg-white/10 backdrop-blur-sm rounded-2xl border border-emerald-300 dark:border-emerald-500/30 flex flex-col items-center justify-center gap-3 hover:bg-slate-200 dark:hover:bg-white/15 transition-all hover:border-emerald-500 dark:hover:border-emerald-400"
         >
-          <Contact className="w-10 h-10 text-emerald-400" />
-          <span className="text-xs text-center leading-tight">
+          <Contact className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-xs text-center leading-tight text-slate-700 dark:text-white">
             انتخاب از <br /> مشتریان
           </span>
         </motion.button>
       </div>
 
-      {/* مودال لیست مشتریان */}
       <AnimatePresence>
         {isClientListOpen && (
           <div className="fixed inset-0 z-[999] flex items-end justify-center">
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsClientListOpen(false)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
             />
 
-            {/* Modal Body */}
             <motion.div
               key="client-list-modal"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="bg-[#1a1e26] w-full max-w-md relative rounded-t-3xl max-h-[80vh] overflow-hidden flex flex-col border-t border-white/10"
+              className="bg-white dark:bg-[#1a1e26] w-full max-w-md relative rounded-t-3xl max-h-[80vh] overflow-hidden flex flex-col border-t border-slate-200 dark:border-white/10"
             >
-              {/* هدر مودال */}
-              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+              <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-50 dark:bg-white/5">
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => {
                     setIsClientListOpen(false);
                     setClientSearch("");
                   }}
-                  className="p-2 hover:bg-white/10 rounded-full transition"
+                  className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition"
                 >
-                  <X className="w-6 h-6 text-gray-400" />
+                  <X className="w-6 h-6 text-slate-500 dark:text-gray-400" />
                 </motion.button>
-                <h3 className="text-lg font-bold text-white">انتخاب مشتری</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white">انتخاب مشتری</h3>
                 <div className="w-10" />
               </div>
 
-              {/* جستجو */}
               <div className="px-4 py-4">
                 <div className="relative">
-                  <Search className="absolute right-4 top-3.5 w-5 h-5 text-gray-400" />
+                  <Search className="absolute right-4 top-3.5 w-5 h-5 text-slate-400 dark:text-gray-400" />
                   <input
                     type="text"
                     value={clientSearch}
                     onChange={(e) => setClientSearch(e.target.value)}
                     placeholder="جستجو بر اساس نام یا شماره..."
-                    className="w-full bg-white/5 rounded-xl pr-12 px-4 py-3.5 text-right placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 border border-white/10 transition-all"
+                    className="w-full bg-slate-100 dark:bg-white/5 rounded-xl pr-12 px-4 py-3.5 text-right placeholder:text-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 border border-slate-200 dark:border-white/10 transition-all text-slate-800 dark:text-white"
                   />
                 </div>
               </div>
 
-              {/* لیست مشتریان */}
               <div className="flex-1 overflow-y-auto px-4 pb-10 space-y-3 custom-scrollbar">
                 {isLoading ? (
                   <div className="flex flex-col items-center py-12 gap-3">
                     <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-                    <p className="text-sm text-gray-500">در حال دریافت لیست...</p>
+                    <p className="text-sm text-slate-500 dark:text-gray-500">در حال دریافت لیست...</p>
                   </div>
                 ) : clients.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">مشتری یافت نشد</div>
+                  <div className="text-center py-12 text-slate-500 dark:text-gray-500">مشتری یافت نشد</div>
                 ) : (
                   clients.map((client: any, index: number) => (
                     <motion.button
@@ -169,16 +160,16 @@ const ClientInfoSection: React.FC<ClientInfoSectionProps> = ({
                       transition={{ delay: index * 0.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelectClient(client)}
-                      className="w-full p-4 bg-white/5 rounded-2xl hover:bg-emerald-500/10 transition-all text-right border border-white/5 hover:border-emerald-500/30 group"
+                      className="w-full p-4 bg-slate-100 dark:bg-white/5 rounded-2xl hover:bg-emerald-100 dark:hover:bg-emerald-500/10 transition-all text-right border border-slate-200 dark:border-white/5 hover:border-emerald-300 dark:hover:border-emerald-500/30 group"
                     >
                       <div className="flex justify-between items-center">
-                        <div className="text-xs text-emerald-500 opacity-0 group-hover:opacity-100 transition">انتخاب</div>
-                        <div className="font-bold text-gray-200">{client.name}</div>
+                        <div className="text-xs text-emerald-600 dark:text-emerald-500 opacity-0 group-hover:opacity-100 transition">انتخاب</div>
+                        <div className="font-bold text-slate-700 dark:text-gray-200">{client.name}</div>
                       </div>
-                      <div className="text-sm text-gray-500 mt-1 font-mono" dir="ltr">
+                      <div className="text-sm text-slate-500 dark:text-gray-500 mt-1 font-mono" dir="ltr">
                         {client.phone.replace(/(\d{4})(\d{3})(\d{4})/, "$1 $2 $3")}
                       </div>
-                      <div className="inline-block px-2 py-0.5 bg-white/5 rounded-md text-[10px] text-gray-500 mt-3">
+                      <div className="inline-block px-2 py-0.5 bg-slate-200 dark:bg-white/5 rounded-md text-[10px] text-slate-500 dark:text-gray-500 mt-3">
                         {client.total_bookings || 0} نوبت ثبت شده
                       </div>
                     </motion.button>

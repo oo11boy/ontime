@@ -18,35 +18,22 @@ const DateTimeSection: React.FC<DateTimeSectionProps> = ({
   onOpenCalendar,
   onOpenTimePicker,
 }) => {
-  // تابع تبدیل اعداد انگلیسی به فارسی (بدون کاما)
   const toPersianNumber = (num: number): string => {
     const persianDigits: { [key: string]: string } = {
-      '0': '۰',
-      '1': '۱',
-      '2': '۲',
-      '3': '۳',
-      '4': '۴',
-      '5': '۵',
-      '6': '۶',
-      '7': '۷',
-      '8': '۸',
-      '9': '۹'
+      '0': '۰', '1': '۱', '2': '۲', '3': '۳', '4': '۴',
+      '5': '۵', '6': '۶', '7': '۷', '8': '۸', '9': '۹'
     };
     return num.toString().replace(/[0-9]/g, (d) => persianDigits[d]);
   };
 
-  // تابع فرمت تاریخ جلالی به صورت فارسی (بدون کاما)
   const formatJalaliDate = (year: number, month: number, day: number | null): string => {
     if (!day) return "انتخاب تاریخ";
-    
     const monthName = persianMonths[month];
     const persianDay = toPersianNumber(day);
     const persianYear = toPersianNumber(year);
-    
     return `${persianDay} ${monthName} ${persianYear}`;
   };
 
-  // تابع فرمت دقیقه به فارسی (بدون کاما)
   const formatDuration = (minutes: number): string => {
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60);
@@ -61,32 +48,29 @@ const DateTimeSection: React.FC<DateTimeSectionProps> = ({
 
   return (
     <div className="space-y-4">
-
-
-      {/* تاریخ و ساعت */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm text-gray-300 mb-2 block">تاریخ</label>
+          <label className="text-sm text-slate-600 dark:text-gray-300 mb-2 block">تاریخ</label>
           <button
             onClick={onOpenCalendar}
-            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm group"
+            className="w-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm group"
           >
-            <span className={selectedDate.day ? "text-white" : "text-gray-400"}>
+            <span className={selectedDate.day ? "text-slate-800 dark:text-white" : "text-slate-400 dark:text-gray-400"}>
               {formatJalaliDate(selectedDate.year, selectedDate.month, selectedDate.day)}
             </span>
-            <Calendar className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
           </button>
         </div>
         <div>
-          <label className="text-sm text-gray-300 mb-2 block">ساعت</label>
+          <label className="text-sm text-slate-600 dark:text-gray-300 mb-2 block">ساعت</label>
           <button
             onClick={onOpenTimePicker}
-            className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm group"
+            className="w-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-emerald-500/50 transition backdrop-blur-sm group"
           >
-            <span className={selectedTime ? "text-white" : "text-gray-400"}>
+            <span className={selectedTime ? "text-slate-800 dark:text-white" : "text-slate-400 dark:text-gray-400"}>
               {selectedTime || "انتخاب ساعت"}
             </span>
-            <Clock className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
           </button>
         </div>
       </div>

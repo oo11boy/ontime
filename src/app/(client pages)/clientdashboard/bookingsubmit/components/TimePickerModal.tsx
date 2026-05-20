@@ -3,12 +3,8 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   X,
   Clock,
-  Sun,
-  Sunset,
-  Moon,
   Loader2,
   AlertCircle,
-  Timer,
   CheckCircle,
   Calendar,
   ChevronLeft,
@@ -66,7 +62,6 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // State برای دو کادر جداگانه
   const [hour, setHour] = useState<string>("");
   const [minute, setMinute] = useState<string>("");
   const [timeError, setTimeError] = useState<string | null>(null);
@@ -114,7 +109,6 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
         setCurrentTime(data.currentTime || "");
         setIsToday(data.isToday || false);
 
-        // اگر زمان قبلی معتبر نیست، پاکش کن
         if (selectedTime && !data.availableTimes?.includes(selectedTime)) {
           setSelectedTime("");
           setHour("");
@@ -141,7 +135,6 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
     }
   }, [isTimePickerOpen, selectedDate, totalDuration, fetchAvailableTimes]);
 
-  // بررسی معتبر بودن زمان
   const isValidTime = (hourVal: number, minuteVal: number): boolean => {
     const timeStr = `${hourVal.toString().padStart(2, "0")}:${minuteVal.toString().padStart(2, "0")}`;
     return availableTimes.includes(timeStr);
@@ -160,7 +153,6 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
     return bookedTimes.find((booked) => booked.time === timeStr);
   };
 
-  // بررسی داخل شیفت بودن
   const isWithinShift = (hourVal: number, minuteVal: number): boolean => {
     const timeMinutes = hourVal * 60 + minuteVal;
     return workShifts.some((shift) => {
@@ -172,9 +164,7 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
     });
   };
 
-  // اعمال زمان
   const handleConfirmTime = () => {
-    // اعتبارسنجی ورودی‌ها
     if (!hour || !minute) {
       setTimeError("لطفاً ساعت و دقیقه را وارد کنید");
       return;
@@ -193,13 +183,11 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
       return;
     }
 
-    // بررسی داخل شیفت بودن
     if (!isWithinShift(hourNum, minuteNum)) {
       setTimeError("این زمان خارج از شیفت‌های کاری است");
       return;
     }
 
-    // بررسی رزرو بودن
     if (isTimeBooked(hourNum, minuteNum)) {
       const bookedInfo = getBookedTimeInfo(hourNum, minuteNum);
       setTimeError(
@@ -208,20 +196,17 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
       return;
     }
 
-    // بررسی موجود بودن
     if (!isValidTime(hourNum, minuteNum)) {
       setTimeError("این زمان در شیفت کاری موجود نیست");
       return;
     }
 
-    // موفقیت
     const formattedTime = `${hourNum.toString().padStart(2, "0")}:${minuteNum.toString().padStart(2, "0")}`;
     setSelectedTime(formattedTime);
     setTimeError(null);
     setTimeout(() => setIsTimePickerOpen(false), 200);
   };
 
-  // هندل تغییر ساعت
   const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^0-9]/g, "");
     if (value.length > 2) value = value.slice(0, 2);
@@ -232,13 +217,11 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
     setHour(value);
     setTimeError(null);
 
-    // اگر ساعت و دقیقه کامل شد، اتوماتیک تمرکز به دقیقه بره
     if (value.length === 2 && minuteInputRef.current) {
       minuteInputRef.current.focus();
     }
   };
 
-  // هندل تغییر دقیقه
   const handleMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^0-9]/g, "");
     if (value.length > 2) value = value.slice(0, 2);
@@ -250,7 +233,6 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
     setTimeError(null);
   };
 
-  // هندل کیبورد
   const handleKeyPress = (e: React.KeyboardEvent, field: "hour" | "minute") => {
     if (e.key === "Enter") {
       if (field === "hour" && minuteInputRef.current) {
@@ -261,7 +243,6 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
     }
   };
 
-  // گروه‌بندی زمان‌های رزرو شده بر اساس شیفت
   const getBookedTimesByShift = () => {
     const shifts = [...workShifts];
     shifts.forEach((shift) => {
@@ -283,24 +264,21 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
     <AnimatePresence>
       {isTimePickerOpen && (
         <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-md"
             onClick={() => setIsTimePickerOpen(false)}
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, y: "100%" }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 400 }}
-            className="relative w-full max-w-lg bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-lg bg-white dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 rounded-t-3xl sm:rounded-3xl shadow-xl dark:shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
           >
-            {/* Header */}
             <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 p-6 flex-shrink-0">
               <button
                 onClick={() => setIsTimePickerOpen(false)}
@@ -331,21 +309,16 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
               </div>
             </div>
 
-   
-
-            {/* Time Input Section - دو کادر مجزا */}
             <div className="px-6 pt-4 pb-3 flex-shrink-0">
-              <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <div className="bg-slate-50 dark:bg-white/5 rounded-2xl p-5 border border-slate-200 dark:border-white/10">
                 <div className="flex items-center gap-2 mb-4">
-                  <ClockIcon className="w-5 h-5 text-emerald-400" />
-                  <label className="text-sm font-medium text-gray-300">
+                  <ClockIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
                     ورود زمان دقیق
                   </label>
                 </div>
 
-                {/* دو کادر ساعت و دقیقه */}
-                <div className="flex items-center flex-row-reverse  justify-center gap-3 mb-4">
-                  {/* کادر ساعت */}
+                <div className="flex items-center flex-row-reverse justify-center gap-3 mb-4">
                   <div className="flex-1">
                     <input
                       ref={hourInputRef}
@@ -354,16 +327,14 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                       onChange={handleHourChange}
                       onKeyPress={(e) => handleKeyPress(e, "hour")}
                       placeholder="ساعت"
-                      className="w-full text-center px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white text-2xl font-bold placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full text-center px-4 py-4 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-xl text-slate-800 dark:text-white text-2xl font-bold placeholder:text-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
                       dir="ltr"
                       maxLength={2}
                     />
                   </div>
 
-                  {/* جداکننده */}
-                  <div className="text-3xl font-bold text-emerald-400">:</div>
+                  <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">:</div>
 
-                  {/* کادر دقیقه */}
                   <div className="flex-1">
                     <input
                       ref={minuteInputRef}
@@ -372,20 +343,19 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                       onChange={handleMinuteChange}
                       onKeyPress={(e) => handleKeyPress(e, "minute")}
                       placeholder="دقیقه"
-                      className="w-full text-center px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white text-2xl font-bold placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full text-center px-4 py-4 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-xl text-slate-800 dark:text-white text-2xl font-bold placeholder:text-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
                       dir="ltr"
                       maxLength={2}
                     />
                   </div>
                 </div>
 
-                {/* نمایش زمان انتخاب شده به صورت پیش‌نمایش */}
                 {hour && minute && !timeError && (
-                  <div className="text-center mb-4 p-2 bg-emerald-500/20 rounded-lg">
-                    <span className="text-sm text-gray-300">
+                  <div className="text-center mb-4 p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg">
+                    <span className="text-sm text-slate-600 dark:text-gray-300">
                       زمان انتخابی:{" "}
                     </span>
-                    <span className="text-lg font-bold text-emerald-400">
+                    <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
                       {hour.toString().padStart(2, "0")}:
                       {minute.toString().padStart(2, "0")}
                     </span>
@@ -393,7 +363,7 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                 )}
 
                 {timeError && (
-                  <div className="flex items-center gap-2 text-red-400 text-sm p-3 bg-red-500/10 rounded-xl mb-4">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm p-3 bg-red-50 dark:bg-red-500/10 rounded-xl mb-4">
                     <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                     <span>{timeError}</span>
                   </div>
@@ -401,35 +371,33 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
 
                 <button
                   onClick={handleConfirmTime}
-                  className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-white font-medium transition-all active:scale-95"
+                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 rounded-xl text-white font-medium transition-all active:scale-95"
                 >
                   تایید زمان
                 </button>
               </div>
             </div>
 
-            {/* Shifts and Booked Times Section - نمایش شیفت‌ها و زمان‌های رزرو شده */}
             <div className="px-6 pb-4 overflow-y-auto flex-1">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
-                  <p className="mt-3 text-gray-400 text-sm">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+                  <p className="mt-3 text-slate-500 dark:text-gray-400 text-sm">
                     در حال بارگذاری...
                   </p>
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
-                  <p className="text-center text-red-400 text-sm">{error}</p>
+                  <AlertCircle className="w-10 h-10 text-red-500 mb-2" />
+                  <p className="text-center text-red-500 text-sm">{error}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* شیفت‌های کاری */}
                   {workShifts.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <Briefcase className="w-4 h-4 text-emerald-400" />
-                        <h4 className="text-sm font-semibold text-gray-300">
+                        <Briefcase className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <h4 className="text-sm font-semibold text-slate-700 dark:text-gray-300">
                           شیفت‌های کاری
                         </h4>
                       </div>
@@ -437,12 +405,12 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                         {workShifts.map((shift, idx) => (
                           <div
                             key={idx}
-                            className="bg-white/5 rounded-lg p-3 border border-white/10"
+                            className="bg-slate-100 dark:bg-white/5 rounded-lg p-3 border border-slate-200 dark:border-white/10"
                           >
-                            <p className="text-xs text-emerald-400 mb-1">
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">
                               {shift.name}
                             </p>
-                            <p className="text-sm text-white font-medium">
+                            <p className="text-sm text-slate-700 dark:text-white font-medium">
                               {shift.start} تا {shift.end}
                             </p>
                           </div>
@@ -451,12 +419,11 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                     </div>
                   )}
 
-                  {/* زمان‌های رزرو شده دسته‌بندی شده */}
                   {bookedTimes.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-3 mt-4">
-                        <Users className="w-4 h-4 text-red-400" />
-                        <h4 className="text-sm font-semibold text-gray-300">
+                        <Users className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        <h4 className="text-sm font-semibold text-slate-700 dark:text-gray-300">
                           زمان‌های رزرو شده ({bookedTimes.length})
                         </h4>
                       </div>
@@ -467,14 +434,14 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                             shift.bookings.length > 0 && (
                               <div
                                 key={idx}
-                                className="bg-red-500/5 rounded-xl p-3 border border-red-500/20"
+                                className="bg-red-50 dark:bg-red-500/5 rounded-xl p-3 border border-red-200 dark:border-red-500/20"
                               >
                                 <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
-                                  <span className="text-xs font-medium text-red-400">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                                  <span className="text-xs font-medium text-red-600 dark:text-red-400">
                                     {shift.name}
                                   </span>
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-slate-500 dark:text-gray-500">
                                     ({shift.bookings.length} نوبت)
                                   </span>
                                 </div>
@@ -483,27 +450,25 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                                     (booking: BookedTime, bIdx: number) => (
                                       <div
                                         key={bIdx}
-                                        className="bg-red-500/10 rounded-lg p-2 text-center group relative"
+                                        className="bg-red-100 dark:bg-red-500/10 rounded-lg p-2 text-center group relative"
                                       >
-                                        <p className="text-sm font-mono text-red-400">
+                                        <p className="text-sm font-mono text-red-700 dark:text-red-400">
                                           {booking.time}
                                         </p>
-                                        <p className="text-xs text-gray-400 truncate">
+                                        <p className="text-xs text-slate-600 dark:text-gray-400 truncate">
                                           {booking.clientName}
                                         </p>
 
-                                        {/* Tooltip اطلاعات کامل */}
                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-                                          <div className="bg-gray-800 rounded-lg p-2 text-xs whitespace-nowrap shadow-lg border border-white/10">
-                                            <p className="text-red-400 font-bold">
+                                          <div className="bg-white dark:bg-gray-800 rounded-lg p-2 text-xs whitespace-nowrap shadow-lg border border-slate-200 dark:border-white/10">
+                                            <p className="text-red-600 dark:text-red-400 font-bold">
                                               {booking.clientName}
                                             </p>
-                                            <p className="text-gray-300">
-                                              {booking.startTime} -{" "}
-                                              {booking.endTime}
+                                            <p className="text-slate-600 dark:text-gray-300">
+                                              {booking.startTime} - {booking.endTime}
                                             </p>
                                             {booking.services && (
-                                              <p className="text-gray-400">
+                                              <p className="text-slate-500 dark:text-gray-400">
                                                 {booking.services}
                                               </p>
                                             )}
@@ -522,8 +487,8 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
 
                   {availableTimes.length === 0 && !loading && (
                     <div className="text-center py-8">
-                      <Clock className="w-10 h-10 text-gray-600 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">
+                      <Clock className="w-10 h-10 text-slate-400 dark:text-gray-600 mx-auto mb-2" />
+                      <p className="text-slate-500 dark:text-gray-400 text-sm">
                         هیچ زمان خالی در شیفت‌های کاری موجود نیست
                       </p>
                     </div>
@@ -532,11 +497,10 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
               )}
             </div>
 
-            {/* Footer */}
-            <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-white/10">
+            <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-slate-200 dark:border-white/10">
               <button
                 onClick={() => setIsTimePickerOpen(false)}
-                className="w-full py-3 bg-white/10 hover:bg-white/15 text-white rounded-xl font-medium transition-all active:scale-95"
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-white rounded-xl font-medium transition-all active:scale-95"
               >
                 بستن
               </button>

@@ -22,30 +22,28 @@ export const HeaderSection: React.FC<HeaderSectionProps> = ({
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
+    <div className="sticky top-0 z-50 bg-white/90 dark:bg-[#1a1e26]/90 backdrop-blur-xl border-b border-slate-200 dark:border-emerald-500/30 transition-colors">
       <div className="max-w-2xl mx-auto p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-md font-bold flex items-center gap-3">
-            <Settings className="w-7 h-7 text-emerald-400" />
+          <h1 className="text-md font-bold flex items-center gap-3 text-slate-800 dark:text-white">
+            <Settings className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             مدیریت خدمات
           </h1>
 
           <div className="flex items-center gap-2">
-            {/* دکمه رفرش که به هدر اضافه شد */}
             <button
               onClick={handleRefreshClick}
               disabled={isLoading || isForcingSpin}
-              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition disabled:opacity-50 flex items-center justify-center"
+              className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition disabled:opacity-50 flex items-center justify-center"
             >
               <RefreshCw
-                className={`w-5 h-5 ${(isLoading || isForcingSpin) ? "animate-spin text-emerald-400" : "text-gray-300"}`}
+                className={`w-5 h-5 ${(isLoading || isForcingSpin) ? "animate-spin text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-gray-300"}`}
               />
             </button>
 
-            {/* دکمه افزودن */}
             <button
               onClick={onAddClick}
-              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 transition text-white"
+              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition text-white"
             >
               <Plus className="w-5 h-5" />
             </button>

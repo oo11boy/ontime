@@ -11,7 +11,7 @@ interface JalaliCalendarModalProps {
   isCalendarOpen: boolean;
   setIsCalendarOpen: (isOpen: boolean) => void;
   onDateSelected?: () => void;
-  offDays: number[]; // 0=شنبه، 1=یکشنبه ... 6=جمعه
+  offDays: number[];
 }
 
 const overlayVariants: Variants = {
@@ -47,11 +47,10 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
     }
   }, [isCalendarOpen, selectedDate.year, selectedDate.month]);
 
-  // تابع کمکی برای تشخیص روز هفته (تبدیل به سیستم شنبه=0 تا جمعه=6)
   const getDayIndex = (year: number, month: number, day: number) => {
     const m = moment(`${year}/${month + 1}/${day}`, "jYYYY/jMM/jDD");
-    const jsDay = m.day(); // 0 (یکشنبه) تا 6 (شنبه) در Moment
-    return (jsDay + 1) % 7; // تبدیل به 0 (شنبه) تا 6 (جمعه)
+    const jsDay = m.day();
+    return (jsDay + 1) % 7;
   };
 
   const generateCalendar = (year: number, month: number) => {
@@ -66,11 +65,9 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
   };
 
   const isDateDisabled = (day: number): boolean => {
-    // ۱. بررسی روزهای تعطیل بیزنس بر اساس تنظیمات
     const dayIndex = getDayIndex(viewYear, viewMonth, day);
     if (offDays.includes(dayIndex)) return true;
 
-    // ۲. بررسی زمان گذشته (جلوگیری از رزرو برای روزهای قبل)
     const m = moment(`${viewYear}/${viewMonth + 1}/${day}`, "jYYYY/jMM/jDD");
     if (m.isBefore(moment(), 'day')) return true;
 
@@ -104,54 +101,50 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
           <motion.div
             variants={overlayVariants}
             initial="hidden" animate="visible" exit="hidden"
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-md"
             onClick={() => setIsCalendarOpen(false)}
           />
 
           <motion.div
             variants={calendarVariants}
             initial="hidden" animate="visible" exit="exit"
-            className="relative w-full max-w-md bg-[#1a1e26] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md bg-white dark:bg-[#1a1e26] rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-hidden"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02]">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                    <Calendar className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
                 </div>
-                <h3 className="text-lg font-black text-white">انتخاب تاریخ جدید</h3>
+                <h3 className="text-lg font-black text-slate-800 dark:text-white">انتخاب تاریخ جدید</h3>
               </div>
               <button 
                 onClick={() => setIsCalendarOpen(false)} 
-                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6">
-              {/* Controller */}
               <div className="flex items-center justify-between mb-8 px-2">
-                <button onClick={handlePrevMonth} className="w-11 h-11 rounded-2xl bg-white/5 flex items-center justify-center text-white border border-white/5 hover:bg-white/10 transition-colors">
-                  <ChevronRight size={22} />
+                <button onClick={handlePrevMonth} className="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                  <ChevronRight size={22} className="text-slate-600 dark:text-white" />
                 </button>
                 <div className="text-center">
-                  <h2 className="text-xl font-black text-white">{persianMonths[viewMonth]}</h2>
-                  <p className="text-emerald-500 font-mono text-sm font-bold opacity-80">{viewYear}</p>
+                  <h2 className="text-xl font-black text-slate-800 dark:text-white">{persianMonths[viewMonth]}</h2>
+                  <p className="text-emerald-600 dark:text-emerald-500 font-mono text-sm font-bold opacity-80">{viewYear}</p>
                 </div>
-                <button onClick={handleNextMonth} className="w-11 h-11 rounded-2xl bg-white/5 flex items-center justify-center text-white border border-white/5 hover:bg-white/10 transition-colors">
-                  <ChevronLeft size={22} />
+                <button onClick={handleNextMonth} className="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                  <ChevronLeft size={22} className="text-slate-600 dark:text-white" />
                 </button>
               </div>
 
-              {/* Day Names */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {weekDays.map((day, index) => (
-                  <div key={index} className="text-center py-2 text-[11px] font-black text-gray-500 uppercase">{day}</div>
+                  <div key={index} className="text-center py-2 text-[11px] font-black text-slate-400 dark:text-gray-500 uppercase">{day}</div>
                 ))}
               </div>
 
-              {/* Days Grid */}
               <div className="grid grid-cols-7 gap-1.5">
                 {calendarDays.map((day, index) => {
                   if (day === null) return <div key={`empty-${index}`} className="aspect-square" />;
@@ -170,32 +163,31 @@ const JalaliCalendarModal: React.FC<JalaliCalendarModalProps> = ({
                       className={`
                         aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all duration-200
                         ${isSelected 
-                          ? 'bg-emerald-500 text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] z-10' 
+                          ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] z-10' 
                           : isToday 
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30'
                             : disabled
-                              ? 'text-gray-700 opacity-20 cursor-not-allowed grayscale bg-white/[0.02]'
-                              : 'hover:bg-white/10 text-gray-300'
+                              ? 'text-slate-300 dark:text-gray-700 opacity-20 cursor-not-allowed grayscale bg-slate-100 dark:bg-white/[0.02]'
+                              : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-gray-300'
                         }
                       `}
                     >
                       <span className="text-sm font-bold">{day}</span>
                       {isToday && !isSelected && (
-                        <span className="absolute bottom-2 w-1 h-1 bg-emerald-400 rounded-full" />
+                        <span className="absolute bottom-2 w-1 h-1 bg-emerald-600 dark:bg-emerald-400 rounded-full" />
                       )}
                     </motion.button>
                   );
                 })}
               </div>
 
-              {/* Jump to Today */}
               <button
                 onClick={() => {
                   const today = getTodayJalali();
                   setViewYear(today.year);
                   setViewMonth(today.month);
                 }}
-                className="w-full mt-8 py-4 bg-white/5 border border-white/5 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
+                className="w-full mt-8 py-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl font-bold text-slate-700 dark:text-white text-sm flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
               >
                 نمایش امروز ({todayJalali.day} {persianMonths[todayJalali.month]})
               </button>

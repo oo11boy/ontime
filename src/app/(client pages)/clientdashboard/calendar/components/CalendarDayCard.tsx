@@ -38,37 +38,37 @@ const CalendarDayCard: React.FC<CalendarDayCardProps> = ({
 
   return (
     <div
-      className={`bg-white/5 backdrop-blur-sm rounded-2xl border p-5 transition-all duration-300 ${
+      className={`bg-white dark:bg-white/5 backdrop-blur-sm rounded-2xl border p-5 transition-all duration-300 ${
         day.isToday
-          ? 'border-emerald-500/60 bg-emerald-500/5'
+          ? 'border-emerald-400 dark:border-emerald-500/60 bg-emerald-50 dark:bg-emerald-500/5'
           : day.isWeekend
-          ? 'border-red-500/30 bg-red-500/5'
-          : 'border-emerald-500/20 hover:border-emerald-400/60 hover:bg-white/8'
+          ? 'border-rose-300 dark:border-red-500/30 bg-rose-50 dark:bg-red-500/5'
+          : 'border-slate-200 dark:border-emerald-500/20 hover:border-emerald-400 dark:hover:border-emerald-400/60 hover:bg-slate-50 dark:hover:bg-white/8'
       }`}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <div className={`w-16 h-16 rounded-xl flex flex-col items-center justify-center text-white font-bold shadow-xl ${
             day.isToday
-              ? 'bg-linear-to-br from-emerald-500 to-emerald-600'
+              ? 'bg-gradient-to-br from-emerald-500 to-emerald-600'
               : day.isWeekend
-              ? 'bg-linear-to-br from-red-500 to-red-600'
-              : 'bg-linear-to-br from-blue-500 to-blue-600'
+              ? 'bg-gradient-to-br from-rose-500 to-rose-600'
+              : 'bg-gradient-to-br from-blue-500 to-blue-600'
           }`}>
             <span className="text-2xl">{day.jalaliDate.day}</span>
             <span className="text-xs opacity-90">{day.jalaliDate.monthName}</span>
           </div>
           <div className="text-right">
-            <h3 className="text-lg font-bold">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">
               {getDayName(day.date)}
               {day.isToday && (
-                <span className="text-xs text-emerald-400 mr-2">(امروز)</span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 mr-2">(امروز)</span>
               )}
             </h3>
             {day.isWeekend && (
-              <p className="text-xs text-red-400 mt-1">تعطیل</p>
+              <p className="text-xs text-rose-600 dark:text-red-400 mt-1">تعطیل</p>
             )}
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
               {activeAppointmentsCount} نوبت فعال
             </p>
           </div>
@@ -80,8 +80,8 @@ const CalendarDayCard: React.FC<CalendarDayCardProps> = ({
             disabled={day.isPast}
             className={`px-4 py-2 rounded-xl font-bold text-[11px] flex items-center gap-2 transition-all ${
               day.isPast
-                ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
-                : "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
+                ? "bg-slate-200 dark:bg-gray-700/50 text-slate-500 dark:text-gray-500 cursor-not-allowed"
+                : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 active:scale-95 text-white"
             }`}
           >
             <Plus className="w-4 h-4" />
@@ -91,7 +91,7 @@ const CalendarDayCard: React.FC<CalendarDayCardProps> = ({
           {activeAppointmentsCount > 0 && !day.isPast && (
             <button
               onClick={onBulkSmsClick}
-              className="px-4 py-2 rounded-xl font-bold text-[11px] flex items-center gap-2 transition-all bg-purple-600 hover:bg-purple-700 active:scale-95"
+              className="px-4 py-2 rounded-xl font-bold text-[11px] flex items-center gap-2 transition-all bg-purple-600 hover:bg-purple-700 active:scale-95 text-white"
             >
               <MessageSquare className="w-4 h-4" />
               پیام همگانی
@@ -102,7 +102,7 @@ const CalendarDayCard: React.FC<CalendarDayCardProps> = ({
 
       <div className="mt-2">
         {day.isPast ? (
-          <p className="text-center text-gray-400 text-sm py-4">
+          <p className="text-center text-slate-500 dark:text-gray-400 text-sm py-4">
             ⚠️ تاریخ گذشته - امکان ثبت نوبت وجود ندارد
           </p>
         ) : day.appointments.length > 0 ? (
@@ -116,7 +116,7 @@ const CalendarDayCard: React.FC<CalendarDayCardProps> = ({
             ))}
           </div>
         ) : (
-          <p className="text-center text-gray-400 text-sm py-6">
+          <p className="text-center text-slate-500 dark:text-gray-400 text-sm py-6">
             هنوز نوبتی ثبت نشده است
           </p>
         )}
@@ -129,51 +129,51 @@ const AppointmentItem: React.FC<{ appointment: Appointment; onClick: () => void 
   return (
     <div
       onClick={onClick}
-      className={`bg-white/10 rounded-xl p-4 cursor-pointer transition-all duration-300 border hover:border-emerald-500/40 group ${
+      className={`bg-white dark:bg-white/10 rounded-xl p-4 cursor-pointer transition-all duration-300 border hover:border-emerald-500/40 group ${
         appointment.status === 'cancelled' 
-          ? 'border-red-500/30 opacity-60' 
+          ? 'border-rose-300 dark:border-red-500/30 opacity-60' 
           : appointment.status === 'done'
-          ? 'border-blue-500/30'
-          : 'border-white/10 hover:bg-white/20'
+          ? 'border-blue-300 dark:border-blue-500/30'
+          : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/20'
       }`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${
-            appointment.status === 'active' ? 'bg-emerald-500/20' :
-            appointment.status === 'cancelled' ? 'bg-red-500/20' :
-            'bg-blue-500/20'
+            appointment.status === 'active' ? 'bg-emerald-100 dark:bg-emerald-500/20' :
+            appointment.status === 'cancelled' ? 'bg-rose-100 dark:bg-red-500/20' :
+            'bg-blue-100 dark:bg-blue-500/20'
           }`}>
             <Clock className={`w-4 h-4 ${
-              appointment.status === 'active' ? 'text-emerald-400' :
-              appointment.status === 'cancelled' ? 'text-red-400' :
-              'text-blue-400'
+              appointment.status === 'active' ? 'text-emerald-600 dark:text-emerald-400' :
+              appointment.status === 'cancelled' ? 'text-rose-600 dark:text-red-400' :
+              'text-blue-600 dark:text-blue-400'
             }`} />
           </div>
           <div>
-            <span className="text-sm font-semibold text-white block">
+            <span className="text-sm font-semibold text-slate-800 dark:text-white block">
               {formatTimeDisplay(appointment.booking_time)}
             </span>
-            <span className="text-xs text-gray-400">
-            {appointment.services || "بدون خدمات"}
+            <span className="text-xs text-slate-500 dark:text-gray-400">
+              {appointment.services || "بدون خدمات"}
             </span>
           </div>
         </div>
         
         <div className="text-left">
-          <p className="text-white font-medium text-sm">
+          <p className="text-slate-800 dark:text-white font-medium text-sm">
             {appointment.client_name}
           </p>
           <div className="flex items-center gap-2 mt-1">
             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-              appointment.status === 'active' ? 'bg-emerald-500/20 text-emerald-300' :
-              appointment.status === 'cancelled' ? 'bg-red-500/20 text-red-300' :
-              'bg-blue-500/20 text-blue-300'
+              appointment.status === 'active' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' :
+              appointment.status === 'cancelled' ? 'bg-rose-100 dark:bg-red-500/20 text-rose-700 dark:text-red-300' :
+              'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300'
             }`}>
               {appointment.status === 'active' ? 'فعال' : 
                appointment.status === 'cancelled' ? 'کنسل شده' : 'انجام شده'}
             </span>
-            <MoreVertical className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
+            <MoreVertical className="w-4 h-4 text-slate-400 dark:text-gray-500 group-hover:text-slate-600 dark:group-hover:text-gray-300" />
           </div>
         </div>
       </div>

@@ -23,6 +23,12 @@ export default function DashboardPage() {
   const { userType } = useUserType();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showStaffBanner, setShowStaffBanner] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // جلوگیری از hydration mismatch برای تم
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const shouldShow = sessionStorage.getItem("show_welcome_modal");
@@ -32,17 +38,23 @@ export default function DashboardPage() {
     }
   }, [dashboardData?.user]);
 
+  if (!mounted) {
+    return null; // یا یک placeholder ساده
+  }
+
   if (isLoading) return <Loading />;
 
   if (error || !dashboardData?.user) {
     return (
-      <div className="min-h-screen bg-[#1D222A] flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-red-500/10 p-4 rounded-full mb-4">
-          <p className="text-red-400 font-bold">خطا در بارگذاری اطلاعات</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-[#14181f] dark:to-[#0f1218] flex flex-col items-center justify-center p-6 text-center transition-colors duration-300">
+        <div className="bg-rose-50 dark:bg-red-500/10 p-4 rounded-full mb-4">
+          <p className="text-rose-600 dark:text-red-400 font-bold">
+            خطا در بارگذاری اطلاعات
+          </p>
         </div>
         <button
           onClick={() => refetch()}
-          className="px-8 py-3 bg-emerald-500 text-[#1D222A] font-bold rounded-2xl hover:bg-emerald-400 transition-all active:scale-95"
+          className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-[#1D222A] font-bold rounded-2xl transition-all active:scale-95"
         >
           تلاش مجدد
         </button>
@@ -54,7 +66,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#14181f] text-white flex flex-col font-sans">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-[#14181f] dark:to-[#0f1218] text-slate-800 dark:text-white flex flex-col font-sans transition-colors duration-300">
         <DashboardHeader />
 
         <main className="flex-1 overflow-y-auto pb-32 pt-4 px-4">

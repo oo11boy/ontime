@@ -20,7 +20,7 @@ const ServicesSection: React.FC<ServicesSectionProps> = ({
           {selectedServices.map((service) => (
             <span
               key={service.id}
-              className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-4 py-2.5 rounded-xl text-sm font-medium border border-emerald-500/30"
+              className="inline-flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-4 py-2.5 rounded-xl text-sm font-medium border border-emerald-300 dark:border-emerald-500/30"
             >
               <Scissors className="w-4 h-4" />
               {service.name}
@@ -37,7 +37,7 @@ const ServicesSection: React.FC<ServicesSectionProps> = ({
 
       <button
         onClick={onOpenServicesModal}
-        className="w-full bg-linear-to-r from-emerald-600 via-emerald-500 to-emerald-600 rounded-2xl py-5 font-bold text-white shadow-2xl hover:shadow-emerald-500/50 active:scale-[0.98] transition-all duration-200 border border-emerald-500/30 flex items-center justify-center gap-4"
+        className="w-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 dark:from-emerald-600 dark:via-emerald-500 dark:to-emerald-600 rounded-2xl py-5 font-bold text-white shadow-2xl hover:shadow-emerald-500/50 active:scale-[0.98] transition-all duration-200 border border-emerald-500/30 flex items-center justify-center gap-4"
       >
         <Scissors className="w-8 h-8" />
         انتخاب خدمات

@@ -81,6 +81,7 @@ export default function NewAppointmentPage() {
     off_days?: number[];
   }>({});
   const [jobs, setJobs] = useState<any[]>([]);
+  
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -95,6 +96,7 @@ export default function NewAppointmentPage() {
     };
     fetchJobs();
   }, []);
+  
   const [unblockModal, setUnblockModal] = useState({
     show: false,
     clientName: "",
@@ -112,7 +114,6 @@ export default function NewAppointmentPage() {
       setNameModalShown(false);
     });
 
-  // ========== محاسبه مدت زمان کل بر اساس سرویس‌های انتخاب شده ==========
   const calculateTotalDuration = useCallback((selectedServices: any[]) => {
     if (!selectedServices || selectedServices.length === 0) return 1;
     return selectedServices.reduce((total, service) => {
@@ -120,12 +121,10 @@ export default function NewAppointmentPage() {
     }, 0);
   }, []);
 
-  // ========== مقدار duration فعلی ==========
   const currentDuration = useMemo(() => {
     return calculateTotalDuration(form?.services || []);
   }, [form?.services, calculateTotalDuration]);
 
-  // ========== همه useEffect‌ها ==========
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -198,7 +197,6 @@ export default function NewAppointmentPage() {
     if (form) localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
   }, [form]);
 
-  // فیلتر الگوهای یادآوری
   const reminderTemplates = useMemo(() => {
     if (!templatesData?.templates || !form?.sendRemindSms) return [];
     const targetSubType = form?.remindTime >= 24 ? "tomorrow" : "today";
@@ -207,15 +205,14 @@ export default function NewAppointmentPage() {
     );
   }, [templatesData?.templates, form?.sendRemindSms, form?.remindTime]);
 
-  // محاسبه تعداد پیامک‌ها
   const reserveSmsCount = form?.sendReserveSms ? form.reserveSmsPage || 1 : 0;
   const remindSmsCount = form?.sendRemindSms ? form.remindSmsPage || 1 : 0;
   const totalSmsNeeded = reserveSmsCount + remindSmsCount;
 
   if (!form) {
     return (
-      <div className="min-h-screen bg-[#1a1e26] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
+      <div className="min-h-screen bg-slate-50 dark:bg-[#1a1e26] flex items-center justify-center transition-colors">
+        <Loader2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400 animate-spin" />
       </div>
     );
   }
@@ -373,13 +370,11 @@ export default function NewAppointmentPage() {
     const cleanPhone = form.phone.replace(/\D/g, "").slice(-10);
     const totalDuration = calculateTotalDuration(form.services);
 
-    // اعتبارسنجی اطلاعات پایه
     if (!form.name.trim() || cleanPhone.length !== 10 || !form.time) {
       toast.error("اطلاعات ضروری (نام، شماره و زمان) را تکمیل کنید");
       return;
     }
 
-    // اعتبارسنجی الزامی بودن انتخاب الگو
     if (form.sendReserveSms && !form.reservePattern) {
       toast.error("لطفاً الگوی پیامک تایید رزرو را انتخاب کنید");
       setModals((prev) => ({ ...prev, reserve: true }));
@@ -404,7 +399,7 @@ export default function NewAppointmentPage() {
           form.date.day,
         ),
         booking_time: form.time,
-        duration_minutes: totalDuration, // ✅ استفاده از مدت زمان محاسبه شده
+        duration_minutes: totalDuration,
         booking_description: form.notes.trim(),
         services: form.services.map((s: any) => s.name).join(", "),
         sms_reserve_enabled: form.sendReserveSms,
@@ -479,26 +474,26 @@ export default function NewAppointmentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1e26] text-white pb-32">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#1a1e26] text-slate-800 dark:text-white pb-32 transition-colors">
       <Toaster position="top-center" />
 
       <div className="max-w-md mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-          <Calendar className="w-7 h-7 text-emerald-400" />
+          <Calendar className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
           ثبت نوبت جدید
         </h1>
 
         {isBlocked && (
-          <div className="mb-8 p-6 bg-red-900/30 border-2 border-red-600 rounded-2xl flex flex-col items-center gap-4 animate-pulse">
+          <div className="mb-8 p-6 bg-red-50 dark:bg-red-900/30 border-2 border-red-500 dark:border-red-600 rounded-2xl flex flex-col items-center gap-4 animate-pulse">
             <div className="flex items-center gap-4">
-              <UserX className="w-10 h-10 text-red-500" />
+              <UserX className="w-10 h-10 text-red-600 dark:text-red-500" />
               <div className="text-center">
-                <p className="text-xl font-bold text-red-400">
+                <p className="text-xl font-bold text-red-700 dark:text-red-400">
                   مشتری مسدود شده است!
                 </p>
-                <p className="text-sm text-red-300 mt-1">
+                <p className="text-sm text-red-600 dark:text-red-300 mt-1">
                   {checkedCustomerData.client.client_name} به دلیل{" "}
-                  <span className="font-bold text-red-400">
+                  <span className="font-bold text-red-700 dark:text-red-400">
                     {checkedCustomerData.client.cancelled_count} بار لغو نوبت
                   </span>{" "}
                   در لیست سیاه است.
@@ -508,7 +503,7 @@ export default function NewAppointmentPage() {
             <button
               onClick={openUnblockModal}
               disabled={isUnblocking}
-              className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 rounded-xl font-bold transition-all active:scale-95"
+              className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 rounded-xl font-bold transition-all active:scale-95 text-white"
             >
               {isUnblocking
                 ? "در حال رفع مسدودیت..."
@@ -601,7 +596,7 @@ export default function NewAppointmentPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-md"
               onClick={() =>
                 setModals((prev) => ({ ...prev, businessInfoMissing: false }))
               }
@@ -612,16 +607,16 @@ export default function NewAppointmentPage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 100, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-md bg-[#1c212c] rounded-t-[2.5rem] sm:rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-white dark:bg-[#1c212c] rounded-t-[2.5rem] sm:rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-hidden"
             >
               <div className="p-6 pb-4 text-center">
-                <div className="w-16 h-16 mx-auto mb-5 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
-                  <Building2 className="w-9 h-9 text-emerald-400" />
+                <div className="w-16 h-16 mx-auto mb-5 bg-emerald-100 dark:bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-300 dark:border-emerald-500/30">
+                  <Building2 className="w-9 h-9 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <h3 className="text-xl font-black text-white mb-3">
+                <h3 className="text-xl font-black text-slate-800 dark:text-white mb-3">
                   تکمیل اطلاعات کسب‌وکار
                 </h3>
-                <p className="text-sm text-gray-400 leading-relaxed px-4">
+                <p className="text-sm text-slate-500 dark:text-gray-400 leading-relaxed px-4">
                   برای ثبت نوبت، لطفاً نام و آدرس کسب‌وکار خود را وارد کنید. این
                   اطلاعات در پیامک‌های مشتریان نمایش داده می‌شود.
                 </p>
@@ -638,7 +633,7 @@ export default function NewAppointmentPage() {
                       business_name: e.target.value,
                     })
                   }
-                  className="w-full bg-white/[0.04] border border-white/[0.1] focus:border-emerald-500 rounded-2xl px-5 py-4 text-sm focus:outline-none transition-all font-black text-emerald-50 shadow-sm"
+                  className="w-full bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.1] focus:border-emerald-500 rounded-2xl px-5 py-4 text-sm focus:outline-none transition-all font-black text-slate-800 dark:text-emerald-50 shadow-sm"
                 />
 
                 <textarea
@@ -651,7 +646,7 @@ export default function NewAppointmentPage() {
                     })
                   }
                   rows={3}
-                  className="w-full bg-white/[0.04] border border-white/[0.1] focus:border-emerald-500 rounded-2xl px-5 py-4 text-sm focus:outline-none transition-all resize-none font-medium text-gray-200 placeholder:text-gray-600"
+                  className="w-full bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.1] focus:border-emerald-500 rounded-2xl px-5 py-4 text-sm focus:outline-none transition-all resize-none font-medium text-slate-700 dark:text-gray-200 placeholder:text-slate-400 dark:placeholder:text-gray-600"
                 />
               </div>
 
@@ -664,14 +659,14 @@ export default function NewAppointmentPage() {
                     }))
                   }
                   disabled={isSavingBusiness}
-                  className="py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold text-gray-300 transition-all active:scale-95 disabled:opacity-50"
+                  className="py-4 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-2xl font-bold text-slate-700 dark:text-gray-300 transition-all active:scale-95 disabled:opacity-50"
                 >
                   انصراف
                 </button>
                 <button
                   onClick={saveBusinessInfo}
                   disabled={isSavingBusiness}
-                  className="py-4 bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl font-black transition-all active:scale-95 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="py-4 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-black rounded-2xl font-black transition-all active:scale-95 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isSavingBusiness ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

@@ -1,6 +1,6 @@
 import React from "react";
 import { SMSPackageCard } from "./SMSPackageCard";
-import { PackageSearch } from "lucide-react"; // برای جذابیت بصری بخش خالی
+import { PackageSearch } from "lucide-react";
 
 interface SMSOption { count: number; }
 
@@ -25,12 +25,12 @@ export const PackagesGrid: React.FC<PackagesGridProps> = ({
 }) => {
   if (smsOptions.length === 0) {
     return (
-      <div className="flex   flex-col items-center justify-center py-16 px-6 bg-white/[0.02] rounded-[2.5rem] border border-dashed border-white/10 group">
-        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-            <PackageSearch className="w-8 h-8 text-gray-600" />
+      <div className="flex flex-col items-center justify-center py-16 px-6 bg-slate-50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-slate-200 dark:border-white/10 group transition-colors">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+          <PackageSearch className="w-8 h-8 text-slate-500 dark:text-gray-600" />
         </div>
-        <p className="text-gray-400 font-medium text-center">
-            در حال حاضر بسته پیامکی فعالی برای نمایش وجود ندارد.
+        <p className="text-slate-500 dark:text-gray-400 font-medium text-center">
+          در حال حاضر بسته پیامکی فعالی برای نمایش وجود ندارد.
         </p>
       </div>
     );
@@ -38,14 +38,9 @@ export const PackagesGrid: React.FC<PackagesGridProps> = ({
 
   return (
     <div className="relative">
-      {/* گرادینت محو شونده برای اسکرول (UX بهتر) */}
-      <div className="absolute -top-4 left-0 right-0 h-4 bg-gradient-to-t from-transparent to-[#1a1e26] z-10" />
+      <div className="absolute -top-4 left-0 right-0 h-4 bg-gradient-to-t from-transparent to-slate-50 dark:to-[#1a1e26] z-10" />
       
-      <div 
-        className="grid grid-cols-1 overflow-auto gap-4   px-1 pb-8 
-                   scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent
-                   hover:scrollbar-thumb-white/20 transition-colors"
-      >
+      <div className="grid grid-cols-1 overflow-auto gap-4 px-1 pb-8">
         {smsOptions.map((option, index) => (
           <div 
             key={option.count}
@@ -65,7 +60,7 @@ export const PackagesGrid: React.FC<PackagesGridProps> = ({
         ))}
       </div>
 
-      <div className="absolute -bottom-4 left-0 right-0 h-8 bg-gradient-to-b from-transparent to-[#1a1e26] z-10" />
+      <div className="absolute -bottom-4 left-0 right-0 h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#1a1e26] z-10" />
     </div>
   );
 };

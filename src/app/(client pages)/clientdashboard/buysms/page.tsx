@@ -34,39 +34,36 @@ export default function BuySMSPage() {
   const formatPrice = (price: number) =>
     price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-const handlePurchase = async () => {
-  if (!selected) {
-    toast.error("لطفاً یک بسته انتخاب کنید.");
-    return;
-  }
-  
-  await startPayment(
-    0, // مبلغ توسط سرور محاسبه می‌شود
-    "sms",
-    selected, // مثال: 100, 200, 500
-    `خرید بسته ${selected.toLocaleString("fa-IR")} عددی پیامک`
-  );
-};
+  const handlePurchase = async () => {
+    if (!selected) {
+      toast.error("لطفاً یک بسته انتخاب کنید.");
+      return;
+    }
+    
+    await startPayment(
+      0,
+      "sms",
+      selected,
+      `خرید بسته ${selected.toLocaleString("fa-IR")} عددی پیامک`
+    );
+  };
+
   if (isDashboardLoading || isPacksLoading) {
     return <LoadingScreen />;
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1e26] text-white selection:bg-emerald-500/30 flex flex-col">
-      {/* هدر ثابت */}
-      <header className="fixed top-0 left-0 right-0 z-20 bg-[#1a1e26] border-b border-white/10 px-4 pt-4 pb-3">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#1a1e26] text-slate-800 dark:text-white selection:bg-emerald-500/30 flex flex-col transition-colors">
+      <header className="fixed top-0 left-0 right-0 z-20 bg-white/95 dark:bg-[#1a1e26] border-b border-slate-200 dark:border-white/10 px-4 pt-4 pb-3 transition-colors">
         <div className="max-w-md mx-auto">
           <HeaderSection
             pricePer100={pricePer100}
             formatPrice={formatPrice}
             currentBalance={totalBalance}
           />
-           
         </div>
-                    
       </header>
 
-      {/* محتوای اصلی - اسکرول‌شونده */}
       <main className="flex-1 overflow-auto pt-[170px] pb-[100px]">
         <div className="max-w-md w-full mx-auto px-4">
           <PackagesGrid
@@ -81,12 +78,11 @@ const handlePurchase = async () => {
         </div>
       </main>
 
-      {/* دکمه خرید ثابت پایین */}
-      <footer className="fixed bottom-0 left-0 right-0 z-20 bg-[#1a1e26] border-t border-white/10 px-4 py-4">
+      <footer className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 dark:bg-[#1a1e26] border-t border-slate-200 dark:border-white/10 px-4 py-4 transition-colors">
         <div className="max-w-md mx-auto">
-              <div className="text-[11px] my-3 text-gray-400">
-                لطفا در صورتی که فیلترشکن شما فعال است قبل از پرداخت آن را خاموش کنید.
-                  </div>
+          <div className="text-[11px] my-3 text-slate-500 dark:text-gray-400">
+            لطفا در صورتی که فیلترشکن شما فعال است قبل از پرداخت آن را خاموش کنید.
+          </div>
           <PurchaseButton
             selected={selected}
             loading={isRedirectingToGateway}
@@ -94,8 +90,6 @@ const handlePurchase = async () => {
           />
         </div>
       </footer>
-
-
     </div>
   );
 }

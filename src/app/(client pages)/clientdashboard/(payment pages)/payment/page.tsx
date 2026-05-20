@@ -31,7 +31,6 @@ export default function PaymentPage() {
       const data = await res.json();
 
       if (data.success && data.trackId) {
-        // هدایت به درگاه زیبال
         window.location.href = data.gatewayUrl;
       } else {
         alert(data.message || "خطا در ارتباط با درگاه پرداخت");
@@ -45,28 +44,28 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className="min-h-screen text-white max-w-md mx-auto relative">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#1a1e26] text-slate-800 dark:text-white max-w-md mx-auto relative transition-colors">
       <DashboardHeader />
-      <div className="bg-[#1a1e26] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#242933] rounded-3xl p-8 border border-white/5 shadow-2xl text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">
+      <div className="flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-[#242933] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-2xl text-center">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-4">
             تأیید و پرداخت
           </h1>
-          <p className="text-gray-400 mb-8">
+          <p className="text-slate-500 dark:text-gray-400 mb-8">
             {type === "sms" ? `خرید بسته ${itemId} پیامکی` : "خرید اشتراک ویژه"}
           </p>
           
           <button
             onClick={handlePayment}
             disabled={loading}
-            className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold transition-all hover:bg-emerald-600 disabled:opacity-50"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white py-4 rounded-2xl font-bold transition-all disabled:opacity-50"
           >
             {loading ? "در حال اتصال به درگاه..." : "پرداخت از طریق زیبال"}
           </button>
           
           <button
             onClick={() => router.back()}
-            className="mt-4 text-gray-400 text-sm hover:text-white transition-colors"
+            className="mt-4 text-slate-500 dark:text-gray-400 text-sm hover:text-slate-700 dark:hover:text-white transition-colors"
           >
             بازگشت
           </button>

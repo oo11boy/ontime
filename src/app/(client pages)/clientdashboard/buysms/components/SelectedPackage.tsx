@@ -18,18 +18,18 @@ export const SelectedPackage: React.FC<SelectedPackageProps> = ({
 
   return (
     <div className="mb-6 animate-in slide-in-from-top-4 duration-500">
-      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl py-3 px-5 flex items-center justify-between overflow-hidden relative">
+      <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/20 rounded-2xl py-3 px-5 flex items-center justify-between overflow-hidden relative">
         <div className="absolute -right-2 -top-2 opacity-10">
-          <Sparkles className="w-12 h-12 text-emerald-400" />
+          <Sparkles className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
         </div>
         
-        <p className="text-xs text-emerald-200/80 font-medium">بسته انتخاب شده:</p>
+        <p className="text-xs text-emerald-800 dark:text-emerald-200/80 font-medium">بسته انتخاب شده:</p>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-black text-emerald-400">
+          <span className="text-sm font-black text-emerald-700 dark:text-emerald-400">
             {selected.toLocaleString("fa-IR")} پیامک
           </span>
           <div className="w-1 h-1 rounded-full bg-emerald-500/40" />
-          <span className="text-sm font-black text-white">
+          <span className="text-sm font-black text-slate-800 dark:text-white">
             {formatPrice(totalPrice)} تومان
           </span>
         </div>

@@ -88,7 +88,6 @@ export default function CalendarPage() {
 
   const todayJalali = useMemo(() => getTodayJalali(), []);
 
-  // بنر اطلاع‌رسانی برای پرسنل
   const showCalendarTypeBanner = userType === "staff" && staffCalendarType;
 
   const handleUpdateBusinessProfile = async (
@@ -197,9 +196,9 @@ export default function CalendarPage() {
   }, [selectedDayForSms, calendarDays]);
 
   return (
-    <div className="min-h-screen text-white max-w-md mx-auto relative">
+    <div className="min-h-screen bg-slate-50 dark:bg-gradient-to-br dark:from-[#1a1e26] dark:to-[#242933] text-slate-800 dark:text-white max-w-md mx-auto relative transition-colors">
       <Toaster position="top-center" />
-      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] pb-32">
+      <div className="min-h-screen pb-32">
         <HeaderSection
           userSmsBalance={userSmsBalance}
           isLoadingBalance={isLoadingBalance}
@@ -220,13 +219,13 @@ export default function CalendarPage() {
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
           {isLoading ? (
-            <div className="text-center py-10 opacity-50 text-sm">
+            <div className="text-center py-10 opacity-50 text-sm text-slate-500 dark:text-gray-400">
               در حال بارگذاری نوبت‌ها...
             </div>
           ) : calendarDays.length === 0 ? (
             <div className="text-center py-12">
-              <Calendar className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-gray-400">
+              <Calendar className="w-16 h-16 text-slate-400 dark:text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-slate-500 dark:text-gray-400">
                 نوبتی یافت نشد
               </h3>
             </div>

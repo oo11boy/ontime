@@ -19,7 +19,7 @@ interface ModalManagerProps {
   onCancelNameChange: () => void;
   offDays: number[];
   reminderTemplates: any[];
-  jobs?: any[]; // اضافه شده
+  jobs?: any[];
 }
 
 const ModalManager: React.FC<ModalManagerProps> = ({
@@ -36,7 +36,7 @@ const ModalManager: React.FC<ModalManagerProps> = ({
   onCancelNameChange,
   offDays,
   reminderTemplates = [],
-  jobs = [], // اضافه شده
+  jobs = [],
 }) => {
   return (
     <>
@@ -49,7 +49,6 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         onCancel={onCancelNameChange}
       />
 
-      {/* مودال انتخاب الگوی پیامک رزرو */}
       <MessageTemplateModal
         formatPreviewMessage={formatPreviewMessage}
         isOpen={modals.reserve}
@@ -69,7 +68,6 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         jobs={jobs}
       />
 
-      {/* مودال انتخاب الگوی پیامک یادآوری */}
       <MessageTemplateModal
         formatPreviewMessage={formatPreviewMessage}
         isOpen={modals.remind}

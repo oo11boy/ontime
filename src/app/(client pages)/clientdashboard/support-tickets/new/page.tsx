@@ -1,4 +1,3 @@
-// src/app/(client pages)/clientdashboard/support-tickets/new/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -16,10 +15,10 @@ const categories = [
 ];
 
 const priorities = [
-  { value: "low", label: "کم", color: "text-gray-400", bg: "bg-gray-500/10" },
-  { value: "normal", label: "متوسط", color: "text-blue-400", bg: "bg-blue-500/10" },
-  { value: "high", label: "بالا", color: "text-orange-400", bg: "bg-orange-500/10" },
-  { value: "urgent", label: "فوری", color: "text-red-400", bg: "bg-red-500/10" },
+  { value: "low", label: "کم", color: "text-gray-500 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-500/10" },
+  { value: "normal", label: "متوسط", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+  { value: "high", label: "بالا", color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-500/10" },
+  { value: "urgent", label: "فوری", color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-500/10" },
 ];
 
 export default function NewTicketPage() {
@@ -65,21 +64,20 @@ export default function NewTicketPage() {
   };
 
   return (
-  <div className="h-screen text-white overflow-auto max-w-md m-auto mb-10">
-  
-    {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
+    <div className="h-screen overflow-auto max-w-md m-auto mb-10 bg-slate-50 dark:bg-[#1a1e26] transition-colors">
+      {/* Header */}
+      <div className="sticky top-0 z-50 bg-white/90 dark:bg-[#1a1e26]/90 backdrop-blur-xl border-b border-slate-200 dark:border-emerald-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+              className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/20 transition"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5 text-slate-700 dark:text-white" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-white">تیکت جدید</h1>
-              <p className="text-xs text-gray-400">ثبت درخواست، پیشنهاد یا گزارش مشکل</p>
+              <h1 className="text-lg font-bold text-slate-800 dark:text-white">تیکت جدید</h1>
+              <p className="text-xs text-slate-500 dark:text-gray-400">ثبت درخواست، پیشنهاد یا گزارش مشکل</p>
             </div>
           </div>
         </div>
@@ -88,7 +86,7 @@ export default function NewTicketPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* دسته‌بندی */}
         <div>
-          <label className="block text-sm font-bold text-gray-400 mb-3">دسته‌بندی</label>
+          <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-3">دسته‌بندی</label>
           <div className="grid grid-cols-2 gap-3">
             {categories.map((cat) => (
               <button
@@ -96,13 +94,13 @@ export default function NewTicketPage() {
                 onClick={() => setFormData({ ...formData, category: cat.value })}
                 className={`p-4 rounded-xl text-right transition-all ${
                   formData.category === cat.value
-                    ? "bg-emerald-500/20 border border-emerald-500/40"
-                    : "bg-white/5 border border-white/10 hover:bg-white/10"
+                    ? "bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/40"
+                    : "bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10"
                 }`}
               >
                 <div className="text-2xl mb-1">{cat.icon}</div>
-                <div className="font-bold text-white text-sm">{cat.label}</div>
-                <p className="text-[10px] text-gray-500 mt-1">{cat.desc}</p>
+                <div className="font-bold text-slate-800 dark:text-white text-sm">{cat.label}</div>
+                <p className="text-[10px] text-slate-500 dark:text-gray-500 mt-1">{cat.desc}</p>
               </button>
             ))}
           </div>
@@ -110,7 +108,7 @@ export default function NewTicketPage() {
 
         {/* اولویت */}
         <div>
-          <label className="block text-sm font-bold text-gray-400 mb-3">اولویت</label>
+          <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-3">اولویت</label>
           <div className="flex gap-3">
             {priorities.map((p) => (
               <button
@@ -119,7 +117,7 @@ export default function NewTicketPage() {
                 className={`flex-1 py-3 rounded-xl text-sm font-medium transition ${
                   formData.priority === p.value
                     ? `${p.color} ${p.bg} border border-white/20`
-                    : "bg-white/5 text-gray-400 hover:bg-white/10"
+                    : "bg-white dark:bg-white/5 text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/10"
                 }`}
               >
                 {p.label}
@@ -130,39 +128,39 @@ export default function NewTicketPage() {
 
         {/* ایمیل (اختیاری) */}
         <div>
-          <label className="block text-sm font-bold text-gray-400 mb-2">
-            ایمیل <span className="text-xs text-gray-500">(اختیاری، برای پاسخگویی)</span>
+          <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">
+            ایمیل <span className="text-xs text-slate-500 dark:text-gray-500">(اختیاری، برای پاسخگویی)</span>
           </label>
           <input
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             placeholder="example@email.com"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition dir-ltr"
+            className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition dir-ltr"
           />
         </div>
 
         {/* عنوان */}
         <div>
-          <label className="block text-sm font-bold text-gray-400 mb-2">عنوان</label>
+          <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">عنوان</label>
           <input
             type="text"
             value={formData.subject}
             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
             placeholder="خلاصه‌ای از پیام خود را وارد کنید"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition"
+            className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition"
           />
         </div>
 
         {/* متن پیام */}
         <div>
-          <label className="block text-sm font-bold text-gray-400 mb-2">متن پیام</label>
+          <label className="block text-sm font-bold text-slate-600 dark:text-gray-400 mb-2">متن پیام</label>
           <textarea
             value={formData.message}
             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
             placeholder="توضیحات خود را به طور کامل وارد کنید..."
             rows={8}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition resize-none"
+            className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition resize-none"
           />
         </div>
 
@@ -170,14 +168,14 @@ export default function NewTicketPage() {
         <div className="flex gap-3 pt-4">
           <button
             onClick={() => router.back()}
-            className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition"
+            className="flex-1 py-3 rounded-xl bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 font-bold hover:bg-slate-100 dark:hover:bg-white/10 transition"
           >
             انصراف
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold transition flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSubmitting ? (
               <RefreshCw className="w-5 h-5 animate-spin" />

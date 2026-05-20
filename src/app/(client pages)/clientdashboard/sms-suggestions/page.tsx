@@ -1,4 +1,3 @@
-// src/app/(client pages)/clientdashboard/sms-suggestions/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -35,16 +34,16 @@ interface Suggestion {
 }
 
 const typeConfig = {
-  reservation: { label: "رزرو نوبت", icon: "📅", color: "text-emerald-400 bg-emerald-500/10" },
-  reminder: { label: "یادآوری نوبت", icon: "⏰", color: "text-blue-400 bg-blue-500/10" },
-  bulk: { label: "ارسال گروهی", icon: "👥", color: "text-purple-400 bg-purple-500/10" },
-  other: { label: "سایر موارد", icon: "📝", color: "text-gray-400 bg-white/5" },
+  reservation: { label: "رزرو نوبت", icon: "📅", color: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/10" },
+  reminder: { label: "یادآوری نوبت", icon: "⏰", color: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10" },
+  bulk: { label: "ارسال گروهی", icon: "👥", color: "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10" },
+  other: { label: "سایر موارد", icon: "📝", color: "text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5" },
 };
 
 const statusConfig = {
-  pending: { label: "در انتظار بررسی", color: "text-yellow-400", icon: Clock, bg: "bg-yellow-500/10" },
-  approved: { label: "تایید شده", color: "text-emerald-400", icon: CheckCircle, bg: "bg-emerald-500/10" },
-  rejected: { label: "رد شده", color: "text-red-400", icon: XCircle, bg: "bg-red-500/10" },
+  pending: { label: "در انتظار بررسی", color: "text-yellow-600 dark:text-yellow-400", icon: Clock, bg: "bg-yellow-100 dark:bg-yellow-500/10" },
+  approved: { label: "تایید شده", color: "text-emerald-600 dark:text-emerald-400", icon: CheckCircle, bg: "bg-emerald-100 dark:bg-emerald-500/10" },
+  rejected: { label: "رد شده", color: "text-red-600 dark:text-red-400", icon: XCircle, bg: "bg-red-100 dark:bg-red-500/10" },
 };
 
 export default function SmsSuggestionsPage() {
@@ -143,26 +142,26 @@ export default function SmsSuggestionsPage() {
   };
 
   return (
- <div className="h-screen text-white overflow-auto max-w-md m-auto">
-       {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#1a1e26]/90 backdrop-blur-xl border-b border-emerald-500/30">
+    <div className="h-screen overflow-auto max-w-md m-auto bg-slate-50 dark:bg-[#1a1e26] transition-colors">
+      {/* Header */}
+      <div className="sticky top-0 z-50 bg-white/90 dark:bg-[#1a1e26]/90 backdrop-blur-xl border-b border-slate-200 dark:border-emerald-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.back()}
-                className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/20 transition"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 text-slate-700 dark:text-white" />
               </button>
               <div>
-                <h1 className="text-lg font-bold text-white">پیشنهادات تمپلیت پیامک</h1>
-                <p className="text-xs text-gray-400">الگوهای پیامکی پیشنهادی شما</p>
+                <h1 className="text-lg font-bold text-slate-800 dark:text-white">پیشنهادات تمپلیت پیامک</h1>
+                <p className="text-xs text-slate-500 dark:text-gray-400">الگوهای پیامکی پیشنهادی شما</p>
               </div>
             </div>
             <button
               onClick={() => setIsNewModalOpen(true)}
-              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 transition text-white"
+              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition text-white"
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -170,39 +169,39 @@ export default function SmsSuggestionsPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4  pb-36 pt-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 pb-36 pt-6 space-y-6">
         {/* آمار */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-white/5 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-white">{stats.total}</p>
-            <p className="text-[10px] text-gray-500">کل</p>
+          <div className="bg-white dark:bg-white/5 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.total}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">کل</p>
           </div>
-          <div className="bg-yellow-500/10 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
-            <p className="text-[10px] text-gray-500">در انتظار</p>
+          <div className="bg-yellow-100 dark:bg-yellow-500/10 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">در انتظار</p>
           </div>
-          <div className="bg-emerald-500/10 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-emerald-400">{stats.approved}</p>
-            <p className="text-[10px] text-gray-500">تایید شده</p>
+          <div className="bg-emerald-100 dark:bg-emerald-500/10 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.approved}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">تایید شده</p>
           </div>
-          <div className="bg-red-500/10 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-red-400">{stats.rejected}</p>
-            <p className="text-[10px] text-gray-500">رد شده</p>
+          <div className="bg-red-100 dark:bg-red-500/10 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</p>
+            <p className="text-[10px] text-slate-500 dark:text-gray-500">رد شده</p>
           </div>
         </div>
 
         {/* لیست پیشنهادات */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
+            <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
           </div>
         ) : suggestions.length === 0 ? (
           <div className="text-center py-20">
-            <MessageSquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500">هیچ پیشنهادی ثبت نکرده‌اید</p>
+            <MessageSquare className="w-16 h-16 text-slate-400 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-slate-500 dark:text-gray-500">هیچ پیشنهادی ثبت نکرده‌اید</p>
             <button
               onClick={() => setIsNewModalOpen(true)}
-              className="mt-4 px-6 py-2 bg-emerald-500 rounded-xl text-white font-bold"
+              className="mt-4 px-6 py-2 bg-emerald-600 dark:bg-emerald-500 rounded-xl text-white font-bold"
             >
               ثبت پیشنهاد جدید
             </button>
@@ -221,12 +220,12 @@ export default function SmsSuggestionsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => openModal(suggestion)}
-                  className="bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-emerald-500/40 transition-all cursor-pointer"
+                  className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10 hover:border-emerald-400 dark:hover:border-emerald-500/40 transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="font-bold text-white text-base">{suggestion.title}</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-white text-base">{suggestion.title}</h3>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${typeInfo.color}`}>
                           {typeInfo.icon} {typeInfo.label}
                         </span>
@@ -235,10 +234,10 @@ export default function SmsSuggestionsPage() {
                           {statusInfo.label}
                         </span>
                       </div>
-                      <p className="text-gray-400 text-sm line-clamp-2 mb-2">
+                      <p className="text-slate-500 dark:text-gray-400 text-sm line-clamp-2 mb-2">
                         {suggestion.content}
                       </p>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-gray-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {formatDate(suggestion.created_at)}
@@ -246,7 +245,7 @@ export default function SmsSuggestionsPage() {
                       </div>
                     </div>
                     <div className="shrink-0 mr-3">
-                      <Eye className="w-5 h-5 text-gray-500" />
+                      <Eye className="w-5 h-5 text-slate-400 dark:text-gray-500" />
                     </div>
                   </div>
                 </motion.div>
@@ -259,24 +258,24 @@ export default function SmsSuggestionsPage() {
       {/* مودال جزئیات پیشنهاد */}
       <AnimatePresence>
         {isModalOpen && selectedSuggestion && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 dark:bg-black/80 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-[#242933] border border-white/10 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl"
+              className="bg-white dark:bg-[#242933] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-xl dark:shadow-2xl"
             >
-              <div className="p-5 border-b border-white/10">
+              <div className="p-5 border-b border-slate-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-white">جزئیات پیشنهاد</h2>
-                    <p className="text-gray-400 text-xs mt-1">{selectedSuggestion.title}</p>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">جزئیات پیشنهاد</h2>
+                    <p className="text-slate-500 dark:text-gray-400 text-xs mt-1">{selectedSuggestion.title}</p>
                   </div>
                   <button
                     onClick={() => setIsModalOpen(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition"
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition"
                   >
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-slate-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -284,7 +283,6 @@ export default function SmsSuggestionsPage() {
               </div>
 
               <div className="p-5 space-y-4">
-                {/* نوع و وضعیت */}
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded-full ${typeConfig[selectedSuggestion.type].color}`}>
                     {typeConfig[selectedSuggestion.type].icon} {typeConfig[selectedSuggestion.type].label}
@@ -295,35 +293,32 @@ export default function SmsSuggestionsPage() {
                   </span>
                 </div>
 
-                {/* متن پیامک */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 mb-2">متن پیامک پیشنهادی</label>
-                  <div className="bg-[#1a1e26] rounded-xl p-4 border border-white/5">
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">
+                  <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 mb-2">متن پیامک پیشنهادی</label>
+                  <div className="bg-slate-100 dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/5">
+                    <p className="text-slate-700 dark:text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">
                       {selectedSuggestion.content}
                     </p>
                   </div>
                 </div>
 
-                {/* پیام ادمین (اگر وجود داشته باشد) */}
                 {selectedSuggestion.admin_note && (
                   <div className={`rounded-xl p-4 border ${
                     selectedSuggestion.status === "approved" 
-                      ? "bg-emerald-500/10 border-emerald-500/30" 
-                      : "bg-red-500/10 border-red-500/30"
+                      ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30" 
+                      : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30"
                   }`}>
                     <div className="flex items-center gap-2 mb-2">
-                      <MessageCircle className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs font-bold text-gray-400">پیام تیم پشتیبانی</span>
+                      <MessageCircle className="w-4 h-4 text-slate-500 dark:text-gray-400" />
+                      <span className="text-xs font-bold text-slate-500 dark:text-gray-400">پیام تیم پشتیبانی</span>
                     </div>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">
+                    <p className="text-slate-700 dark:text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">
                       {selectedSuggestion.admin_note}
                     </p>
                   </div>
                 )}
 
-                {/* تاریخ */}
-                <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-gray-500 pt-2 border-t border-slate-200 dark:border-white/5">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
                     ثبت: {formatDate(selectedSuggestion.created_at)}
@@ -337,10 +332,10 @@ export default function SmsSuggestionsPage() {
                 </div>
               </div>
 
-              <div className="p-5 border-t border-white/10">
+              <div className="p-5 border-t border-slate-200 dark:border-white/10">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="w-full py-3 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition"
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold transition"
                 >
                   بستن
                 </button>
@@ -353,24 +348,24 @@ export default function SmsSuggestionsPage() {
       {/* مودال ثبت پیشنهاد جدید */}
       <AnimatePresence>
         {isNewModalOpen && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 dark:bg-black/80 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-[#242933] border border-white/10 rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl"
+              className="bg-white dark:bg-[#242933] border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-xl dark:shadow-2xl"
             >
-              <div className="p-5 border-b border-white/10">
+              <div className="p-5 border-b border-slate-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-white">پیشنهاد جدید</h2>
-                    <p className="text-gray-400 text-xs mt-1">الگوی پیامکی خود را پیشنهاد دهید</p>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">پیشنهاد جدید</h2>
+                    <p className="text-slate-500 dark:text-gray-400 text-xs mt-1">الگوی پیامکی خود را پیشنهاد دهید</p>
                   </div>
                   <button
                     onClick={() => setIsNewModalOpen(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition"
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition"
                   >
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-slate-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -378,9 +373,8 @@ export default function SmsSuggestionsPage() {
               </div>
 
               <div className="p-5 space-y-4">
-                {/* نوع تمپلیت */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 mb-2">نوع پیامک</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 mb-2">نوع پیامک</label>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(typeConfig).map(([key, config]) => (
                       <button
@@ -389,57 +383,55 @@ export default function SmsSuggestionsPage() {
                         className={`p-3 rounded-xl text-right transition-all ${
                           formData.type === key
                             ? `${config.color} border border-emerald-500/40`
-                            : "bg-white/5 border border-white/10 hover:bg-white/10"
+                            : "bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10"
                         }`}
                       >
                         <div className="text-lg mb-1">{config.icon}</div>
-                        <div className="text-sm font-bold">{config.label}</div>
+                        <div className="text-sm font-bold text-slate-800 dark:text-white">{config.label}</div>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* عنوان */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 mb-2">عنوان تمپلیت</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 mb-2">عنوان تمپلیت</label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="مثال: یادآوری نوبت آرایشگاه"
-                    className="w-full bg-[#1a1e26] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition"
+                    className="w-full bg-slate-100 dark:bg-[#1a1e26] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition"
                   />
                 </div>
 
-                {/* متن پیامک */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 mb-2">متن پیامک</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 mb-2">متن پیامک</label>
                   <textarea
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     placeholder={`متن پیامک خود را وارد کنید...
 نکته: برای نام مشتری از %name%، برای تاریخ از %date%، برای ساعت از %time% استفاده کنید.`}
                     rows={6}
-                    className="w-full bg-[#1a1e26] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition resize-none"
+                    className="w-full bg-slate-100 dark:bg-[#1a1e26] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition resize-none"
                   />
-                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                  <p className="text-xs text-slate-500 dark:text-gray-500 mt-2 flex items-center gap-1">
                     <FileText className="w-3 h-3" />
                     می‌توانید از متغیرهای %name%، %date%، %time%، %salon% استفاده کنید
                   </p>
                 </div>
               </div>
 
-              <div className="p-5 border-t border-white/10 flex gap-3">
+              <div className="p-5 border-t border-slate-200 dark:border-white/10 flex gap-3">
                 <button
                   onClick={() => setIsNewModalOpen(false)}
-                  className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition"
+                  className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition"
                 >
                   انصراف
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -455,7 +447,7 @@ export default function SmsSuggestionsPage() {
           </div>
         )}
       </AnimatePresence>
-      <Footer/>
+      <Footer />
     </div>
   );
 }

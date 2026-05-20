@@ -43,7 +43,6 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
     return Math.ceil(template.content.length / 70) || 1;
   };
 
-  // گروه‌بندی الگوها بر اساس job_id
   const groupedTemplates = useMemo(() => {
     const groups: { [key: string]: SmsTemplate[] } = {
       all: [],
@@ -66,7 +65,6 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
     return groups;
   }, [templates]);
 
-  // آمار تعداد الگوها برای هر دسته
   const categoryStats = useMemo(() => {
     const stats: { [key: string]: number } = {
       all: templates.length,
@@ -78,21 +76,17 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
     return stats;
   }, [templates.length, jobs, groupedTemplates]);
 
-  // لیست دسته‌بندی‌هایی که حداقل یک الگو دارند
   const availableCategories = useMemo(() => {
     const categories = [];
     
-    // گزینه "همه" - همیشه نمایش داده می‌شود اگر الگویی وجود داشته باشد
     if (categoryStats.all > 0) {
       categories.push({ id: "all", name: "همه", icon: Layers, count: categoryStats.all });
     }
     
-    // گزینه "عمومی" - الگوهایی که job_id ندارند
     if (categoryStats.none > 0) {
       categories.push({ id: "none", name: "عمومی", icon: Hash, count: categoryStats.none });
     }
     
-    // گزینه‌های شغلی که حداقل یک الگو دارند
     jobs.forEach((job) => {
       const count = categoryStats[job.id.toString()];
       if (count > 0) {
@@ -113,6 +107,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
     if (selectedJobId === "none") return groupedTemplates.none || [];
     return groupedTemplates[selectedJobId.toString()] || [];
   }, [selectedJobId, groupedTemplates]);
+  
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
@@ -125,7 +120,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[#0f1115]/90 backdrop-blur-md"
+            className="absolute inset-0 bg-black/50 dark:bg-[#0f1115]/90 backdrop-blur-md"
             onClick={onClose}
           />
 
@@ -137,18 +132,18 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="relative w-full max-w-2xl z-[1000]"
           >
-            <div className="bg-gradient-to-br from-[#1a1e26] to-[#151920] border border-white/10 rounded-[2rem] shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-white dark:bg-gradient-to-br dark:from-[#1a1e26] dark:to-[#151920] border border-slate-200 dark:border-white/10 rounded-[2rem] shadow-xl dark:shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/5 backdrop-blur-sm">
+              <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                     <MessageCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">
                       {title}
                     </h3>
-                    <p className="text-[10px] text-gray-500 mt-0.5">
+                    <p className="text-[10px] text-slate-500 dark:text-gray-500 mt-0.5">
                       {templates.length} الگوی پیامک موجود
                     </p>
                   </div>
@@ -156,15 +151,15 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={onClose}
-                  className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all group"
+                  className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 flex items-center justify-center transition-all group"
                 >
-                  <X className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                  <X className="w-5 h-5 text-slate-500 dark:text-gray-400 group-hover:text-slate-800 dark:group-hover:text-white" />
                 </motion.button>
               </div>
 
               {/* Categories Tabs */}
               {availableCategories.length > 0 && (
-                <div className="border-b border-white/10 bg-white/2">
+                <div className="border-b border-slate-200 dark:border-white/10 bg-white/2">
                   <div className="p-4 pb-2 overflow-x-auto custom-scrollbar">
                     <div className="flex gap-2 min-w-max">
                       {availableCategories.map((category) => (
@@ -176,7 +171,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                             selectedJobId === category.id
                               ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20"
-                              : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-white"
                           }`}
                         >
                           <category.icon size={16} />
@@ -184,7 +179,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                             selectedJobId === category.id
                               ? "bg-white/20 text-white"
-                              : "bg-white/10 text-gray-500"
+                              : "bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-gray-500"
                           }`}>
                             {category.count}
                           </span>
@@ -203,7 +198,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                       <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
                       <div className="absolute inset-0 blur-xl bg-emerald-500/20 animate-pulse" />
                     </div>
-                    <p className="text-gray-400 mt-4 text-sm font-medium">
+                    <p className="text-slate-500 dark:text-gray-400 mt-4 text-sm font-medium">
                       در حال دریافت الگوها...
                     </p>
                   </div>
@@ -211,13 +206,13 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-center py-20 bg-white/2 rounded-2xl border border-dashed border-white/10"
+                    className="text-center py-20 bg-slate-50 dark:bg-white/2 rounded-2xl border border-dashed border-slate-200 dark:border-white/10"
                   >
-                    <MessageCircle className="w-12 h-12 text-gray-700 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm">
+                    <MessageCircle className="w-12 h-12 text-slate-400 dark:text-gray-700 mx-auto mb-3" />
+                    <p className="text-slate-500 dark:text-gray-500 text-sm">
                       در این دسته الگویی وجود ندارد
                     </p>
-                    <p className="text-xs text-gray-600 mt-2">
+                    <p className="text-xs text-slate-400 dark:text-gray-600 mt-2">
                       دسته دیگری را انتخاب کنید یا الگوی جدید بسازید
                     </p>
                   </motion.div>
@@ -243,35 +238,35 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-emerald-500/0 group-hover:from-emerald-500/5 group-hover:to-emerald-500/0 rounded-xl transition-all" />
                         
-                        <div className="relative p-4 space-y-2 bg-white/3 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                        <div className="relative p-4 space-y-2 bg-white dark:bg-white/3 rounded-xl border border-slate-200 dark:border-white/5 hover:border-emerald-300 dark:hover:border-emerald-500/30 transition-all">
                           <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-emerald-400 text-xs font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                              <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold bg-emerald-100 dark:bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-300 dark:border-emerald-500/20">
                                 {template.title}
                               </span>
                               {template.job_id && template.job_name && (
-                                <span className="text-cyan-400 text-[10px] font-medium bg-cyan-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <span className="text-cyan-700 dark:text-cyan-400 text-[10px] font-medium bg-cyan-100 dark:bg-cyan-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                                   <Briefcase size={10} />
                                   {template.job_name}
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <div className="flex items-center gap-1 text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded-full">
+                              <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-gray-500 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-full">
                                 <MessageCircle size={10} />
                                 <span>{calculateSmsCount(template)} پیامک</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="bg-black/30 rounded-xl p-3 border border-white/5">
-                            <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line line-clamp-3 group-hover:text-white transition-colors">
+                          <div className="bg-slate-50 dark:bg-black/30 rounded-xl p-3 border border-slate-200 dark:border-white/5">
+                            <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed whitespace-pre-line line-clamp-3 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                               {formatPreviewMessage(template.content)}
                             </p>
                           </div>
 
                           <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-all duration-200">
-                            <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold bg-emerald-500/10 px-3 py-1.5 rounded-full">
+                            <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-xs font-bold bg-emerald-100 dark:bg-emerald-500/10 px-3 py-1.5 rounded-full">
                               <Check className="w-3.5 h-3.5" />
                               <span>انتخاب این الگو</span>
                             </div>
@@ -281,19 +276,19 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                     ))}
                   </div>
                 )}
-                              <div className="w-full mt-8 flex justify-center items-center">
- <Link
-                  href={"../clientdashboard/sms-suggestions"}
-                  className=" text-[11px] w-full border py-3 text-gray-400  text-center m-auto rounded-2xl"
-                >
-                  پیشنهاد متن پیامک
-                </Link> 
-              </div>
+                <div className="w-full mt-8 flex justify-center items-center">
+                  <Link
+                    href={"../clientdashboard/sms-suggestions"}
+                    className="text-[11px] w-full border border-slate-200 dark:border-white/10 py-3 text-slate-600 dark:text-gray-400 text-center m-auto rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    پیشنهاد متن پیامک
+                  </Link> 
+                </div>
               </div>
 
               {/* Footer */}
-              <div className="p-3 bg-white/2 border-t border-white/5">
-                <div className="flex items-center justify-between text-[10px] text-gray-500">
+              <div className="p-3 bg-slate-50 dark:bg-white/2 border-t border-slate-200 dark:border-white/5">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-gray-500">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <span>متغیرها هنگام ارسال جایگزین می‌شوند</span>
@@ -318,8 +313,11 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.1);
           border-radius: 10px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(16, 185, 129, 0.4);
