@@ -75,39 +75,45 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const interval = setInterval(fetchBadges, 30000);
     return () => clearInterval(interval);
   }, []);
+const menuItems = [
+  // ========== اصلی و پیشخوان ==========
+  { href: "/admindashboard", icon: LayoutDashboard, label: "پیشخوان" },
 
-  const menuItems = [
-    { href: "/admindashboard", icon: LayoutDashboard, label: "داشبورد اصلی" },
+  // ========== مدیریت محتوا ==========
+  { title: "مدیریت محتوا" },
+  { href: "/admindashboard/blog", icon: Layers, label: "نوشته‌ها" },
+  //{ href: "/admindashboard/comments", icon: MessageSquare, label: "دیدگاه‌ها", badge: "5" },
+  { href: "/admindashboard/announcements", icon: Bell, label: "اطلاعیه‌ها" },
 
-    { title: "مدیریت محتوا" },
-    { href: "/admindashboard/announcements", icon: Bell, label: "اطلاعیه‌ها" },
+  // ========== مدیریت کاربران ==========
+  { title: "مدیریت کاربران" },
+  { href: "/admindashboard/clients", icon: Users, label: "کاربران" },
+  { href: "/admindashboard/jobs", icon: Briefcase, label: "دسته‌بندی مشاغل" },
 
-    { title: "مدیریت بازخوردها" },
-    { href: "/admindashboard/sms-suggestions", icon: FileText, label: "پیشنهادات تمپلیت", badge: suggestionsBadge },
-    { href: "/admindashboard/support-tickets", icon: HelpCircle, label: "تیکت‌های پشتیبانی", badge: ticketsBadge },
+  // ========== مدیریت پیامک ==========
+  { title: "مدیریت پیامک" },
+  { href: "/admindashboard/smstemplates", icon: MessageCircle, label: "پترن‌های پیامکی" },
+  { href: "/admindashboard/sms-suggestions", icon: FileText, label: "پیشنهادات متن پیامک", badge: suggestionsBadge },
+  { href: "/admindashboard/systemstatus", icon: MessageSquareIcon, label: "وضعیت سیستم پیامکی" },
 
-    { title: "مدیریت پیامک" },
-    { href: "/admindashboard/systemstatus", icon: MessageSquareIcon, label: "سیستم پیامکی" },
-    { href: "/admindashboard/smstemplates", icon: MessageCircle, label: "پترن های پیامکی" },
+  // ========== مدیریت بازخورد و پشتیبانی ==========
+  { title: "پشتیبانی و بازخورد" },
+  { href: "/admindashboard/support-tickets", icon: HelpCircle, label: "تیکت‌های پشتیبانی", badge: ticketsBadge },
 
-    { title: "مدیریت کاربران" },
-    { href: "/admindashboard/clients", icon: Users, label: "کلاینت‌ها" },
-    { href: "/admindashboard/jobs", icon: Briefcase, label: "مشاغل" },
+  // ========== خدمات و مالی ==========
+  { title: "خدمات و اشتراک" },
+  { href: "/admindashboard/plans", icon: Layers, label: "پلن‌های سرویس" },
+  { href: "/admindashboard/sms", icon: Smartphone, label: "پلن‌های پیامکی" },
 
-    { title: "مدیریت وبلاگ" },
-    { href: "/admindashboard/blog", icon: Layers, label: "نوشته ها" },
+  // ========== گزارشات و آمار ==========
+  { title: "گزارشات و تحلیل" },
+  { href: "/admindashboard/reports", icon: BarChart4, label: "گزارشات و آمار" },
 
-    { title: "سرویس‌ها و مالی" },
-    { href: "/admindashboard/plans", icon: Layers, label: "پلن‌ها" },
-    { href: "/admindashboard/sms", icon: Smartphone, label: "پلن‌های پیامکی" },
-
-    { title: "اطلاعات و سیستم" },
-    { href: "/admindashboard/freesettings", icon: Settings, label: "تنظیمات سیستم" },
-    { href: "/admindashboard/reports", icon: BarChart4, label: "گزارشات و آمار" },
-    { href: "/admindashboard/comments", icon: MessageSquare, label: "دیدگاه‌ها", badge: "5" },
-    { href: "/admindashboard/settings", icon: Settings, label: "تنظیمات" },
-  ];
-
+  // ========== تنظیمات و سیستم ==========
+  { title: "تنظیمات و سیستم" },
+  { href: "/admindashboard/settings", icon: Settings, label: "تنظیمات عمومی" },
+  { href: "/admindashboard/freesettings", icon: Settings, label: "تنظیمات پیشرفته" },
+];
   // تابع خروج از حساب
   const handleLogout = async () => {
     onClose();

@@ -14,6 +14,7 @@ import {
   Phone,
   AlertCircle,
   Send,
+  Bell,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +32,12 @@ interface Suggestion {
   created_at: string;
   updated_at: string;
 }
+
+// کدهای پترن
+const PATTERNS = {
+  APPROVED: "5t8vv8z4ltnlk47",
+  REJECTED: "ldr2c07a937fxbk",
+};
 
 const typeLabels = {
   reservation: "رزرو نوبت",
@@ -59,6 +66,8 @@ export default function SmsSuggestionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [adminNote, setAdminNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"approved" | "rejected" | null>(null);
 
   const fetchSuggestions = async () => {
     setLoading(true);
@@ -81,30 +90,100 @@ export default function SmsSuggestionsPage() {
     fetchSuggestions();
   }, []);
 
-  const handleUpdateStatus = async (id: number, status: "approved" | "rejected") => {
-    if (!adminNote.trim() && status === "rejected") {
+  // تابع ارسال پیامک با پترن
+  const sendPatternSms = async (
+    phone: string,
+    patternCode: string,
+    variables: Record<string, string>,
+    suggestionId: number,
+    action: string
+  ) => {
+    try {
+      const res = await fetch("/api/admin/send-pattern-sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone,
+          patternCode,
+          variables,
+          suggestionId,
+          action,
+        }),
+      });
+      const data = await res.json();
+      return data.success;
+    } catch (error) {
+      console.error("Error sending SMS:", error);
+      return false;
+    }
+  };
+
+  const handleUpdateStatus = async (id: number, status: "approved" | "rejected", sendSms: boolean = true) => {
+    if (status === "rejected" && !adminNote.trim()) {
       toast.error("لطفاً دلیل رد را وارد کنید");
       return;
     }
 
     setIsProcessing(true);
+    
     try {
+      // 1. ابتدا وضعیت پیشنهاد را به‌روزرسانی کنید
       const res = await fetch("/api/admin/sms-suggestions", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status, admin_note: adminNote || null }),
       });
       const data = await res.json();
+      
       if (data.success) {
-        toast.success(data.message);
+        // 2. اگر کاربر درخواست ارسال پیامک داشته باشد
+        if (sendSms && selectedSuggestion && selectedSuggestion.user_phone) {
+          const patternCode = status === "approved" ? PATTERNS.APPROVED : PATTERNS.REJECTED;
+          
+          // آماده سازی متغیرهای پیامک
+          const variables: Record<string, string> = {
+            name: selectedSuggestion.user_name || "کاربر گرامی",
+            title: selectedSuggestion.title,
+          };
+          
+          // اگر رد شده و دلیل وجود دارد، به متغیرها اضافه کن
+          if (status === "rejected" && adminNote) {
+            variables.reason = adminNote;
+          }
+          
+          const smsSent = await sendPatternSms(
+            selectedSuggestion.user_phone,
+            patternCode,
+            variables,
+            selectedSuggestion.id,
+            status
+          );
+          
+          if (smsSent) {
+            toast.success(`✅ پیامک ${status === "approved" ? "تایید" : "رد"} برای کاربر ارسال شد`);
+          } else {
+            toast.success(`⚠️ پیشنهاد ${status === "approved" ? "تایید" : "رد"} شد اما ارسال پیامک با مشکل مواجه شد`);
+          }
+        } else if (!sendSms) {
+          toast.success(`پیشنهاد با موفقیت ${status === "approved" ? "تایید" : "رد"} شد (بدون ارسال پیامک)`);
+        } else {
+          toast.success(data.message);
+        }
+        
+        // بستن مودال‌ها و ریست کردن state
         setIsModalOpen(false);
+        setShowConfirmModal(false);
         setSelectedSuggestion(null);
         setAdminNote("");
+        setPendingAction(null);
+        
+        // رفرش لیست
         fetchSuggestions();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Error updating suggestion:", error);
       toast.error("خطا در بروزرسانی");
     } finally {
       setIsProcessing(false);
@@ -115,6 +194,15 @@ export default function SmsSuggestionsPage() {
     setSelectedSuggestion(suggestion);
     setAdminNote(suggestion.admin_note || "");
     setIsModalOpen(true);
+  };
+
+  const showConfirmation = (action: "approved" | "rejected") => {
+    if (action === "rejected" && !adminNote.trim()) {
+      toast.error("لطفاً دلیل رد را وارد کنید");
+      return;
+    }
+    setPendingAction(action);
+    setShowConfirmModal(true);
   };
 
   const getTypeLabel = (type: string) => {
@@ -133,7 +221,7 @@ export default function SmsSuggestionsPage() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      {/* Header */}
+      {/* Header -保持不变 */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -153,7 +241,7 @@ export default function SmsSuggestionsPage() {
         </button>
       </div>
 
-      {/* Stats */}
+      {/* Stats -保持不变 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-[#242933] border border-emerald-500/20 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">کل پیشنهادات</p>
@@ -177,7 +265,7 @@ export default function SmsSuggestionsPage() {
         </div>
       </div>
 
-      {/* Suggestions List */}
+      {/* Suggestions List -保持不变 */}
       {loading ? (
         <div className="flex justify-center py-20">
           <RefreshCw className="w-10 h-10 animate-spin text-emerald-400" />
@@ -315,7 +403,7 @@ export default function SmsSuggestionsPage() {
                 {selectedSuggestion.status === "pending" ? (
                   <>
                     <button
-                      onClick={() => handleUpdateStatus(selectedSuggestion.id, "rejected")}
+                      onClick={() => showConfirmation("rejected")}
                       disabled={isProcessing}
                       className="flex-1 py-3 rounded-xl bg-red-500/10 text-red-400 font-bold hover:bg-red-500/20 transition disabled:opacity-50"
                     >
@@ -323,7 +411,7 @@ export default function SmsSuggestionsPage() {
                       رد پیشنهاد
                     </button>
                     <button
-                      onClick={() => handleUpdateStatus(selectedSuggestion.id, "approved")}
+                      onClick={() => showConfirmation("approved")}
                       disabled={isProcessing}
                       className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition disabled:opacity-50"
                     >
@@ -339,6 +427,85 @@ export default function SmsSuggestionsPage() {
                     بستن
                   </button>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal تایید ارسال پیامک */}
+      <AnimatePresence>
+        {showConfirmModal && pendingAction && selectedSuggestion && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-[#242933] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl"
+            >
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                    pendingAction === "approved" ? "bg-emerald-500/20" : "bg-red-500/20"
+                  }`}>
+                    {pendingAction === "approved" ? (
+                      <Bell className="w-8 h-8 text-emerald-400" />
+                    ) : (
+                      <AlertCircle className="w-8 h-8 text-red-400" />
+                    )}
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {pendingAction === "approved" ? "تایید پیشنهاد" : "رد پیشنهاد"}
+                  </h3>
+                  <p className="text-gray-400">
+                    آیا مایل به ارسال پیامک اطلاع‌رسانی به کاربر هستید؟
+                  </p>
+                  {pendingAction === "rejected" && adminNote && (
+                    <div className="mt-3 p-3 bg-red-500/10 rounded-xl text-right">
+                      <p className="text-red-400 text-xs">دلیل رد:</p>
+                      <p className="text-white text-sm mt-1">{adminNote}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowConfirmModal(false);
+                      setPendingAction(null);
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition"
+                  >
+                    انصراف
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowConfirmModal(false);
+                      if (pendingAction) {
+                        handleUpdateStatus(selectedSuggestion.id, pendingAction, false);
+                      }
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
+                  >
+                    فقط {pendingAction === "approved" ? "تایید" : "رد"} کن
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowConfirmModal(false);
+                      if (pendingAction) {
+                        handleUpdateStatus(selectedSuggestion.id, pendingAction, true);
+                      }
+                    }}
+                    className={`flex-1 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 ${
+                      pendingAction === "approved"
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                        : "bg-red-500 text-white hover:bg-red-600"
+                    }`}
+                  >
+                    <Send className="w-4 h-4" />
+                    ارسال پیامک و {pendingAction === "approved" ? "تایید" : "رد"}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

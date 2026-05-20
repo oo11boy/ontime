@@ -23,7 +23,7 @@ export const GET = withAdminAuth(async (req: NextRequest, context) => {
   }
 });
 
-// PUT: بروزرسانی وضعیت پیشنهاد
+// PUT: بروزرسانی وضعیت پیشنهاد (بدون اضافه شدن خودکار)
 export const PUT = withAdminAuth(async (req: NextRequest, context) => {
   try {
     const body = await req.json();
@@ -36,6 +36,7 @@ export const PUT = withAdminAuth(async (req: NextRequest, context) => {
       );
     }
 
+    // فقط وضعیت پیشنهاد را آپدیت کن، هیچ چیز دیگری اضافه نکن
     await query(
       `UPDATE sms_template_suggestions 
        SET status = ?, admin_note = ?, updated_at = NOW()
@@ -43,32 +44,14 @@ export const PUT = withAdminAuth(async (req: NextRequest, context) => {
       [status, admin_note || null, id]
     );
 
-    // اگر تایید شده، می‌توانیم به صورت خودکار به تمپلیت‌ها اضافه کنیم
-    if (status === "approved") {
-      const suggestion = await query(
-        "SELECT title, content, type FROM sms_template_suggestions WHERE id = ?",
-        [id]
-      );
-      
-      if (suggestion && suggestion.length > 0) {
-        // اضافه کردن به جدول smstemplates
-        const s = suggestion[0] as any;
-        let templateType = "generic";
-        if (s.type === "reservation") templateType = "reserve";
-        else if (s.type === "reminder") templateType = "reminder";
-        else if (s.type === "bulk") templateType = "bulk";
-        
-        await query(
-          `INSERT INTO smstemplates (user_id, type, name, content, message_count, created_at)
-           VALUES (NULL, ?, ?, ?, 1, NOW())`,
-          [templateType, s.title, s.content]
-        );
-      }
-    }
+    // پیام مناسب بر اساس وضعیت
+    const message = status === "approved" 
+      ? "پیشنهاد با موفقیت تایید شد" 
+      : "پیشنهاد رد شد";
 
     return NextResponse.json({
       success: true,
-      message: status === "approved" ? "پیشنهاد تایید و به تمپلیت‌ها اضافه شد" : "پیشنهاد رد شد",
+      message: message,
     });
   } catch (error) {
     console.error("Error updating suggestion:", error);
