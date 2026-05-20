@@ -1,4 +1,3 @@
-// src/app/api/customer/available-times/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { getCurrentDateTime } from "@/lib/date-utils";
@@ -16,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // 1. دریافت اطلاعات نوبت اصلی
+    // 1. دریافت اطلاعات نوبت اصلی - شامل off_days و work_shifts از جدول users
     const bookingData: any[] = await query(
       `SELECT 
           b.id, 
@@ -57,13 +56,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // بررسی روز تعطیل
+    // ========== بررسی روزهای تعطیل ==========
+    let offDays: number[] = [];
+    try {
+      offDays = booking.off_days ? JSON.parse(booking.off_days) : [];
+    } catch (e) {
+      offDays = [];
+    }
+
     const selectedDateObj = new Date(targetDate);
     const jsDay = selectedDateObj.getDay();
+    // تبدیل به شمسی: 0=شنبه, 1=یکشنبه, ..., 6=جمعه
     const dayIndex = jsDay === 6 ? 0 : jsDay + 1;
-    const offDays: number[] = booking.off_days
-      ? JSON.parse(booking.off_days)
-      : [];
 
     if (offDays.includes(dayIndex)) {
       return NextResponse.json({
@@ -72,10 +76,12 @@ export async function GET(req: NextRequest) {
         bookedTimes: [],
         workShifts: [],
         message: "تعطیل",
+        isToday: targetDate === getCurrentDateTime().currentGregorianDate,
+        currentTime: getCurrentDateTime().currentTimeString,
       });
     }
 
-    // پردازش شیفت‌های کاری از تنظیمات کاربر (داینامیک)
+    // ========== پردازش شیفت‌های کاری ==========
     let rawWorkShifts: any[] = [];
     try {
       rawWorkShifts = booking.work_shifts
@@ -85,7 +91,7 @@ export async function GET(req: NextRequest) {
       rawWorkShifts = [{ start: "09:00", end: "13:00" }, { start: "16:00", end: "20:00" }];
     }
 
-    // اضافه کردن name به شیفت‌ها بر اساس زمان شروع
+    // اضافه کردن name به شیفت‌ها
     const workShifts = rawWorkShifts.map((shift: { start: string; end: string }) => {
       const startHour = parseInt(shift.start.split(":")[0]);
       let name = "شیفت کاری";
@@ -122,6 +128,7 @@ export async function GET(req: NextRequest) {
     let bookingRecords: any[] = [];
 
     if (staffId && calendarType === "independent") {
+      // پرسنل مستقل: فقط نوبت‌های خودش
       bookingRecords = await query(
         `SELECT id, client_name, booking_time, 
                 COALESCE(duration_minutes, 30) AS duration_minutes
@@ -131,6 +138,7 @@ export async function GET(req: NextRequest) {
         [userId, staffId, targetDate, booking.id],
       );
     } else if (staffId) {
+      // پرسنل هماهنگ: نوبت‌های خودش + نوبت‌های رییس
       bookingRecords = await query(
         `SELECT id, client_name, booking_time, 
                 COALESCE(duration_minutes, 30) AS duration_minutes
@@ -141,6 +149,7 @@ export async function GET(req: NextRequest) {
         [userId, targetDate, booking.id, staffId],
       );
     } else {
+      // رییس: نوبت‌های خودش + نوبت‌های پرسنل هماهنگ
       bookingRecords = await query(
         `SELECT b.id, b.client_name, b.booking_time, 
                 COALESCE(b.duration_minutes, 30) AS duration_minutes
@@ -159,7 +168,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // ========== تولید زمان‌های خالی با قوانین 60 دقیقه قبل و بعد ==========
+    // ========== تولید زمان‌های خالی ==========
     const currentDateTime = getCurrentDateTime();
     const isToday = targetDate === currentDateTime.currentGregorianDate;
     const availableTimes: string[] = [];
@@ -246,14 +255,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       availableTimes: uniqueAvailableTimes,
-      bookedTimes: uniqueBookedTimes.map(bt => ({ 
-        time: bt.time, 
-        clientName: bt.clientName,
-        startTime: bt.startTime,
-        endTime: bt.endTime,
-        duration: bt.duration
-      })),
-      workShifts: workShifts, // حالا workShifts حتماً name دارد
+      bookedTimes: uniqueBookedTimes,
+      workShifts: workShifts,
       isToday,
       currentTime: currentDateTime.currentTimeString,
     });

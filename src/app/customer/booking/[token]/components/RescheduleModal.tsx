@@ -103,8 +103,8 @@ export default function RescheduleModal({
       
       // پردازش شیفت‌های کاری - اطمینان از وجود name
       const shifts = (data.workShifts || [
-        { start: "09:00", end: "13:00" },
-        { start: "16:00", end: "20:00" }
+        { start: "08:00", end: "22:00" },
+      
       ]).map((shift: any) => {
         const startHour = parseInt(shift.start.split(":")[0]);
         let name = "شیفت کاری";
