@@ -51,7 +51,7 @@ export default function Footer({ userType = "user" }: FooterProps) {
     <div className="fixed bottom-0 inset-x-0 z-[100] flex justify-center items-end pb-4 px-4 pointer-events-none">
       <motion.nav
         initial={false}
-        className="flex items-center justify-around w-full max-w-[460px] h-[80px] bg-white/90 backdrop-blur-xl dark:bg-[#0c111d]/90 dark:backdrop-blur-xl border border-slate-200/60 dark:border-white/10 rounded-[28px] px-2 pointer-events-auto relative shadow-lg dark:shadow-2xl transition-all duration-300"
+        className="flex items-center justify-around w-full max-w-[460px] h-[80px] bg-white/95 dark:bg-[#0c111d] border border-slate-200/60 dark:border-white/10 rounded-[28px] px-2 pointer-events-auto relative shadow-lg dark:shadow-2xl transition-all duration-300"
       >
         {items.map((item, index) => {
           const active = isActive(item.href);
@@ -62,20 +62,19 @@ export default function Footer({ userType = "user" }: FooterProps) {
               <Link
                 key={index}
                 href={item.href}
-                className="relative -top-6 flex flex-col items-center group"
+                className="relative -top-6 flex flex-col items-center"
               >
                 <motion.div
                   whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-400 dark:to-emerald-500 rounded-[22px] flex items-center justify-center border-[5px] border-white dark:border-[#0C111D] shadow-md hover:shadow-lg transition-all duration-300"
+                  className="w-16 h-16 bg-emerald-500 dark:bg-emerald-500 rounded-[22px] flex items-center justify-center border-[5px] border-white dark:border-[#0C111D] shadow-md dark:shadow-emerald-500/20"
                 >
                   <Plus size={32} className="text-white dark:text-[#0C111D] stroke-[3px]" />
                 </motion.div>
                 <span
-                  className={`text-[11px] mt-2 font-bold transition-all duration-200 ${
+                  className={`text-[11px] mt-2 font-bold transition-colors ${
                     active 
                       ? "text-emerald-600 dark:text-emerald-400" 
-                      : "text-slate-500 dark:text-gray-500 group-hover:text-slate-700 dark:group-hover:text-gray-300"
+                      : "text-slate-400 dark:text-gray-400"
                   }`}
                 >
                   {item.label}
@@ -88,12 +87,12 @@ export default function Footer({ userType = "user" }: FooterProps) {
             <Link
               key={index}
               href={item.href}
-              className="relative flex flex-col items-center justify-center flex-1 h-full transition-none group"
+              className="relative flex flex-col items-center justify-center flex-1 h-full transition-none"
             >
               {active && (
                 <motion.div
                   layoutId="nav-pill"
-                  className="absolute inset-x-1 inset-y-3 bg-gradient-to-br from-slate-100 to-slate-50 dark:bg-white/[0.03] rounded-2xl -z-0 transition-colors"
+                  className="absolute inset-x-1 inset-y-3 bg-slate-100/80 dark:bg-white/[0.03] rounded-2xl -z-0 transition-colors"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                 />
               )}
@@ -102,7 +101,7 @@ export default function Footer({ userType = "user" }: FooterProps) {
                 className={`relative z-10 flex flex-col items-center gap-1.5 transition-all duration-200 ${
                   active
                     ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-slate-500 dark:text-gray-500 group-hover:text-slate-700 dark:group-hover:text-gray-300"
+                    : "text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300"
                 }`}
               >
                 <Icon
@@ -112,8 +111,8 @@ export default function Footer({ userType = "user" }: FooterProps) {
                 />
 
                 <span
-                  className={`text-[11px] font-bold tracking-tight transition-all duration-200 ${
-                    active ? "opacity-100" : "opacity-80 group-hover:opacity-100"
+                  className={`text-[11px] font-bold tracking-tight transition-colors ${
+                    active ? "opacity-100" : "opacity-80"
                   }`}
                 >
                   {item.label}
@@ -123,7 +122,7 @@ export default function Footer({ userType = "user" }: FooterProps) {
               {active && (
                 <motion.div
                   layoutId="active-line"
-                  className="absolute top-0 w-8 h-1 bg-gradient-to-r from-emerald-500 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 rounded-b-full shadow-[0_2px_10px_rgba(16,185,129,0.3)] dark:shadow-[0_2px_10px_rgba(16,185,129,0.5)]"
+                  className="absolute top-0 w-8 h-1 bg-emerald-500 rounded-b-full shadow-[0_2px_10px_rgba(16,185,129,0.3)] dark:shadow-[0_2px_10px_rgba(16,185,129,0.5)]"
                 />
               )}
             </Link>

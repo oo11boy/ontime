@@ -48,7 +48,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-white/90 dark:bg-gradient-to-b dark:from-[#1a1e26]/90 dark:to-transparent backdrop-blur-xl border-b border-slate-200 dark:border-emerald-500/30 text-slate-800 dark:text-white">
+    <div className="sticky top-0 z-50 bg-gradient-to-b from-white/90 to-transparent dark:from-[#1a1e26]/90 dark:to-transparent backdrop-blur-xl border-b border-slate-200 dark:border-emerald-500/30 text-slate-800 dark:text-white transition-colors">
       <div className="max-w-2xl mx-auto p-4">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-md font-bold flex items-center gap-3">
@@ -94,7 +94,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
 
           <button
             onClick={onAddAppointment}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl px-4 py-3.5 font-bold hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg text-white"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-500 dark:to-emerald-600 rounded-xl px-4 py-3.5 font-bold hover:from-emerald-600 hover:to-emerald-700 dark:hover:from-emerald-600 dark:hover:to-emerald-700 transition-all shadow-lg text-white"
           >
             <Plus className="w-5 h-5" />
             نوبت جدید

@@ -260,7 +260,7 @@ const MessageTemplateModal: React.FC<MessageTemplateModalProps> = ({
                           </div>
 
                           <div className="bg-slate-50 dark:bg-black/30 rounded-xl p-3 border border-slate-200 dark:border-white/5">
-                            <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed whitespace-pre-line line-clamp-3 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                            <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed whitespace-pre-line  group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                               {formatPreviewMessage(template.content)}
                             </p>
                           </div>

@@ -340,10 +340,10 @@ const InternalTemplateModal = ({
 
                       <div className="relative">
                         <div className="pr-2 sm:pr-4">
-                          <div className="text-[10px] sm:text-sm text-slate-700 dark:text-gray-300 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                          <div className="text-[10px] sm:text-sm text-slate-700 dark:text-gray-300 leading-relaxed ">
                             {formatPreview(template.content ?? "")
                               .split("\n")
-                              .slice(0, 2)
+                              
                               .map(
                                 (paragraph: string, idx: number) =>
                                   paragraph.trim() && (
@@ -355,11 +355,7 @@ const InternalTemplateModal = ({
                                     </p>
                                   ),
                               )}
-                            {(template.content?.split("\n").length || 0) > 2 && (
-                              <span className="text-emerald-500/70 text-[9px] sm:text-[10px] mt-1 inline-block">
-                                ... ادامه
-                              </span>
-                            )}
+                     
                           </div>
                         </div>
                       </div>

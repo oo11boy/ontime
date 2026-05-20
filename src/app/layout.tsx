@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 import Script from "next/script";
+import { ThemeProvider } from "next-themes";
 // import { GoogleAnalytics } from "@next/third-parties/google";
 
 const yekanBakh = localFont({
@@ -19,7 +20,10 @@ const yekanBakh = localFont({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#1D222A",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1D222A" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
@@ -86,11 +90,6 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover"
         />
-
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-        />
         <Script
           id="global-json-ld"
           type="application/ld+json"
@@ -100,29 +99,26 @@ export default function RootLayout({
       </head>
       <body
         className={`${yekanBakh.variable} font-sans antialiased`}
-        style={{ backgroundColor: "#1B1F28" }}
         suppressHydrationWarning
       >
-        <Providers>{children}</Providers>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Providers>{children}</Providers>
+        </ThemeProvider>
 
-        {/* کدهای تحلیلی و چت آنلاین */}
-        {/* <GoogleAnalytics gaId="G-8PVVM0N5SV" /> */}
 
-        {/* اسکریپت گفتینو */}
-        <Script id="goftino-widget" strategy="afterInteractive">
-          {`
-            !function(){var i="YOUR_GOFTINO_TOKEN",a=window,d=document;function t(){var g=d.createElement("script"),s="https://www.goftino.com/widget/"+i,l=localStorage.getItem("goftino_"+i);g.type="text/javascript",g.async=!0,g.src=l?s+"?o="+l:s,d.getElementsByTagName("head")[0].appendChild(g)}
-            "complete"===d.readyState?t():a.attachEvent?a.attachEvent("onload",t):a.addEventListener("load",t,!1)}();
-          `}
-        </Script>
 
         <Toaster
           position="top-center"
           toastOptions={{
             duration: 4000,
             style: {
-              background: "#1a1e26",
-              color: "#fff",
+              background: "var(--toast-bg, #1a1e26)",
+              color: "var(--toast-color, #fff)",
               border: "1px solid #333",
             },
             success: {

@@ -1,3 +1,4 @@
+// src/app/(client pages)/clientdashboard/components/Header/Header.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -19,6 +20,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useUserType } from "@/hooks/useUserType";
+import { ThemeToggle } from "../ThemeToggle";
 
 interface Notification {
   id: number;
@@ -145,8 +147,7 @@ export default function Header() {
   const isAnyModalOpen = isProfileOpen || isNotifOpen;
 
   return (
-    <div className="w-full relative px-4 py-1 md:px-8 md:py-6">
-      {/* --- Overlay Backdrop --- */}
+    <div className="w-full relative px-4 py-1 ">
       <AnimatePresence>
         {isAnyModalOpen && (
           <motion.div
@@ -159,10 +160,8 @@ export default function Header() {
         )}
       </AnimatePresence>
 
-      {/* --- Main Header Container --- */}
-      <div className="max-w-7xl mx-auto bg-white/90 dark:bg-[#161b22]/80 backdrop-blur-2xl border border-slate-200/60 dark:border-white/10 rounded-[2rem] p-3 md:p-4 flex justify-between items-center relative z-[95] shadow-md dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] transition-all duration-300">
+      <div className="max-w-7xl mx-auto bg-white/90 dark:bg-[#161b22]/80 backdrop-blur-2xl border border-slate-200/60 dark:border-white/10 rounded-[2rem] p-3  flex justify-between items-center relative z-[95] shadow-md dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] transition-all duration-300">
         
-        {/* Logo */}
         <div 
           className="flex items-center gap-2 cursor-pointer group" 
           onClick={() => router.push("/clientdashboard")}
@@ -175,7 +174,10 @@ export default function Header() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="flex items-center gap-1 ">
+          {/* دکمه تغییر تم */}
+          <ThemeToggle />
+
           {/* Notification Button */}
           <div className="relative" ref={notifRef}>
             <button
@@ -190,14 +192,13 @@ export default function Header() {
               )}
             </button>
 
-            {/* Notification Modal */}
             <AnimatePresence>
               {isNotifOpen && (
                 <motion.div 
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="fixed top-24 left-4 right-4 z-[100] bg-white dark:bg-[#1e232e] rounded-[2rem] border border-slate-200/60 dark:border-white/10 shadow-xl dark:shadow-2xl md:absolute md:top-full md:left-0 md:right-auto md:mt-4 md:w-85 overflow-hidden"
+                  className="fixed top-24 left-4 right-4 z-[100] bg-white dark:bg-[#1e232e] rounded-[2rem] border border-slate-200/60 dark:border-white/10 shadow-xl dark:shadow-2xl  overflow-hidden"
                 >
                   <div className="p-5 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-white/[0.02]" dir="rtl">
                     <span className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
@@ -205,7 +206,7 @@ export default function Header() {
                     </span>
                     <X className="w-5 h-5 text-slate-400 dark:text-gray-500 cursor-pointer hover:text-slate-600 dark:hover:text-white" onClick={() => setIsNotifOpen(false)} />
                   </div>
-                  <div className="max-h-[60vh] md:max-h-[400px] overflow-y-auto p-3 custom-scrollbar space-y-2">
+                  <div className="max-h-[60vh] overflow-y-auto p-3 custom-scrollbar space-y-2">
                     {notifications.length === 0 ? (
                       <div className="p-12 text-center text-slate-400 dark:text-gray-500 text-xs">اعلانی وجود ندارد</div>
                     ) : (
@@ -233,9 +234,9 @@ export default function Header() {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
-              className={`flex items-center gap-3 p-1.5 md:pr-4 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all ${isProfileOpen ? "ring-2 ring-emerald-500/50" : ""}`}
+              className={`flex items-center gap-3 p-1.5  rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all ${isProfileOpen ? "ring-2 ring-emerald-500/50" : ""}`}
             >
-              <div className="hidden md:flex flex-col items-end">
+              <div className="hidden  flex-col items-end">
                 <span className="text-xs font-bold text-slate-700 dark:text-white">{isDashLoading ? "..." : dashboardData?.user?.name || "کاربر"}</span>
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
@@ -245,17 +246,16 @@ export default function Header() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-400 dark:to-teal-600 flex items-center justify-center text-white dark:text-[#161b22] shadow-md">
                 <User className="w-6 h-6" strokeWidth={2.5} />
               </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 dark:text-gray-500 transition-transform hidden md:block ${isProfileOpen ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-4 h-4 text-slate-400 dark:text-gray-500 transition-transform hidden  ${isProfileOpen ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Profile Modal */}
             <AnimatePresence>
               {isProfileOpen && (
                 <motion.div 
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="fixed top-24 left-4 right-4 z-[100] bg-white dark:bg-[#1e232e] rounded-[2rem] border border-slate-200/60 dark:border-white/10 p-3 shadow-xl dark:shadow-2xl md:absolute md:top-full md:left-0 md:right-auto md:mt-4 md:w-72"
+                  className="fixed top-24 left-4 right-4 z-[100] bg-white dark:bg-[#1e232e] rounded-[2rem] border border-slate-200/60 dark:border-white/10 p-3 shadow-xl dark:shadow-2xl "
                 >
                   <div className="p-4 flex items-center gap-4 bg-slate-50 dark:bg-white/5 rounded-2xl mb-2" dir="rtl">
                     <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-400/20">
