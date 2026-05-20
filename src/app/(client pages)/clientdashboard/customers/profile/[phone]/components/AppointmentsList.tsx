@@ -1,4 +1,3 @@
-// components/CustomerProfile/AppointmentsList.tsx
 import React from "react";
 import { Calendar } from "lucide-react";
 import { AppointmentCard } from "./AppointmentCard";
@@ -27,14 +26,14 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({
 }) => {
   return (
     <div>
-      <h3 className="text-lg font-bold mb-5 flex items-center gap-3">
-        <Calendar className="w-6 h-6 text-emerald-400" />
+      <h3 className="text-lg font-bold mb-5 flex items-center gap-3 text-slate-800 dark:text-white">
+        <Calendar className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
         نوبت‌های ثبت شده
       </h3>
 
       <div className="space-y-4">
         {appointments.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">
+          <p className="text-center text-slate-500 dark:text-gray-400 py-8">
             هیچ نوبتی ثبت نشده است
           </p>
         ) : (

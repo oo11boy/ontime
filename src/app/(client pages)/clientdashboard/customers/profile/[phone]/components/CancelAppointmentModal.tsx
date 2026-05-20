@@ -1,4 +1,3 @@
-// components/CustomerProfile/CancelAppointmentModal.tsx
 import React, { useState } from "react";
 import { AlertCircle, Send, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,7 +28,6 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
 
   const { data: templatesData, isLoading: templatesLoading } = useSmsTemplates();
 
-  // فقط الگوهایی که احتمالاً مربوط به کنسلی هستند
   const cancellationTemplates = (templatesData?.templates || []).filter((t: any) => {
     if (!t.content) return false;
     const text = t.content.toLowerCase();
@@ -40,7 +38,7 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <motion.div
@@ -48,15 +46,15 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-red-500/30"
+        className="bg-white dark:bg-[#242933] rounded-2xl p-6 max-w-md w-full shadow-xl dark:shadow-2xl border border-red-300 dark:border-red-500/30"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 text-red-400 mb-5">
+        <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-5">
           <AlertCircle className="w-8 h-8" />
-          <h3 className="text-xl font-bold">کنسل کردن نوبت</h3>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-white">کنسل کردن نوبت</h3>
         </div>
 
-        <p className="text-gray-300 mb-6">
+        <p className="text-slate-600 dark:text-gray-300 mb-6">
           آیا از کنسل کردن این نوبت مطمئن هستید؟
         </p>
 
@@ -74,22 +72,22 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
             }}
             className="w-5 h-5 text-emerald-500 rounded focus:ring-emerald-500"
           />
-          <span className="text-sm flex items-center gap-2">
-            <Send className="w-4 h-4 text-emerald-400" />
+          <span className="text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
+            <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             ارسال پیامک اطلاع‌رسانی کنسلی
           </span>
         </label>
 
         {sendCancellationSms && (
           <div className="mb-6">
-            <p className="text-sm text-gray-400 mb-3">الگوهای پیامک کنسلی:</p>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-3">الگوهای پیامک کنسلی:</p>
 
             {templatesLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
               </div>
             ) : cancellationTemplates.length === 0 ? (
-              <div className="text-center py-6 text-gray-500 text-sm border border-dashed border-gray-700 rounded-xl">
+              <div className="text-center py-6 text-slate-500 dark:text-gray-500 text-sm border border-dashed border-slate-300 dark:border-gray-700 rounded-xl">
                 هیچ الگویی با کلمهٔ کنسل / لغو / ابطال یافت نشد
               </div>
             ) : (
@@ -107,20 +105,20 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
                       }}
                       className={`w-full text-right p-4 rounded-xl border transition-all text-sm leading-relaxed ${
                         isSelected
-                          ? "border-red-500/60 bg-red-950/30 shadow-sm shadow-red-900/20"
-                          : "border-white/10 hover:bg-white/5 hover:border-white/20"
+                          ? "border-red-500/60 bg-red-50 dark:bg-red-950/30 shadow-sm shadow-red-900/20"
+                          : "border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20"
                       }`}
                     >
                       {tpl.content ? (
-                        <div className={`${isSelected ? "text-white" : "text-gray-300"}`}>
+                        <div className={`${isSelected ? "text-slate-800 dark:text-white" : "text-slate-600 dark:text-gray-300"}`}>
                           {tpl.content}
                         </div>
                       ) : (
-                        <div className="text-gray-500 italic">متن الگو موجود نیست</div>
+                        <div className="text-slate-500 dark:text-gray-500 italic">متن الگو موجود نیست</div>
                       )}
 
                       {tpl.message_count && (
-                        <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-white/5">
+                        <div className="text-xs text-slate-500 dark:text-gray-500 mt-2 pt-2 border-t border-slate-200 dark:border-white/5">
                           تعداد صفحه پیامک: {tpl.message_count}
                         </div>
                       )}
@@ -144,8 +142,8 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
             disabled={canceling || (sendCancellationSms && !selectedTemplateKey)}
             className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
               (sendCancellationSms && !selectedTemplateKey) || canceling
-                ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800"
+                ? "bg-slate-200 dark:bg-gray-600 text-slate-500 dark:text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 text-white"
             }`}
           >
             {canceling ? (
@@ -160,7 +158,7 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
 
           <button
             onClick={onClose}
-            className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 rounded-xl font-medium transition"
+            className="flex-1 py-3.5 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-xl font-medium transition text-slate-700 dark:text-white"
           >
             انصراف
           </button>

@@ -24,19 +24,16 @@ export default function CustomerProfile() {
   const params = useParams();
   const phone = params?.phone as string;
 
-  // React Query Hook
   const { data: customerData, isLoading, refetch } = useCustomerProfile(phone);
 
   const customer = customerData?.client || null;
   const appointments = customerData?.appointments || [];
 
-  // Modals State
   const [showGeneralSmsModal, setShowGeneralSmsModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showUnblockModal, setShowUnblockModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState<number | null>(null);
 
-  // Actions State
   const [sendCancellationSms, setSendCancellationSms] = useState(false);
   const [selectedCancellationTemplateKey, setSelectedCancellationTemplateKey] = useState<string | null>(null);
   const [generalSmsMessage, setGeneralSmsMessage] = useState("");
@@ -44,7 +41,6 @@ export default function CustomerProfile() {
   const [canceling, setCanceling] = useState(false);
   const [blocking, setBlocking] = useState(false);
 
-  // کنسل کردن نوبت
   const handleCancelAppointment = async (apptId: number, templateKey?: string | null) => {
     try {
       setCanceling(true);
@@ -60,7 +56,6 @@ export default function CustomerProfile() {
         throw new Error(err.message || "خطا در کنسل کردن نوبت");
       }
 
-      // اگر پیامک کنسلی بخواهد و template انتخاب شده باشد
       if (sendCancellationSms && templateKey && customer) {
         try {
           await sendSingleSmsMutation.mutateAsync({
@@ -69,19 +64,15 @@ export default function CustomerProfile() {
             booking_id: apptId,
             template_key: templateKey,
           });
-
           toast.success("پیامک کنسل کردن نوبت ارسال شد");
         } catch (smsError) {
           toast.error("ارسال پیامک کنسل با خطا مواجه شد");
-          console.error("SMS Error:", smsError);
         }
       }
 
-      // به‌روزرسانی لیست
       await refetch();
       toast.success("نوبت با موفقیت کنسل شد");
     } catch (error) {
-      console.error("Error canceling appointment:", error);
       toast.error("خطا در کنسل کردن نوبت");
     } finally {
       setCanceling(false);
@@ -91,30 +82,25 @@ export default function CustomerProfile() {
     }
   };
 
-  // ارسال پیامک عمومی
   const handleSendGeneralSms = async () => {
     if (!customer || !generalSmsMessage.trim()) return;
 
     try {
       setSendingSms(true);
-
       await sendSingleSmsMutation.mutateAsync({
         to_phone: customer.phone,
         content: generalSmsMessage.trim(),
         sms_type: "individual",
       });
-
       setShowGeneralSmsModal(false);
       setGeneralSmsMessage("");
     } catch (error) {
       toast.error("ارسال پیامک با خطا مواجه شد");
-      console.error(error);
     } finally {
       setSendingSms(false);
     }
   };
 
-  // بلاک کردن مشتری
   const handleBlockCustomer = async () => {
     if (!customer) return;
     try {
@@ -140,7 +126,6 @@ export default function CustomerProfile() {
     }
   };
 
-  // رفع بلاک مشتری
   const handleUnblockCustomer = async () => {
     if (!customer) return;
     try {
@@ -166,7 +151,6 @@ export default function CustomerProfile() {
     }
   };
 
-  // توابع کمکی
   const formatPhoneStr = (p: string) => {
     if (p && p.length === 11) {
       return `${p.slice(0, 4)} ${p.slice(4, 7)} ${p.slice(7)}`;
@@ -199,20 +183,20 @@ export default function CustomerProfile() {
   }
 
   return (
-    <div className="h-screen text-white overflow-auto max-w-md m-auto">
-      <div className="min-h-screen bg-linear-to-br from-[#1a1e26] to-[#242933] text-white pb-32">
+    <div className="h-screen overflow-auto max-w-md m-auto bg-slate-50 dark:bg-[#1a1e26] transition-colors">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-[#1a1e26] dark:to-[#242933] text-slate-800 dark:text-white pb-32 transition-colors">
         <div className="max-w-2xl mx-auto">
           <HeaderSection />
 
           <div
-            className={`relative bg-white/5 backdrop-blur-sm rounded-2xl border ${
+            className={`relative bg-white dark:bg-white/5 backdrop-blur-sm rounded-2xl border ${
               customer.is_blocked
-                ? "border-red-500/50"
-                : "border-emerald-500/20"
-            } overflow-hidden shadow-2xl m-4`}
+                ? "border-red-300 dark:border-red-500/50"
+                : "border-emerald-200 dark:border-emerald-500/20"
+            } overflow-hidden shadow-lg dark:shadow-2xl m-4`}
           >
             {customer.is_blocked ? (
-              <div className="bg-linear-to-r from-red-600 to-red-700 text-white text-center py-3.5 font-bold text-sm shadow-lg">
+              <div className="bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white text-center py-3.5 font-bold text-sm shadow-lg">
                 این مشتری بلاک شده است
               </div>
             ) : null}
@@ -243,7 +227,6 @@ export default function CustomerProfile() {
           </div>
         </div>
 
-        {/* Modals */}
         <SmsModal
           isOpen={showGeneralSmsModal}
           customerName={customer.name}
@@ -290,6 +273,7 @@ export default function CustomerProfile() {
           onConfirm={handleUnblockCustomer}
         />
       </div>
+      <Footer />
     </div>
   );
 }
