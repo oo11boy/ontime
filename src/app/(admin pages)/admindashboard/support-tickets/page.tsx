@@ -16,6 +16,7 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  Bell,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -132,6 +133,8 @@ export default function SupportTicketsPage() {
     }
 
     setIsSending(true);
+    const loadingToast = toast.loading("در حال ارسال پاسخ...");
+    
     try {
       const res = await fetch(`/api/admin/support-tickets/${selectedTicket!.id}/reply`, {
         method: "POST",
@@ -139,17 +142,27 @@ export default function SupportTicketsPage() {
         body: JSON.stringify({ message: replyMessage }),
       });
       const data = await res.json();
+      
       if (data.success) {
-        toast.success("پاسخ با موفقیت ارسال شد");
+        if (data.sms_sent) {
+          toast.success("✅ پاسخ ارسال شد و پیامک به کاربر اطلاع داده شد", { id: loadingToast });
+        } else {
+          toast.success("✅ پاسخ با موفقیت ارسال شد", { id: loadingToast });
+        }
         setReplyMessage("");
         await fetchTicketReplies(selectedTicket!.id);
         await fetchTickets();
+        
+        // به‌روزرسانی تیکت انتخاب شده
+        if (selectedTicket) {
+          setSelectedTicket({ ...selectedTicket, status: "answered" });
+        }
       } else {
-        toast.error(data.message);
+        toast.error(data.message || "خطا در ارسال پاسخ", { id: loadingToast });
       }
     } catch (error) {
       console.error("Error sending reply:", error);
-      toast.error("خطا در ارسال پاسخ");
+      toast.error("خطا در ارسال پاسخ", { id: loadingToast });
     } finally {
       setIsSending(false);
     }
@@ -471,22 +484,29 @@ export default function SupportTicketsPage() {
                     <textarea
                       value={replyMessage}
                       onChange={(e) => setReplyMessage(e.target.value)}
-                      placeholder="پاسخ خود را وارد کنید..."
+                      placeholder="پاسخ خود را وارد کنید... (پس از ارسال، پیامک به کاربر اطلاع داده می‌شود)"
                       rows={2}
-                      className="flex-1 bg-[#1a1e26] border border-white/10 rounded-xl p-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition resize-none"
+                      className="flex-1 bg-[#1a1e26] border border-white/10 rounded-xl p-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition resize-none text-sm"
                     />
                     <button
                       onClick={handleSendReply}
                       disabled={isSending || !replyMessage.trim()}
-                      className="px-4 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition disabled:opacity-50 flex items-center justify-center"
+                      className="px-4 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {isSending ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
-                        <Send className="w-5 h-5" />
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span className="hidden sm:inline">ارسال</span>
+                        </>
                       )}
                     </button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-2 mr-1 flex items-center gap-1">
+                    <Bell className="w-3 h-3" />
+                    پس از ارسال پاسخ، پیامک به کاربر اطلاع داده می‌شود
+                  </p>
                 </div>
               )}
             </motion.div>
