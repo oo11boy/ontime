@@ -3,8 +3,6 @@ import { useState, useEffect } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import {
   Plus,
-  Bell,
-  Clock,
   MessageSquare,
   Trash2,
   Loader2,
@@ -13,15 +11,28 @@ import {
   ChevronLeft,
   Edit3,
   Save,
-  AlertCircle,
+  Briefcase,
+  Filter,
+  Bell,
+  AlertTriangle,
 } from "lucide-react";
+
+// تایپ برای دسته‌بندی شغلی
+type JobCategory = {
+  id: number;
+  english_name: string;
+  persian_name: string;
+  businessCount: number;
+};
 
 export default function AdminTemplatesPage() {
   const [templates, setTemplates] = useState([]);
+  const [jobs, setJobs] = useState<JobCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [selectedJobFilter, setSelectedJobFilter] = useState<string>("all");
 
   const [formData, setFormData] = useState({
     id: null as number | null,
@@ -31,8 +42,10 @@ export default function AdminTemplatesPage() {
     payamresan_id: "",
     content: "",
     message_count: 1,
+    job_id: null as number | null,
   });
 
+  // دریافت لیست الگوها
   const fetchTemplates = async () => {
     try {
       setLoading(true);
@@ -46,8 +59,22 @@ export default function AdminTemplatesPage() {
     }
   };
 
+  // دریافت لیست دسته‌بندی‌های شغلی
+  const fetchJobs = async () => {
+    try {
+      const res = await fetch("/api/admin/jobs");
+      const data = await res.json();
+      if (res.ok) {
+        setJobs(data.jobs || []);
+      }
+    } catch (err) {
+      console.error("خطا در دریافت مشاغل:", err);
+    }
+  };
+
   useEffect(() => {
     fetchTemplates();
+    fetchJobs();
   }, []);
 
   const openCreateModal = () => {
@@ -60,6 +87,7 @@ export default function AdminTemplatesPage() {
       payamresan_id: "",
       content: "",
       message_count: 1,
+      job_id: null,
     });
     setShowModal(true);
   };
@@ -74,13 +102,16 @@ export default function AdminTemplatesPage() {
       payamresan_id: tpl.payamresan_id,
       content: tpl.content || "",
       message_count: tpl.message_count || 1,
+      job_id: tpl.job_id || null,
     });
     setShowModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const loadingId = toast.loading(editingId ? "در حال به‌روزرسانی..." : "در حال ذخیره الگو...");
+    const loadingId = toast.loading(
+      editingId ? "در حال به‌روزرسانی..." : "در حال ذخیره الگو..."
+    );
 
     try {
       const url = editingId
@@ -97,7 +128,9 @@ export default function AdminTemplatesPage() {
 
       if (res.ok) {
         toast.success(
-          editingId ? "الگو با موفقیت به‌روزرسانی شد" : "پترن با موفقیت ساخته شد",
+          editingId
+            ? "الگو با موفقیت به‌روزرسانی شد"
+            : "پترن با موفقیت ساخته شد",
           { id: loadingId }
         );
         setShowModal(false);
@@ -126,11 +159,34 @@ export default function AdminTemplatesPage() {
     }
   };
 
+  // فیلتر کردن الگوها بر اساس job_id
+  const filteredTemplates = templates.filter((tpl: any) => {
+    if (selectedJobFilter === "all") return true;
+    if (selectedJobFilter === "none") return !tpl.job_id;
+    return tpl.job_id === parseInt(selectedJobFilter);
+  });
+
+  // تابع کمکی برای دریافت نام شغل
+  const getJobName = (jobId: number | null) => {
+    if (!jobId) return "عمومی";
+    const job = jobs.find((j) => j.id === jobId);
+    return job ? job.persian_name : "نامشخص";
+  };
+
+  // تابع نمایش برچسب نوع همگانی
+  const getBulkTypeLabel = (subType: string) => {
+    if (subType === "cancel") {
+      return { text: "❌ کنسلی", color: "bg-red-500/10 text-red-400" };
+    }
+    return { text: "📢 اطلاع‌رسانی", color: "bg-emerald-500/10 text-emerald-400" };
+  };
+
   return (
     <div className="p-6 bg-[#0f0f0f] min-h-screen text-white">
       <Toaster position="top-center" reverseOrder={false} />
 
       <div className="max-w-6xl mx-auto">
+        {/* هدر */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
             <h1 className="text-3xl font-black flex items-center gap-3">
@@ -140,7 +196,7 @@ export default function AdminTemplatesPage() {
               مدیریت الگوهای هوشمند
             </h1>
             <p className="text-gray-500 text-sm mt-2 mr-1">
-              پیکربندی پترن‌های ارسالی بر اساس زمان‌بندی دقیق
+              پیکربندی پترن‌های ارسالی بر اساس زمان‌بندی دقیق و دسته‌بندی شغلی
             </p>
           </div>
           <button
@@ -151,85 +207,156 @@ export default function AdminTemplatesPage() {
           </button>
         </div>
 
+        {/* فیلتر دسته‌بندی شغلی */}
+        <div className="mb-6 flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl">
+            <Filter size={16} className="text-gray-400" />
+            <span className="text-sm text-gray-400">فیلتر بر اساس شغل:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedJobFilter("all")}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                selectedJobFilter === "all"
+                  ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                  : "bg-white/5 text-gray-400 hover:bg-white/10"
+              }`}
+            >
+              همه
+            </button>
+            <button
+              onClick={() => setSelectedJobFilter("none")}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                selectedJobFilter === "none"
+                  ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                  : "bg-white/5 text-gray-400 hover:bg-white/10"
+              }`}
+            >
+              عمومی
+            </button>
+            {jobs.map((job) => (
+              <button
+                key={job.id}
+                onClick={() => setSelectedJobFilter(job.id.toString())}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
+                  selectedJobFilter === job.id.toString()
+                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                    : "bg-white/5 text-gray-400 hover:bg-white/10"
+                }`}
+              >
+                <Briefcase size={14} />
+                {job.persian_name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* لیست الگوها */}
         {loading ? (
           <div className="flex flex-col justify-center items-center py-24 gap-4">
             <Loader2 className="animate-spin text-emerald-500" size={48} />
             <p className="text-gray-400">در حال فراخوانی اطلاعات...</p>
           </div>
-        ) : templates.length === 0 ? (
+        ) : filteredTemplates.length === 0 ? (
           <div className="text-center py-20">
             <MessageSquare className="w-20 h-20 text-gray-700 mx-auto mb-4 opacity-30" />
-            <p className="text-gray-500">هنوز الگویی تعریف نشده است</p>
+            <p className="text-gray-500">هیچ الگویی یافت نشد</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((tpl: any) => (
-              <div
-                key={tpl.id}
-                className="bg-[#181818] p-6 rounded-4xl border border-gray-800/50 hover:border-emerald-500/40 transition-all group relative overflow-hidden"
-              >
-                <div className="flex justify-between items-start mb-5 relative z-10">
-                  <div className="flex flex-col gap-2">
-                    <span
-                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase w-fit ${
-                        tpl.type === "reserve"
-                          ? "bg-blue-500/10 text-blue-400"
-                          : tpl.type === "reminder"
-                          ? "bg-amber-500/10 text-amber-400"
-                          : tpl.type === "bulk"
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : "bg-purple-500/10 text-purple-400"
-                      }`}
-                    >
-                      {tpl.type === "reserve"
-                        ? "🔔 ثبت رزرو"
-                        : tpl.type === "reminder"
-                        ? "⏰ یادآوری"
-                        : tpl.type === "bulk"
-                        ? "📢 همگانی"
-                        : "📩 عمومی"}
-                    </span>
-                    {tpl.sub_type !== "none" && (
-                      <span className="text-[10px] bg-white/5 text-gray-400 px-2 py-1 rounded-md w-fit border border-white/5">
-                        🎯 مخصوص نوبت‌های: {tpl.sub_type === "today" ? "امروز" : "فردا"}
+            {filteredTemplates.map((tpl: any) => {
+              const bulkType = tpl.type === "bulk" ? getBulkTypeLabel(tpl.sub_type) : null;
+              return (
+                <div
+                  key={tpl.id}
+                  className="bg-[#181818] p-6 rounded-4xl border border-gray-800/50 hover:border-emerald-500/40 transition-all group relative overflow-hidden"
+                >
+                  <div className="flex justify-between items-start mb-5 relative z-10">
+                    <div className="flex flex-col gap-2">
+                      {/* نشانگر نوع الگو */}
+                      <div className="flex gap-2 flex-wrap">
+                        <span
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase ${
+                            tpl.type === "reserve"
+                              ? "bg-blue-500/10 text-blue-400"
+                              : tpl.type === "reminder"
+                              ? "bg-amber-500/10 text-amber-400"
+                              : tpl.type === "bulk"
+                              ? "bg-emerald-500/10 text-emerald-400"
+                              : "bg-purple-500/10 text-purple-400"
+                          }`}
+                        >
+                          {tpl.type === "reserve"
+                            ? "🔔 ثبت رزرو"
+                            : tpl.type === "reminder"
+                            ? "⏰ یادآوری"
+                            : tpl.type === "bulk"
+                            ? "📢 همگانی"
+                            : "📩 عمومی"}
+                        </span>
+
+                        {/* نشانگر نوع همگانی (اطلاع‌رسانی/کنسلی) */}
+                        {bulkType && (
+                          <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black ${bulkType.color} flex items-center gap-1`}>
+                            {tpl.sub_type === "cancel" ? <AlertTriangle size={10} /> : <Bell size={10} />}
+                            {bulkType.text}
+                          </span>
+                        )}
+
+                        {/* نشانگر دسته‌بندی شغلی */}
+                        {tpl.job_id && (
+                          <span className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-cyan-500/10 text-cyan-400 flex items-center gap-1">
+                            <Briefcase size={10} />
+                            {getJobName(tpl.job_id)}
+                          </span>
+                        )}
+
+                        {tpl.type === "reminder" && tpl.sub_type !== "none" && (
+                          <span className="text-[10px] bg-white/5 text-gray-400 px-2 py-1 rounded-md w-fit border border-white/5">
+                            🎯 مخصوص نوبت‌های:{" "}
+                            {tpl.sub_type === "today" ? "امروز" : "فردا"}
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-[10px] bg-orange-500/10 text-orange-400 px-2 py-1 rounded-md w-fit border border-orange-500/20">
+                        💬 {tpl.message_count || 1} پیامک
                       </span>
-                    )}
-                    <span className="text-[10px] bg-orange-500/10 text-orange-400 px-2 py-1 rounded-md w-fit border border-orange-500/20">
-                      💬 {tpl.message_count || 1} پیامک
-                    </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openEditModal(tpl)}
+                        className="bg-emerald-500/10 p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                        title="ویرایش"
+                      >
+                        <Edit3 size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(tpl.id)}
+                        className="bg-red-500/10 p-2 rounded-lg text-gray-500 hover:text-red-500 transition-all"
+                        title="حذف"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(tpl)}
-                      className="bg-emerald-500/10 p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-all"
-                      title="ویرایش"
-                    >
-                      <Edit3 size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(tpl.id)}
-                      className="bg-red-500/10 p-2 rounded-lg text-gray-500 hover:text-red-500 transition-all"
-                      title="حذف"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+
+                  <h3 className="font-bold text-xl mb-3 group-hover:text-emerald-400 transition-colors line-clamp-1">
+                    {tpl.name}
+                  </h3>
+
+                  <div className="bg-black/40 border border-white/5 p-2.5 rounded-xl text-[12px] font-mono text-emerald-500/80 mb-4 flex justify-between items-center italic">
+                    <span className="text-gray-600">ID:</span>
+                    <span>{tpl.payamresan_id}</span>
                   </div>
+
+                  <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-2 min-h-18">
+                    "{tpl.content || "-"}"
+                  </p>
                 </div>
-
-                <h3 className="font-bold text-xl mb-3 group-hover:text-emerald-400 transition-colors line-clamp-1">
-                  {tpl.name}
-                </h3>
-
-                <div className="bg-black/40 border border-white/5 p-2.5 rounded-xl text-[12px] font-mono text-emerald-500/80 mb-4 flex justify-between items-center italic">
-                  <span className="text-gray-600">ID:</span>
-                  <span>{tpl.payamresan_id}</span>
-                </div>
-
-                <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-2 min-h-18">
-                  "{tpl.content || "-"}"
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -260,7 +387,9 @@ export default function AdminTemplatesPage() {
                     required
                     className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-emerald-500 transition-all"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                   />
                 </div>
 
@@ -276,7 +405,10 @@ export default function AdminTemplatesPage() {
                       setFormData({
                         ...formData,
                         type: val,
-                        sub_type: val === "reminder" ? formData.sub_type : "none",
+                        sub_type:
+                          val === "reminder" || val === "bulk"
+                            ? formData.sub_type
+                            : "none",
                       });
                     }}
                   >
@@ -287,14 +419,78 @@ export default function AdminTemplatesPage() {
                   </select>
                 </div>
 
-                <div className={formData.type === "reminder" ? "block" : "invisible"}>
+                {/* انتخاب نوع همگانی - اضافه شده */}
+                {formData.type === "bulk" && (
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2 mr-1">
+                      نوع پیام همگانی
+                    </label>
+                    <select
+                      className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-purple-500 cursor-pointer appearance-none"
+                      value={formData.sub_type}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sub_type: e.target.value })
+                      }
+                    >
+                      <option value="none">
+                        <span className="flex items-center gap-2">
+                          <Bell size={14} /> 📢 اطلاع‌رسانی عمومی
+                        </span>
+                      </option>
+                      <option value="cancel">
+                        <span className="flex items-center gap-2">
+                          <AlertTriangle size={14} /> ❌ کنسلی نوبت
+                        </span>
+                      </option>
+                    </select>
+                    <p className="text-[10px] text-gray-500 mt-2">
+                      {formData.sub_type === "cancel"
+                        ? "این پیام برای اطلاع از لغو نوبت‌ها استفاده می‌شود"
+                        : "این پیام برای اطلاع‌رسانی عمومی استفاده می‌شود"}
+                    </p>
+                  </div>
+                )}
+
+                {/* انتخاب دسته‌بندی شغلی */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2 mr-1">
+                    دسته‌بندی شغلی
+                  </label>
+                  <select
+                    className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-cyan-500 cursor-pointer appearance-none"
+                    value={formData.job_id || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        job_id: e.target.value ? parseInt(e.target.value) : null,
+                      })
+                    }
+                  >
+                    <option value="">عمومی (همه مشاغل)</option>
+                    {jobs.map((job) => (
+                      <option key={job.id} value={job.id}>
+                        {job.persian_name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-gray-500 mt-2">
+                    اگر شغلی انتخاب کنید، این الگو فقط برای آن دسته از
+                    کسب‌وکارها قابل استفاده خواهد بود
+                  </p>
+                </div>
+
+                <div
+                  className={formData.type === "reminder" ? "block" : "hidden"}
+                >
                   <label className="block text-sm text-gray-400 mb-2 mr-1">
                     هدف زمانی
                   </label>
                   <select
                     className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-amber-500 cursor-pointer appearance-none text-amber-500 font-bold"
                     value={formData.sub_type}
-                    onChange={(e) => setFormData({ ...formData, sub_type: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, sub_type: e.target.value })
+                    }
                   >
                     <option value="tomorrow">📅 نوبت‌های فردا</option>
                     <option value="today">🕒 نوبت‌های امروز</option>
@@ -308,7 +504,12 @@ export default function AdminTemplatesPage() {
                   <select
                     className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 outline-none focus:border-orange-500 cursor-pointer"
                     value={formData.message_count}
-                    onChange={(e) => setFormData({ ...formData, message_count: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        message_count: Number(e.target.value),
+                      })
+                    }
                   >
                     <option value={1}>۱ پیامک</option>
                     <option value={2}>۲ پیامک</option>
@@ -330,7 +531,9 @@ export default function AdminTemplatesPage() {
                   required
                   className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 font-mono text-emerald-400 outline-none focus:border-emerald-500"
                   value={formData.payamresan_id}
-                  onChange={(e) => setFormData({ ...formData, payamresan_id: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, payamresan_id: e.target.value })
+                  }
                 />
               </div>
 
@@ -372,6 +575,12 @@ export default function AdminTemplatesPage() {
                       <code className="bg-black/40 p-1.5 rounded border border-white/5">
                         %link% : لینک مدیریت
                       </code>
+                      <code className="bg-black/40 p-1.5 rounded border border-white/5">
+                        %address% : آدرس
+                      </code>
+                      <code className="bg-black/40 p-1.5 rounded border border-white/5">
+                        %phone% : شماره تماس
+                      </code>
                     </div>
                   </div>
                 )}
@@ -380,7 +589,9 @@ export default function AdminTemplatesPage() {
                   required
                   className="w-full bg-black/40 border border-gray-800 rounded-2xl p-4 h-32 resize-none text-sm outline-none focus:border-emerald-500"
                   value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, content: e.target.value })
+                  }
                   placeholder="مثال: سلام %name% عزیز، نوبت‌های امروز در سالن %salon% لغو گردید."
                 />
               </div>

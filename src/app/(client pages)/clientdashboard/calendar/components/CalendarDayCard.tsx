@@ -78,7 +78,7 @@ const CalendarDayCard: React.FC<CalendarDayCardProps> = ({
           <button
             onClick={onAddAppointment}
             disabled={day.isPast}
-            className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${
+            className={`px-4 py-2 rounded-xl font-bold text-[11px] flex items-center gap-2 transition-all ${
               day.isPast
                 ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
                 : "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 active:scale-95"
@@ -91,7 +91,7 @@ const CalendarDayCard: React.FC<CalendarDayCardProps> = ({
           {activeAppointmentsCount > 0 && !day.isPast && (
             <button
               onClick={onBulkSmsClick}
-              className="px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all bg-purple-600 hover:bg-purple-700 active:scale-95"
+              className="px-4 py-2 rounded-xl font-bold text-[11px] flex items-center gap-2 transition-all bg-purple-600 hover:bg-purple-700 active:scale-95"
             >
               <MessageSquare className="w-4 h-4" />
               پیام همگانی

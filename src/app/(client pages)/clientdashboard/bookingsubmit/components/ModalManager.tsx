@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import MessageTemplateModal from "./MessageTemplateModal";
 import ServicesModal from "./ServicesModal";
@@ -20,7 +18,8 @@ interface ModalManagerProps {
   onConfirmNameChange: () => void;
   onCancelNameChange: () => void;
   offDays: number[];
-  reminderTemplates: any[]; // ← اضافه شده برای فیلتر الگوهای یادآوری
+  reminderTemplates: any[];
+  jobs?: any[]; // اضافه شده
 }
 
 const ModalManager: React.FC<ModalManagerProps> = ({
@@ -36,11 +35,11 @@ const ModalManager: React.FC<ModalManagerProps> = ({
   onConfirmNameChange,
   onCancelNameChange,
   offDays,
-  reminderTemplates = [], // مقدار پیش‌فرض خالی
+  reminderTemplates = [],
+  jobs = [], // اضافه شده
 }) => {
   return (
     <>
-      {/* مودال تایید تغییر نام مشتری */}
       <NameChangeConfirmationModal
         isOpen={modals.nameChange}
         onClose={() => setModals((m: any) => ({ ...m, nameChange: false }))}
@@ -67,14 +66,15 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         }}
         title="انتخاب الگوی رزرو"
         isLoading={isLoadingTemplates}
+        jobs={jobs}
       />
 
-      {/* مودال انتخاب الگوی پیامک یادآوری — با فیلتر هوشمند */}
+      {/* مودال انتخاب الگوی پیامک یادآوری */}
       <MessageTemplateModal
         formatPreviewMessage={formatPreviewMessage}
         isOpen={modals.remind}
         onClose={() => setModals((m: any) => ({ ...m, remind: false }))}
-        templates={reminderTemplates} // ← فقط الگوهای فیلتر شده (today یا tomorrow)
+        templates={reminderTemplates}
         onSelect={(data: { content: string; pattern: string; message_count?: number }) => {
           updateForm({
             remindMsg: data.content,
@@ -84,9 +84,9 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         }}
         title="انتخاب الگوی یادآوری"
         isLoading={isLoadingTemplates}
+        jobs={jobs}
       />
 
-      {/* مودال انتخاب خدمات */}
       <ServicesModal
         isOpen={modals.services}
         onClose={() => setModals((m: any) => ({ ...m, services: false }))}
@@ -100,7 +100,6 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         isLoading={!servicesData}
       />
 
-      {/* مودال تقویم شمسی */}
       <JalaliCalendarModal
         offDays={offDays}
         selectedDate={form.date}
@@ -114,7 +113,6 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         onDateSelected={() => setModals((m: any) => ({ ...m, time: true }))}
       />
 
-      {/* مودال انتخاب ساعت */}
       <TimePickerModal
         selectedDate={form.date}
         selectedTime={form.time}

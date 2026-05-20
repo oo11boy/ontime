@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const adminProtectedGET = withAdminAuth(async () => {
         try {
             const templates = await query(
-                `SELECT id, name, type, sub_type, payamresan_id, content, message_count 
+                `SELECT id, name, type, sub_type, payamresan_id, content, message_count, job_id
                  FROM smstemplates 
                  ORDER BY id DESC`
             );
@@ -27,7 +27,7 @@ const templatesHandler = withAdminAuth(async (request) => {
     // --- ایجاد الگوی جدید ---
     if (request.method === 'POST') {
         try {
-            const { name, type, sub_type, payamresan_id, content, message_count = 1 } = await request.json();
+            const { name, type, sub_type, payamresan_id, content, message_count = 1, job_id } = await request.json();
             
             if (!name || !payamresan_id) {
                 return NextResponse.json({ message: 'نام الگو و کد پترن الزامی هستند' }, { status: 400 });
@@ -35,9 +35,9 @@ const templatesHandler = withAdminAuth(async (request) => {
 
             await query(
                 `INSERT INTO smstemplates 
-                 (name, type, sub_type, payamresan_id, content, message_count, created_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-                [name, type || 'generic', sub_type || 'none', payamresan_id, content || '', message_count]
+                 (name, type, sub_type, payamresan_id, content, message_count, job_id, created_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+                [name, type || 'generic', sub_type || 'none', payamresan_id, content || '', message_count, job_id || null]
             );
             return NextResponse.json({ message: 'الگو با موفقیت ایجاد شد' }, { status: 201 });
         } catch (error) {
@@ -53,13 +53,13 @@ const templatesHandler = withAdminAuth(async (request) => {
             const id = url.searchParams.get('id');
             if (!id) return NextResponse.json({ message: 'آیدی الگو الزامی است' }, { status: 400 });
 
-            const { name, type, sub_type, payamresan_id, content, message_count = 1 } = await request.json();
+            const { name, type, sub_type, payamresan_id, content, message_count = 1, job_id } = await request.json();
 
             const result: any = await query(
                 `UPDATE smstemplates 
-                 SET name = ?, type = ?, sub_type = ?, payamresan_id = ?, content = ?, message_count = ? 
+                 SET name = ?, type = ?, sub_type = ?, payamresan_id = ?, content = ?, message_count = ?, job_id = ? 
                  WHERE id = ?`,
-                [name, type, sub_type || 'none', payamresan_id, content || '', message_count, id]
+                [name, type, sub_type || 'none', payamresan_id, content || '', message_count, job_id || null, id]
             );
 
             if (result.affectedRows === 0) {

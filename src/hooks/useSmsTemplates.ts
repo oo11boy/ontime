@@ -18,22 +18,10 @@ interface SmsTemplatesResponse {
 export const useSmsTemplates = () => {
   return useApiQuery<SmsTemplatesResponse>(
     ["sms-templates"],
-    "/api/smstemplates",
+    "/api/client/smstemplates",
     {
       staleTime: 10 * 60 * 1000, // ۱۰ دقیقه کش — کاملاً معتبر
       // refetchOnWindowFocus: false, ← این خط رو حذف کن (خطا میده)
     }
   );
-};
-
-export const useCreateSmsTemplate = () => {
-  return useApiMutation("POST", "/api/smstemplates", [["sms-templates"]]);
-};
-
-export const useUpdateSmsTemplate = () => {
-  return useApiMutation("PUT", "/api/smstemplates", [["sms-templates"]]);
-};
-
-export const useDeleteSmsTemplate = () => {
-  return useApiMutation("DELETE", "/api/smstemplates", [["sms-templates"]]);
 };

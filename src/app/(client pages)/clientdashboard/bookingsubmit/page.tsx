@@ -80,7 +80,21 @@ export default function NewAppointmentPage() {
     job_id?: number;
     off_days?: number[];
   }>({});
-
+  const [jobs, setJobs] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await fetch("/api/client/jobs/list");
+        const data = await res.json();
+        if (res.ok) {
+          setJobs(data.jobs || []);
+        }
+      } catch (err) {
+        console.error("خطا در دریافت مشاغل:", err);
+      }
+    };
+    fetchJobs();
+  }, []);
   const [unblockModal, setUnblockModal] = useState({
     show: false,
     clientName: "",
@@ -695,6 +709,7 @@ export default function NewAppointmentPage() {
         onConfirmNameChange={handleConfirmNameChange}
         onCancelNameChange={handleCancelNameChange}
         reminderTemplates={reminderTemplates}
+        jobs={jobs}
       />
 
       <Footer userType={userType} />

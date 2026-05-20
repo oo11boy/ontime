@@ -49,7 +49,7 @@ export default function CalendarPage() {
   const queryClient = useQueryClient();
 
   const staffCalendarType = dashboardData?.user?.calendar_type;
-  
+
   const {
     data: bookingsData,
     isLoading,
@@ -57,7 +57,8 @@ export default function CalendarPage() {
     refetch: refetchAppointments,
   } = useBookings();
   const { data: servicesData } = useServices();
-  const { balance: userSmsBalance, isLoading: isLoadingBalance } = useSmsBalance();
+  const { balance: userSmsBalance, isLoading: isLoadingBalance } =
+    useSmsBalance();
   const { mutateAsync: sendBulkSms } = useSendBulkSms();
 
   const { data: userData } = useQuery({
@@ -70,15 +71,16 @@ export default function CalendarPage() {
 
   const allAppointments = useMemo(
     () => (bookingsData?.bookings as Appointment[]) || [],
-    [bookingsData]
+    [bookingsData],
   );
   const services: Service[] = useMemo(
     () => (servicesData?.services as Service[]) || [],
-    [servicesData]
+    [servicesData],
   );
 
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showBulkSmsModal, setShowBulkSmsModal] = useState(false);
   const [selectedDayForSms, setSelectedDayForSms] = useState<Date | null>(null);
@@ -89,15 +91,18 @@ export default function CalendarPage() {
   // بنر اطلاع‌رسانی برای پرسنل
   const showCalendarTypeBanner = userType === "staff" && staffCalendarType;
 
-  const handleUpdateBusinessProfile = async (newName: string, newAddress: string) => {
+  const handleUpdateBusinessProfile = async (
+    newName: string,
+    newAddress: string,
+  ) => {
     try {
       const response = await fetch("/api/client/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          ...userData?.user, 
+        body: JSON.stringify({
+          ...userData?.user,
           business_name: newName,
-          business_address: newAddress 
+          business_address: newAddress,
         }),
       });
       if (response.ok) {
@@ -119,8 +124,8 @@ export default function CalendarPage() {
         typeof app.services === "string"
           ? (app.services as string).split(",").map((s: string) => s.trim())
           : Array.isArray(app.services)
-          ? (app.services as any[]).map((s: any) => String(s).trim())
-          : [];
+            ? (app.services as any[]).map((s: any) => String(s).trim())
+            : [];
       return serviceList.some((s: string) => s === selectedService.trim());
     });
   }, [allAppointments, selectedService]);
@@ -140,13 +145,14 @@ export default function CalendarPage() {
           const persian = gregorianToPersian(date);
           const dayApps = filteredAppointments.filter(
             (app) =>
-              new Date(app.booking_date).toDateString() === date.toDateString()
+              new Date(app.booking_date).toDateString() === date.toDateString(),
           );
           return {
             date,
             jalaliDate: { ...persian },
             isToday: date.toDateString() === today.toDateString(),
-            isPast: date < today && date.toDateString() !== today.toDateString(),
+            isPast:
+              date < today && date.toDateString() !== today.toDateString(),
             isWeekend: persian.weekDay === "جمعه",
             appointments: dayApps,
             hasAppointments: dayApps.length > 0,
@@ -157,7 +163,10 @@ export default function CalendarPage() {
     generateCalendar();
   }, [filteredAppointments]);
 
-  const handleSendBulkSms = async (templateKey: string, appointmentIds: (string | number)[]) => {
+  const handleSendBulkSms = async (
+    templateKey: string,
+    appointmentIds: (string | number)[],
+  ) => {
     const recipients = appointmentIds
       .map((id) => {
         const app = allAppointments.find((a) => a.id === id);
@@ -176,7 +185,7 @@ export default function CalendarPage() {
   const appointmentsForSms = useMemo(() => {
     if (!selectedDayForSms) return [];
     const day = calendarDays.find(
-      (d) => d.date.toDateString() === selectedDayForSms.toDateString()
+      (d) => d.date.toDateString() === selectedDayForSms.toDateString(),
     );
     return (day?.appointments || [])
       .filter((app: Appointment) => app.status === "active")
@@ -202,16 +211,14 @@ export default function CalendarPage() {
           onAddAppointment={() =>
             router.push(
               `/clientdashboard/bookingsubmit?date=${encodeURIComponent(
-                `${todayJalali.year}/${todayJalali.month + 1}/${todayJalali.day}`
-              )}`
+                `${todayJalali.year}/${todayJalali.month + 1}/${todayJalali.day}`,
+              )}`,
             )
           }
           onClearFilter={() => setSelectedService("all")}
         />
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-    
-
           {isLoading ? (
             <div className="text-center py-10 opacity-50 text-sm">
               در حال بارگذاری نوبت‌ها...
@@ -232,8 +239,8 @@ export default function CalendarPage() {
                 onAddAppointment={() =>
                   router.push(
                     `/clientdashboard/bookingsubmit?date=${encodeURIComponent(
-                      `${day.jalaliDate.year}/${day.jalaliDate.month + 1}/${day.jalaliDate.day}`
-                    )}`
+                      `${day.jalaliDate.year}/${day.jalaliDate.month + 1}/${day.jalaliDate.day}`,
+                    )}`,
                   )
                 }
                 onBulkSmsClick={() => {

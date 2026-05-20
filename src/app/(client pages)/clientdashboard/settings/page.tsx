@@ -60,7 +60,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
-const [openTabs, setOpenTabs] = useState<number[]>([1]);
+  const [openTabs, setOpenTabs] = useState<number[]>([1]);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -70,40 +70,40 @@ const [openTabs, setOpenTabs] = useState<number[]>([1]);
     work_shifts: [] as { start: string; end: string }[],
     off_days: [] as number[],
   });
-useEffect(() => {
-  const tab = searchParams.get("tab");
-  let targetId: string | null = null;
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    let targetId: string | null = null;
 
-  if (tab === "shifts") {
-    setOpenTabs([2]);
-    targetId = "tab-2";
-  } else if (tab === "holidays") {
-    setOpenTabs([3]);
-    targetId = "tab-3";
-  } else {
-    setOpenTabs([1]);
-  }
+    if (tab === "shifts") {
+      setOpenTabs([2]);
+      targetId = "tab-2";
+    } else if (tab === "holidays") {
+      setOpenTabs([3]);
+      targetId = "tab-3";
+    } else {
+      setOpenTabs([1]);
+    }
 
-  if (targetId) {
-    setTimeout(() => {
-      const element = document.getElementById(targetId);
-      if (element) {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-        // جبران هدر ثابت (sticky header)
-        window.scrollBy(0, -100);
-      }
-    }, 400);
-  }
-}, [searchParams]);
+    if (targetId) {
+      setTimeout(() => {
+        const element = document.getElementById(targetId);
+        if (element) {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          // جبران هدر ثابت (sticky header)
+          window.scrollBy(0, -100);
+        }
+      }, 400);
+    }
+  }, [searchParams]);
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsPageLoading(true);
         const [jobsRes, userRes] = await Promise.all([
-          fetch("/api/client/jobs/list"),
+          fetch("/api/client/jobs/list/list"),
           fetch("/api/client/settings"),
         ]);
 
@@ -154,7 +154,7 @@ useEffect(() => {
   const updateShift = (
     index: number,
     field: "start" | "end",
-    value: string
+    value: string,
   ) => {
     const newShifts = [...formData.work_shifts];
     newShifts[index][field] = value;
@@ -174,7 +174,7 @@ useEffect(() => {
     setOpenTabs((prev) =>
       prev.includes(tabId)
         ? prev.filter((id) => id !== tabId)
-        : [...prev, tabId]
+        : [...prev, tabId],
     );
   };
 
@@ -490,7 +490,7 @@ useEffect(() => {
               className="rounded-2xl overflow-hidden"
             >
               <button
-              id={`tab-${tab.id}`}
+                id={`tab-${tab.id}`}
                 type="button"
                 onClick={() => toggleTab(tab.id)}
                 className={`w-full p-5 flex items-center justify-between transition-all ${
