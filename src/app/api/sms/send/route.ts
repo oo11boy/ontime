@@ -1,4 +1,3 @@
-// src\app\api\sms\send\route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -36,6 +35,7 @@ export const POST = withAuth(async (req, context) => {
       link,
       address,
       business_phone,
+      phone: bodyPhone,  // دریافت phone از بدنه درخواست
     } = body;
 
     console.log(`[SMS API] درخواست ارسال پیامک (${sms_type}):`, {
@@ -48,6 +48,9 @@ export const POST = withAuth(async (req, context) => {
       booking_time,
       sms_reminder_hours_before,
     });
+    
+    console.log(`[SMS API] body.phone: ${bodyPhone}`);
+    console.log(`[SMS API] body.business_phone: ${business_phone}`);
 
     if (!to_phone || to_phone.replace(/\D/g, "").length < 10) {
       return NextResponse.json(
@@ -64,7 +67,7 @@ export const POST = withAuth(async (req, context) => {
     const userData = Array.isArray(users) ? users[0] : users;
     const salonName = userData?.business_name?.trim() || userData?.name?.trim() || "آن‌تایم";
     const salonAddress = userData?.business_address?.trim() || "";
-    const salonPhone = userData?.phone?.trim() || "";  // شماره شخصی کاربر
+    const salonPhone = userData?.phone?.trim() || "";
 
     const finalSmsCost = Math.max(1, Number(message_count));
 
@@ -153,6 +156,22 @@ export const POST = withAuth(async (req, context) => {
 
     const logId = logResult?.insertId || logResult?.[0]?.insertId;
 
+    // اولویت شماره تلفن: body.phone > business_phone > salonPhone
+    const finalPhoneNumber = bodyPhone || business_phone || salonPhone;
+    
+    const workerParams = {
+      name: name || "مشتری عزیز",
+      date: customDate || booking_date || "",
+      time: customTime || booking_time || "",
+      service: service || "خدمات",
+      link: link || "",
+      salon: salonName,
+      address: address || salonAddress,
+      phone: finalPhoneNumber,
+    };
+
+    console.log(`[SMS API] finalPhoneNumber: ${finalPhoneNumber}`);
+
     try {
       await smsQueue.add(
         "send-sms",
@@ -161,16 +180,7 @@ export const POST = withAuth(async (req, context) => {
           to_phone,
           content: content || null,
           template_key,
-          params: {
-            name: name || "مشتری عزیز",
-            date: customDate || booking_date || "",
-            time: customTime || booking_time || "",
-            service: service || "خدمات",
-            link: link || "",
-            salon: salonName,
-            address: address || salonAddress,
-            phone: business_phone || salonPhone,  // اولویت با business_phone ارسالی، در غیر این صورت phone کاربر
-          },
+          params: workerParams,
           userId,
           staffId,
           cost: finalSmsCost,

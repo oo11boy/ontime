@@ -1,3 +1,5 @@
+// src/app/customer/booking/[token]/page.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -15,10 +17,12 @@ import {
   MapPin,
   Building2,
   Info,
+  AlertCircle,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { formatPersianDate, isTimeInPast } from "@/lib/date-utils";
 import RescheduleModal from "./components/RescheduleModal";
+import CancelReasonModal from "./components/CancelReasonModal";
 
 interface BookingData {
   id: number;
@@ -40,7 +44,8 @@ interface BookingData {
   businessAddress?: string;
   canCancel: boolean;
   canReschedule: boolean;
-  offDays: number[]; // اضافه شده برای هماهنگی با تنظیمات پنل
+  offDays: number[];
+  hasPendingReschedule?: boolean; // اضافه شد
 }
 
 export default function CustomerBookingPage() {
@@ -52,6 +57,7 @@ export default function CustomerBookingPage() {
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
   useEffect(() => {
@@ -81,22 +87,26 @@ export default function CustomerBookingPage() {
     }
   };
 
-  const handleCancelBooking = async () => {
+  // لغو نوبت (با دلیل)
+  const handleCancelWithReason = async (reason: string) => {
     if (!booking || !booking.canCancel) return;
-
-    if (!confirm("آیا مطمئن هستید که می‌خواهید این نوبت را لغو کنید؟")) return;
 
     setIsCancelling(true);
     try {
       const response = await fetch("/api/customer-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, action: "cancel" }),
+        body: JSON.stringify({ 
+          token, 
+          action: "cancel",
+          data: { reason }
+        }),
       });
 
       const data = await response.json();
       if (data.success) {
         toast.success("نوبت شما با موفقیت لغو شد");
+        setShowCancelModal(false);
         fetchBooking();
       } else {
         toast.error(data.message);
@@ -108,7 +118,8 @@ export default function CustomerBookingPage() {
     }
   };
 
-  const handleReschedule = async (newDate: string, newTime: string) => {
+  // تغییر نوبت (ثبت درخواست)
+  const handleRescheduleRequest = async (newDate: string, newTime: string, reason?: string) => {
     try {
       const response = await fetch("/api/customer-booking", {
         method: "POST",
@@ -116,20 +127,21 @@ export default function CustomerBookingPage() {
         body: JSON.stringify({
           token,
           action: "reschedule",
-          data: { newDate, newTime },
+          data: { newDate, newTime, reason },
         }),
       });
 
       const data = await response.json();
       if (data.success) {
-        toast.success("زمان نوبت با موفقیت تغییر یافت");
+        toast.success(data.message);
         setShowRescheduleModal(false);
-        fetchBooking();
+        // رفرش کردن اطلاعات نوبت برای دریافت وضعیت جدید hasPendingReschedule
+        await fetchBooking();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("خطا در تغییر زمان نوبت");
+      toast.error("خطا در ثبت درخواست تغییر زمان");
     }
   };
 
@@ -167,6 +179,9 @@ export default function CustomerBookingPage() {
 
   const isPast = isTimeInPast(booking.date, booking.time);
   const persianDate = formatPersianDate(booking.date);
+  
+  // بررسی آیا درخواست تغییر قبلاً ثبت شده
+  const isRescheduleDisabled = !booking.canReschedule || booking.hasPendingReschedule === true;
 
   return (
     <div
@@ -207,7 +222,7 @@ export default function CustomerBookingPage() {
                   {booking.businessAddress || "آدرس ثبت نشده"}
                 </span>
               </div>
-                    <div className="flex items-center py-2 justify-between">
+              <div className="flex items-center py-2 justify-between">
                 <span className="text-gray-400 pl-2 text-sm">
                   شماره تماس مجموعه:
                 </span>
@@ -366,7 +381,8 @@ export default function CustomerBookingPage() {
         {booking.status === "active" && !isPast && (
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0f1115] via-[#0f1115]/95 to-transparent backdrop-blur-sm z-50">
             <div className="max-w-md mx-auto flex flex-col gap-3">
-              {booking.canReschedule && (
+              {/* دکمه تغییر زمان - فقط اگر امکان تغییر وجود داشته باشد و درخواست در انتظار نداشته باشد */}
+              {booking.canReschedule && !booking.hasPendingReschedule && (
                 <button
                   onClick={() => setShowRescheduleModal(true)}
                   className="w-full h-16 bg-white text-black rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-transform"
@@ -379,9 +395,20 @@ export default function CustomerBookingPage() {
                 </button>
               )}
 
+              {/* نمایش باکس زرد رنگ در صورت وجود درخواست در انتظار */}
+              {booking.hasPendingReschedule && (
+                <div className="w-full p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                  <p className="text-yellow-400 text-sm text-right">
+                    درخواست تغییر زمان شما ثبت شده و در انتظار تایید مدیر است. نتیجه از طریق پیامک اطلاع داده می‌شود.
+                  </p>
+                </div>
+              )}
+
+              {/* دکمه لغو نوبت */}
               {booking.canCancel && (
                 <button
-                  onClick={handleCancelBooking}
+                  onClick={() => setShowCancelModal(true)}
                   disabled={isCancelling}
                   className="w-full h-14 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                 >
@@ -396,15 +423,24 @@ export default function CustomerBookingPage() {
         <div className="h-32" />
       </main>
 
-      {/* Modal Integration */}
+      {/* Modal برای تغییر زمان نوبت */}
       {showRescheduleModal && booking && (
         <RescheduleModal
           currentDate={booking.date}
           currentTime={booking.time}
           customerToken={booking.token}
-          offDays={booking.offDays} // ارسال روزهای تعطیل به مدال تقویم
+          offDays={booking.offDays}
           onClose={() => setShowRescheduleModal(false)}
-          onConfirm={handleReschedule}
+          onConfirm={handleRescheduleRequest}
+        />
+      )}
+
+      {/* Modal برای لغو نوبت با دلیل */}
+      {showCancelModal && booking && (
+        <CancelReasonModal
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={handleCancelWithReason}
+          isProcessing={isCancelling}
         />
       )}
     </div>

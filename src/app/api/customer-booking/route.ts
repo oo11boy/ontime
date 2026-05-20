@@ -1,4 +1,4 @@
-// src/app/api/customer/booking/route.ts
+// src/app/api/customer-booking/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { formatPersianDate } from "@/lib/date-utils";
@@ -19,8 +19,7 @@ interface CustomerBooking {
   created_at: string;
   business_name?: string;
   business_phone?: string;
-  staff_phone?:string
-  
+  staff_phone?: string;
   business_address?: string;
   off_days?: string;
   work_shifts?: string;
@@ -42,33 +41,33 @@ export async function GET(req: NextRequest) {
   try {
     const bookings = await query(
       `SELECT 
-    b.id,
-    b.client_name,
-    b.client_phone,
-    DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,
-    TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time,
-    b.duration_minutes,
-    b.booking_description,
-    b.services,
-    b.status,
-    b.change_count,
-    b.customer_token,
-    b.token_expires_at,
-    b.created_at,
-    b.staff_id,
-    s.phone AS staff_phone,       
-    u.phone AS business_phone,    
-    u.business_name,
-    u.business_address,
-    u.off_days,
-    u.work_shifts,
-    s.calendar_type
-  FROM booking b
-  LEFT JOIN users u ON b.user_id = u.id
-  LEFT JOIN staffs s ON b.staff_id = s.id
-  WHERE b.customer_token = ?
-    AND b.token_expires_at > NOW()
-    AND b.status IN ('active', 'done', 'cancelled')`,
+        b.id,
+        b.client_name,
+        b.client_phone,
+        DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,
+        TIME_FORMAT(b.booking_time, '%H:%i') AS booking_time,
+        b.duration_minutes,
+        b.booking_description,
+        b.services,
+        b.status,
+        b.change_count,
+        b.customer_token,
+        b.token_expires_at,
+        b.created_at,
+        b.staff_id,
+        s.phone AS staff_phone,       
+        u.phone AS business_phone,    
+        u.business_name,
+        u.business_address,
+        u.off_days,
+        u.work_shifts,
+        s.calendar_type
+      FROM booking b
+      LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN staffs s ON b.staff_id = s.id
+      WHERE b.customer_token = ?
+        AND b.token_expires_at > NOW()
+        AND b.status IN ('active', 'done', 'cancelled')`,
       [token],
     );
 
@@ -80,11 +79,16 @@ export async function GET(req: NextRequest) {
     }
 
     const booking = bookings[0] as CustomerBooking;
-
     const offDaysArray = booking.off_days ? JSON.parse(booking.off_days) : [];
-
-    // محاسبه حداکثر تعداد تغییرات مجاز (برای پرسنل مستقل شاید متفاوت باشد)
     const maxChangeCount = 1;
+
+    // بررسی وجود درخواست تغییر در انتظار تایید
+    const pendingChanges = await query(
+      `SELECT id FROM booking_changes 
+       WHERE booking_id = ? AND request_type = 'reschedule' AND status = 'pending'`,
+      [booking.id],
+    );
+    const hasPendingReschedule = pendingChanges.length > 0;
 
     return NextResponse.json({
       success: true,
@@ -108,11 +112,12 @@ export async function GET(req: NextRequest) {
         businessAddress: booking.business_address || "",
         canCancel: booking.status === "active",
         canReschedule:
-          booking.status === "active" && booking.change_count < maxChangeCount,
+          booking.status === "active" && booking.change_count < maxChangeCount && !hasPendingReschedule,
         offDays: offDaysArray,
         staffId: booking.staff_id,
         calendarType: booking.calendar_type,
         contactPhone: booking.staff_phone || booking.business_phone || "",
+        hasPendingReschedule: hasPendingReschedule,
       },
     });
   } catch (error) {
@@ -136,7 +141,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // دریافت اطلاعات نوبت با جزئیات بیشتر (شامل staff_id و calendar_type)
+    // دریافت اطلاعات نوبت
     const bookings = await query(
       `SELECT 
         b.id,
@@ -151,7 +156,10 @@ export async function POST(req: NextRequest) {
         b.duration_minutes,
         u.work_shifts,
         u.off_days,
-        s.calendar_type
+        u.business_name,
+        u.phone as business_phone,
+        s.calendar_type,
+        s.name as staff_name
       FROM booking b
       INNER JOIN users u ON b.user_id = u.id
       LEFT JOIN staffs s ON b.staff_id = s.id
@@ -172,7 +180,7 @@ export async function POST(req: NextRequest) {
     const persianDate = formatPersianDate(booking.booking_date);
     const timeDisplay = booking.booking_time;
 
-    // ==================== عملیات لغو نوبت ====================
+    // ==================== عملیات لغو نوبت (همان لحظه) ====================
     if (action === "cancel") {
       if (booking.status !== "active") {
         return NextResponse.json(
@@ -181,11 +189,15 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const cancelReason = data?.reason || "بدون دلیل";
+
+      // لغو مستقیم نوبت
       await query(
         `UPDATE booking SET status = 'cancelled', customer_token = NULL, updated_at = NOW() WHERE id = ?`,
         [booking.id],
       );
 
+      // ثبت در لاگ پیامک
       await query(
         `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
          VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
@@ -196,23 +208,41 @@ export async function POST(req: NextRequest) {
         ],
       );
 
+      // ثبت نوتیفیکیشن برای رییس
       await query(
         `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
          VALUES (?, ?, 'cancel', ?, NOW())`,
         [
           booking.user_id,
           booking.id,
-          `مشتری (${booking.client_name}) نوبت خود را برای تاریخ ${persianDate} ساعت ${timeDisplay} لغو کرد.`,
+          `مشتری (${booking.client_name}) نوبت خود را برای تاریخ ${persianDate} ساعت ${timeDisplay} لغو کرد. دلیل: ${cancelReason}`,
+        ],
+      );
+
+      // ثبت در جدول booking_changes (برای تاریخچه)
+      await query(
+        `INSERT INTO booking_changes 
+         (booking_id, client_name, client_phone, request_type, 
+          old_date, old_time, reason, status, staff_id, requested_at, processed_at)
+         VALUES (?, ?, ?, 'cancel', ?, ?, ?, 'approved', ?, NOW(), NOW())`,
+        [
+          booking.id,
+          booking.client_name,
+          booking.client_phone,
+          booking.booking_date,
+          booking.booking_time,
+          cancelReason,
+          booking.staff_id,
         ],
       );
 
       return NextResponse.json({
         success: true,
-        message: "نوبت با موفقیت لغو شد",
+        message: "نوبت شما با موفقیت لغو شد",
       });
     }
 
-    // ==================== عملیات تغییر زمان نوبت ====================
+    // ==================== عملیات تغییر زمان نوبت (نیاز به تایید) ====================
     if (action === "reschedule") {
       if (booking.status !== "active") {
         return NextResponse.json(
@@ -231,7 +261,24 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const { newDate, newTime } = data;
+      // بررسی وجود درخواست تغییر در انتظار تایید قبلی
+      const existingPending = await query(
+        `SELECT id FROM booking_changes 
+         WHERE booking_id = ? AND request_type = 'reschedule' AND status = 'pending'`,
+        [booking.id],
+      );
+
+      if (existingPending.length > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "درخواست تغییر زمان قبلی شما در انتظار تایید است. لطفاً صبر کنید.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const { newDate, newTime, reason } = data;
       if (!newDate || !newTime) {
         return NextResponse.json(
           { success: false, message: "تاریخ و زمان جدید الزامی است" },
@@ -239,9 +286,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const newPersianDate = formatPersianDate(newDate);
-
-      // ========== بررسی تداخل بر اساس نوع تقویم ==========
+      // بررسی تداخل زمانی
       let conflictCheckSql = `
         SELECT id FROM booking 
         WHERE user_id = ? AND booking_date = ? AND booking_time = ? AND status = 'active' AND id != ?
@@ -253,18 +298,13 @@ export async function POST(req: NextRequest) {
         booking.id,
       ];
 
-      // اگر نوبت متعلق به پرسنل است
       if (booking.staff_id) {
         const calendarType = booking.calendar_type;
-
         if (calendarType === "independent") {
-          // پرسنل مستقل: فقط تداخل با نوبت‌های خودش
           conflictCheckSql += " AND staff_id = ?";
           conflictParams.push(booking.staff_id);
         }
-        // پرسنل هماهنگ (synced): تداخل با نوبت‌های رییس و خودش (همان شرط اصلی)
       } else {
-        // نوبت متعلق به رییس: فقط تداخل با نوبت‌های رییس و پرسنل هماهنگ
         conflictCheckSql += ` AND (
           staff_id IS NULL 
           OR staff_id IN (
@@ -279,44 +319,37 @@ export async function POST(req: NextRequest) {
 
       if (conflicts.length > 0) {
         return NextResponse.json(
-          { success: false, message: "متأسفانه این زمان در همین لحظه رزرو شد" },
+          {
+            success: false,
+            message: "متأسفانه این زمان در همین لحظه رزرو شده است",
+          },
           { status: 400 },
         );
       }
 
-      // به‌روزرسانی نوبت
+      // ثبت درخواست تغییر زمان در جدول booking_changes
       await query(
-        `UPDATE booking 
-         SET booking_date = ?, booking_time = ?, change_count = change_count + 1, updated_at = NOW()
-         WHERE id = ?`,
-        [newDate, newTime, booking.id],
-      );
-
-      // ثبت در لاگ پیامک
-      await query(
-        `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
-         VALUES (?, ?, ?, 'reschedule', 'sent', NOW())`,
+        `INSERT INTO booking_changes 
+         (booking_id, client_name, client_phone, request_type, 
+          old_date, old_time, new_date, new_time, reason, staff_id, requested_at)
+         VALUES (?, ?, ?, 'reschedule', ?, ?, ?, ?, ?, ?, NOW())`,
         [
-          booking.user_id,
-          booking.client_phone,
-          `زمان نوبت شما تغییر کرد. تاریخ جدید: ${newPersianDate} - زمان جدید: ${newTime}`,
-        ],
-      );
-
-      // ثبت نوتیفیکیشن برای رییس
-      await query(
-        `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
-         VALUES (?, ?, 'reschedule', ?, NOW())`,
-        [
-          booking.user_id,
           booking.id,
-          `مشتری (${booking.client_name}) زمان نوبت خود را به ${newPersianDate} ساعت ${newTime} تغییر داد.`,
+          booking.client_name,
+          booking.client_phone,
+          booking.booking_date,
+          booking.booking_time,
+          newDate,
+          newTime,
+          reason || "درخواست تغییر زمان نوبت توسط مشتری",
+          booking.staff_id,
         ],
       );
 
       return NextResponse.json({
         success: true,
-        message: "زمان نوبت با موفقیت تغییر یافت",
+        message: "درخواست تغییر زمان نوبت با موفقیت ثبت شد. نتیجه درخواست شما از طریق پیامک اطلاع داده می‌شود.",
+        requires_approval: true,
       });
     }
 

@@ -8,7 +8,7 @@ const redisConnection = new Redis(
   {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
-  }
+  },
 );
 
 // تعریف صف
@@ -24,10 +24,17 @@ export const smsQueue = new Queue("sms", {
 });
 
 // تابع بازگرداندن اعتبار پیامک
-async function refundSmsCost(logId: number, cost: number, userId: number, staffId: number | null = null) {
+async function refundSmsCost(
+  logId: number,
+  cost: number,
+  userId: number,
+  staffId: number | null = null,
+) {
   try {
-    console.log(`💰 Refunding ${cost} SMS credits for log ${logId} (User: ${userId}, Staff: ${staffId || "N/A"})`);
-    
+    console.log(
+      `💰 Refunding ${cost} SMS credits for log ${logId} (User: ${userId}, Staff: ${staffId || "N/A"})`,
+    );
+
     if (staffId) {
       await query(
         `UPDATE staffs 
@@ -35,62 +42,76 @@ async function refundSmsCost(logId: number, cost: number, userId: number, staffI
              sms_used = sms_used - ?,
              updated_at = NOW()
          WHERE id = ? AND owner_user_id = ?`,
-        [cost, cost, staffId, userId]
+        [cost, cost, staffId, userId],
       );
-      
+
       await query(
         `INSERT INTO credit_transfer_log 
          (from_user_id, to_user_id, amount, reason, related_staff_id, created_at)
          VALUES (?, ?, ?, 'refund', ?, NOW())`,
-        [userId, staffId, cost, staffId]
+        [userId, staffId, cost, staffId],
       );
     } else {
       let remainingRefund = cost;
-      
+
       const recentPackages = await query<any>(
         `SELECT id, remaining_sms FROM smspurchase 
          WHERE user_id = ? AND type = 'one_time_sms' AND status = 'active'
          AND remaining_sms > 0
          ORDER BY created_at DESC`,
-        [userId]
+        [userId],
       );
-      
+
       for (const pkg of recentPackages) {
         if (remainingRefund <= 0) break;
         await query(
           `UPDATE smspurchase SET remaining_sms = remaining_sms + ? WHERE id = ?`,
-          [remainingRefund, pkg.id]
+          [remainingRefund, pkg.id],
         );
         remainingRefund = 0;
       }
-      
+
       if (remainingRefund > 0) {
         await query(
           `UPDATE users SET sms_balance = sms_balance + ? WHERE id = ?`,
-          [remainingRefund, userId]
+          [remainingRefund, userId],
         );
       }
     }
-    
+
     await query(
       `UPDATE smslog SET status = 'refunded', error_message = CONCAT(error_message, ' - اعتبار برگشت داده شد') WHERE id = ?`,
-      [logId]
+      [logId],
     );
-    
+
     console.log(`✅ Successfully refunded ${cost} credits for log ${logId}`);
   } catch (refundError) {
-    console.error(`❌ Failed to refund SMS cost for log ${logId}:`, refundError);
+    console.error(
+      `❌ Failed to refund SMS cost for log ${logId}:`,
+      refundError,
+    );
   }
 }
 
 // تابع اصلی ارسال پیامک از طریق IPPanel
 async function sendToIPPANEL(jobData: any) {
-  const { logId, to_phone, template_key, params, userId, staffId, cost, scheduled_at } = jobData;
-  
+  const {
+    logId,
+    to_phone,
+    template_key,
+    params,
+    userId,
+    staffId,
+    cost,
+    scheduled_at,
+  } = jobData;
+
   if (scheduled_at) {
-    console.log(`⏰ Executing scheduled SMS at ${new Date(scheduled_at).toISOString()}`);
+    console.log(
+      `⏰ Executing scheduled SMS at ${new Date(scheduled_at).toISOString()}`,
+    );
   }
-  
+
   const IP_PANEL_API_KEY = process.env.IP_PANEL_API_KEY;
   const SENDER_NUMBER = process.env.SENDER_NUMBER || "+983000505";
 
@@ -101,14 +122,18 @@ async function sendToIPPANEL(jobData: any) {
     return;
   }
 
-  console.log(`⏰ Reminder: ${jobData.reminder_hours_before || 0} hours before booking`);
-  
+  console.log(
+    `⏰ Reminder: ${jobData.reminder_hours_before || 0} hours before booking`,
+  );
+
   let status: "sent" | "failed" = "failed";
   let messageId: string | null = null;
   let errorMsg: string | null = null;
 
   try {
-    console.log(`🚀 [Worker] Processing SMS for: ${to_phone} (LogID: ${logId}) | Template: ${template_key}`);
+    console.log(
+      `🚀 [Worker] Processing SMS for: ${to_phone} (LogID: ${logId}) | Template: ${template_key}`,
+    );
 
     // استانداردسازی شماره
     const cleanPhone = to_phone.replace(/\D/g, "").slice(-10);
@@ -130,7 +155,7 @@ async function sendToIPPANEL(jobData: any) {
       link: params?.link?.trim() || "",
       salon: params?.salon?.trim() || "آن‌تایم",
       address: params?.address?.trim() || "",
-      phone: params?.phone?.trim() || "",  // شماره تلفن کسب و کار
+      phone: params?.phone?.trim() || "", // شماره تلفن کسب و کار
     };
 
     const response = await fetch("https://edge.ippanel.com/v1/api/send", {
@@ -155,7 +180,7 @@ async function sendToIPPANEL(jobData: any) {
         result.data?.message_outbox_ids?.[0] ||
           result.data?.bulk_id ||
           result.data?.id ||
-          "sent"
+          "sent",
       );
       status = "sent";
       console.log(`✅ SMS Sent Successfully to ${to_phone}. ID: ${messageId}`);
@@ -174,7 +199,7 @@ async function sendToIPPANEL(jobData: any) {
   }
 
   await updateLogStatus(logId, status, messageId, errorMsg);
-  
+
   if (status === "failed") {
     await refundSmsCost(logId, cost, userId, staffId);
   }
@@ -185,14 +210,14 @@ async function updateLogStatus(
   logId: number,
   status: "sent" | "failed",
   messageId: string | null,
-  errorMsg: string | null
+  errorMsg: string | null,
 ) {
   try {
     await query(
       `UPDATE smslog 
        SET status = ?, message_id = ?, error_message = ? 
        WHERE id = ?`,
-      [status, messageId || null, errorMsg || null, logId]
+      [status, messageId || null, errorMsg || null, logId],
     );
   } catch (dbErr) {
     console.error(`❌ DB Update Fail (LogID: ${logId}):`, dbErr);
@@ -213,21 +238,24 @@ if (!(global as any)[workerGlobalKey]) {
       concurrency: 5,
       removeOnComplete: { count: 200 },
       removeOnFail: { count: 1000 },
-    }
+    },
   );
 
   (global as any)[workerGlobalKey].on("completed", (job: Job) => {
     console.log(`✅ Job ${job.id} completed successfully`);
   });
 
-  (global as any)[workerGlobalKey].on("failed", async (job: Job, err: Error) => {
-    console.error(`❌ Job ${job?.id} failed after all retries:`, err.message);
-    
-    if (job) {
-      const { logId, cost, userId, staffId } = job.data;
-      await refundSmsCost(logId, cost, userId, staffId);
-    }
-  });
+  (global as any)[workerGlobalKey].on(
+    "failed",
+    async (job: Job, err: Error) => {
+      console.error(`❌ Job ${job?.id} failed after all retries:`, err.message);
+
+      if (job) {
+        const { logId, cost, userId, staffId } = job.data;
+        await refundSmsCost(logId, cost, userId, staffId);
+      }
+    },
+  );
 
   console.log("🛠 SMS Worker Started with Concurrency: 5");
 }

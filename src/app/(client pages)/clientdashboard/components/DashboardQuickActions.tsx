@@ -15,6 +15,7 @@ import {
   MessageCircle,
   MessageSquare,
   FileText,
+  CalendarClock,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -108,6 +109,15 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
   color: "#10b981",
   bg: "rgba(16,185,129,0.1)",
 },
+{
+  id: "booking-changes",
+  label: "تغییرات نوبت",
+  icon: CalendarClock,
+  href: "/clientdashboard/booking-changes",
+  color: "#10b981",
+  bg: "rgba(16,185,129,0.1)",
+}
+
   ];
 
   const staffsactions = [
@@ -151,6 +161,14 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
   color: "#10b981",
   bg: "rgba(16,185,129,0.1)",
 },
+{
+  id: "booking-changes",
+  label: "تغییرات نوبت",
+  icon: CalendarClock,
+  href: "/clientdashboard/booking-changes",
+  color: "#10b981",
+  bg: "rgba(16,185,129,0.1)",
+}
   ];
   return (
     <div className="w-full px-4 py-6" dir="rtl">
