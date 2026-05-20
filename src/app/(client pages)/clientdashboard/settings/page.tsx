@@ -103,7 +103,7 @@ export default function SettingsPage() {
       try {
         setIsPageLoading(true);
         const [jobsRes, userRes] = await Promise.all([
-          fetch("/api/client/jobs/list/list"),
+          fetch("/api/client/jobs/list"),
           fetch("/api/client/settings"),
         ]);
 

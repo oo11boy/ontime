@@ -11,6 +11,7 @@ export async function GET() {
     return NextResponse.json({
       jobs: jobs.map(job => ({
         id: job.id,
+        name:job.persian_name,
         persian_name: job.persian_name,  // ← نام فارسی
         english_name: job.english_name   // ← نام انگلیسی
       }))

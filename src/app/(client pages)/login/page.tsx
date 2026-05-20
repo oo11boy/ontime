@@ -24,7 +24,7 @@ export default function LoginPage(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
+  const [jobs, setJobs] = useState<{ id: number; persian_name: string }[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -47,14 +47,14 @@ export default function LoginPage(): JSX.Element {
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const res = await fetch("/api/client/jobs/list/list");
+        const res = await fetch("/api/client/jobs/list");
         const data = await res.json();
         setJobs(data.jobs || []);
       } catch {
         setJobs([
-          { id: 1, name: "آرایشگر" },
-          { id: 2, name: "وکیل" },
-          { id: 3, name: "دندان‌پزشک" },
+          { id: 1, persian_name: "آرایشگر" },
+          { id: 2, persian_name: "وکیل" },
+          { id: 3, persian_name: "دندان‌پزشک" },
         ]);
       }
     };
@@ -118,7 +118,6 @@ export default function LoginPage(): JSX.Element {
       setLoading(false);
     }
   };
-
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d?$/.test(value)) return;
     const currentOtpArr = otp.split("");
@@ -377,11 +376,11 @@ export default function LoginPage(): JSX.Element {
                       className="w-full h-16 bg-[#1a1d23] border border-white/10 rounded-2xl pr-14 pl-6 text-lg font-bold appearance-none focus:border-emerald-500/50 outline-none transition-all"
                     >
                       <option value="">انتخاب تخصص...</option>
-                      {jobs.map((j) => (
+                      {jobs.map((j) => 
                         <option key={j.id} value={j.id}>
-                          {j.name}
+                          { j.persian_name}
                         </option>
-                      ))}
+                      )}
                     </select>
                   </div>
                 </div>
