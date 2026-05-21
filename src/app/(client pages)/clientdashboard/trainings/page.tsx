@@ -142,7 +142,7 @@ export default function TrainingsPage() {
             <p className="text-gray-500 dark:text-gray-400 mt-2">سعی کنید با عبارت دیگری جستجو کنید</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2  gap-4 sm:gap-6">
             {filteredVideos.map((video, index) => (
               <motion.div key={video.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.05, 0.5) }} onClick={() => setSelectedVideo(video)}
