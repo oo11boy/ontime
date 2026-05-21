@@ -11,6 +11,7 @@ import {
   Smartphone,
   ArrowLeft,
   Book,
+  Briefcase,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,7 +42,9 @@ export default function BeautyNavigation(): React.JSX.Element {
     { href: "#sms", label: "سیستم پیامک", icon: <Smartphone size={18} /> },
     { href: "#pricing", label: "پلن‌ها", icon: <CreditCard size={18} /> },
     { href: "#faq", label: "سوالات متداول", icon: <HelpCircle size={18} /> },
-    { href: "/blog", label: "مجله آنتایم", icon: <Book size={18} /> },
+    { href: "../blog", label: "مجله آنتایم", icon: <Book size={18} /> },
+      { href: "../industries", label: "کسب و کارها", icon: <Briefcase size={18} /> },  // ← اصلاح شده
+
   ];
 
   return (

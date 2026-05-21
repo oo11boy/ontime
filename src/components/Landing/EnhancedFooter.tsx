@@ -8,6 +8,8 @@ import {
   ShieldCheck,
   Sparkles,
   Scissors,
+  Check,
+  CheckCircle2Icon,
 } from "lucide-react";
 import React from "react";
 import Link from "next/link";
@@ -18,6 +20,17 @@ export default function EnhancedFooter(): React.JSX.Element {
   const currentYear = new Date().toLocaleDateString("fa-IR", {
     year: "numeric",
   });
+  const AparatIcon = ({ size = 18 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+  </svg>
+);
 
   const baseUrl = "https://ontimeapp.ir";
 
@@ -37,6 +50,8 @@ export default function EnhancedFooter(): React.JSX.Element {
     sameAs: [
       "https://instagram.com/ontimeapp.ir",
       "https://t.me/ontime_sup",
+      "https://ble.ir/ontimeapp",
+      "https://www.aparat.com/ontimeapp"
     ],
     contactPoint: {
       "@type": "ContactPoint",
@@ -153,28 +168,38 @@ export default function EnhancedFooter(): React.JSX.Element {
                 hoverColor="hover:bg-blue-500"
                 href="https://t.me/ontime_sup"
               />
+                    <SocialIcon
+                icon={<CheckCircle2Icon size={20} />}
+                label="کانال بله آنتایم"
+                hoverColor="hover:bg-blue-500"
+                href="https://ble.ir/ontimeapp"
+              />
+                     <SocialIcon
+                icon={< AparatIcon/>}
+                label="کانال آپارات آنتایم"
+                hoverColor="hover:bg-blue-500"
+                href="https://www.aparat.com/ontimeapp"
+              />
             </div>
           </div>
 
           {/* بخش محصولات و لندینگ‌های تخصصی */}
           <div>
-            <FooterHeader title="محصولات تخصصی" color="bg-blue-500" />
+            <FooterHeader title="کسب و کار ها" color="bg-blue-500" />
             <ul className="space-y-4 font-bold text-sm">
               <FooterLink href="/industries/beauty-salon">
                 <div className="flex items-center gap-2">
                   <Scissors size={14} className="text-pink-500" />
-                  مدیریت سالن زیبایی
+             نوبت دهی برای سالن های زیبایی و آرایشگاه
                 </div>
               </FooterLink>
               <FooterLink href="/industries/nail-artist">
                 <div className="flex items-center gap-2">
                   <Sparkles size={14} className="text-rose-400" />
-                  پنل اختصاصی ناخن‌کار
+               نوبت دهی برای ناخن کارها
                 </div>
               </FooterLink>
-              <FooterLink href="#">نوبت‌دهی مراکز پزشکی</FooterLink>
-              <FooterLink href="#">رزرو مجموعه‌های ورزشی</FooterLink>
-              <FooterLink href="#">سیستم مراکز آموزشی</FooterLink>
+             
             </ul>
           </div>
 
@@ -182,11 +207,10 @@ export default function EnhancedFooter(): React.JSX.Element {
           <div>
             <FooterHeader title="راهنما و منابع" color="bg-indigo-500" />
             <ul className="space-y-4 font-bold text-sm">
-              <FooterLink href="#">مرکز آموزش</FooterLink>
-              <FooterLink href="/blog">وبلاگ و اخبار</FooterLink>
-              <FooterLink href="#">سوالات متداول</FooterLink>
-              <FooterLink href="#">قوانین و مقررات</FooterLink>
-              <FooterLink href="#">حریم خصوصی</FooterLink>
+              <FooterLink href="../trainings">مرکز آموزش</FooterLink>
+              <FooterLink href="../blog">وبلاگ و اخبار</FooterLink>
+              <FooterLink href="../#faq">سوالات متداول</FooterLink>
+             
             </ul>
           </div>
 
@@ -194,12 +218,12 @@ export default function EnhancedFooter(): React.JSX.Element {
           <div>
             <FooterHeader title="ارتباط با ما" color="bg-emerald-500" />
             <ul className="space-y-6 font-bold text-sm">
-              <li className="flex items-center gap-4 group cursor-pointer text-slate-300 hover:text-white transition-all">
+              {/* <li className="flex items-center gap-4 group cursor-pointer text-slate-300 hover:text-white transition-all">
                 <div className="bg-white/5 p-2.5 rounded-xl group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
                   <Phone size={18} aria-hidden="true" />
                 </div>
                 <span className="tabular-nums text-base">۰۹۹۸۱۳۹۴۸۳۲</span>
-              </li>
+              </li> */}
               <li className="flex items-center gap-4 group cursor-pointer text-slate-300 hover:text-white transition-all">
                 <div className="bg-white/5 p-2.5 rounded-xl group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
                   <Mail size={18} aria-hidden="true" />
@@ -238,7 +262,7 @@ export default function EnhancedFooter(): React.JSX.Element {
             <p className="text-[11px] font-bold text-slate-400">
               طراحی و توسعه توسط{" "}
               <a
-                href="https://unicodewebdesign.com"
+                href="https://unicodewebdesign.ir"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"

@@ -12,7 +12,18 @@ export default function robots(): MetadataRoute.Robots {
     "PerplexityBot",
     "MetaExternalAgent",
     "Applebot-Extended",
-    "CCBot",
+    "OAI-SearchBot",
+    "cohere-ai",
+    // ربات‌های موتورهای جستجو
+    "Googlebot",
+    "Bingbot",
+    "YandexBot",
+    "DuckDuckBot",
+    "Baiduspider",
+    // ربات‌های ایرانی
+    "ParsijooBot",
+    "SazitoBot",
+    "YaazahBot",
   ];
 
   return {
@@ -20,7 +31,15 @@ export default function robots(): MetadataRoute.Robots {
       {
         // دسترسی هوش مصنوعی به محتوای متنی جهت درک بیزینس
         userAgent: aiBots,
-        allow: ["/", "/blog", "/blog/", "/industries/"],
+        allow: [
+          "/",
+          "/blog",
+          "/blog/",
+          "/industries/",
+          "/trainings",
+          "/industries",
+          "/trainings/",
+        ],
         disallow: [
           "/admindashboard",
           "/clientdashboard",
@@ -37,6 +56,9 @@ export default function robots(): MetadataRoute.Robots {
           "/blog",
           "/blog/",
           "/industries/", // اجازه به لندینگ‌های تخصصی مثل آرایشگری
+          "/trainings",
+          "/industries",
+          "/trainings/",
           "/_next/static/",
           "/images/", // بسیار مهم: اجازه به گوگل برای ایندکس تصاویر گالری شما
           "/icons/",

@@ -10,7 +10,8 @@ import {
   Smartphone,
   ArrowLeft,
   Book,
-  Scissors
+  Scissors,
+  Briefcase
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,7 +40,9 @@ export default function NailNavigation(): React.JSX.Element {
     { href: "#sms", label: "اطلاع‌رسانی ترمیم", icon: <Smartphone size={18} /> },
     { href: "#pricing", label: "اشتراک‌ها", icon: <CreditCard size={18} /> },
     { href: "#faq", label: "سوالات ناخن‌کاران", icon: <HelpCircle size={18} /> },
-    { href: "/blog", label: "مجله تخصصی", icon: <Book size={18} /> },
+    { href: "../blog", label: "مجله تخصصی", icon: <Book size={18} /> },
+      { href: "../industries", label: "کسب و کارها", icon: <Briefcase size={18} /> },  // ← اصلاح شده
+
   ];
 
   return (

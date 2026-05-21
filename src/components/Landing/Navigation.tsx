@@ -11,6 +11,8 @@ import {
   Workflow,
   ArrowLeft,
   Book,
+  Briefcase,
+  GraduationCap,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,14 +38,15 @@ export default function Navigation(): React.JSX.Element {
     }
   }, [isOpen]);
 
-  const menuItems = [
-    { href: "../#features", label: "امکانات", icon: <Sparkles size={18} /> },
-    { href: "../#pricing", label: "تعرفه‌ها", icon: <CreditCard size={18} /> },
-    { href: "../#roi", label: "ماشین حساب", icon: <Workflow size={18} /> },
-    { href: "../#faq", label: "سوالات متداول", icon: <HelpCircle size={18} /> },
-    { href: "../#industries", label: "درباره آنتایم", icon: <Building size={18} /> },
-    { href: "../blog", label: "مجله آنتایم", icon: <Book size={18} /> },
-  ];
+const menuItems = [
+ { href: "../industries", label: "کسب و کارها", icon: <Briefcase size={18} /> },
+  { href: "../blog", label: "مجله آنتایم", icon: <Book size={18} /> },
+  { href: "../#pricing", label: "تعرفه‌ها", icon: <CreditCard size={18} /> },
+  { href: "../#faq", label: "سوالات متداول", icon: <HelpCircle size={18} /> },
+  { href: "../trainings", label: "آموزش", icon: <GraduationCap size={18} /> },
+ 
+  { href: "../#industries", label: "درباره آنتایم", icon: <Building size={18} /> }
+];
 
   return (
     <nav
