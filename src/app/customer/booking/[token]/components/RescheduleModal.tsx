@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { X, Clock, Calendar as CalendarIcon, ChevronLeft, Lock, AlertTriangle, Briefcase, Users, Sun, Sunset, Moon } from "lucide-react";
+import { X, Clock, Calendar as CalendarIcon, ChevronLeft, Lock, AlertTriangle, Briefcase, Users, Sun, Sunset, Moon, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import {
@@ -101,30 +101,46 @@ export default function RescheduleModal({
       setAvailableTimes(data.availableTimes || []);
       setBookedTimes(data.bookedTimes || []);
       
-      // پردازش شیفت‌های کاری - اطمینان از وجود name
-      const shifts = (data.workShifts || [
-        { start: "08:00", end: "22:00" },
-      
-      ]).map((shift: any) => {
-        const startHour = parseInt(shift.start.split(":")[0]);
-        let name = "شیفت کاری";
-        
-        if (startHour >= 0 && startHour < 12) {
-          name = "شیفت صبح";
-        } else if (startHour >= 12 && startHour < 16) {
-          name = "شیفت ظهر";
-        } else if (startHour >= 16 && startHour < 20) {
-          name = "شیفت عصر";
-        } else if (startHour >= 20) {
-          name = "شیفت شب";
-        }
-        
-        return {
-          start: shift.start,
-          end: shift.end,
-          name: shift.name || name
-        };
-      });
+// پردازش شیفت‌های کاری - نامگذاری هوشمندتر
+const shifts = (data.workShifts || [
+  { start: "08:00", end: "22:00" },
+]).map((shift: any) => {
+  const startHour = parseInt(shift.start.split(":")[0]);
+  const endHour = parseInt(shift.end.split(":")[0]);
+  let name = "شیفت کاری";
+  
+  // اگر شیفت بیشتر از 6 ساعت باشد، از نام "شیفت کامل" استفاده کن
+  const duration = endHour - startHour;
+  const isLongShift = duration > 6;
+  
+  if (isLongShift) {
+    // شیفت‌های طولانی
+    if (startHour >= 6 && startHour <= 10 && endHour >= 14) {
+      name = "شیفت کامل (صبح تا عصر)";
+    } else if (startHour >= 10 && startHour <= 14 && endHour >= 18) {
+      name = "شیفت کامل (ظهر تا شب)";
+    } else {
+      name = "شیفت کاری تمام‌وقت";
+    }
+  } else {
+    // شیفت‌های کوتاه (کمتر از 6 ساعت)
+    if (startHour >= 0 && startHour < 12) {
+      name = "شیفت صبح";
+    } else if (startHour >= 12 && startHour < 16) {
+      name = "شیفت ظهر";
+    } else if (startHour >= 16 && startHour < 20) {
+      name = "شیفت عصر";
+    } else if (startHour >= 20) {
+      name = "شیفت شب";
+    }
+  }
+  
+  return {
+    start: shift.start,
+    end: shift.end,
+    name: shift.name || name
+  };
+});
       
       setWorkShifts(shifts);
     } catch (err: any) {
@@ -366,23 +382,8 @@ export default function RescheduleModal({
               
               <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
                 {/* دو کادر ساعت و دقیقه */}
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <div className="flex-1">
-                    <input
-                      ref={hourInputRef}
-                      type="text"
-                      value={hour}
-                      onChange={handleHourChange}
-                      onKeyPress={(e) => handleKeyPress(e, "hour")}
-                      placeholder="ساعت"
-                      className="w-full text-center px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white text-2xl font-bold placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
-                      dir="ltr"
-                      maxLength={2}
-                    />
-                    <p className="text-center text-xs text-gray-500 mt-1">0-23</p>
-                  </div>
-
-                  <div className="text-3xl font-bold text-emerald-400">:</div>
+                <div className="flex  items-center justify-center gap-3 mb-4">
+          
 
                   <div className="flex-1">
                     <input
@@ -397,6 +398,21 @@ export default function RescheduleModal({
                       maxLength={2}
                     />
                     <p className="text-center text-xs text-gray-500 mt-1">0-59</p>
+                  </div>
+                  <div className="text-3xl font-bold text-emerald-400">:</div>
+        <div className="flex-1">
+                    <input
+                      ref={hourInputRef}
+                      type="text"
+                      value={hour}
+                      onChange={handleHourChange}
+                      onKeyPress={(e) => handleKeyPress(e, "hour")}
+                      placeholder="ساعت"
+                      className="w-full text-center px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white text-2xl font-bold placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                      dir="ltr"
+                      maxLength={2}
+                    />
+                    <p className="text-center text-xs text-gray-500 mt-1">0-23</p>
                   </div>
                 </div>
 
@@ -571,25 +587,3 @@ export default function RescheduleModal({
   );
 }
 
-// آیکون کمکی
-function RefreshCw(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-      <path d="M21 3v5h-5" />
-      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-      <path d="M3 21v-5h5" />
-    </svg>
-  );
-}

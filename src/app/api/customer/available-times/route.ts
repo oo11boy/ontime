@@ -91,27 +91,42 @@ export async function GET(req: NextRequest) {
       rawWorkShifts = [{ start: "09:00", end: "13:00" }, { start: "16:00", end: "20:00" }];
     }
 
-    // اضافه کردن name به شیفت‌ها
-    const workShifts = rawWorkShifts.map((shift: { start: string; end: string }) => {
-      const startHour = parseInt(shift.start.split(":")[0]);
-      let name = "شیفت کاری";
-      
-      if (startHour >= 0 && startHour < 12) {
-        name = "شیفت صبح";
-      } else if (startHour >= 12 && startHour < 16) {
-        name = "شیفت ظهر";
-      } else if (startHour >= 16 && startHour < 20) {
-        name = "شیفت عصر";
-      } else if (startHour >= 20) {
-        name = "شیفت شب";
-      }
-      
-      return {
-        start: shift.start,
-        end: shift.end,
-        name: name
-      };
-    });
+// اضافه کردن name به شیفت‌ها
+const workShifts = rawWorkShifts.map((shift: { start: string; end: string }) => {
+  const startHour = parseInt(shift.start.split(":")[0]);
+  const endHour = parseInt(shift.end.split(":")[0]);
+  const duration = endHour - startHour;
+  
+  let name = "شیفت کاری";
+  
+  // اگر شیفت طولانی است (بیش از 6 ساعت)
+  if (duration > 6) {
+    if (startHour >= 6 && startHour <= 10) {
+      name = "شیفت کامل (صبح تا عصر)";
+    } else if (startHour >= 10 && startHour <= 14) {
+      name = "شیفت کامل (ظهر تا شب)";
+    } else {
+      name = "شیفت تمام‌وقت";
+    }
+  } else {
+    // شیفت‌های کوتاه
+    if (startHour >= 0 && startHour < 12) {
+      name = "شیفت صبح";
+    } else if (startHour >= 12 && startHour < 16) {
+      name = "شیفت ظهر";
+    } else if (startHour >= 16 && startHour < 20) {
+      name = "شیفت عصر";
+    } else if (startHour >= 20) {
+      name = "شیفت شب";
+    }
+  }
+  
+  return {
+    start: shift.start,
+    end: shift.end,
+    name: name
+  };
+});
 
     const timeToMinutes = (time: string): number => {
       const [h, m] = time.split(":").map(Number);
