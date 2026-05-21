@@ -17,12 +17,12 @@ import IosInstallPrompt from "./components/IosInstallPrompt";
 import { useUserType } from "@/hooks/useUserType";
 import AnnouncementBanner from "./components/AnnouncementBanner";
 import DownloadAppBanner from "./components/DownloadAppBanner";
+import VideoTrainings from "./components/VideoTrainings";
 
 export default function DashboardPage() {
   const { data: dashboardData, isLoading, error, refetch } = useDashboard();
   const { userType } = useUserType();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [showStaffBanner, setShowStaffBanner] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   // جلوگیری از hydration mismatch برای تم
@@ -92,7 +92,9 @@ export default function DashboardPage() {
             </div>
 
             <DashboardQuickActions userType={userType} />
-
+<div className="mt-8">
+  <VideoTrainings />
+</div>
             <div className="mt-8">
               <DashboardRecentAppointments />
             </div>

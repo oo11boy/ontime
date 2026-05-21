@@ -50,15 +50,16 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       bg: "bg-purple-50 dark:bg-purple-500/10",
       hoverBg: "group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20",
     },
-    {
-      id: 2,
-      label: "آموزش",
-      icon: GraduationCap,
-      onClick: () => setShowModal(true),
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-50 dark:bg-amber-500/10",
-      hoverBg: "group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20",
-    },
+ // جایگزین دکمه آموزش فعلی
+{
+  id: 2,
+  label: "آموزش",
+  icon: GraduationCap,
+  href: "/clientdashboard/trainings", // تغییر به لینک صفحه آموزش
+  color: "text-amber-600 dark:text-amber-400",
+  bg: "bg-amber-50 dark:bg-amber-500/10",
+  hoverBg: "group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20",
+},
     {
       id: 7,
       label: "اطلاعات بیزنس",

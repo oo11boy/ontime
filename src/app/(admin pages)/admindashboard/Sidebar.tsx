@@ -21,6 +21,7 @@ import {
   Bell,
   HelpCircle,
   FileText,
+  Play,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -84,7 +85,7 @@ const menuItems = [
   { href: "/admindashboard/blog", icon: Layers, label: "نوشته‌ها" },
   //{ href: "/admindashboard/comments", icon: MessageSquare, label: "دیدگاه‌ها", badge: "5" },
   { href: "/admindashboard/announcements", icon: Bell, label: "اطلاعیه‌ها" },
-
+{ href: "/admindashboard/video-trainings", icon: Play, label: "آموزش‌های ویدیویی" },
   // ========== مدیریت کاربران ==========
   { title: "مدیریت کاربران" },
   { href: "/admindashboard/clients", icon: Users, label: "کاربران" },
