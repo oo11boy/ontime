@@ -9,7 +9,11 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+# training images
+**/uploads/training/
+**/uploads/**/*.jpg
+**/uploads/**/*.png
+**/uploads/**/*.webp
 # testing
 /coverage
 

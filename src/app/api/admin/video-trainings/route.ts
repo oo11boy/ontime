@@ -1,6 +1,8 @@
 // src/app/api/admin/video-trainings/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { unlink } from 'fs/promises';
+import path from 'path';
 
 interface TrainingVideo {
   id: number;
@@ -64,19 +66,10 @@ export async function POST(request: NextRequest) {
       [title, subtitle || '', video_url, videoId, category || 'عمومی', order_index || 0, cover_image || null]
     );
 
-    // بررسی ساختار result (ممکن است آرایه باشد یا آبجکت با insertId)
-    let insertedId: number | null = null;
-    
-    if (Array.isArray(result) && result.length > 0 && (result as any)[0]?.insertId) {
-      insertedId = (result as any)[0].insertId;
-    } else if ((result as any)?.insertId) {
-      insertedId = (result as any).insertId;
-    }
-
     return NextResponse.json({ 
       success: true, 
       message: 'آموزش با موفقیت اضافه شد', 
-      id: insertedId 
+      id: (result as any).insertId 
     });
   } catch (error) {
     console.error('Error creating training:', error);
@@ -121,6 +114,20 @@ export async function DELETE(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ success: false, message: 'آیدی آموزش الزامی است' }, { status: 400 });
+    }
+
+    // گرفتن اطلاعات برای حذف فایل کاور
+    const videos = await query(`SELECT cover_image FROM video_trainings WHERE id = ?`, [id]);
+    const video = videos && Array.isArray(videos) && videos.length > 0 ? videos[0] as any : null;
+    
+    if (video && video.cover_image) {
+      const filename = video.cover_image.replace('/uploads/', '');
+      const filePath = path.join(process.cwd(), 'public', 'uploads', filename);
+      try {
+        await unlink(filePath);
+      } catch (err) {
+        console.error('Error deleting file:', err);
+      }
     }
 
     await query(`DELETE FROM video_trainings WHERE id = ?`, [id]);
