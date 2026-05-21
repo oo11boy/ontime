@@ -59,7 +59,7 @@ export default function NailNavigation(): React.JSX.Element {
               src="/icons/icon-192.png"
               width={48}
               height={48}
-              alt="لوگو آنتایم نوبت دهی"
+            alt="لوگو اپلیکیشن نوبت دهی ناخن آنتایم" 
               className="object-cover rounded-2xl"
             />
           </div>

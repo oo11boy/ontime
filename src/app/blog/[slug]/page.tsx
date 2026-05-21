@@ -20,42 +20,19 @@ import Script from "next/script";
 
 export const revalidate = 60;
 
-// --- تولید متادیتای پویا برای گوگل و شبکه‌های اجتماعی ---
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const posts: any[] = await query(
-    `SELECT title, description FROM blog_posts WHERE slug = ?`,
-    [slug]
-  );
-  const post = posts[0];
-
-  if (!post) return { title: "مقاله پیدا نشد" };
-
-  const baseUrl = "https://ontimeapp.ir";
-  const title = `${post.title} | مجله تخصصی آنتایم`;
-  const desc =
-    post.description || `مطالعه مقاله ${post.title} در مجله نوبت‌دهی آنتایم`;
-
-  return {
-    title,
-    description: desc,
-    openGraph: {
-      title,
-      description: desc,
-      url: `${baseUrl}/blog/${slug}`,
-      siteName: "آنتایم",
-      locale: "fa_IR",
-      type: "article",
-    },
-    alternates: {
-      canonical: `${baseUrl}/blog/${slug}`,
-    },
-  };
-}
+// ========== تابع استخراج شناسه ویدیوهای آپارات از محتوا ==========
+const extractVideoIds = (html: string): string[] => {
+  if (!html) return [];
+  const videoIds: string[] = [];
+  const pattern = /data-video-id="([^"]+)"/gi;
+  let match;
+  while ((match = pattern.exec(html)) !== null) {
+    if (!videoIds.includes(match[1])) {
+      videoIds.push(match[1]);
+    }
+  }
+  return videoIds;
+};
 
 // ========== تابع پردازش ویدیوهای آپارات با استایل ریسپانسیو ==========
 const processAparatVideos = (html: string): string => {
@@ -82,7 +59,7 @@ const processAparatVideos = (html: string): string => {
           .aparat-video-wrapper .video-container {
             position: relative;
             width: 100%;
-            padding-bottom: 56.25%; /* نسبت 16:9 */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
           }
@@ -94,7 +71,6 @@ const processAparatVideos = (html: string): string => {
             height: 100%;
             border: none;
           }
-          /* ریسپانسیو برای موبایل */
           @media (max-width: 768px) {
             .aparat-video-wrapper {
               margin: 1rem 0;
@@ -107,7 +83,6 @@ const processAparatVideos = (html: string): string => {
               border-radius: 0.5rem;
             }
           }
-          /* حالت تمام صفحه */
           .aparat-video-wrapper iframe:fullscreen {
             width: 100vw;
             height: 100vh;
@@ -124,7 +99,7 @@ const processAparatVideos = (html: string): string => {
             webkitallowfullscreen="true" 
             mozallowfullscreen="true"
             loading="lazy"
-            title="ویدیو از آپارات"
+            title="آموزش تصویری مدیریت پرسنل آنتایم"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           ></iframe>
         </div>
@@ -135,6 +110,88 @@ const processAparatVideos = (html: string): string => {
   return processedHtml;
 };
 
+// ========== تولید متادیتای پویا (بهینه برای سئو) ==========
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const posts: any[] = await query(
+    `SELECT title, description, content, category, author FROM blog_posts WHERE slug = ?`,
+    [slug]
+  );
+  const post = posts[0];
+
+  if (!post) return { title: "مقاله پیدا نشد" };
+
+  const baseUrl = "https://ontimeapp.ir";
+  const title = `${post.title} | مجله تخصصی آنتایم`;
+  const desc = post.description || `مطالعه مقاله ${post.title} در مجله نوبت‌دهی آنتایم`;
+  
+  const videoIds = extractVideoIds(post.content || "");
+  const hasVideo = videoIds.length > 0;
+
+  return {
+    title,
+    description: desc,
+    keywords: [
+      post.category,
+      "مدیریت پرسنل",
+      "سیستم نوبت دهی",
+      "آنتایم",
+      "اپلیکیشن نوبت دهی",
+      "مدیریت کسب و کار",
+    ].join(", "),
+    authors: [{ name: post.author || "تحریریه آنتایم", url: baseUrl }],
+    category: post.category,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
+    openGraph: {
+      title,
+      description: desc,
+      url: `${baseUrl}/blog/${slug}`,
+      siteName: "آنتایم",
+      locale: "fa_IR",
+      type: "article",
+      publishedTime: new Date().toISOString(),
+      authors: [post.author || "تحریریه آنتایم"],
+      tags: [post.category],
+      ...(hasVideo && {
+        videos: videoIds.map(id => `https://www.aparat.com/v/${id}`),
+      }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: desc,
+      site: "@ontimeapp",
+      creator: "@ontimeapp",
+    },
+    alternates: {
+      canonical: `${baseUrl}/blog/${slug}`,
+    },
+    verification: {
+      google: "کد_تایید_گوگل_شما",
+    },
+    other: {
+      "article:published_time": new Date().toISOString(),
+      "article:modified_time": new Date().toISOString(),
+      "article:section": post.category,
+    },
+  };
+}
+
+// ========== کامپوننت اصلی صفحه ==========
 export default async function BlogPostPage({
   params,
 }: {
@@ -159,16 +216,18 @@ export default async function BlogPostPage({
 
   const baseUrl = "https://ontimeapp.ir";
   const formattedDate = new Date(post.created_at).toISOString();
+  const modifiedDate = post.updated_at
+    ? new Date(post.updated_at).toISOString()
+    : formattedDate;
   const displayDate = new Date(post.created_at).toLocaleDateString("fa-IR", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
-  // ۳. پردازش هدینگ‌ها برای TOC و پردازش ویدیوها
+  // ۳. پردازش هدینگ‌ها برای TOC
   const headings: { id: string; title: string; level: number }[] = [];
   
-  // ابتدا هدینگ‌ها را پردازش کن
   let processedContent = post.content || "";
   
   processedContent = processedContent.replace(
@@ -184,17 +243,42 @@ export default async function BlogPostPage({
     }
   );
   
-  // سپس ویدیوهای آپارات را پردازش کن
+  // پردازش ویدیوهای آپارات
   processedContent = processAparatVideos(processedContent);
 
-  // ۴. Sanitize محتوا برای امنیت
+  // ۴. استخراج ویدیوها برای اسکیما
+  const videoIds = extractVideoIds(post.content || "");
+  
+  // ۵. Sanitize محتوا برای امنیت
   const safeContent = DOMPurify.sanitize(processedContent, {
     USE_PROFILES: { html: true },
     ADD_TAGS: ["style", "iframe", "div", "span"],
     ADD_ATTR: ["allowfullscreen", "webkitallowfullscreen", "mozallowfullscreen", "loading", "class", "style", "src", "title", "allow"],
   });
 
-  // ۵. ساختار Schema Markup (JSON-LD)
+  // ۶. ساخت آبجکت‌های ویدیویی برای اسکیما
+  const videoObjects = videoIds.map((videoId, index) => ({
+    "@type": "VideoObject",
+    "@id": `${baseUrl}/blog/${slug}#video-${index + 1}`,
+    name: `آموزش تصویری: ${post.title}`,
+    description: post.description || `ویدیو آموزشی مرتبط با مقاله ${post.title} در آنتایم`,
+    thumbnailUrl: `https://www.aparat.com/public/thumb/${videoId}.jpg`,
+    contentUrl: `https://www.aparat.com/v/${videoId}`,
+    embedUrl: `https://www.aparat.com/video/embed/videohash/${videoId}/vt/frame?titleShow=true`,
+    uploadDate: formattedDate,
+    duration: "PT2M30S",
+    interactionCount: "0",
+    publisher: {
+      "@type": "Organization",
+      name: "آنتایم",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://ontimeapp.ir/icons/icon-192.png",
+      },
+    },
+  }));
+
+  // ۷. ساختار Schema Markup نهایی (JSON-LD) - بهینه برای سئو
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -205,9 +289,7 @@ export default async function BlogPostPage({
         description: post.description || post.title,
         image: "https://ontimeapp.ir/icons/icon-512.png",
         datePublished: formattedDate,
-        dateModified: post.updated_at
-          ? new Date(post.updated_at).toISOString()
-          : formattedDate,
+        dateModified: modifiedDate,
         author: {
           "@type": "Person",
           name: post.author || "تحریریه آنتایم",
@@ -225,7 +307,14 @@ export default async function BlogPostPage({
           "@type": "WebPage",
           "@id": `${baseUrl}/blog/${slug}`,
         },
+        keywords: `${post.category}, مدیریت پرسنل, سیستم نوبت دهی آنتایم`,
+        articleSection: post.category,
+        inLanguage: "fa-IR",
+        ...(videoIds.length > 0 && {
+          video: videoObjects.map(v => v["@id"]),
+        }),
       },
+      ...videoObjects,
       {
         "@type": "BreadcrumbList",
         "@id": `${baseUrl}/blog/${slug}#breadcrumb`,
@@ -251,6 +340,14 @@ export default async function BlogPostPage({
           },
         ],
       },
+      {
+        "@type": "WebPage",
+        "@id": `${baseUrl}/blog/${slug}`,
+        url: `${baseUrl}/blog/${slug}`,
+        name: post.title,
+        isPartOf: { "@id": `${baseUrl}/blog` },
+        breadcrumb: { "@id": `${baseUrl}/blog/${slug}#breadcrumb` },
+      },
     ],
   };
 
@@ -259,11 +356,34 @@ export default async function BlogPostPage({
       dir="rtl"
       className="bg-gray-50 min-h-screen font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-700"
     >
+      {/* اسکیماهای JSON-LD */}
       <Script
         id="article-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        strategy="afterInteractive"
       />
+      
+      {/* اسکیما اضافی برای سازمان (بهبود سئوی برند) */}
+      <Script
+        id="organization-schema"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "آنتایم",
+            url: baseUrl,
+            logo: "https://ontimeapp.ir/icons/icon-512.png",
+            sameAs: [
+              "https://instagram.com/ontimeapp",
+              "https://t.me/ontimeapp",
+            ],
+          }),
+        }}
+      />
+
       <Navigation />
 
       <main className="max-w-7xl mx-auto pt-24 lg:pt-32 pb-20 px-4 sm:px-6 lg:px-8">
@@ -349,7 +469,7 @@ export default async function BlogPostPage({
               />
             </article>
 
-            {/* CTA Box */}
+            {/* CTA Box - بدون تغییر */}
             <div className="mt-8 sm:mt-12 p-6 sm:p-8 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-[1.5rem] sm:rounded-[2rem] lg:rounded-[2.5rem] text-white shadow-2xl shadow-blue-200 relative overflow-hidden group">
               <div className="absolute -bottom-10 -left-10 w-32 sm:w-40 h-32 sm:h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
               <div className="absolute -top-10 -right-10 w-32 sm:w-40 h-32 sm:h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
@@ -374,7 +494,7 @@ export default async function BlogPostPage({
               </div>
             </div>
 
-            {/* مقالات مرتبط */}
+            {/* مقالات مرتبط - بدون تغییر */}
             {relatedPosts.length > 0 && (
               <section className="bg-slate-100/50 p-6 sm:p-8 lg:p-12 rounded-[1.5rem] sm:rounded-[2rem] lg:rounded-[3rem] border border-slate-200/50">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6 sm:mb-8 lg:mb-10">

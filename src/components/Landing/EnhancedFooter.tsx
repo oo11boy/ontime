@@ -2,9 +2,7 @@
 
 import {
   Instagram,
-  Linkedin,
   Mail,
-  MessageSquare,
   Phone,
   Send,
   ShieldCheck,
@@ -14,17 +12,98 @@ import {
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 
 export default function EnhancedFooter(): React.JSX.Element {
   const currentYear = new Date().toLocaleDateString("fa-IR", {
     year: "numeric",
   });
 
+  const baseUrl = "https://ontimeapp.ir";
+
+  // ========== اسکیماهای فوتر (برای کل سایت) ==========
+  
+  // 1. Organization Schema
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${baseUrl}/#organization`,
+    name: "آنتایم",
+    url: baseUrl,
+    logo: {
+      "@type": "ImageObject",
+      url: `${baseUrl}/icons/icon-512.png`,
+    },
+    sameAs: [
+      "https://instagram.com/ontimeapp.ir",
+      "https://t.me/ontime_sup",
+    ],
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+989981394832",
+      contactType: "customer service",
+      availableLanguage: "Persian",
+      email: "ontimeappir@gmail.com",
+    },
+    foundingYear: "2023",
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "IR",
+    },
+  };
+
+  // 2. LocalBusiness Schema (برای کسب‌وکار)
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: "آنتایم",
+    image: `${baseUrl}/icons/icon-512.png`,
+    description: "اپلیکیشن هوشمند نوبت دهی آنلاین و مدیریت مشتریان",
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "IR",
+    },
+    telephone: "+989981394832",
+    priceRange: "رایگان تا ۲,۰۰۰,۰۰۰ تومان",
+    openingHours: "Sa-Th 09:00-20:00",
+  };
+
+  // 3. BreadcrumbList Schema برای فوتر (اختیاری)
+  const footerBreadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "خانه", item: baseUrl },
+      { "@type": "ListItem", position: 2, name: "محصولات تخصصی", item: `${baseUrl}/#industries` },
+      { "@type": "ListItem", position: 3, name: "وبلاگ", item: `${baseUrl}/blog` },
+    ],
+  };
+
   return (
     <footer
       className="bg-slate-950 text-slate-200 py-24 border-t border-white/5 relative overflow-hidden"
       dir="rtl"
     >
+      {/* ========== تزریق اسکیماهای فوتر ========== */}
+      <Script
+        id="footer-organization-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        strategy="afterInteractive"
+      />
+      <Script
+        id="footer-localbusiness-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        strategy="afterInteractive"
+      />
+      <Script
+        id="footer-breadcrumb-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(footerBreadcrumbSchema) }}
+        strategy="afterInteractive"
+      />
+
       {/* Glow Effect background */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full -mr-48 -mb-48 pointer-events-none"></div>
 
@@ -42,7 +121,7 @@ export default function EnhancedFooter(): React.JSX.Element {
                 src="/icons/icon-192.png"
                 width={64}
                 height={64}
-                alt="لوگو آنتایم"
+                alt="لوگو اپلیکیشن نوبت دهی آنلاین آنتایم"
                 className="w-16 h-16 aspect-square object-cover rounded-[1.25rem] group-hover:scale-105 transition-transform duration-500"
               />
               <div className="flex flex-col">
@@ -74,18 +153,6 @@ export default function EnhancedFooter(): React.JSX.Element {
                 hoverColor="hover:bg-blue-500"
                 href="https://t.me/ontime_sup"
               />
-              {/* <SocialIcon
-                icon={<Linkedin size={20} />}
-                label="لینکدین آنتایم"
-                hoverColor="hover:bg-blue-700"
-                href="#"
-              /> */}
-              {/* <SocialIcon
-                icon={<MessageSquare size={20} />}
-                label="واتس‌اپ آنتایم"
-                hoverColor="hover:bg-green-600"
-                href="#"
-              /> */}
             </div>
           </div>
 
@@ -142,7 +209,7 @@ export default function EnhancedFooter(): React.JSX.Element {
               <li className="pt-4 flex gap-4">
                 <Link
                   href="/namad"
-                  aria-label="نماد اعتماد"
+                  aria-label="نماد اعتماد الکترونیکی آنتایم"
                   className="w-full flex flex-col justify-center bg-white/5 rounded-2xl border border-white/10 items-center p-4 gap-3 grayscale hover:grayscale-0 transition-all cursor-pointer group"
                 >
                   <ShieldCheck size={32} className="opacity-60 text-emerald-400 group-hover:scale-110 transition-transform" />
@@ -188,17 +255,14 @@ export default function EnhancedFooter(): React.JSX.Element {
 
 // --- Components کمکی ---
 
-function SocialIcon({
-  icon,
-  hoverColor,
-  label,
-  href,
-}: {
+interface SocialIconProps {
   icon: React.ReactNode;
   hoverColor: string;
   label: string;
   href: string;
-}) {
+}
+
+function SocialIcon({ icon, hoverColor, label, href }: SocialIconProps) {
   return (
     <a
       href={href}

@@ -119,7 +119,7 @@ export default function BeautyNavigation(): React.JSX.Element {
       >
         <div className="flex items-center justify-between p-6 border-b border-slate-50">
           <div className="flex items-center gap-2">
-             <Image src="/icons/icon-192.png" width={32} height={32} alt="logo" className="rounded-lg shadow-sm" />
+             <Image src="/icons/icon-192.png" width={32} height={32} alt="لوگو اپلیکیشن نوبت دهی آرایشگاه آنتایم"  className="rounded-lg shadow-sm" />
              <span className="font-black text-slate-900 italic">پنل مخصوص آرایشگران</span>
           </div>
           <button 

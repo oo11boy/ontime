@@ -218,7 +218,7 @@ export default function CustomerBookingPage() {
         
               <div className="flex items-center gap-1 text-gray-400 text-sm mt-1">
                 <MapPin className="w-3.5 h-3.5" />
-                <span className="truncate max-w-[200px]">
+                <span className="">
                   {booking.businessAddress || "آدرس ثبت نشده"}
                 </span>
               </div>
@@ -305,12 +305,7 @@ export default function CustomerBookingPage() {
               </p>
             </div>
           </div>
-          <div className="mt-4 py-3 px-5 bg-emerald-500/5 rounded-2xl flex items-center justify-between border border-emerald-500/10">
-            <span className="text-sm text-gray-400">مدت زمان تخمینی</span>
-            <span className="font-bold text-sm text-white">
-              {booking.duration} دقیقه
-            </span>
-          </div>
+
         </section>
 
         {/* Services */}

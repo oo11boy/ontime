@@ -1,40 +1,41 @@
 import { MetadataRoute } from "next";
 import { query } from "@/lib/db";
 
-export const revalidate = 0; 
+// ========== خودکار: بدون نیاز به تغییر دستی ==========
+export const revalidate = 86400; // 24 ساعت
+
+// تاریخ ثابت – فقط یک بار در زمان build محاسبه می‌شود
+// اگر در حال توسعه هستید، تاریخ فعلی را می‌گیرد
+const STATIC_DATE = (() => {
+  // در محیط production، تاریخ build را نگه می‌دارد
+  if (process.env.NODE_ENV === "production") {
+    // این مقدار در هر build یکبار محاسبه می‌شود
+    return new Date();
+  }
+  // در محیط development، تاریخ ثابت (برای جلوگیری از تغییر مداوم)
+  return new Date("2025-01-01");
+})();
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://ontimeapp.ir";
 
   try {
-    // ۱. دریافت تمام مقالات
     const posts = (await query(
-      "SELECT slug, created_at FROM blog_posts ORDER BY created_at DESC",
+      "SELECT slug, COALESCE(updated_at, created_at) as last_modified FROM blog_posts ORDER BY created_at DESC",
       []
     )) as any[];
 
-    const lastPostDate =
-      posts && posts.length > 0 ? new Date(posts[0].created_at) : new Date();
+    const lastPostDate = posts?.[0]?.last_modified 
+      ? new Date(posts[0].last_modified) 
+      : STATIC_DATE;
 
-    // ۲. صفحات ثابت سایت (اصلاح شده)
+    // ========== صفحات ثابت – با تاریخ خودکار ==========
     const staticRoutes: MetadataRoute.Sitemap = [
       {
         url: baseUrl,
-        lastModified: new Date(),
+        lastModified: STATIC_DATE,
         changeFrequency: "monthly",
-        priority: 1,
-      },
-      {
-        url: `${baseUrl}/industries/beauty-salon`, // اضافه شدن لندینگ آرایشگری
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.9,
-      },
-            {
-        url: `${baseUrl}/industries/nail-artist`, // اضافه شدن لندینگ آرایشگری
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.9,
+        priority: 1.0,
       },
       {
         url: `${baseUrl}/blog`,
@@ -42,48 +43,51 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily",
         priority: 0.9,
       },
+      {
+        url: `${baseUrl}/industries`,
+        lastModified: STATIC_DATE,
+        changeFrequency: "monthly",
+        priority: 0.8,
+      },
+            {
+        url: `${baseUrl}/trainings`,
+        lastModified: STATIC_DATE,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      },
+      {
+        url: `${baseUrl}/industries/beauty-salon`,
+        lastModified: STATIC_DATE,
+        changeFrequency: "weekly",
+        priority: 0.9,
+      },
+      {
+        url: `${baseUrl}/industries/nail-artist`,
+        lastModified: STATIC_DATE,
+        changeFrequency: "weekly",
+        priority: 0.9,
+      },
     ];
 
-    if (!posts || !Array.isArray(posts)) {
-      return staticRoutes;
-    }
+    if (!posts?.length) return staticRoutes;
 
-    // ۳. تبدیل مقالات به فرمت نقشه سایت
     const dynamicRoutes = posts.map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
-      lastModified: new Date(post.created_at),
+      lastModified: new Date(post.last_modified),
       changeFrequency: "weekly" as const,
-      priority: 0.8,
+      priority: 0.7,
     }));
 
     return [...staticRoutes, ...dynamicRoutes];
+    
   } catch (error) {
-    console.error("Sitemap Auto-Update Error:", error);
+    console.error("Sitemap error:", error);
+    // Fallback: صفحات اصلی
     return [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-        changeFrequency: "monthly",
-        priority: 1,
-      },
-      {
-        url: `${baseUrl}/industries/beauty-salon`, // آدرس رزرو در صورت خطا
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.9,
-      },
-            {
-        url: `${baseUrl}/industries/nail-artist`,
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.9,
-      },
-      {
-        url: `${baseUrl}/blog`,
-        lastModified: new Date(),
-        changeFrequency: "daily",
-        priority: 0.8,
-      },
+      { url: baseUrl, lastModified: STATIC_DATE, changeFrequency: "monthly", priority: 1.0 },
+      { url: `${baseUrl}/blog`, lastModified: STATIC_DATE, changeFrequency: "daily", priority: 0.9 },
+      { url: `${baseUrl}/industries/beauty-salon`, lastModified: STATIC_DATE, changeFrequency: "weekly", priority: 0.9 },
+      { url: `${baseUrl}/industries/nail-artist`, lastModified: STATIC_DATE, changeFrequency: "weekly", priority: 0.9 },
     ];
   }
 }
