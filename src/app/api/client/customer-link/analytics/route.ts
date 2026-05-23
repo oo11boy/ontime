@@ -30,7 +30,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
           conversionRate: 0,
           totalBookings: 0,
           totalReviews: 0,
-          socialClicks: { instagram: 0, telegram: 0, whatsapp: 0 },
+          avgRating: 0,
+          socialClicks: { instagram: 0, telegram: 0, whatsapp: 0, rubika: 0, eitaa: 0, bale: 0, soroush: 0 },
           weeklyVisits: [0, 0, 0, 0, 0, 0, 0],
           deviceStats: { mobile: 0, desktop: 0, tablet: 0 },
           popularHours: [],
@@ -42,12 +43,11 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     const totalVisits = customerLink[0].total_visits || 0;
     const uniqueVisitors = customerLink[0].unique_visitors || 0;
 
-    // 2. بازدید امروز
-    const today = new Date().toISOString().split("T")[0];
+    // 2. بازدید امروز - با استفاده از DATE در دیتابیس
     const todayVisitsResult = await query<any>(
       `SELECT COUNT(*) as count FROM link_visits 
-       WHERE link_id = ? AND DATE(visited_at) = ?`,
-      [linkId, today]
+       WHERE link_id = ? AND DATE(visited_at) = CURDATE()`,
+      [linkId]
     );
     const todayVisits = todayVisitsResult[0]?.count || 0;
 
@@ -81,8 +81,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     const avgRating = reviewsResult[0]?.avg_rating || 0;
 
     // 5. نرخ تبدیل
-    const conversionRate = uniqueVisitors > 0 
-      ? Math.round((totalBookings / uniqueVisitors) * 100) 
+    const conversionRate = totalVisits > 0 
+      ? Math.round((totalBookings / totalVisits) * 100) 
       : 0;
 
     // 6. کلیک روی شبکه‌های اجتماعی
@@ -98,48 +98,51 @@ export const GET = withAuth(async (req: NextRequest, context) => {
       instagram: 0,
       telegram: 0,
       whatsapp: 0,
+      rubika: 0,
+      eitaa: 0,
+      bale: 0,
+      soroush: 0,
     };
     socialClicksResult.forEach((row: any) => {
-      if (row.social_type === "instagram") socialClicks.instagram = row.count;
-      if (row.social_type === "telegram") socialClicks.telegram = row.count;
-      if (row.social_type === "whatsapp") socialClicks.whatsapp = row.count;
+      if (socialClicks.hasOwnProperty(row.social_type)) {
+        socialClicks[row.social_type as keyof typeof socialClicks] = row.count;
+      }
     });
 
-    // 7. بازدیدهای هفتگی/ماهانه
-    let weeklyVisits: number[] = [];
+    // 7. بازدیدهای هفتگی - اصلاح شده
+    let weeklyVisits: number[] = [0, 0, 0, 0, 0, 0, 0];
+    
     if (period === "week") {
+      // گرفتن بازدیدهای 7 روز گذشته با فرمت صحیح
       const weeklyResult = await query<any>(
-        `SELECT DATE(visited_at) as date, COUNT(*) as count 
+        `SELECT 
+          DATE(visited_at) as visit_date, 
+          COUNT(*) as count 
          FROM link_visits 
-         WHERE link_id = ? AND visited_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
-         GROUP BY DATE(visited_at)
-         ORDER BY date ASC`,
+         WHERE link_id = ? 
+           AND visited_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+         GROUP BY DATE(visited_at)`,
         [linkId]
       );
       
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
+      // ساخت آرایه 7 روز (از 6 روز پیش تا امروز)
+      const weekDays = [];
+      for (let i = 6; i >= 0; i--) {
         const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return d.toISOString().split("T")[0];
-      });
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        weekDays.push(dateStr);
+      }
       
-      weeklyVisits = last7Days.map(date => {
-        const found = weeklyResult.find((r: any) => r.date === date);
-        return found ? found.count : 0;
-      });
-    } else {
-      const monthlyResult = await query<any>(
-        `SELECT DAY(visited_at) as day, COUNT(*) as count 
-         FROM link_visits 
-         WHERE link_id = ? AND visited_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
-         GROUP BY DAY(visited_at)
-         ORDER BY day ASC`,
-        [linkId]
-      );
-      
-      weeklyVisits = Array.from({ length: 30 }, (_, i) => {
-        const found = monthlyResult.find((r: any) => r.day === i + 1);
-        return found ? found.count : 0;
+      // پر کردن آرایه بازدیدها
+      weeklyVisits = weekDays.map(date => {
+        const found = weeklyResult.find((r: any) => {
+          const rDate = r.visit_date instanceof Date 
+            ? r.visit_date.toISOString().split('T')[0] 
+            : new Date(r.visit_date).toISOString().split('T')[0];
+          return rDate === date;
+        });
+        return found ? parseInt(found.count) : 0;
       });
     }
 
@@ -171,7 +174,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     );
 
     const popularHours = popularHoursResult.map((row: any) => ({
-      hour: row.hour,
+      hour: row.hour.toString().padStart(2, '0') + ':00',
       count: row.count,
     }));
 

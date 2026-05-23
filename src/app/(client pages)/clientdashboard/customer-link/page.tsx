@@ -416,7 +416,7 @@ export default function CustomerLinkHomePage() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen  pb-20">
       <div className="max-w-2xl mx-auto px-4">
         {/* هدر ساده */}
         <div className="text-center mb-5">

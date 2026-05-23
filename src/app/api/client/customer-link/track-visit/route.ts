@@ -1,12 +1,16 @@
-// src/app/api/client/customer-link/track-visit/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import type { NextRequest } from "next/server";
 
+// تابع برای دریافت زمان تهران
+const getTehranTime = () => {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tehran" }));
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { slug, device_type, referrer, time_on_page } = body;
+    const { slug, device_type, referrer, time_on_page, session_id, custom_time } = body;
 
     if (!slug) {
       return NextResponse.json({ success: false }, { status: 400 });
@@ -24,21 +28,29 @@ export async function POST(req: NextRequest) {
 
     const linkId = link[0].id;
     const userId = link[0].user_id;
+    
+    // استفاده از زمان دلخواه اگر ارسال شده، در غیر این صورت زمان حال
+    let visitTime;
+    if (custom_time) {
+      visitTime = custom_time;
+    } else {
+      visitTime = getTehranTime();
+    }
 
     // ثبت بازدید
     await query(
-      `INSERT INTO link_visits (link_id, user_id, device_type, referrer, time_on_page, visited_at)
-       VALUES (?, ?, ?, ?, ?, NOW())`,
-      [linkId, userId, device_type || "unknown", referrer || null, time_on_page || 0]
+      `INSERT INTO link_visits (link_id, user_id, session_id, device_type, referrer, time_on_page, visited_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [linkId, userId, session_id || null, device_type || "unknown", referrer || null, time_on_page || 0, visitTime]
     );
 
-    // بروزرسانی آمار در جدول customer_links
+    // بروزرسانی آمار
     await query(
       `UPDATE customer_links 
-       SET total_visits = total_visits + 1,
-           unique_visitors = (SELECT COUNT(DISTINCT session_id) FROM link_visits WHERE link_id = ?)
+       SET total_visits = (SELECT COUNT(*) FROM link_visits WHERE link_id = ?),
+           unique_visitors = (SELECT COUNT(DISTINCT session_id) FROM link_visits WHERE link_id = ? AND session_id IS NOT NULL)
        WHERE id = ?`,
-      [linkId, linkId]
+      [linkId, linkId, linkId]
     );
 
     return NextResponse.json({ success: true });

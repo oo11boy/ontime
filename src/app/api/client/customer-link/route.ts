@@ -3,11 +3,14 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
+
 interface CustomerLink {
   id: number;
   slug: string;
   full_url: string;
   business_name: string;
+  province: string | null;
+  city: string | null;
   business_address: string;
   phone: string;
   bio: string;
@@ -23,19 +26,20 @@ interface CustomerLink {
   created_at: string;
   updated_at: string;
 }
+
 // ==================== GET - دریافت لینک اختصاصی ====================
 export const GET = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
   try {
-const result = await query<any>(
-  `SELECT id, slug, full_url, business_name, business_address, phone, bio, logo, avatar_image, cover_image,
-          social_media, services, work_shifts, off_days, total_visits, is_active, 
-          created_at, updated_at
-   FROM customer_links 
-   WHERE user_id = ? AND is_deleted = 0`,
-  [userId]
-);
+    const result = await query<any>(
+      `SELECT id, slug, full_url, business_name, province, city, business_address, phone, bio, logo, avatar_image, cover_image,
+              social_media, services, work_shifts, off_days, total_visits, is_active, 
+              created_at, updated_at
+       FROM customer_links 
+       WHERE user_id = ? AND is_deleted = 0`,
+      [userId]
+    );
 
     const hasLink = result && result.length > 0;
     const link = hasLink ? result[0] : null;
@@ -48,6 +52,8 @@ const result = await query<any>(
         slug: link.slug,
         fullUrl: link.full_url,
         business_name: link.business_name,
+        province: link.province,
+        city: link.city,
         business_address: link.business_address,
         phone: link.phone,
         bio: link.bio,
@@ -82,6 +88,8 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     const {
       slug,
       business_name,
+      province,
+      city,
       business_address,
       phone,
       bio,
@@ -116,17 +124,19 @@ export const POST = withAuth(async (req: NextRequest, context) => {
 
     const fullUrl = `myapp.ir/c/${slug}`;
 
-    // ذخیره لینک اختصاصی
+    // ذخیره لینک اختصاصی با فیلدهای جدید
     await query(
       `INSERT INTO customer_links 
-       (user_id, slug, full_url, business_name, business_address, phone, bio, logo, avatar_image, cover_image,
+       (user_id, slug, full_url, business_name, province, city, business_address, phone, bio, logo, avatar_image, cover_image,
         social_media, services, work_shifts, off_days, total_visits, is_active, is_deleted, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, NOW())`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, NOW())`,
       [
         userId,
         slug,
         fullUrl,
         business_name || null,
+        province || null,
+        city || null,
         business_address || null,
         phone || null,
         bio || null,
@@ -193,6 +203,8 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
     const {
       slug,
       business_name,
+      province,
+      city,
       business_address,
       phone,
       bio,
@@ -206,7 +218,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
     } = body;
 
     // بررسی وجود لینک
-  const existingLink = await query<any>(
+    const existingLink = await query<any>(
       "SELECT id, slug FROM customer_links WHERE user_id = ? AND is_deleted = 0",
       [userId]
     );
@@ -220,10 +232,12 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
     const currentSlug = existingLink[0].slug;
 
-    // بروزرسانی لینک اختصاصی (اسلاگ قابل تغییر نیست)
+    // بروزرسانی لینک اختصاصی با فیلدهای جدید (اسلاگ قابل تغییر نیست)
     await query(
       `UPDATE customer_links 
        SET business_name = ?, 
+           province = ?,
+           city = ?,
            business_address = ?, 
            phone = ?, 
            bio = ?, 
@@ -238,6 +252,8 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
        WHERE user_id = ? AND is_deleted = 0`,
       [
         business_name || null,
+        province || null,
+        city || null,
         business_address || null,
         phone || null,
         bio || null,

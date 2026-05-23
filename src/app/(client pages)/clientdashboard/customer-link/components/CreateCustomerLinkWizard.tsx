@@ -62,6 +62,8 @@ interface SocialMedia {
 
 interface BusinessInfo {
   business_name: string;
+  province: string;
+  city: string;
   business_address: string;
   phone: string;
   bio: string;
@@ -78,6 +80,8 @@ interface CreateCustomerLinkWizardProps {
   existingData?: {
     slug?: string;
     business_name?: string;
+    province?: string;
+    city?: string;
     business_address?: string;
     phone?: string;
     bio?: string;
@@ -116,6 +120,75 @@ const defaultSocialMedia: SocialMedia = {
   eitaa: "",
   bale: "",
   soroush: "",
+};
+
+// لیست استان‌ها و شهرهای ایران
+const IRAN_PROVINCES = [
+  "آذربایجان شرقی",
+  "آذربایجان غربی",
+  "اردبیل",
+  "اصفهان",
+  "البرز",
+  "ایلام",
+  "بوشهر",
+  "تهران",
+  "چهارمحال و بختیاری",
+  "خراسان جنوبی",
+  "خراسان رضوی",
+  "خراسان شمالی",
+  "خوزستان",
+  "زنجان",
+  "سمنان",
+  "سیستان و بلوچستان",
+  "فارس",
+  "قزوین",
+  "قم",
+  "کردستان",
+  "کرمان",
+  "کرمانشاه",
+  "کهگیلویه و بویراحمد",
+  "گلستان",
+  "گیلان",
+  "لرستان",
+  "مازندران",
+  "مرکزی",
+  "هرمزگان",
+  "همدان",
+  "یزد",
+];
+
+const IRAN_CITIES_BY_PROVINCE: Record<string, string[]> = {
+  "تهران": ["تهران", "کرج", "اسلامشهر", "قدس", "ملارد", "ورامین", "پردیس", "قرچک", "شهریار", "رباط کریم", "اندیشه", "سایر"],
+  "اصفهان": ["اصفهان", "کاشان", "خمینی‌شهر", "نجف‌آباد", "شاهین‌شهر", "مبارکه", "فلاورجان", "زرین‌شهر", "آران و بیدگل", "سایر"],
+  "خراسان رضوی": ["مشهد", "نیشابور", "سبزوار", "تربت حیدریه", "قوچان", "کاشمر", "تربت جام", "چناران", "فریمان", "گناباد", "سایر"],
+  "فارس": ["شیراز", "مرودشت", "کازرون", "لارستان", "فسا", "جهرم", "داراب", "ممسنی", "آباده", "اقلید", "سایر"],
+  "خوزستان": ["اهواز", "دزفول", "آبادان", "خرمشهر", "اندیمشک", "بهبهان", "شوشتر", "مسجدسلیمان", "ایذه", "شوش", "سایر"],
+  "مازندران": ["ساری", "بابل", "آمل", "قائم‌شهر", "بهشهر", "نوشهر", "چالوس", "تنکابن", "نور", "محمودآباد", "بابلسر", "سایر"],
+  "گیلان": ["رشت", "بندر انزلی", "لاهیجان", "لنگرود", "تالش", "آستارا", "رودسر", "صومعه سرا", "فومن", "رودبار", "سایر"],
+  "کرمانشاه": ["کرمانشاه", "اسلام‌آباد غرب", "هرسین", "کنگاور", "سنقر", "صحنه", "پاوه", "سرپل ذهاب", "گیلانغرب", "سایر"],
+  "کرمان": ["کرمان", "سیرجان", "رفسنجان", "جیرفت", "بم", "زرند", "کهنوج", "شهربابک", "بافت", "منوجان", "سایر"],
+  "آذربایجان شرقی": ["تبریز", "مراغه", "مرند", "میاندوآب", "اهر", "بناب", "سراب", "آذر‌شهر", "سایر"],
+  "آذربایجان غربی": ["ارومیه", "خوی", "بوکان", "مهاباد", "سلماس", "نقده", "پیرانشهر", "سایر"],
+  "البرز": ["کرج", "فردیس", "مهرشهر", "اشتهارد", "طالقان", "نظرآباد", "هشتگرد", "سایر"],
+  "اردبیل": ["اردبیل", "پارس‌آباد", "مشگین‌شهر", "خلخال", "بیله‌سوار", "گرمی", "نمین", "سرعین", "سایر"],
+  "ایلام": ["ایلام", "دهلران", "ایوان", "مهران", "دره‌شهر", "آبدانان", "چرداول", "سایر"],
+  "بوشهر": ["بوشهر", "برازجان", "کنگان", "گناوه", "دشتستان", "دشتی", "جم", "دیر", "عسلویه", "سایر"],
+  "چهارمحال و بختیاری": ["شهرکرد", "بروجن", "فارسان", "لردگان", "کوهرنگ", "اردل", "کیار", "سامان", "سایر"],
+  "خراسان جنوبی": ["بیرجند", "قائنات", "فردوس", "طبس", "نهبندان", "سربیشه", "خوسف", "سایر"],
+  "خراسان شمالی": ["بجنورد", "شیروان", "اسفراین", "جاجرم", "مانه و سملقان", "گرمه", "سایر"],
+  "زنجان": ["زنجان", "ابهر", "خرمدره", "ماهنشان", "طارم", "ایجرود", "سلطانیه", "سایر"],
+  "سمنان": ["سمنان", "شاهرود", "دامغان", "گرمسار", "مهدی‌شهر", "میامی", "سرخه", "سایر"],
+  "سیستان و بلوچستان": ["زاهدان", "زابل", "چابهار", "ایرانشهر", "سراوان", "خاش", "نیکشهر", "کنارک", "زهک", "سایر"],
+  "قزوین": ["قزوین", "البرز", "آبیک", "تاکستان", "بوئین زهرا", "آوج", "سایر"],
+  "قم": ["قم", "جعفریه", "کهک", "سلفچگان", "سایر"],
+  "کردستان": ["سنندج", "سقز", "مریوان", "بانه", "قروه", "کامیاران", "بیجار", "دیواندره", "دهگلان", "سایر"],
+  "کهگیلویه و بویراحمد": ["یاسوج", "گچساران", "دهدشت", "باشت", "سی‌سخت", "لنده", "چرام", "سایر"],
+  "گلستان": ["گرگان", "گنبد کاووس", "علی‌آباد کتول", "آق‌قلا", "کردکوی", "بندر ترکمن", "رامیان", "مینودشت", "کلاله", "سایر"],
+  "لرستان": ["خرم‌آباد", "بروجرد", "دورود", "کوهدشت", "الیگودرز", "الشتر", "نورآباد", "پلدختر", "ازنا", "سایر"],
+  "مرکزی": ["اراک", "ساوه", "خمین", "محلات", "دلیجان", "تفرش", "اشتیان", "شازند", "خنداب", "سایر"],
+  "هرمزگان": ["بندرعباس", "قشم", "کیش", "میناب", "بندر لنگه", "جاسک", "حاجی‌آباد", "رودان", "بستک", "سایر"],
+  "همدان": ["همدان", "ملایر", "نهاوند", "کبودرآهنگ", "اسدآباد", "تویسرکان", "رزن", "بهار", "سایر"],
+  "یزد": ["یزد", "میبد", "اردکان", "بافق", "مهریز", "ابرکوه", "تفت", "خاتم", "اشکذر", "بهاباد", "سایر"],
 };
 
 // ==================== Image Uploader Component ====================
@@ -456,7 +529,17 @@ function BasicInfoStep({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const isValid = data.business_name && data.business_address && data.phone;
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (data.province && IRAN_CITIES_BY_PROVINCE[data.province]) {
+      setAvailableCities(IRAN_CITIES_BY_PROVINCE[data.province]);
+    } else {
+      setAvailableCities([]);
+    }
+  }, [data.province]);
+
+  const isValid = data.business_name && data.province && data.city && data.business_address && data.phone;
 
   return (
     <div className="space-y-5">
@@ -518,9 +601,56 @@ function BasicInfoStep({
           />
         </div>
 
+        {/* استان */}
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
-            آدرس <span className="text-red-500">*</span>
+            استان <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <select
+              value={data.province || ""}
+              onChange={(e) => onDataChange({ province: e.target.value, city: "" })}
+              className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
+            >
+              <option value="">انتخاب استان...</option>
+              {IRAN_PROVINCES.map((province) => (
+                <option key={province} value={province}>
+                  {province}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* شهر */}
+        {data.province && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+              شهر <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={data.city || ""}
+                onChange={(e) => onDataChange({ city: e.target.value })}
+                className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="">انتخاب شهر...</option>
+                {availableCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
+
+        {/* آدرس کامل */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+            آدرس کامل <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center gap-2 p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <MapPin className="w-5 h-5 text-emerald-500 shrink-0" />
@@ -528,10 +658,11 @@ function BasicInfoStep({
               type="text"
               value={data.business_address || ""}
               onChange={(e) => onDataChange({ business_address: e.target.value })}
-              placeholder="استان، شهر، خیابان، پلاک"
+              placeholder="خیابان، پلاک، واحد..."
               className="flex-1 bg-transparent outline-none"
             />
           </div>
+          <p className="text-xs text-slate-400 mt-1">مثال: خیابان رشیدی، پلاک ۱۲، واحد ۳</p>
         </div>
 
         <div>
@@ -790,7 +921,6 @@ function ServicesAndSettingsStep({
     }
   };
 
-  // تابع برای رفتن به تب بعدی
   const handleNextSection = () => {
     if (activeSection === "services") {
       setActiveSection("shifts");
@@ -801,7 +931,6 @@ function ServicesAndSettingsStep({
     }
   };
 
-  // تابع برای رفتن به تب قبلی
   const handlePrevSection = () => {
     if (activeSection === "holidays") {
       setActiveSection("shifts");
@@ -812,14 +941,12 @@ function ServicesAndSettingsStep({
     }
   };
 
-  // تعیین متن دکمه بعدی
   const getNextButtonText = () => {
     if (activeSection === "services") return "بعدی: شیفت کاری";
     if (activeSection === "shifts") return "بعدی: تعطیلات هفتگی";
     return "تکمیل و ادامه";
   };
 
-  // تعیین متن دکمه قبلی
   const getPrevButtonText = () => {
     if (activeSection === "holidays") return "قبلی: شیفت کاری";
     if (activeSection === "shifts") return "قبلی: خدمات";
@@ -833,7 +960,6 @@ function ServicesAndSettingsStep({
         <p className="text-sm text-slate-500 dark:text-gray-400">خدمات، شیفت کاری و روزهای تعطیل را تنظیم کنید</p>
       </div>
 
-      {/* تب‌ها - فقط برای نمایش، بدون قابلیت کلیک */}
       <div className="flex gap-2 border-b border-slate-200 dark:border-gray-700 pb-2">
         <div
           className={`flex-1 py-2 rounded-lg text-sm font-medium text-center cursor-default transition-all ${
@@ -864,7 +990,6 @@ function ServicesAndSettingsStep({
         </div>
       </div>
 
-      {/* تب خدمات */}
       {activeSection === "services" && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -921,7 +1046,6 @@ function ServicesAndSettingsStep({
         </div>
       )}
 
-      {/* تب شیفت کاری */}
       {activeSection === "shifts" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -991,7 +1115,6 @@ function ServicesAndSettingsStep({
         </div>
       )}
 
-      {/* تب تعطیلات هفتگی */}
       {activeSection === "holidays" && (
         <div className="space-y-4">
           <span className="text-xs text-slate-500">روزهای غیرفعال هفته را انتخاب کنید</span>
@@ -1019,7 +1142,6 @@ function ServicesAndSettingsStep({
         </div>
       )}
 
-      {/* دکمه‌های ناوبری */}
       <div className="flex gap-3 pt-4">
         <button 
           onClick={handlePrevSection} 
@@ -1035,7 +1157,6 @@ function ServicesAndSettingsStep({
         </button>
       </div>
 
-      {/* Add Service Modal */}
       {showAddServiceModal && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50">
           <div className="w-full sm:max-w-md bg-white dark:bg-[#1a1e26] rounded-t-2xl sm:rounded-2xl overflow-hidden">
@@ -1144,7 +1265,6 @@ function FinalReviewStep({
         </p>
       </div>
 
-      {/* Preview Card */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl overflow-hidden">
         {businessInfo.cover_image && (
           <div className="h-32 w-full overflow-hidden">
@@ -1170,7 +1290,6 @@ function FinalReviewStep({
         </div>
       </div>
 
-      {/* Business Info */}
       <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
         <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
           <Building2 className="w-4 h-4 text-emerald-500" />
@@ -1178,13 +1297,14 @@ function FinalReviewStep({
         </h4>
         <div className="space-y-2 text-sm">
           <p><span className="text-slate-500">نام:</span> {businessInfo.business_name}</p>
+          <p><span className="text-slate-500">استان:</span> {businessInfo.province}</p>
+          <p><span className="text-slate-500">شهر:</span> {businessInfo.city}</p>
           <p><span className="text-slate-500">آدرس:</span> {businessInfo.business_address}</p>
           <p><span className="text-slate-500">تلفن:</span> {businessInfo.phone}</p>
           {businessInfo.bio && <p><span className="text-slate-500">معرفی:</span> {businessInfo.bio.substring(0, 50)}...</p>}
         </div>
       </div>
 
-      {/* Social Media Summary */}
       {activeSocials.length > 0 && (
         <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
           <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
@@ -1201,7 +1321,6 @@ function FinalReviewStep({
         </div>
       )}
 
-      {/* Working Hours */}
       <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
         <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
           <Clock className="w-4 h-4 text-emerald-500" />
@@ -1210,7 +1329,6 @@ function FinalReviewStep({
         <p className="text-sm">{shiftsText}</p>
       </div>
 
-      {/* Holidays */}
       {offDays.length > 0 && (
         <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
           <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
@@ -1227,7 +1345,6 @@ function FinalReviewStep({
         </div>
       )}
 
-      {/* Services */}
       {selectedServices.length > 0 && (
         <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
           <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
@@ -1340,6 +1457,8 @@ export function CreateCustomerLinkWizard({
 
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
     business_name: "",
+    province: "",
+    city: "",
     business_address: "",
     phone: "",
     bio: "",
@@ -1360,6 +1479,8 @@ export function CreateCustomerLinkWizard({
         setSlug(existingData.slug || "");
         setBusinessInfo({
           business_name: existingData.business_name || "",
+          province: existingData.province || "",
+          city: existingData.city || "",
           business_address: existingData.business_address || "",
           phone: existingData.phone || "",
           bio: existingData.bio || "",
@@ -1381,6 +1502,8 @@ export function CreateCustomerLinkWizard({
             if (data.success && data.user) {
               setBusinessInfo({
                 business_name: data.user.business_name || "",
+                province: "",
+                city: "",
                 business_address: data.user.business_address || "",
                 phone: data.user.phone || "",
                 bio: "",
@@ -1423,6 +1546,8 @@ export function CreateCustomerLinkWizard({
         body: JSON.stringify({
           slug,
           business_name: businessInfo.business_name,
+          province: businessInfo.province,
+          city: businessInfo.city,
           business_address: businessInfo.business_address,
           phone: businessInfo.phone,
           bio: businessInfo.bio,
@@ -1445,7 +1570,6 @@ export function CreateCustomerLinkWizard({
           setCreatedLink(finalLink);
           setShowSuccess(true);
         } else {
-          // برای حالت ویرایش، مودال موفقیت با متن متفاوت نشان بده
           setCreatedLink(finalLink);
           setShowSuccess(true);
         }

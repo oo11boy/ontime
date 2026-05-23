@@ -114,7 +114,11 @@ export default function AnalyticsPage() {
 
   const weekDays = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
   const maxWeekly = Math.max(...data.weeklyVisits, 1);
-
+  console.log("Rendering chart with data:", {
+    weeklyVisits: data.weeklyVisits,
+    maxWeekly: maxWeekly,
+    weekDays: weekDays
+  });
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -224,32 +228,33 @@ const activeSocials = allSocials.filter(social => (data.socialClicks[social.key 
         </div>
       </div>
 
-      {/* نمودار بازدیدها */}
-      <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
-        <h3 className="font-semibold text-slate-800 dark:text-white mb-4">
-          بازدیدهای {period === "week" ? "هفته جاری" : "۳۰ روز اخیر"}
-        </h3>
-        <div className="flex items-end justify-between gap-1 sm:gap-2 h-40">
-          {data.weeklyVisits.map((value, i) => (
-            <div key={i} className="flex-1 text-center">
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(value / maxWeekly) * 100}%` }}
-                transition={{ duration: 0.5, delay: i * 0.02 }}
-                className="bg-gradient-to-t from-emerald-500 to-teal-500 rounded-lg cursor-pointer group relative"
-                style={{ height: `${(value / maxWeekly) * 100}%`, minHeight: "4px" }}
-              >
-                <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                  {value}
-                </div>
-              </motion.div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-2">
-                {period === "week" ? weekDays[i] : `${i + 1}`}
-              </p>
+{/* نمودار بازدیدها */}
+<div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
+  <h3 className="font-semibold text-slate-800 dark:text-white mb-4">
+    بازدیدهای {period === "week" ? "هفته جاری" : "۳۰ روز اخیر"}
+  </h3>
+  <div className="flex items-end justify-between gap-1 sm:gap-2" style={{ height: "200px", minHeight: "200px" }}>
+    {data.weeklyVisits.map((val, i) => {
+      const value = Number(val) || 0;
+      const height = (value / maxWeekly) * 100;
+      return (
+        <div key={i} className="flex-1 text-center h-full flex flex-col justify-end">
+          <div
+            className="bg-gradient-to-t from-emerald-500 to-teal-500 rounded-lg cursor-pointer group relative w-full"
+            style={{ height: `${height}%`, minHeight: value > 0 ? "20px" : "4px" }}
+          >
+            <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+              {value}
             </div>
-          ))}
+          </div>
+          <p className="text-[10px] sm:text-xs text-slate-500 mt-2">
+            {period === "week" ? weekDays[i] : `${i + 1}`}
+          </p>
         </div>
-      </div>
+      );
+    })}
+  </div>
+</div>
 
       {/* آمار تعامل */}
       <div className="grid grid-cols-2 gap-3">
