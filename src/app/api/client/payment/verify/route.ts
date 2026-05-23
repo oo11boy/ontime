@@ -1,3 +1,4 @@
+// src/app/api/client/payment/verify/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { PoolConnection } from "mysql2/promise";
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
         ["canceled", trackId]
       );
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard?payment=failed`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/customer-link/plans?payment=failed&trackId=${trackId}`
       );
     }
 
@@ -65,88 +66,142 @@ export async function GET(req: NextRequest) {
           "UPDATE users SET purchased_sms_credit = purchased_sms_credit + ? WHERE id = ?",
           [smsCount, userId]
         );
-      } else if (payment.type === "plan") {
+      } 
+      else if (payment.type === "plan") {
         const planId = payment.item_id;
-
-        const [plans]: any = await connection.execute(
-          "SELECT * FROM plans WHERE id = ?",
-          [planId]
+        
+        // 🔥 فعال‌سازی قابلیت ثبت نوبت در لینک اختصاصی
+        // بررسی می‌کنیم که آیا این پلن 3 ماهه است (مبلغ 258,000 تومان = 2,580,000 ریال)
+        const isThreeMonthsPlan = (
+          payment.amount === 2580000 || // 258,000 تومان
+          planId === "pro_3months" || 
+          planId === "pro_quarterly" || 
+          planId === "quarterly"
         );
-        const plan = plans[0];
-
-        if (plan) {
-          const durationMonths = plan.plan_key === "free_trial" ? 2 : 1;
-          const today = new Date();
-          const startedAt = today.toISOString().split("T")[0];
-          const endDate = new Date();
-          endDate.setMonth(today.getMonth() + durationMonths);
-          const endedAt = endDate.toISOString().split("T")[0];
-          const quotaEndDate = new Date();
-          quotaEndDate.setMonth(today.getMonth() + 1);
-          const quotaEndsAt = quotaEndDate.toISOString().split("T")[0];
-
-          await connection.execute(
-            `UPDATE users SET 
-              plan_key = ?, 
-              sms_balance = ?, 
-              sms_monthly_quota = ?, 
-              started_at = ?, 
-              ended_at = ?, 
-              quota_starts_at = ?, 
-              quota_ends_at = ?,
-              has_used_free_trial = 1
+        
+        if (isThreeMonthsPlan) {
+          // دریافت لینک اختصاصی کاربر
+          const [links]: any = await connection.execute(
+            "SELECT id FROM customer_links WHERE user_id = ? AND is_deleted = 0 LIMIT 1",
+            [userId]
+          );
+          
+          if (links && links.length > 0) {
+            const linkId = links[0].id;
+            const expiryDate = new Date();
+            expiryDate.setMonth(expiryDate.getMonth() + 3); // +3 ماه
+            
+            // فعال‌سازی قابلیت ثبت نوبت
+            await connection.execute(
+              `UPDATE customer_links SET 
+                booking_feature_enabled = 1,
+                booking_feature_expiry = ?,
+                booking_feature_payment_id = ?
               WHERE id = ?`,
-            [
-              plan.plan_key,
-              plan.free_sms_month,
-              plan.free_sms_month,
-              startedAt,
-              endedAt,
-              startedAt,
-              quotaEndsAt,
-              userId,
-            ]
+              [expiryDate.toISOString().split('T')[0], payment.id, linkId]
+            );
+            
+            console.log(`✅ قابلیت ثبت نوبت برای لینک ${linkId} فعال شد تا ${expiryDate.toISOString().split('T')[0]}`);
+          } else {
+            console.warn(`⚠️ کاربر ${userId} لینک اختصاصی ندارد!`);
+            // اگر لینک ندارد، یک لینک پیش‌فرض بسازیم
+            const defaultSlug = `business_${userId}_${Date.now()}`;
+            await connection.execute(
+              `INSERT INTO customer_links (user_id, slug, full_url, business_name, is_active, booking_feature_enabled, booking_feature_expiry, booking_feature_payment_id, created_at) 
+               VALUES (?, ?, ?, ?, 1, 1, ?, ?, NOW())`,
+              [userId, defaultSlug, `c/${defaultSlug}`, "کسب‌وکار من", expiryDate.toISOString().split('T')[0], payment.id]
+            );
+            console.log(`✅ لینک اختصاصی جدید برای کاربر ${userId} ساخته شد`);
+          }
+        }
+        
+        // به‌روزرسانی اطلاعات کاربر در جدول users (اختیاری)
+        // اگر جدول plans دارید و می‌خواهید آپدیت کنید
+        if (planId && !isNaN(Number(planId))) {
+          const [plans]: any = await connection.execute(
+            "SELECT * FROM plans WHERE id = ?",
+            [planId]
           );
+          const plan = plans?.[0];
 
-          await connection.execute(
-            `INSERT INTO smspurchase 
-              (user_id, type, amount_paid, ref_number, sms_amount, remaining_sms, valid_from, expires_at, status) 
-              VALUES (?, 'monthly_subscription', ?, ?, ?, ?, CURDATE(), ?, 'active')`,
-            [
-              userId,
-              payment.amount / 10,
-              vData.refNumber,
-              plan.free_sms_month,
-              plan.free_sms_month,
-              endedAt,
-            ]
-          );
+          if (plan) {
+            const durationMonths = plan.plan_key === "free_trial" ? 2 : 1;
+            const today = new Date();
+            const startedAt = today.toISOString().split("T")[0];
+            const endDate = new Date();
+            endDate.setMonth(today.getMonth() + durationMonths);
+            const endedAt = endDate.toISOString().split("T")[0];
+            const quotaEndDate = new Date();
+            quotaEndDate.setMonth(today.getMonth() + 1);
+            const quotaEndsAt = quotaEndDate.toISOString().split("T")[0];
+
+            await connection.execute(
+              `UPDATE users SET 
+                plan_key = ?, 
+                sms_balance = ?, 
+                sms_monthly_quota = ?, 
+                started_at = ?, 
+                ended_at = ?, 
+                quota_starts_at = ?, 
+                quota_ends_at = ?,
+                has_used_free_trial = 1
+                WHERE id = ?`,
+              [
+                plan.plan_key,
+                plan.free_sms_month,
+                plan.free_sms_month,
+                startedAt,
+                endedAt,
+                startedAt,
+                quotaEndsAt,
+                userId,
+              ]
+            );
+
+            await connection.execute(
+              `INSERT INTO smspurchase 
+                (user_id, type, amount_paid, ref_number, sms_amount, remaining_sms, valid_from, expires_at, status) 
+                VALUES (?, 'monthly_subscription', ?, ?, ?, ?, CURDATE(), ?, 'active')`,
+              [
+                userId,
+                payment.amount / 10,
+                vData.refNumber,
+                plan.free_sms_month,
+                plan.free_sms_month,
+                endedAt,
+              ]
+            );
+          }
         }
       }
 
       await connection.commit();
-      // ✅ اصلاح شده
+      
+      // ریدایرکت به صفحه پلن‌ها با وضعیت موفق
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=success&trackId=${trackId}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/customer-link/plans?payment=success&trackId=${trackId}`
       );
-    } else {
+    } 
+    else {
       await connection.execute(
         "UPDATE payments SET status = ? WHERE track_id = ?",
         ["failed", trackId]
       );
-      // ✅ اصلاح شده
+      
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/customer-link/plans?payment=failed&trackId=${trackId}`
       );
     }
-  } catch (error: any) {
+  } 
+  catch (error: any) {
     if (connection) await connection.rollback();
     console.error("Verify Error:", error);
-    // ✅ اصلاح شده
+    
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/customer-link/plans?payment=failed&trackId=${trackId}`
     );
-  } finally {
+  } 
+  finally {
     if (connection) connection.release();
   }
 }

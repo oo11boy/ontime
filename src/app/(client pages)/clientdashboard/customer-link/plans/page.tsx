@@ -1,394 +1,411 @@
 // src/app/clientdashboard/customer-link/plans/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
   Crown, 
-  Zap, 
-  Calendar, 
-  BarChart3, 
-  MessageSquare, 
-  Users, 
-  Link as LinkIcon,
+  Calendar,
   Check,
-  X,
   Sparkles,
-  Gift,
   Shield,
+  Loader2,
+  Lock,
   Clock,
-  Star,
-  Heart,
-  TrendingUp,
+  Users,
   Smartphone,
-  Eye,
-  Lock
+  Bell,
+  TrendingUp,
+  Rocket,
+  Zap,
+  ArrowLeft,
+  Gift,
+  Timer,
+  ListTodo,
+  XCircle,
+  Edit2,
+  AlertCircle
 } from "lucide-react";
+import { toast, Toaster } from "react-hot-toast";
+import { usePayment } from "@/hooks/usePayment";
 
 export default function PlansPage() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "quarterly">("quarterly");
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { startPayment, isPending } = usePayment();
+  
+  const [hasLink, setHasLink] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [bookingFeatureStatus, setBookingFeatureStatus] = useState<{
+    isEnabled: boolean;
+    expiryDate: string | null;
+    daysRemaining: number;
+  }>({ isEnabled: false, expiryDate: null, daysRemaining: 0 });
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number }>({ days: 0, hours: 0, minutes: 0 });
 
-  const plans = {
-    free: {
-      name: "رایگان",
-      icon: Zap,
-      color: "gray",
-      price: 0,
-      quarterlyPrice: 0,
-      description: "مناسب برای شروع کار",
-      features: [
-        { text: "لینک اختصاصی", included: true, limit: "1 عدد" },
-        { text: "مشاهده پروفایل", included: true, limit: "نامحدود" },
-        { text: "دریافت نظرات", included: true, limit: "تا ۲۰ نظر" },
-        { text: "ثبت نوبت", included: false, tooltip: "برای فعال‌سازی نیاز به ارتقا دارید" },
-        { text: "آمار پیشرفته", included: false, tooltip: "دسترسی به آمار بازدید و رفتار کاربران" },
-        { text: "پیامک خودکار", included: false, tooltip: "ارسال پیامک یادآوری نوبت" },
-        { text: "پشتیبانی اختصاصی", included: false, tooltip: "پشتیبانی تلفنی و آنلاین" },
-      ],
-      badge: null,
-    },
-    pro: {
-      name: "ویژه",
-      icon: Crown,
-      color: "purple",
-      price: 87000,
-      quarterlyPrice: 258000,
-      description: "همه چیز برای رشد کسب‌وکار شما",
-      savings: "۶۳,۰۰۰ تومان",
-      features: [
-        { text: "لینک اختصاصی", included: true, limit: "نامحدود" },
-        { text: "مشاهده پروفایل", included: true, limit: "نامحدود" },
-        { text: "دریافت نظرات", included: true, limit: "نامحدود" },
-        { text: "ثبت نوبت آنلاین", included: true, highlight: true },
-        { text: "آمار پیشرفته", included: true, highlight: true },
-        { text: "پیامک خودکار", included: true, limit: "۵۰۰ عدد/ماه" },
-        { text: "پشتیبانی ۲۴/۷", included: true },
-        { text: "گزارش‌های تحلیلی", included: true },
-        { text: "بدون تبلیغات", included: true },
-      ],
-      badge: "پرفروش‌ترین",
-      popular: true,
-    },
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      setLoading(true);
+      try {
+        const [linkRes, featureRes] = await Promise.all([
+          fetch("/api/client/customer-link"),
+          fetch("/api/client/customer-link/booking-feature-status")
+        ]);
+        
+        const linkData = await linkRes.json();
+        const featureData = await featureRes.json();
+        
+        if (linkData.success && linkData.hasLink) {
+          setHasLink(true);
+        }
+        
+        if (featureData.success) {
+          setBookingFeatureStatus({
+            isEnabled: featureData.isEnabled,
+            expiryDate: featureData.expiryDate,
+            daysRemaining: featureData.daysRemaining || 0
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user status:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserStatus();
+  }, []);
+
+  useEffect(() => {
+    if (bookingFeatureStatus.isEnabled && bookingFeatureStatus.expiryDate) {
+      const updateTimer = () => {
+        const now = new Date().getTime();
+        const expiry = new Date(bookingFeatureStatus.expiryDate!).getTime();
+        const diff = expiry - now;
+        
+        if (diff <= 0) {
+          setTimeLeft({ days: 0, hours: 0, minutes: 0 });
+          return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        setTimeLeft({ days, hours, minutes });
+      };
+      
+      updateTimer();
+      const interval = setInterval(updateTimer, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [bookingFeatureStatus.isEnabled, bookingFeatureStatus.expiryDate]);
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    
+    if (paymentStatus === "success") {
+      toast.success("🎉 تبریک! ثبت نوبت مشتریان فعال شد!", { duration: 4000 });
+      setTimeout(() => {
+        window.location.href = "/clientdashboard/customer-link/plans";
+      }, 2000);
+    } else if (paymentStatus === "failed") {
+      toast.error("پرداخت ناموفق بود. دوباره تلاش کن.");
+    }
+  }, [searchParams]);
+
+  const handlePurchase = async () => {
+    if (!hasLink) {
+      toast.error("اول لینک اختصاصی بساز");
+      router.push("/clientdashboard/customer-link");
+      return;
+    }
+    
+    await startPayment(258000, "plan", "pro_3months", "فعال‌سازی ثبت نوبت مشتریان");
   };
 
-  const currentPlan = "free"; // از API میاد
-  const currentPlanData = plans[currentPlan as keyof typeof plans];
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
 
-  const handleUpgrade = (planId: string) => {
-    setSelectedPlan(planId);
-    setShowPaymentModal(true);
-  };
+  const isBookingEnabled = bookingFeatureStatus.isEnabled;
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* Header */}
-      <div className="text-center">
-        <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 px-4 py-2 rounded-full mb-3">
-          <Sparkles className="w-4 h-4 text-purple-600" />
-          <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-            قیمت‌ها مناسب و مقرون‌به‌صرفه
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-          پلن‌های عضویت
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
-          با تهیه پلن ویژه، از همه امکانات پیشرفته استفاده کنید
-        </p>
-      </div>
+    <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 pb-28">
+      <Toaster position="top-center" />
+      
+      {/* دکمه بازگشت */}
+      <button onClick={() => router.back()} className="flex items-center gap-1 text-gray-500 text-sm">
+        <ArrowLeft className="w-4 h-4" /> بازگشت
+      </button>
 
-      {/* Billing Toggle */}
-      <div className="flex justify-center">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-1 flex">
-          <button
-            onClick={() => setBillingCycle("monthly")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              billingCycle === "monthly"
-                ? "bg-white dark:bg-gray-700 shadow-sm text-purple-600"
-                : "text-gray-500"
-            }`}
-          >
-            ماهانه
-          </button>
-          <button
-            onClick={() => setBillingCycle("quarterly")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1 ${
-              billingCycle === "quarterly"
-                ? "bg-white dark:bg-gray-700 shadow-sm text-purple-600"
-                : "text-gray-500"
-            }`}
-          >
-            ۳ ماهه
-            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
-              ۲۴٪ تخفیف
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Current Plan Card */}
-      {currentPlan === "free" && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-4 border border-amber-200 dark:border-amber-800">
+      {/* ========== وضعیت فعال ========== */}
+      {isBookingEnabled && (
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-amber-600" />
+            <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center">
+              <Crown className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
-                شما در حال حاضر از پلن رایگان استفاده می‌کنید
-              </p>
-              <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
-                برای دسترسی به امکانات پیشرفته مانند ثبت نوبت و آمار، پلن خود را ارتقا دهید
-              </p>
+              <p className="font-bold text-emerald-800">✅ ثبت نوبت فعال است</p>
+              <p className="text-sm text-emerald-600">مشتریات آنلاین نوبت می‌گیرن</p>
             </div>
+          </div>
+          
+          {/* تایمر */}
+          <div className="mt-4 p-3 bg-white/60 rounded-xl text-center">
+            <p className="text-xs text-emerald-600 mb-2">⏳ زمان باقیمانده</p>
+            <div className="flex justify-center gap-3">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.days}</div>
+                <p className="text-[10px] text-gray-500">روز</p>
+              </div>
+              <span className="text-2xl text-emerald-500">:</span>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.hours.toString().padStart(2, '0')}</div>
+                <p className="text-[10px] text-gray-500">ساعت</p>
+              </div>
+              <span className="text-2xl text-emerald-500">:</span>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.minutes.toString().padStart(2, '0')}</div>
+                <p className="text-[10px] text-gray-500">دقیقه</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 flex gap-3">
+            <button onClick={() => router.push("/clientdashboard/customer-link")} className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium">لینک من</button>
+            <button onClick={() => router.push("/clientdashboard/booking-changes")} className="flex-1 py-2 border-2 border-emerald-400 text-emerald-700 rounded-xl text-sm font-medium">مدیریت نوبت‌ها</button>
           </div>
         </div>
       )}
 
-      {/* Plans Grid */}
-      <div className="grid gap-4">
-        {/* Free Plan */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-gray-600" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                    {plans.free.name}
-                  </h3>
-                </div>
-                <p className="text-gray-500 text-sm">{plans.free.description}</p>
-              </div>
-              <div className="text-left">
-                <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                  رایگان
-                </p>
-                <p className="text-xs text-gray-500">همیشه رایگان</p>
-              </div>
+      {/* ========== هدر ========== */}
+      {!isBookingEnabled && (
+        <>
+          <div className="text-center">
+            <div className="inline-flex items-center gap-1 bg-emerald-100 px-3 py-1 rounded-full mb-2">
+              <Rocket className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-medium text-emerald-700">حرفه‌ای شو!</span>
             </div>
-
-            <div className="mt-4 space-y-2">
-              {plans.free.features.map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm">
-                  {feature.included ? (
-                    <Check className="w-4 h-4 text-green-500 shrink-0" />
-                  ) : (
-                    <Lock className="w-4 h-4 text-gray-400 shrink-0" />
-                  )}
-                  <span className={`text-gray-600 dark:text-gray-300 ${!feature.included && "opacity-60"}`}>
-                    {feature.text}
-                  </span>
-                  {feature.limit && (
-                    <span className="text-xs text-gray-400 mr-auto">
-                      {feature.limit}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              مشتریات <span className="text-emerald-600">آنلاین</span> نوبت بگیرن
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">یک لینک بده به مشتریهات، بقیه با ما!</p>
           </div>
-        </div>
 
-        {/* Pro Plan - Highlighted */}
-        <div className={`relative bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl overflow-hidden shadow-lg border-2 border-purple-300 dark:border-purple-700`}>
-          {plans.pro.popular && (
-            <div className="absolute top-0 right-0">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-4 py-1 rounded-bl-2xl">
-                <Sparkles className="w-3 h-3 inline ml-1" />
-                پرفروش‌ترین
-              </div>
-            </div>
-          )}
+          {/* بنر کوتاه */}
+          <div className="bg-amber-50 rounded-xl p-3 text-center">
+            <p className="text-amber-700 text-sm flex items-center justify-center gap-1">
+              <Zap className="w-4 h-4" />
+              <span>کسب‌وکارهای دارای نوبت‌دهی آنلاین، <span className="font-bold">۳ برابر</span> مشتری بیشتر جذب می‌کنن</span>
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* ========== کارت اصلی پلن (فقط وقتی فعال نیست) ========== */}
+      {!isBookingEnabled && (
+        <div className="relative bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl overflow-hidden border-2 border-emerald-300">
+          <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">🔥 پیشنهاد ویژه</div>
           
           <div className="p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center">
-                    <Crown className="w-4 h-4 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                    {plans.pro.name}
-                  </h3>
-                </div>
-                <p className="text-gray-600 text-sm">{plans.pro.description}</p>
+            {/* قیمت */}
+            <div className="text-center mb-4">
+              <div className="inline-flex items-baseline gap-1">
+                <span className="text-4xl font-bold text-emerald-700">۲۵۸</span>
+                <span className="text-gray-500">هزار تومان</span>
               </div>
-              <div className="text-left">
-                <div className="flex items-baseline gap-1">
-                  <p className="text-3xl font-bold text-purple-700 dark:text-purple-400">
-                    {billingCycle === "monthly" 
-                      ? `${plans.pro.price.toLocaleString()}`
-                      : `${(plans.pro.quarterlyPrice / 3).toLocaleString()}`
-                    }
-                  </p>
-                  <span className="text-gray-500">هزار تومان</span>
+              <p className="text-xs text-gray-500">برای ۳ ماه کامل</p>
+              <p className="text-sm text-emerald-600 font-bold mt-1">✨ فقط ۸۶ هزار تومان در ماه</p>
+              <p className="text-xs text-gray-400 line-through">قبلاً ۳۲۴ هزار تومان</p>
+            </div>
+
+            {/* مزایا - جدید با توضیحات کامل */}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2 p-2 bg-white/50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 text-emerald-600" />
                 </div>
-                <p className="text-xs text-gray-500">
-                  {billingCycle === "monthly" ? "ماهانه" : "ماهانه (دوره ۳ ماهه)"}
-                </p>
-                {billingCycle === "quarterly" && (
-                  <p className="text-xs text-green-600 mt-1">
-                    ✨ صرفه‌جویی {plans.pro.savings} تومانی
-                  </p>
-                )}
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">📅 ثبت نوبت آنلاین</p>
+                  <p className="text-xs text-gray-500">مشتری می‌تونه نوبت ثبت کنه، فقط نوبت‌های بدون تداخل</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-white/50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <ListTodo className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">📋 لیست نوبت‌ها</p>
+                  <p className="text-xs text-gray-500">مشتری نوبت‌های گذشته و آینده‌ش رو می‌بینه</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-white/50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <Edit2 className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">✏️ درخواست تغییر نوبت</p>
+                  <p className="text-xs text-gray-500">مشتری می‌تونه درخواست تغییر زمان نوبت بده</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-white/50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <XCircle className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">❌ لغو نوبت با دلیل</p>
+                  <p className="text-xs text-gray-500">مشتری می‌تونه نوبت رو با ذکر دلیل کنسل کنه</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-white/50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">🚫 جلوگیری از تداخل</p>
+                  <p className="text-xs text-gray-500">سیستم اجازه ثبت نوبت همزمان رو نمی‌ده</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-white/50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <Bell className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">🔔 اعلان فوری</p>
+                  <p className="text-xs text-gray-500">همون لحظه از نوبت جدید باخبر شو</p>
+                </div>
               </div>
             </div>
 
-            {/* Price Comparison */}
-            {billingCycle === "quarterly" && (
-              <div className="mt-3 flex items-center gap-2 text-sm">
-                <span className="text-gray-400 line-through">
-                  {Math.round(plans.pro.price * 3).toLocaleString()} هزار تومان
-                </span>
-                <span className="text-green-600 font-medium">
-                  {plans.pro.quarterlyPrice.toLocaleString()} هزار تومان
-                </span>
-                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">
-                  ذخیره {plans.pro.savings} تومان
-                </span>
+            {/* جمع‌بندی سریع */}
+            <div className="bg-white/50 rounded-xl p-3 mb-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">هزینه روزانه:</span>
+                <span className="font-bold text-emerald-700">فقط ۲,۸۶۰ تومان!</span>
               </div>
-            )}
-
-            <div className="mt-4 space-y-2">
-              {plans.pro.features.map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm">
-                  <Check className="w-4 h-4 text-green-500 shrink-0" />
-                  <span className={`text-gray-700 dark:text-gray-300 ${feature.highlight && "font-medium text-purple-700 dark:text-purple-400"}`}>
-                    {feature.text}
-                  </span>
-                  {feature.limit && (
-                    <span className="text-xs text-gray-400 mr-auto">
-                      {feature.limit}
-                    </span>
-                  )}
-                  {feature.highlight && (
-                    <Sparkles className="w-3 h-3 text-purple-500 mr-1" />
-                  )}
-                </div>
-              ))}
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>📱 کمتر از یه قهوه روزانه</span>
+                <span>✨ سرمایه‌گذاری برای رشد</span>
+              </div>
             </div>
 
-            {/* CTA */}
+            {/* دکمه خرید */}
             <button
-              onClick={() => handleUpgrade("pro")}
-              className="w-full mt-5 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg transition-all"
+              onClick={handlePurchase}
+              disabled={isPending}
+              className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold flex items-center justify-center gap-2"
             >
-              <Crown className="w-4 h-4" />
-              ارتقا به پلن ویژه
-              <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
-                فقط {billingCycle === "monthly" ? "۸۷" : "۸۷"} هزار/ماه
-              </span>
+              {isPending ? (
+                <><Loader2 className="w-5 h-5 animate-spin" /> در حال اتصال...</>
+              ) : (
+                <><Rocket className="w-5 h-5" /> همین الان شروع کن!</>
+              )}
             </button>
-          </div>
-        </div>
-      </div>
 
-      {/* What You Get Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5">
-        <h3 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
-          <Gift className="w-5 h-5 text-purple-600" />
-          با پلن ویژه چه چیزهایی دریافت می‌کنید؟
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Check className="w-4 h-4 text-green-500" /> ثبت نوبت آنلاین
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Check className="w-4 h-4 text-green-500" /> آمار پیشرفته
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Check className="w-4 h-4 text-green-500" /> پیامک خودکار
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Check className="w-4 h-4 text-green-500" /> پشتیبانی اختصاصی
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Check className="w-4 h-4 text-green-500" /> حذف تبلیغات
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Check className="w-4 h-4 text-green-500" /> لینک نامحدود
-          </div>
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5">
-        <h3 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
-          <Heart className="w-5 h-5 text-purple-600" />
-          سوالات متداول
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <p className="font-medium text-gray-800 dark:text-white text-sm">
-              ❓ آیا می‌توانم هر زمانی پلن خود را لغو کنم؟
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              بله، شما می‌توانید در هر زمان اشتراک خود را لغو کنید. در این صورت تا پایان دوره از امکانات استفاده می‌کنید.
-            </p>
-          </div>
-          <div>
-            <p className="font-medium text-gray-800 dark:text-white text-sm">
-              ❓ هزینه پلن ویژه چقدر است؟
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              ماهانه ۸۷ هزار تومان یا دوره ۳ ماهه ۲۵۸ هزار تومان (معادل ۸۶ هزار تومان در ماه)
-            </p>
-          </div>
-          <div>
-            <p className="font-medium text-gray-800 dark:text-white text-sm">
-              ❓ آیا ضمانت بازگشت وجه دارید؟
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              بله، اگر در ۷ روز اول از پلن راضی نبودید، وجه شما عودت داده می‌شود.
+            <p className="text-center text-xs text-gray-500 mt-3 flex items-center justify-center gap-2">
+              <Shield className="w-3 h-3" /> پرداخت امن • ۷ روز گارانتی بازگشت وجه
             </p>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50">
-          <div className="w-full sm:max-w-md bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl overflow-hidden">
-            <div className="p-5 border-b dark:border-gray-700">
-              <h3 className="font-bold text-gray-800 dark:text-white text-center">
-                تکمیل خرید
-              </h3>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 text-center">
-                <Crown className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <p className="font-bold text-gray-800 dark:text-white">
-                  پلن ویژه (۳ ماهه)
-                </p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">
-                  ۲۵۸,۰۰۰ تومان
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  معادل ۸۶,۰۰۰ تومان در ماه
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <button className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-medium">
-                  انصراف
-                </button>
-                <button className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium flex items-center justify-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  پرداخت امن
-                </button>
-              </div>
-
-              <p className="text-center text-xs text-gray-500">
-                پرداخت شما کاملاً امن است و اطلاعات شما محفوظ می‌ماند
+      {/* ========== توضیحات کامل قابلیت‌ها برای مشتری ========== */}
+      {!isBookingEnabled && (
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-1 text-sm">
+            <Users className="w-4 h-4 text-emerald-600" />
+            مشتریات چه امکاناتی دارن؟
+          </h3>
+          <div className="space-y-3 text-sm">
+            <div className="border-b border-gray-100 pb-2">
+              <p className="font-medium text-gray-800 text-xs flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-500" /> مشاهده لیست نوبت‌ها
               </p>
+              <p className="text-xs text-gray-500 mt-0.5 pr-5">مشتری می‌تونه لیست نوبت‌های گذشته و آینده‌ش رو در همان صفحه ببینه</p>
+            </div>
+            <div className="border-b border-gray-100 pb-2">
+              <p className="font-medium text-gray-800 text-xs flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-500" /> ثبت نوبت جدید
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5 pr-5">مشتری می‌تونه درخواست نوبت بده، سیستم تداخل با نوبت‌های دیگه رو چک می‌کنه</p>
+            </div>
+            <div className="border-b border-gray-100 pb-2">
+              <p className="font-medium text-gray-800 text-xs flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-500" /> درخواست تغییر نوبت
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5 pr-5">اگه مشتری نتونه بیاد، می‌تونه درخواست تغییر زمان بده</p>
+            </div>
+            <div>
+              <p className="font-medium text-gray-800 text-xs flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-500" /> لغو نوبت با دلیل
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5 pr-5">مشتری می‌تونه نوبتش رو با ذکر دلیل کنسل کنه</p>
             </div>
           </div>
         </div>
       )}
+
+      {/* ========== چرا نیاز داری؟ ========== */}
+      {!isBookingEnabled && (
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-1 text-sm">
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+            چرا نیاز داری؟
+          </h3>
+          <div className="space-y-2 text-sm">
+            <p className="flex items-start gap-2 text-gray-600">⏰ <span>دیگه وقتت رو برای هماهنگی نوبت تلف نکن</span></p>
+            <p className="flex items-start gap-2 text-gray-600">🌙 <span>مشتریات حتی ساعت ۳ صبح هم می‌تونن نوبت بگیرن</span></p>
+            <p className="flex items-start gap-2 text-gray-600">📈 <span>تا ۴۰٪ افزایش پر شدن وقت‌های کاری</span></p>
+            <p className="flex items-start gap-2 text-gray-600">🔄 <span>مدیریت خودکار تغییرات و لغو نوبت‌ها</span></p>
+          </div>
+        </div>
+      )}
+
+      {/* ========== نیاز به لینک ========== */}
+      {!hasLink && !isBookingEnabled && (
+        <div className="bg-amber-50 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">اول لینک بساز!</p>
+              <p className="text-xs text-amber-600">کمتر از ۵ دقیقه</p>
+            </div>
+          </div>
+          <button onClick={() => router.push("/clientdashboard/customer-link")} className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-medium">ساختن لینک</button>
+        </div>
+      )}
+
+      {/* ========== سوالات متداول ========== */}
+      <div className="bg-white rounded-xl p-4 shadow-sm">
+        <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-1 text-sm">
+          <Sparkles className="w-4 h-4 text-emerald-600" />
+          سوالات سریع
+        </h3>
+        <div className="space-y-2 text-sm">
+          <div>
+            <p className="font-medium text-gray-700 text-xs">❓ مشتری چطور نوبت می‌گیره؟</p>
+            <p className="text-xs text-gray-500">کافیه لینک رو بهش بدی، کلیک کنه و نوبتش رو رزرو کنه. سیستم خودش تداخل نوبت‌ها رو چک می‌کنه.</p>
+          </div>
+          <div>
+            <p className="font-medium text-gray-700 text-xs">❓ مشتری چطور نوبتش رو عوض کنه؟</p>
+            <p className="text-xs text-gray-500">مشتری می‌تونه از صفحه نوبت‌هاش، درخواست تغییر یا لغو بده و دلیلش رو بنویسه.</p>
+          </div>
+          <div>
+            <p className="font-medium text-gray-700 text-xs">❓ بعد ۳ ماه چی؟</p>
+            <p className="text-xs text-gray-500">می‌تونی تمدید کنی یا بمونه همون حالت رایگان (فقط صفحه اختصاصی).</p>
+          </div>
+       
+        </div>
+      </div>
+
+      {/* اعتماد */}
+      <p className="text-center text-xs text-gray-400 py-2">بیش از 1000 کسب‌وکار از آنتایم استفاده می‌کنن</p>
     </div>
   );
 }

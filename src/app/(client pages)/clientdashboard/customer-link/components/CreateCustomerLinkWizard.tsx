@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
-import { ImageUploader } from "./ImageUploader";
 
 // ==================== Types ====================
 interface Service {
@@ -120,7 +119,18 @@ const defaultSocialMedia: SocialMedia = {
 };
 
 // ==================== Image Uploader Component ====================
-interface ImageUploaderProps {
+function ImageUploader({
+  currentImage,
+  onImageUploaded,
+  onImageRemoved,
+  aspectRatio = 1,
+  maxSizeMB = 5,
+  quality = 0.8,
+  title = "آپلود تصویر",
+  description = "PNG, JPG یا JPEG",
+  shape = "square",
+  className = "",
+}: {
   currentImage: string | null;
   onImageUploaded: (imageUrl: string) => void;
   onImageRemoved?: () => void;
@@ -131,9 +141,108 @@ interface ImageUploaderProps {
   description?: string;
   shape?: "circle" | "square" | "cover";
   className?: string;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      toast.error(`حجم فایل نباید بیشتر از ${maxSizeMB} مگابایت باشد`);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("لطفاً فایل تصویری انتخاب کنید");
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/client/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        onImageUploaded(data.url);
+        toast.success("تصویر با موفقیت آپلود شد");
+      } else {
+        toast.error(data.message || "خطا در آپلود تصویر");
+      }
+    } catch (error) {
+      toast.error("خطا در ارتباط با سرور");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const getShapeClass = () => {
+    if (shape === "circle") return "rounded-full";
+    if (shape === "cover") return "rounded-xl";
+    return "rounded-xl";
+  };
+
+  return (
+    <div className={`${className}`}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      
+      {currentImage ? (
+        <div className={`relative ${getShapeClass()} overflow-hidden bg-slate-100 dark:bg-white/5`}>
+          <img
+            src={currentImage}
+            alt="آپلود شده"
+            className={`w-full h-full object-cover ${shape === "circle" ? "rounded-full" : "rounded-xl"}`}
+            style={shape === "cover" ? { aspectRatio: "16/9" } : { aspectRatio: "1/1" }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
+          >
+            <div className="bg-white rounded-full p-2">
+              <Edit2 className="w-5 h-5 text-gray-800" />
+            </div>
+          </button>
+          {onImageRemoved && (
+            <button
+              onClick={() => onImageRemoved()}
+              className="absolute top-2 right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors"
+            >
+              <Trash2 className="w-4 h-4 text-white" />
+            </button>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className={`w-full border-2 border-dashed border-gray-300 dark:border-gray-600 ${getShapeClass()} bg-slate-50 dark:bg-white/5 hover:border-emerald-500 transition-colors flex flex-col items-center justify-center p-6 ${shape === "cover" ? "aspect-video" : "aspect-square"}`}
+        >
+          {isUploading ? (
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+          ) : (
+            <>
+              <Upload className="w-8 h-8 text-gray-400 mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
+              <p className="text-xs text-gray-400 mt-1">{description}</p>
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
 }
-
-
 
 // ==================== Step Indicator ====================
 function StepIndicator({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
@@ -266,10 +375,10 @@ function SlugStep({
         <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
           آدرس دلخواه شما
         </label>
-        <div className={`flex items-center gap-2 p-3 bg-white dark:bg-[#0f1115] border-2 rounded-xl transition-colors ${
+        <div dir="ltr" className={`flex items-center gap-2 p-3 bg-white dark:bg-[#0f1115] border-2 rounded-xl transition-colors ${
           editMode ? "border-gray-300 bg-gray-50 dark:bg-gray-800/50" : "focus-within:border-emerald-500"
         }`}>
-          <span className="text-slate-500 text-sm font-mono shrink-0">myapp.ir/c/</span>
+          <span className="text-slate-500 text-sm font-mono shrink-0">ontimeapp.ir/c/</span>
           <input
             type="text"
             value={localSlug}
@@ -681,6 +790,42 @@ function ServicesAndSettingsStep({
     }
   };
 
+  // تابع برای رفتن به تب بعدی
+  const handleNextSection = () => {
+    if (activeSection === "services") {
+      setActiveSection("shifts");
+    } else if (activeSection === "shifts") {
+      setActiveSection("holidays");
+    } else {
+      onNext();
+    }
+  };
+
+  // تابع برای رفتن به تب قبلی
+  const handlePrevSection = () => {
+    if (activeSection === "holidays") {
+      setActiveSection("shifts");
+    } else if (activeSection === "shifts") {
+      setActiveSection("services");
+    } else {
+      onBack();
+    }
+  };
+
+  // تعیین متن دکمه بعدی
+  const getNextButtonText = () => {
+    if (activeSection === "services") return "بعدی: شیفت کاری";
+    if (activeSection === "shifts") return "بعدی: تعطیلات هفتگی";
+    return "تکمیل و ادامه";
+  };
+
+  // تعیین متن دکمه قبلی
+  const getPrevButtonText = () => {
+    if (activeSection === "holidays") return "قبلی: شیفت کاری";
+    if (activeSection === "shifts") return "قبلی: خدمات";
+    return "قبلی";
+  };
+
   return (
     <div className="space-y-5">
       <div className="text-center mb-2">
@@ -688,39 +833,38 @@ function ServicesAndSettingsStep({
         <p className="text-sm text-slate-500 dark:text-gray-400">خدمات، شیفت کاری و روزهای تعطیل را تنظیم کنید</p>
       </div>
 
+      {/* تب‌ها - فقط برای نمایش، بدون قابلیت کلیک */}
       <div className="flex gap-2 border-b border-slate-200 dark:border-gray-700 pb-2">
-        <button
-          onClick={() => setActiveSection("services")}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+        <div
+          className={`flex-1 py-2 rounded-lg text-sm font-medium text-center cursor-default transition-all ${
             activeSection === "services"
               ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-              : "text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5"
+              : "text-slate-500"
           }`}
         >
           <Plus className="w-4 h-4 inline ml-1" /> خدمات
-        </button>
-        <button
-          onClick={() => setActiveSection("shifts")}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+        </div>
+        <div
+          className={`flex-1 py-2 rounded-lg text-sm font-medium text-center cursor-default transition-all ${
             activeSection === "shifts"
               ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-              : "text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5"
+              : "text-slate-500"
           }`}
         >
           <Clock className="w-4 h-4 inline ml-1" /> شیفت کاری
-        </button>
-        <button
-          onClick={() => setActiveSection("holidays")}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+        </div>
+        <div
+          className={`flex-1 py-2 rounded-lg text-sm font-medium text-center cursor-default transition-all ${
             activeSection === "holidays"
               ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-              : "text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5"
+              : "text-slate-500"
           }`}
         >
           <CalendarOff className="w-4 h-4 inline ml-1" /> تعطیلات هفتگی
-        </button>
+        </div>
       </div>
 
+      {/* تب خدمات */}
       {activeSection === "services" && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -777,6 +921,7 @@ function ServicesAndSettingsStep({
         </div>
       )}
 
+      {/* تب شیفت کاری */}
       {activeSection === "shifts" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -846,6 +991,7 @@ function ServicesAndSettingsStep({
         </div>
       )}
 
+      {/* تب تعطیلات هفتگی */}
       {activeSection === "holidays" && (
         <div className="space-y-4">
           <span className="text-xs text-slate-500">روزهای غیرفعال هفته را انتخاب کنید</span>
@@ -873,9 +1019,20 @@ function ServicesAndSettingsStep({
         </div>
       )}
 
+      {/* دکمه‌های ناوبری */}
       <div className="flex gap-3 pt-4">
-        <button onClick={onBack} className="flex-1 py-3 border rounded-xl">قبلی</button>
-        <button onClick={onNext} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold">ادامه</button>
+        <button 
+          onClick={handlePrevSection} 
+          className="flex-1 py-3 border border-gray-300 dark:border-gray-700 rounded-xl font-medium"
+        >
+          {getPrevButtonText()}
+        </button>
+        <button 
+          onClick={handleNextSection} 
+          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all"
+        >
+          {getNextButtonText()}
+        </button>
       </div>
 
       {/* Add Service Modal */}
@@ -1104,7 +1261,7 @@ function FinalReviewStep({
 }
 
 // ==================== Success Modal ====================
-function SuccessModal({ link, onClose }: { link: string; onClose: () => void }) {
+function SuccessModal({ link, onClose, isEditMode = false }: { link: string; onClose: () => void; isEditMode?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -1125,8 +1282,12 @@ function SuccessModal({ link, onClose }: { link: string; onClose: () => void }) 
           <div className="w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center animate-bounce">
             <Check className="w-10 h-10 text-emerald-500" />
           </div>
-          <h3 className="text-white font-bold text-xl mt-3">🎉 تبریک!</h3>
-          <p className="text-emerald-100 text-sm mt-1">لینک اختصاصی شما ساخته شد</p>
+          <h3 className="text-white font-bold text-xl mt-3">
+            {isEditMode ? "✨ ویرایش با موفقیت انجام شد!" : "🎉 تبریک!"}
+          </h3>
+          <p className="text-emerald-100 text-sm mt-1">
+            {isEditMode ? "تغییرات لینک اختصاصی شما ذخیره شد" : "لینک اختصاصی شما ساخته شد"}
+          </p>
         </div>
 
         <div className="p-6">
@@ -1142,14 +1303,16 @@ function SuccessModal({ link, onClose }: { link: string; onClose: () => void }) 
             </div>
           </div>
 
-          <div className="mt-4 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 rounded-xl">
-            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 text-center">
-              📌 این لینک را در بیوگرافی اینستاگرام خود قرار دهید
-            </p>
-            <p className="text-xs text-slate-500 dark:text-gray-400 text-center mt-1">
-              مشتریان با کلیک روی لینک، مستقیماً به صفحه اختصاصی شما هدایت می‌شوند
-            </p>
-          </div>
+          {!isEditMode && (
+            <div className="mt-4 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 rounded-xl">
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 text-center">
+                📌 این لینک را در بیوگرافی اینستاگرام خود قرار دهید
+              </p>
+              <p className="text-xs text-slate-500 dark:text-gray-400 text-center mt-1">
+                مشتریان با کلیک روی لینک، مستقیماً به صفحه اختصاصی شما هدایت می‌شوند
+              </p>
+            </div>
+          )}
 
           <button onClick={onClose} className="w-full mt-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium">
             رفتن به داشبورد
@@ -1281,10 +1444,10 @@ export function CreateCustomerLinkWizard({
         if (!editMode) {
           setCreatedLink(finalLink);
           setShowSuccess(true);
-          toast.success("لینک اختصاصی با موفقیت ساخته شد!");
         } else {
-          toast.success("تغییرات با موفقیت ذخیره شد!");
-          onClose();
+          // برای حالت ویرایش، مودال موفقیت با متن متفاوت نشان بده
+          setCreatedLink(finalLink);
+          setShowSuccess(true);
         }
         
         if (onSuccess) {
@@ -1413,7 +1576,7 @@ export function CreateCustomerLinkWizard({
       </div>
 
       {showSuccess && (
-        <SuccessModal link={createdLink} onClose={onClose} />
+        <SuccessModal link={createdLink} onClose={onClose} isEditMode={editMode} />
       )}
     </>
   );

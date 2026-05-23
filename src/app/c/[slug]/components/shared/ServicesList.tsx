@@ -33,7 +33,7 @@ export function ServicesList({ services, onBookingClick, showBookingButton = tru
               <div>
                 <h4 className="font-medium text-white text-sm">{service.name}</h4>
                 <div className="flex items-center gap-2 mt-1">
-                  <Clock size={10} className="text-gray-500" />
+                  <Clock size={12} className="text-gray-400" />
                   <span className="text-xs text-gray-400">{service.duration_minutes} دقیقه</span>
                 </div>
               </div>
@@ -47,10 +47,11 @@ export function ServicesList({ services, onBookingClick, showBookingButton = tru
           </div>
         ))}
       </div>
+      {/* فقط اگه showBookingButton true باشه و onBookingClick وجود داشته باشه، دکمه نمایش داده میشه */}
       {showBookingButton && onBookingClick && (
         <button
           onClick={onBookingClick}
-          className="w-full mt-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-medium shadow-lg"
+          className="w-full mt-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-medium shadow-lg hover:shadow-emerald-500/25 transition-all duration-300"
         >
           ثبت نوبت
         </button>

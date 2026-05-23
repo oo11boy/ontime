@@ -11,23 +11,39 @@ export const POST = withAuth(async (req: NextRequest, context) => {
 
   try {
     let finalAmountToman = 0;
+    let planIdentifier = null;
 
-    // ۱. اگر قصد خرید پلن (ارتقای اشتراک) را دارد
+    // ۱. اگر قصد خرید پلن (فعال‌سازی ثبت نوبت) را دارد
     if (type === "plan") {
-      let query = "";
-      let params: any[] = [];
-      
-      if (typeof item_id === "number" || !isNaN(Number(item_id))) {
-        query = "SELECT monthly_fee FROM plans WHERE id = ?";
-        params = [Number(item_id)];
-      } else {
-        query = "SELECT monthly_fee FROM plans WHERE plan_key = ?";
-        params = [item_id];
+      // پشتیبانی از شناسه‌های مختلف پلن
+      if (item_id === "pro_3months" || item_id === "pro_quarterly" || item_id === "quarterly") {
+        // پلن ۳ ماهه ۲۵۸ هزار تومانی
+        finalAmountToman = 258000;
+        planIdentifier = "pro_3months";
+      } 
+      else if (item_id === "pro_monthly" || item_id === "monthly") {
+        // پلن ماهانه (اگر بخواهید بعداً اضافه کنید)
+        finalAmountToman = 87000;
+        planIdentifier = "pro_monthly";
       }
-      
-      const [plans]: any = await connection.execute(query, params);
-      if (!plans || plans.length === 0) throw new Error("پلن معتبر نیست.");
-      finalAmountToman = plans[0].monthly_fee;
+      else {
+        // اگر با آیدی عددی اومد، از دیتابیس بخوان
+        let query = "";
+        let params: any[] = [];
+        
+        if (typeof item_id === "number" || !isNaN(Number(item_id))) {
+          query = "SELECT monthly_fee FROM plans WHERE id = ?";
+          params = [Number(item_id)];
+        } else {
+          query = "SELECT monthly_fee FROM plans WHERE plan_key = ?";
+          params = [item_id];
+        }
+        
+        const [plans]: any = await connection.execute(query, params);
+        if (!plans || plans.length === 0) throw new Error("پلن معتبر نیست.");
+        finalAmountToman = plans[0].monthly_fee;
+        planIdentifier = item_id;
+      }
     }
 
     // ۲. اگر قصد خرید بسته پیامکی (sms) را دارد
@@ -51,14 +67,14 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     if (finalAmountToman <= 0) throw new Error("مبلغ تراکنش محاسبه نشد.");
     const amountInRial = finalAmountToman * 10;
 
-    // ۳. ثبت تراکنش در جدول لاگ پرداخت‌ها (حذف ستون gateway)
+    // ۳. ثبت تراکنش در جدول لاگ پرداخت‌ها
     const [res]: any = await connection.execute(
       "INSERT INTO payments (user_id, amount, type, item_id, status) VALUES (?, ?, ?, ?, 'pending')",
-      [userId, amountInRial, type, item_id]
+      [userId, amountInRial, type, planIdentifier || item_id]
     );
     const localPaymentId = res.insertId;
 
-    // ========== فقط درگاه زیبال ==========
+    // ========== درگاه زیبال ==========
     const zibalResponse = await fetch("https://gateway.zibal.ir/v1/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -66,7 +82,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
         merchant: process.env.ZIBAL_CODE,
         amount: amountInRial,
         callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/client/payment/verify`,
-        description: description || `خرید ${type === "sms" ? "پیامک" : "پلن"}`,
+        description: description || `خرید ${type === "sms" ? "پیامک" : "فعال‌سازی ثبت نوبت به مدت 3 ماه"}`,
         orderId: localPaymentId.toString(),
       }),
     });

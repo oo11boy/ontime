@@ -1,17 +1,22 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   User,
   Phone,
   RefreshCw,
-  AlertTriangle,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
   CreditCard,
   X,
+  Lock,
+  Crown,
+  Sparkles,
+  Rocket,
+  Shield,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -81,7 +86,6 @@ const formatRequestDate = (date: string): string => {
   });
 };
 
-
 const StatCard = ({
   label,
   value,
@@ -130,7 +134,6 @@ const ChangeCard = ({
   const isActiveBooking = change.request_type === "active_booking";
   const isCancel = change.request_type === "cancel";
   const isPending = change.status === "pending";
-  const isApproved = change.status === "approved";
   const cancelledByInfo = getCancelledByLabel(change);
   
   const canDirectCancel = isActiveBooking && change.current_status === "active";
@@ -276,7 +279,6 @@ const ChangeCard = ({
         ثبت درخواست: {formatRequestDate(change.requested_at)}
       </p>
 
-      {/* دکمه لغو مستقیم برای نوبت‌های فعال */}
       {canDirectCancel && onDirectCancel && (
         <button
           onClick={() => onDirectCancel(change.booking_id, change.client_name, change.client_phone)}
@@ -431,10 +433,103 @@ const ReviewModal = ({
   );
 };
 
-export default function bookings() {
+// مودال نیاز به خرید پلن
+const UpgradeRequiredModal = ({
+  isOpen,
+  onClose,
+  onUpgrade,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onUpgrade: () => void;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white dark:bg-[#1a1d24] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+      >
+        {/* هدر گرادیان */}
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-center">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Crown className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-xl font-bold text-white">دسترسی محدود! 🚀</h3>
+          <p className="text-amber-100 text-sm mt-1">
+            برای مشاهده درخواست‌های نوبت مشتریان
+          </p>
+        </div>
+
+        {/* محتوا */}
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <p className="text-gray-700 dark:text-gray-300 text-base">
+              قابلیت <span className="font-bold text-amber-600">مدیریت نوبت‌های مشتریان</span> 
+              {" "}نیاز به فعال‌سازی دارد.
+            </p>
+          </div>
+
+          {/* مزایا */}
+          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 mb-6">
+            <p className="text-sm font-bold text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              با فعال‌سازی این قابلیت:
+            </p>
+            <ul className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
+              <li className="flex items-center gap-2">✅ مشتریات ۲۴ ساعته آنلاین نوبت می‌گیرن</li>
+              <li className="flex items-center gap-2">✅ دیگه نیازی به تماس تلفنی برای هماهنگی نیست</li>
+              <li className="flex items-center gap-2">✅ تمام درخواست‌های نوبت رو اینجا می‌بینی</li>
+              <li className="flex items-center gap-2">✅ می‌تونی نوبت‌ها رو تایید یا رد کنی</li>
+            </ul>
+          </div>
+
+          {/* قیمت */}
+          <div className="text-center mb-6">
+            <p className="text-gray-500 text-sm line-through">قبلاً ۳۲۴,۰۰۰ تومان</p>
+            <div className="flex items-baseline justify-center gap-1 mt-1">
+              <span className="text-3xl font-bold text-amber-600">۲۵۸</span>
+              <span className="text-gray-500">هزار تومان</span>
+            </div>
+            <p className="text-xs text-emerald-600 mt-1">✨ فقط برای ۳ ماه (معادل ۸۶ هزار تومان در ماه)</p>
+          </div>
+
+          {/* دکمه‌ها */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 transition"
+            >
+              بعداً
+            </button>
+            <button
+              onClick={onUpgrade}
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg transition"
+            >
+              <Rocket className="w-4 h-4" />
+              فعال‌سازی ثبت نوبت
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-gray-400 mt-4">
+            🔒 پرداخت امن • ۷ روز ضمانت بازگشت وجه
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default function BookingChangesPage() {
+  const router = useRouter();
   const { userType } = useUserType();
   const [changes, setChanges] = useState<BookingChange[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -442,6 +537,28 @@ export default function bookings() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const itemsPerPage = 8;
+
+  // تابع بررسی دسترسی به قابلیت ثبت نوبت
+  const checkBookingFeatureAccess = useCallback(async () => {
+    setCheckingAccess(true);
+    try {
+      const res = await fetch("/api/client/customer-link/booking-feature-status");
+      const data = await res.json();
+      
+      if (!data.success || !data.isEnabled) {
+        // به جای ریدایرکت، مودال نشون بده
+        setShowUpgradeModal(true);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error checking booking feature access:", error);
+      setShowUpgradeModal(true);
+      return false;
+    } finally {
+      setCheckingAccess(false);
+    }
+  }, []);
 
   const fetchChanges = useCallback(async () => {
     setLoading(true);
@@ -461,9 +578,19 @@ export default function bookings() {
     }
   }, []);
 
+  // بررسی دسترسی هنگام لود صفحه
   useEffect(() => {
-    fetchChanges();
-  }, [fetchChanges]);
+    checkBookingFeatureAccess().then((hasAccess) => {
+      if (hasAccess) {
+        fetchChanges();
+      }
+    });
+  }, [checkBookingFeatureAccess, fetchChanges]);
+
+  const handleUpgrade = () => {
+    setShowUpgradeModal(false);
+    router.push("/clientdashboard/customer-link/plans");
+  };
 
   const handleDirectCancel = async (bookingId: number, clientName: string, clientPhone: string) => {
     const reason = prompt("لطفاً دلیل لغو نوبت را وارد کنید:", "لغو توسط مدیر");
@@ -584,132 +711,149 @@ export default function bookings() {
     active: changes.filter((c) => c.request_type === "active_booking").length,
   };
 
-  const isStaff = userType === "staff";
-  const pendingCount = stats.pending;
+  // در حال بررسی دسترسی - نمایش لودینگ
+  if (checkingAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0f1115]">
+        <div className="text-center">
+          <RefreshCw className="w-12 h-12 animate-spin text-emerald-600 dark:text-emerald-400 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-gray-400">در حال بررسی دسترسی...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen max-w-md m-auto bg-slate-50 dark:bg-[#0f1115] text-slate-800 dark:text-white transition-colors">
       <Toaster position="top-center" />
 
-      <div className=" pb-20 px-4 max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-          <StatCard
-            label="کل درخواست‌ها"
-            value={stats.total}
-            color="border-slate-200 dark:border-white/10"
-          />
-          <StatCard
-            label="در انتظار تایید"
-            value={stats.pending}
-            color="border-yellow-200 dark:border-yellow-500/20"
-          />
-          <StatCard
-            label="درخواست لغو"
-            value={stats.cancelled}
-            color="border-red-200 dark:border-red-500/20"
-          />
-          <StatCard
-            label="درخواست تغییر"
-            value={stats.reschedule}
-            color="border-blue-200 dark:border-blue-500/20"
-          />
-          <StatCard
-            label="نوبت‌های فعال"
-            value={stats.active}
-            color="border-emerald-200 dark:border-emerald-500/20"
-          />
-        </div>
+      {/* مودال نیاز به ارتقا */}
+      <UpgradeRequiredModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={handleUpgrade}
+      />
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          {["all", "pending", "approved", "rejected"].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                filterStatus === status
-                  ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
-              }`}
-            >
-              {status === "all" && "همه"}
-              {status === "pending" && "در انتظار"}
-              {status === "approved" && "تایید شده"}
-              {status === "rejected" && "رد شده"}
-            </button>
-          ))}
-          <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1" />
-          {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                filterType === type
-                  ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
-              }`}
-            >
-              {type === "all" && "همه نوع"}
-              {type === "reschedule" && "تغییر زمان"}
-              {type === "cancel" && "لغو نوبت"}
-              {type === "new_booking" && "ثبت جدید"}
-              {type === "active_booking" && "نوبت‌های فعال"}
-            </button>
-          ))}
-          <button
-            onClick={fetchChanges}
-            className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
+      {!showUpgradeModal && (
+        <div className="pb-20 px-4 max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <StatCard
+              label="کل درخواست‌ها"
+              value={stats.total}
+              color="border-slate-200 dark:border-white/10"
+            />
+            <StatCard
+              label="در انتظار تایید"
+              value={stats.pending}
+              color="border-yellow-200 dark:border-yellow-500/20"
+            />
+            <StatCard
+              label="درخواست لغو"
+              value={stats.cancelled}
+              color="border-red-200 dark:border-red-500/20"
+            />
+            <StatCard
+              label="درخواست تغییر"
+              value={stats.reschedule}
+              color="border-blue-200 dark:border-blue-500/20"
+            />
+            <StatCard
+              label="نوبت‌های فعال"
+              value={stats.active}
+              color="border-emerald-200 dark:border-emerald-500/20"
+            />
+          </div>
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
-          </div>
-        ) : paginatedChanges.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#1a1d24]/50 rounded-2xl border border-dashed border-slate-300 dark:border-gray-700">
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-gray-600" />
-            <p className="text-slate-500 dark:text-gray-500">
-              هیچ درخواستی یافت نشد
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {paginatedChanges.map((change) => (
-              <ChangeCard
-                key={change.id}
-                change={change}
-                onReview={() => openModal(change)}
-                onDirectCancel={handleDirectCancel}
-              />
+          <div className="flex flex-wrap gap-2 mb-6">
+            {["all", "pending", "approved", "rejected"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  filterStatus === status
+                    ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                }`}
+              >
+                {status === "all" && "همه"}
+                {status === "pending" && "در انتظار"}
+                {status === "approved" && "تایید شده"}
+                {status === "rejected" && "رد شده"}
+              </button>
             ))}
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-6">
+            <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1" />
+            {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  filterType === type
+                    ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                }`}
+              >
+                {type === "all" && "همه نوع"}
+                {type === "reschedule" && "تغییر زمان"}
+                {type === "cancel" && "لغو نوبت"}
+                {type === "new_booking" && "ثبت جدید"}
+                {type === "active_booking" && "نوبت‌های فعال"}
+              </button>
+            ))}
             <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
+              onClick={fetchChanges}
+              className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
             >
-              <ChevronRight className="w-4 h-4 text-slate-600 dark:text-white" />
-            </button>
-            <span className="text-sm text-slate-500 dark:text-gray-400">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
-            >
-              <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-white" />
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
-        )}
-      </div>
 
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+            </div>
+          ) : paginatedChanges.length === 0 ? (
+            <div className="text-center py-16 bg-white dark:bg-[#1a1d24]/50 rounded-2xl border border-dashed border-slate-300 dark:border-gray-700">
+              <CheckCircle className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-gray-600" />
+              <p className="text-slate-500 dark:text-gray-500">
+                هیچ درخواستی یافت نشد
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {paginatedChanges.map((change) => (
+                <ChangeCard
+                  key={change.id}
+                  change={change}
+                  onReview={() => openModal(change)}
+                  onDirectCancel={handleDirectCancel}
+                />
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
+              >
+                <ChevronRight className="w-4 h-4 text-slate-600 dark:text-white" />
+              </button>
+              <span className="text-sm text-slate-500 dark:text-gray-400">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
+              >
+                <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-white" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <AnimatePresence>
         {isModalOpen && selectedChange && (
