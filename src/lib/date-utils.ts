@@ -1,19 +1,5 @@
+// lib/date-utils.ts
 import moment from "moment-jalaali";
-
-/* --------------------------------------------------
-   توابع پایه امن (خیلی مهم)
--------------------------------------------------- */
-
-// ساخت Date محلی امن از YYYY-MM-DD
-export const parseLocalDate = (dateStr: string): Date => {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d, 12, 0, 0, 0); // ⬅️ 12 ظهر (جلوگیری از عقب افتادن روز)
-};
-
-// ساخت moment امن از تاریخ میلادی
-export const safeMomentFromGregorian = (dateStr: string) => {
-  return moment(dateStr, "YYYY-MM-DD").hour(12).minute(0).second(0);
-};
 
 /* --------------------------------------------------
    ثابت‌ها
@@ -45,6 +31,53 @@ export const persianWeekDays = [
 ];
 
 /* --------------------------------------------------
+   توابع پایه
+-------------------------------------------------- */
+
+// تبدیل هر نوع تاریخ ورودی به فرمت YYYY-MM-DD (فقط تاریخ، بدون زمان)
+export const normalizeToDateOnly = (dateStr: string): string => {
+  console.log("normalizeToDateOnly - ورودی:", dateStr);
+  
+  try {
+    // اگر تاریخ به فرمت ISO (با T) بود
+    if (dateStr.includes("T")) {
+      // فقط قسمت تاریخ را بگیر
+      const normalized = dateStr.split("T")[0];
+      console.log("normalizeToDateOnly - خروجی (ISO):", normalized);
+      return normalized;
+    }
+    
+    // اگر تاریخ به فرمت YYYY-MM-DD بود
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      console.log("normalizeToDateOnly - خروجی (YYYY-MM-DD):", dateStr);
+      return dateStr;
+    }
+    
+    // سایر فرمت‌ها
+    console.log("normalizeToDateOnly - خروجی (سایر):", dateStr);
+    return dateStr;
+  } catch {
+    return dateStr;
+  }
+};
+
+// ساخت Date محلی امن از YYYY-MM-DD
+export const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
+};
+
+// ساخت moment امن از تاریخ میلادی (فقط تاریخ، بدون زمان)
+export const safeMomentFromGregorian = (dateStr: string) => {
+  // اول نرمالایز کن
+  const normalized = normalizeToDateOnly(dateStr);
+  const [year, month, day] = normalized.split("-").map(Number);
+  
+  // ساخت moment با ساعت 12 ظهر برای جلوگیری از جابه‌جایی منطقه زمانی
+  return moment(`${year}-${month}-${day} 12:00:00`, "YYYY-MM-DD HH:mm:ss");
+};
+
+/* --------------------------------------------------
    تبدیل تاریخ‌ها
 -------------------------------------------------- */
 
@@ -55,8 +88,9 @@ export const jalaliToGregorian = (
   day: number
 ): string => {
   try {
-    const jalaliString = `${year}/${month + 1}/${day} 12:00`;
-    const m = moment(jalaliString, "jYYYY/jMM/jDD HH:mm");
+    const jalaliString = `${year}/${month + 1}/${day}`;
+    const m = moment(jalaliString, "jYYYY/jMM/jDD");
+    m.hour(12).minute(0).second(0);
 
     if (!m.isValid()) throw new Error("Invalid Jalali date");
 
@@ -79,16 +113,17 @@ export const gregorianToPersian = (
   weekDay: string;
 } => {
   try {
-    let m: moment.Moment;
-
+    let dateStr: string;
+    
     if (typeof date === "string") {
-      // همیشه از safe method استفاده کن
-      m = safeMomentFromGregorian(date);
+      dateStr = normalizeToDateOnly(date);
     } else {
-      // اگر Date object بود، ساعت را روی ۱۲ ظهر تنظیم کن
-      m = moment(date).hour(12).minute(0).second(0);
+      // اگر Date object بود، به فرمت YYYY-MM-DD تبدیل کن
+      dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     }
-
+    
+    const m = safeMomentFromGregorian(dateStr);
+    
     if (!m.isValid()) throw new Error("Invalid date");
 
     const jYear = m.jYear();
@@ -122,12 +157,21 @@ export const gregorianToPersian = (
 -------------------------------------------------- */
 
 export const formatPersianDate = (dateString: string): string => {
+  console.log("formatPersianDate - ورودی:", dateString);
+  
   try {
     const m = safeMomentFromGregorian(dateString);
-    if (!m.isValid()) return dateString;
-
-    return `${m.jDate()} ${persianMonths[m.jMonth()]} ${m.jYear()}`;
-  } catch {
+    if (!m.isValid()) {
+      console.log("formatPersianDate - moment نامعتبر");
+      return dateString;
+    }
+    
+    const result = `${m.jDate()} ${persianMonths[m.jMonth()]} ${m.jYear()}`;
+    console.log("formatPersianDate - خروجی:", result);
+    
+    return result;
+  } catch (error) {
+    console.error("formatPersianDate error:", error);
     return dateString;
   }
 };
@@ -140,7 +184,7 @@ export const formatPersianDateTime = (
 };
 
 /* --------------------------------------------------
-   بررسی گذشته بودن (اصلاح‌شده)
+   بررسی گذشته بودن
 -------------------------------------------------- */
 
 export const isPastDate = (
@@ -148,7 +192,11 @@ export const isPastDate = (
   timeString?: string
 ): boolean => {
   try {
-    const m = safeMomentFromGregorian(dateString);
+    const normalized = normalizeToDateOnly(dateString);
+    const [year, month, day] = normalized.split("-").map(Number);
+    const m = moment(`${year}-${month}-${day}`, "YYYY-MM-DD").hour(12);
+    
+    if (!m.isValid()) return false;
 
     if (timeString) {
       const [h, min] = timeString.split(":").map(Number);

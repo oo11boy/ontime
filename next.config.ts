@@ -53,17 +53,18 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   compress: true,
 
-  turbopack: {}, 
+  turbopack: {},
   images: {
-    formats: ["image/avif", "image/webp"] as any, // استفاده از any برای عبور از تداخل پکیج PWA
+    formats: ["image/avif", "image/webp"] as any,
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-     domains: ['localhost', 'ontimeapp.ir'], // دامنه خودت رو اضافه کن
+    domains: ['localhost', 'ontimeapp.ir'],
   },
   async rewrites() {
     return [
       {
-      source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|blog|clientdashboard|admindashboard|login|admin-login|customer|_next|static|images|icons).*)",
+        // اضافه کردن "c" به لیست استثناها
+        source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|blog|clientdashboard|admindashboard|login|admin-login|customer|c|_next|static|images|icons).*)",
         destination: "/customer/booking/:token",
       },
     ];

@@ -42,6 +42,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
 /**
  * بروزرسانی تنظیمات کاربر
  */
+// src/app/api/client/settings/route.ts (بخش POST را آپدیت می‌کنیم)
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
   try {
@@ -52,11 +53,10 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       business_address,
       phone,
       job_id,
-      work_shifts, // این فیلد به صورت رشته JSON دریافت می‌شود
-      off_days, // این فیلد به صورت رشته JSON دریافت می‌شود
+      work_shifts,
+      off_days,
     } = body;
 
-    // اعتبار سنجی فیلدهای الزامی اصلی
     if (!name || !phone || !job_id) {
       return NextResponse.json(
         { message: "نام، شماره تماس و نوع تخصص الزامی است" },
@@ -64,7 +64,6 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // بررسی تکراری نبودن شماره موبایل (اگر کاربر شماره خود را تغییر داده باشد)
     const existingUser = await query<any[]>(
       "SELECT id FROM users WHERE phone = ? AND id != ?",
       [phone, userId]
@@ -99,6 +98,31 @@ export const POST = withAuth(async (req: NextRequest, context) => {
         userId,
       ]
     );
+
+    // همچنین اگر لینک اختصاصی وجود دارد، آن را هم آپدیت می‌کنیم
+    const customerLink = await query(
+      "SELECT id FROM customer_links WHERE user_id = ? AND is_deleted = 0",
+      [userId]
+    );
+
+    if (customerLink && customerLink.length > 0) {
+      await query(
+        `UPDATE customer_links 
+         SET business_name = COALESCE(?, business_name),
+             business_address = COALESCE(?, business_address),
+             work_shifts = COALESCE(?, work_shifts),
+             off_days = COALESCE(?, off_days),
+             updated_at = NOW()
+         WHERE user_id = ? AND is_deleted = 0`,
+        [
+          business_name || null,
+          business_address || null,
+          work_shifts || null,
+          off_days || null,
+          userId
+        ]
+      );
+    }
 
     return NextResponse.json({
       success: true,

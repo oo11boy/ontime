@@ -1,4 +1,6 @@
+// src/app/(client pages)/login/page.tsx
 "use client";
+
 import React, { JSX, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -10,10 +12,115 @@ import {
   RefreshCw,
   Sparkles,
   Briefcase,
+  Crown,
+  Zap,
+  X,
+  Link as LinkIcon,
+  Copy,
+  Instagram,
+  Send,
+  MessageCircle,
+  MapPin,
+  Clock,
+  Calendar as CalendarIcon,
+  Plus,
+  Trash2,
+  Eye,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
+import { CreateCustomerLinkWizard } from "../clientdashboard/customer-link/components/CreateCustomerLinkWizard";
 
+// ==================== Import the Wizard Component ====================
+
+// ==================== Types ====================
+interface Job {
+  id: number;
+  persian_name: string;
+}
+
+// ==================== کامپوننت پیشنهاد ساخت لینک ====================
+function OfferCustomerLinkModal({ 
+  onStart, 
+  onSkip,
+  userName 
+}: { 
+  onStart: () => void;
+  onSkip: () => void;
+  userName: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl"
+      >
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-center">
+          <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3">
+            <Crown className="w-10 h-10 text-white" />
+          </div>
+          <h3 className="text-white font-bold text-xl">✨ صفحه اختصاصی کسب‌وکار</h3>
+          <p className="text-purple-100 text-sm mt-1">یک صفحه اختصاصی برای برند خود بسازید</p>
+        </div>
+
+        <div className="p-6">
+          <p className="text-gray-700 dark:text-gray-300 text-center mb-4">
+            {userName} عزیز، با ساختن صفحه اختصاصی:
+          </p>
+          
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-3 p-2">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+              </div>
+              <span className="text-sm">مشتریان می‌توانند آنلاین نوبت بگیرند</span>
+            </div>
+            <div className="flex items-center gap-3 p-2">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <Eye className="w-4 h-4 text-blue-600" />
+              </div>
+              <span className="text-sm">آمار بازدید لینک را ببینید</span>
+            </div>
+            <div className="flex items-center gap-3 p-2">
+              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                <MessageCircle className="w-4 h-4 text-purple-600" />
+              </div>
+              <span className="text-sm">نظرات مشتریان را مدیریت کنید</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-3 text-center mb-6">
+            <p className="text-sm font-bold text-purple-700">🔥 فقط ۲۵۷ هزار تومان - دوره ۳ ماهه</p>
+            <p className="text-xs text-gray-500">معادل ۸۵,۶۰۰ تومان در ماه</p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onSkip}
+              className="flex-1 py-3 border border-gray-300 rounded-xl font-medium"
+            >
+              رد کردن
+            </button>
+            <button
+              onClick={onStart}
+              className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              شروع ساخت
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-gray-400 mt-4">
+            می‌توانید بعداً از بخش لینک اختصاصی نیز اقدام کنید
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ==================== صفحه اصلی لاگین ====================
 export default function LoginPage(): JSX.Element {
   const router = useRouter();
   const [step, setStep] = useState<"phone" | "otp" | "signup">("phone");
@@ -24,7 +131,13 @@ export default function LoginPage(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [jobs, setJobs] = useState<{ id: number; persian_name: string }[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  
+  // State برای مودال لینک اختصاصی
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showCreateLinkWizard, setShowCreateLinkWizard] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -87,7 +200,6 @@ export default function LoginPage(): JSX.Element {
     }
   };
 
-  // تابع اصلی برای تایید کد (هم به صورت خودکار و هم با دکمه فراخوانی می‌شود)
   const verifyOtp = async (currentOtp: string) => {
     if (currentOtp.length !== 6) return;
     setLoading(true);
@@ -109,7 +221,7 @@ export default function LoginPage(): JSX.Element {
         }
       } else {
         toast.error(data.message || "کد اشتباه است");
-        setOtp(""); // پاک کردن کد در صورت اشتباه بودن
+        setOtp("");
         inputRefs.current[0]?.focus();
       }
     } catch {
@@ -118,6 +230,7 @@ export default function LoginPage(): JSX.Element {
       setLoading(false);
     }
   };
+
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d?$/.test(value)) return;
     const currentOtpArr = otp.split("");
@@ -125,12 +238,10 @@ export default function LoginPage(): JSX.Element {
     const newOtp = currentOtpArr.join("");
     setOtp(newOtp);
 
-    // انتقال به اینپوت بعدی
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // تایید خودکار در صورت تکمیل ۶ رقم
     if (newOtp.length === 6) {
       verifyOtp(newOtp);
     }
@@ -151,14 +262,16 @@ export default function LoginPage(): JSX.Element {
 
       if (res.ok) {
         toast.success("ثبت‌نام با موفقیت انجام شد");
-
-        // اگر مودال خوش‌آمدگویی داری، اینجا ست کن
-        if (data.show_welcome_modal) {
-          sessionStorage.setItem("show_welcome_modal", "true");
+        
+        setUserName(name.trim());
+        
+        const userRes = await fetch("/api/client/auth/user-type");
+        const userData = await userRes.json();
+        if (userData.userType === "user" && userData.userId) {
+          setUserId(userData.userId);
         }
-
-        // ریدایرکت سخت
-        window.location.href = "/clientdashboard";
+        
+        setShowOfferModal(true);
         return;
       } else {
         toast.error(data.message || "خطا در ثبت اطلاعات");
@@ -168,6 +281,13 @@ export default function LoginPage(): JSX.Element {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLinkCreated = (link: string, slug: string) => {
+    toast.success(`لینک اختصاصی شما ساخته شد: ${link}`);
+    setTimeout(() => {
+      window.location.href = "/clientdashboard";
+    }, 2000);
   };
 
   return (
@@ -376,11 +496,11 @@ export default function LoginPage(): JSX.Element {
                       className="w-full h-16 bg-[#1a1d23] border border-white/10 rounded-2xl pr-14 pl-6 text-lg font-bold appearance-none focus:border-emerald-500/50 outline-none transition-all"
                     >
                       <option value="">انتخاب تخصص...</option>
-                      {jobs.map((j) => 
+                      {jobs.map((j) => (
                         <option key={j.id} value={j.id}>
-                          { j.persian_name}
+                          {j.persian_name}
                         </option>
-                      )}
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -401,6 +521,34 @@ export default function LoginPage(): JSX.Element {
           </AnimatePresence>
         </div>
       </motion.div>
+
+      {/* مودال پیشنهاد ساخت لینک اختصاصی */}
+      {showOfferModal && (
+        <OfferCustomerLinkModal
+          userName={name || userName}
+          onStart={() => {
+            setShowOfferModal(false);
+            setShowCreateLinkWizard(true);
+          }}
+          onSkip={() => {
+            setShowOfferModal(false);
+            window.location.href = "/clientdashboard";
+          }}
+        />
+      )}
+
+      {/* ویزارت ساخت لینک اختصاصی (فرم ۵ مرحله‌ای) */}
+      {showCreateLinkWizard && userId && (
+        <CreateCustomerLinkWizard
+          isOpen={showCreateLinkWizard}
+          onClose={() => {
+            setShowCreateLinkWizard(false);
+            window.location.href = "/clientdashboard";
+          }}
+          onSuccess={handleLinkCreated}
+      
+        />
+      )}
     </div>
   );
 }
