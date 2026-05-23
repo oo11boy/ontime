@@ -5,10 +5,10 @@ import { Home, Sparkles, Calendar, Star } from "lucide-react";
 
 interface BottomNavProps {
   activeTab: string;
-  onTabChange: (tab: string) => void;
+onTabChange: (tab: "info" | "booking" | "reviews") => void;
 }
 
-const tabs = [
+const tabs: { id: "info" | "booking" | "reviews"; label: string; icon: any }[] = [
   { id: "info", label: "معرفی", icon: Home },
   { id: "booking", label: "نوبت دهی", icon: Calendar },
   { id: "reviews", label: "نظرات", icon: Star },

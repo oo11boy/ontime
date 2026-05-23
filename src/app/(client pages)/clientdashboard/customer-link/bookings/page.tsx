@@ -1,10 +1,727 @@
-import React from 'react'
-import BookingChangesPage from '../../booking-changes/page'
+"use client";
 
-export default function page() {
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Calendar,
+  User,
+  Phone,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  X,
+} from "lucide-react";
+import { toast, Toaster } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { formatPersianDate } from "@/lib/date-utils";
+import { useUserType } from "@/hooks/useUserType";
+
+// Interface BookingChange
+interface BookingChange {
+  id: number;
+  client_name: string;
+  client_phone: string;
+  old_date: string;
+  old_time: string;
+  new_date: string | null;
+  new_time: string | null;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  request_type: "reschedule" | "cancel" | "new_booking" | "active_booking";
+  reason: string | null;
+  admin_reason: string | null;
+  requested_at: string;
+  booking_id: number;
+  staff_id: number | null;
+  staff_name: string | null;
+  business_name: string;
+  business_phone: string;
+  cancelled_by?: "customer" | "admin" | null;
+  current_status?: string;
+}
+
+const formatTime = (time: string): string => {
+  if (!time) return "";
+  const parts = time.split(":");
+  if (parts.length >= 2) {
+    return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
+  }
+  return time;
+};
+
+const formatGregorianToPersian = (dateStr: string): string => {
+  if (!dateStr) return "";
+  try {
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return formatPersianDate(dateStr);
+    }
+    const date = new Date(dateStr);
+    const utcDate = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0),
+    );
+    const year = utcDate.getUTCFullYear();
+    const month = (utcDate.getUTCMonth() + 1).toString().padStart(2, "0");
+    const day = utcDate.getUTCDate().toString().padStart(2, "0");
+    return formatPersianDate(`${year}-${month}-${day}`);
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatPersianDateWithTime = (date: string, time: string): string => {
+  return `${formatGregorianToPersian(date)} - ${formatTime(time)}`;
+};
+
+const formatRequestDate = (date: string): string => {
+  const d = new Date(date);
+  return d.toLocaleDateString("fa-IR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+
+const StatCard = ({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) => (
+  <div
+    className={`bg-white dark:bg-[#1a1d24] rounded-xl p-3 border ${color} transition-colors`}
+  >
+    <p className="text-slate-500 dark:text-gray-400 text-xs mb-1">{label}</p>
+    <p className="text-xl font-bold text-slate-800 dark:text-white">{value}</p>
+  </div>
+);
+
+const getCancelledByLabel = (change: BookingChange) => {
+  if (change.request_type !== "cancel") return null;
+  if (change.cancelled_by === "customer") {
+    return {
+      text: "لغو توسط مشتری",
+      className: "bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400",
+    };
+  }
+  if (change.cancelled_by === "admin") {
+    return {
+      text: "لغو توسط مدیر",
+      className: "bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400",
+    };
+  }
+  return null;
+};
+
+const ChangeCard = ({
+  change,
+  onReview,
+  onDirectCancel,
+}: {
+  change: BookingChange;
+  onReview: () => void;
+  onDirectCancel?: (bookingId: number, clientName: string, clientPhone: string) => void;
+}) => {
+  const isReschedule = change.request_type === "reschedule";
+  const isNewBooking = change.request_type === "new_booking";
+  const isActiveBooking = change.request_type === "active_booking";
+  const isCancel = change.request_type === "cancel";
+  const isPending = change.status === "pending";
+  const isApproved = change.status === "approved";
+  const cancelledByInfo = getCancelledByLabel(change);
+  
+  const canDirectCancel = isActiveBooking && change.current_status === "active";
+
+  const getStatusStyle = () => {
+    if (change.status === "pending")
+      return "bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400";
+    if (change.status === "approved")
+      return "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400";
+    return "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400";
+  };
+
+  const getStatusLabel = () => {
+    if (change.status === "pending") return "در انتظار تایید";
+    if (change.status === "approved") {
+      if (isReschedule) return "تغییر تایید شده";
+      if (isCancel) return "لغو تایید شده";
+      if (isNewBooking) return "نوبت تایید شده";
+      if (isActiveBooking) return "نوبت فعال";
+      return "تایید شده";
+    }
+    return "رد شده";
+  };
+
+  const getRequestTypeLabel = () => {
+    if (isReschedule) return "تغییر زمان";
+    if (isCancel) return "لغو نوبت";
+    if (isNewBooking) return "ثبت نوبت جدید";
+    if (isActiveBooking) return "نوبت فعال";
+    return "سایر";
+  };
+
+  const getRequestTypeStyle = () => {
+    if (isReschedule) return "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400";
+    if (isCancel) return "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400";
+    if (isNewBooking) return "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400";
+    if (isActiveBooking) return "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400";
+    return "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400";
+  };
+
   return (
-  <>
-<BookingChangesPage/>
-  </>
-  )
+    <div className="bg-white dark:bg-[#1a1d24] rounded-xl p-4 border border-slate-200 dark:border-white/10 hover:border-emerald-400 dark:hover:border-emerald-500/30 transition-all">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${getStatusStyle()}`}>
+            {getStatusLabel()}
+          </span>
+          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${getRequestTypeStyle()}`}>
+            {getRequestTypeLabel()}
+          </span>
+          {cancelledByInfo && (
+            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${cancelledByInfo.className}`}>
+              {cancelledByInfo.text}
+            </span>
+          )}
+          {isReschedule && isPending && (
+            <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+              <CreditCard className="w-3 h-3" /> کسر ۲ پیامک
+            </span>
+          )}
+        </div>
+        {isPending && (
+          <button
+            onClick={onReview}
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-xs font-bold transition"
+          >
+            بررسی
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 text-sm mb-3">
+        <User className="w-4 h-4 text-slate-500 dark:text-gray-500" />
+        <span className="text-slate-800 dark:text-white">{change.client_name}</span>
+        <Phone className="w-4 h-4 text-slate-500 dark:text-gray-500 mr-2" />
+        <span className="text-slate-500 dark:text-gray-400 text-xs" dir="ltr">
+          {change.client_phone}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-slate-100 dark:bg-black/30 rounded-lg p-2">
+          <p className="text-slate-500 dark:text-gray-500 text-[10px] mb-1">
+            {isNewBooking ? "تاریخ درخواستی" : "تاریخ نوبت"}
+          </p>
+          <div className="flex items-center gap-1">
+            <Calendar className="w-3 h-3 text-slate-500 dark:text-gray-500" />
+            <span className="text-slate-800 dark:text-white text-xs">
+              {formatPersianDateWithTime(change.old_date, change.old_time)}
+            </span>
+          </div>
+        </div>
+
+        {isReschedule && change.new_date && change.new_time && (
+          <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-lg p-2 border border-emerald-200 dark:border-emerald-500/20">
+            <p className="text-emerald-700 dark:text-emerald-400 text-[10px] mb-1">
+              زمان جدید درخواستی
+            </p>
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-emerald-700 dark:text-emerald-300 text-xs">
+                {formatPersianDateWithTime(change.new_date, change.new_time)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {isCancel && change.cancelled_by && (
+          <div className={`rounded-lg p-2 ${change.cancelled_by === 'customer' ? 'bg-purple-50 dark:bg-purple-500/10' : 'bg-orange-50 dark:bg-orange-500/10'}`}>
+            <p className="text-slate-500 dark:text-gray-500 text-[10px] mb-1">
+              نحوه لغو
+            </p>
+            <p className={`text-xs ${change.cancelled_by === 'customer' ? 'text-purple-700 dark:text-purple-300' : 'text-orange-700 dark:text-orange-300'}`}>
+              {change.cancelled_by === 'customer' ? 'توسط مشتری' : 'توسط مدیر'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {change.reason && (
+        <div className="bg-slate-100 dark:bg-gray-500/10 rounded-lg p-2 mb-2">
+          <p className="text-slate-500 dark:text-gray-500 text-[10px] mb-1">
+            {isNewBooking ? "توضیحات درخواست" : "دلیل درخواست"}
+          </p>
+          <p className="text-slate-700 dark:text-gray-300 text-xs line-clamp-2">
+            {change.reason}
+          </p>
+        </div>
+      )}
+
+      {change.admin_reason && change.status === "rejected" && (
+        <div className="bg-red-50 dark:bg-red-500/10 rounded-lg p-2 mb-2">
+          <p className="text-red-600 dark:text-red-400 text-[10px] mb-1">
+            دلیل رد
+          </p>
+          <p className="text-red-700 dark:text-red-300 text-xs">
+            {change.admin_reason}
+          </p>
+        </div>
+      )}
+
+      <p className="text-slate-500 dark:text-gray-500 text-[10px] mt-2">
+        ثبت درخواست: {formatRequestDate(change.requested_at)}
+      </p>
+
+      {/* دکمه لغو مستقیم برای نوبت‌های فعال */}
+      {canDirectCancel && onDirectCancel && (
+        <button
+          onClick={() => onDirectCancel(change.booking_id, change.client_name, change.client_phone)}
+          className="mt-3 w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-xs font-bold transition flex items-center justify-center gap-1"
+        >
+          <X className="w-3 h-3" />
+          لغو نوبت
+        </button>
+      )}
+    </div>
+  );
+};
+
+const ReviewModal = ({
+  change,
+  onClose,
+  onApprove,
+  onReject,
+  isProcessing,
+}: {
+  change: BookingChange;
+  onClose: () => void;
+  onApprove: () => void;
+  onReject: (reason: string) => void;
+  isProcessing: boolean;
+}) => {
+  const [reason, setReason] = useState("");
+  const isReschedule = change.request_type === "reschedule";
+  const isNewBooking = change.request_type === "new_booking";
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 dark:bg-black/80 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white dark:bg-[#1a1d24] rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+      >
+        <div className="sticky top-0 bg-white dark:bg-[#1a1d24] p-4 border-b border-slate-200 dark:border-white/10">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+              بررسی درخواست
+            </h3>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10"
+            >
+              <X className="w-5 h-5 text-slate-500 dark:text-gray-400" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="bg-slate-100 dark:bg-black/30 rounded-xl p-3">
+            <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
+              مشتری
+            </p>
+            <p className="text-slate-800 dark:text-white font-medium">
+              {change.client_name}
+            </p>
+            <p className="text-slate-500 dark:text-gray-400 text-sm" dir="ltr">
+              {change.client_phone}
+            </p>
+          </div>
+
+          <div className="bg-slate-100 dark:bg-black/30 rounded-xl p-3">
+            <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
+              {isNewBooking ? "تاریخ درخواستی نوبت" : "زمان فعلی نوبت"}
+            </p>
+            <p className="text-slate-800 dark:text-white">
+              {formatPersianDateWithTime(change.old_date, change.old_time)}
+            </p>
+          </div>
+
+          {isReschedule && change.new_date && change.new_time && (
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 border border-emerald-200 dark:border-emerald-500/20">
+              <p className="text-emerald-700 dark:text-emerald-400 text-xs mb-1">
+                زمان جدید درخواستی
+              </p>
+              <p className="text-emerald-800 dark:text-emerald-300">
+                {formatPersianDateWithTime(change.new_date, change.new_time)}
+              </p>
+            </div>
+          )}
+
+          {change.reason && (
+            <div className="bg-slate-100 dark:bg-gray-500/10 rounded-xl p-3">
+              <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
+                {isNewBooking ? "توضیحات درخواست" : "دلیل درخواست"}
+              </p>
+              <p className="text-slate-700 dark:text-gray-300">
+                {change.reason}
+              </p>
+            </div>
+          )}
+
+          {(isReschedule || isNewBooking) && (
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 border border-emerald-200 dark:border-emerald-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                  {isReschedule ? "هزینه پیامک" : "توجه"}
+                </p>
+              </div>
+              <p className="text-emerald-700 dark:text-emerald-300 text-sm">
+                {isReschedule 
+                  ? "با تایید این درخواست، ۲ واحد از اعتبار پیامک شما کسر خواهد شد"
+                  : "با تایید این درخواست، نوبت جدید برای مشتری رزرو خواهد شد"}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm text-slate-600 dark:text-gray-400 mb-2">
+              در صورت رد، دلیل را وارد کنید
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="دلیل رد درخواست..."
+              rows={2}
+              className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500/50 resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-white dark:bg-[#1a1d24] p-4 border-t border-slate-200 dark:border-white/10 flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition"
+          >
+            انصراف
+          </button>
+          <button
+            onClick={() => onReject(reason)}
+            disabled={isProcessing}
+            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium transition disabled:opacity-50"
+          >
+            رد
+          </button>
+          <button
+            onClick={onApprove}
+            disabled={isProcessing}
+            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-1"
+          >
+            {isReschedule && <CreditCard className="w-4 h-4" />}
+            تایید
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default function bookings() {
+  const { userType } = useUserType();
+  const [changes, setChanges] = useState<BookingChange[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedChange, setSelectedChange] = useState<BookingChange | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const itemsPerPage = 8;
+
+  const fetchChanges = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/client/booking-changes");
+      const data = await res.json();
+      
+      if (data.success) {
+        setChanges(data.changes || []);
+      } else {
+        toast.error(data.message);
+      }
+    } catch {
+      toast.error("خطا در دریافت درخواست‌ها");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchChanges();
+  }, [fetchChanges]);
+
+  const handleDirectCancel = async (bookingId: number, clientName: string, clientPhone: string) => {
+    const reason = prompt("لطفاً دلیل لغو نوبت را وارد کنید:", "لغو توسط مدیر");
+    if (reason === null) return;
+    
+    setIsProcessing(true);
+    const loadingToast = toast.loading("در حال لغو نوبت...");
+    try {
+      const res = await fetch("/api/client/booking-changes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "direct_cancel", 
+          booking_id: bookingId,
+          reason: reason.trim() || "لغو توسط مدیر"
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message, { id: loadingToast });
+        fetchChanges();
+      } else {
+        toast.error(data.message, { id: loadingToast });
+      }
+    } catch {
+      toast.error("خطا در لغو نوبت", { id: loadingToast });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!selectedChange) return;
+    setIsProcessing(true);
+    const loadingToast = toast.loading("در حال تایید درخواست...");
+    try {
+      const res = await fetch("/api/client/booking-changes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedChange.id, action: "approve" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message, { id: loadingToast });
+        fetchChanges();
+        setIsModalOpen(false);
+        setSelectedChange(null);
+      } else {
+        toast.error(data.message, { id: loadingToast });
+      }
+    } catch {
+      toast.error("خطا در تایید درخواست", { id: loadingToast });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReject = async (reason: string) => {
+    if (!selectedChange) return;
+    if (!reason.trim()) {
+      toast.error("لطفاً دلیل رد را وارد کنید");
+      return;
+    }
+    setIsProcessing(true);
+    const loadingToast = toast.loading("در حال رد درخواست...");
+    try {
+      const res = await fetch("/api/client/booking-changes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedChange.id,
+          action: "reject",
+          reason,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message, { id: loadingToast });
+        fetchChanges();
+        setIsModalOpen(false);
+        setSelectedChange(null);
+      } else {
+        toast.error(data.message, { id: loadingToast });
+      }
+    } catch {
+      toast.error("خطا در رد درخواست", { id: loadingToast });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const openModal = (change: BookingChange) => {
+    setSelectedChange(change);
+    setIsModalOpen(true);
+  };
+
+  const filteredChanges = changes.filter((c) => {
+    if (filterStatus !== "all" && c.status !== filterStatus) return false;
+    if (filterType !== "all" && c.request_type !== filterType) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredChanges.length / itemsPerPage);
+  const paginatedChanges = filteredChanges.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  const stats = {
+    total: changes.length,
+    pending: changes.filter((c) => c.status === "pending").length,
+    cancelled: changes.filter(
+      (c) => c.request_type === "cancel" && c.status === "pending",
+    ).length,
+    reschedule: changes.filter(
+      (c) => c.request_type === "reschedule" && c.status === "pending",
+    ).length,
+    active: changes.filter((c) => c.request_type === "active_booking").length,
+  };
+
+  const isStaff = userType === "staff";
+  const pendingCount = stats.pending;
+
+  return (
+    <div className="min-h-screen max-w-md m-auto bg-slate-50 dark:bg-[#0f1115] text-slate-800 dark:text-white transition-colors">
+      <Toaster position="top-center" />
+
+      <div className=" pb-20 px-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          <StatCard
+            label="کل درخواست‌ها"
+            value={stats.total}
+            color="border-slate-200 dark:border-white/10"
+          />
+          <StatCard
+            label="در انتظار تایید"
+            value={stats.pending}
+            color="border-yellow-200 dark:border-yellow-500/20"
+          />
+          <StatCard
+            label="درخواست لغو"
+            value={stats.cancelled}
+            color="border-red-200 dark:border-red-500/20"
+          />
+          <StatCard
+            label="درخواست تغییر"
+            value={stats.reschedule}
+            color="border-blue-200 dark:border-blue-500/20"
+          />
+          <StatCard
+            label="نوبت‌های فعال"
+            value={stats.active}
+            color="border-emerald-200 dark:border-emerald-500/20"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-6">
+          {["all", "pending", "approved", "rejected"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                filterStatus === status
+                  ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+              }`}
+            >
+              {status === "all" && "همه"}
+              {status === "pending" && "در انتظار"}
+              {status === "approved" && "تایید شده"}
+              {status === "rejected" && "رد شده"}
+            </button>
+          ))}
+          <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1" />
+          {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setFilterType(type)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                filterType === type
+                  ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+              }`}
+            >
+              {type === "all" && "همه نوع"}
+              {type === "reschedule" && "تغییر زمان"}
+              {type === "cancel" && "لغو نوبت"}
+              {type === "new_booking" && "ثبت جدید"}
+              {type === "active_booking" && "نوبت‌های فعال"}
+            </button>
+          ))}
+          <button
+            onClick={fetchChanges}
+            className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+          </div>
+        ) : paginatedChanges.length === 0 ? (
+          <div className="text-center py-16 bg-white dark:bg-[#1a1d24]/50 rounded-2xl border border-dashed border-slate-300 dark:border-gray-700">
+            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-gray-600" />
+            <p className="text-slate-500 dark:text-gray-500">
+              هیچ درخواستی یافت نشد
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {paginatedChanges.map((change) => (
+              <ChangeCard
+                key={change.id}
+                change={change}
+                onReview={() => openModal(change)}
+                onDirectCancel={handleDirectCancel}
+              />
+            ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
+            >
+              <ChevronRight className="w-4 h-4 text-slate-600 dark:text-white" />
+            </button>
+            <span className="text-sm text-slate-500 dark:text-gray-400">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-white" />
+            </button>
+          </div>
+        )}
+      </div>
+
+
+      <AnimatePresence>
+        {isModalOpen && selectedChange && (
+          <ReviewModal
+            change={selectedChange}
+            onClose={() => setIsModalOpen(false)}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            isProcessing={isProcessing}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }

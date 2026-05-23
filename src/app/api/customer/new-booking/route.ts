@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const cleanedPhone = customer_phone.replace(/\D/g, "").slice(-10);
     
     // دریافت user_id از slug
-    const linkData = await query(
+    const linkData = await query<any>(
       `SELECT user_id FROM customer_links WHERE slug = ? AND is_active = 1`,
       [slug]
     );

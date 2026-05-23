@@ -21,6 +21,9 @@ import {
   ArrowDownRight,
   RefreshCw,
   Star,
+  Calendar,
+  BarChart3,
+  Activity,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -38,6 +41,10 @@ interface AnalyticsData {
     instagram: number;
     telegram: number;
     whatsapp: number;
+    rubika?: number;
+    eitaa?: number;
+    bale?: number;
+    soroush?: number;
   };
   weeklyVisits: number[];
   deviceStats: {
@@ -62,7 +69,7 @@ export default function AnalyticsPage() {
         setData(result.data);
         if (showToast) toast.success("آمار بروزرسانی شد");
       } else {
-        toast.error("خطا در دریافت آمار");
+        toast.error(result.message || "خطا در دریافت آمار");
       }
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -93,7 +100,17 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <BarChart3 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500">هیچ داده آماری موجود نیست</p>
+          <p className="text-sm text-slate-400 mt-1">پس از مدتی آمار نمایش داده می‌شود</p>
+        </div>
+      </div>
+    );
+  }
 
   const weekDays = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
   const maxWeekly = Math.max(...data.weeklyVisits, 1);
@@ -104,6 +121,18 @@ export default function AnalyticsPage() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // همه شبکه‌های اجتماعی فعال
+  const allSocials = [
+    { key: "instagram", icon: Instagram, color: "text-pink-600", bg: "bg-pink-50 dark:bg-pink-500/10", name: "اینستاگرام" },
+    { key: "telegram", icon: Send, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-500/10", name: "تلگرام" },
+    { key: "whatsapp", icon: Phone, color: "text-green-600", bg: "bg-green-50 dark:bg-green-500/10", name: "واتساپ" },
+    { key: "rubika", icon: MessageCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-500/10", name: "روبیکا" },
+    { key: "eitaa", icon: MessageCircle, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-500/10", name: "ایتا" },
+    { key: "bale", icon: MessageCircle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-500/10", name: "بله" },
+    { key: "soroush", icon: MessageCircle, color: "text-indigo-600", bg: "bg-indigo-50 dark:bg-indigo-500/10", name: "سروش" },
+  ];
+
+const activeSocials = allSocials.filter(social => (data.socialClicks[social.key as keyof typeof data.socialClicks] ?? 0) > 0);
   return (
     <div className="space-y-5 pb-20">
       {/* Header */}
@@ -117,9 +146,9 @@ export default function AnalyticsPage() {
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 transition"
+          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition disabled:opacity-50"
         >
-          <RefreshCw className={`w-5 h-5 text-slate-600 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-5 h-5 text-slate-600 dark:text-gray-400 ${isRefreshing ? "animate-spin" : ""}`} />
         </button>
       </div>
 
@@ -129,8 +158,8 @@ export default function AnalyticsPage() {
           onClick={() => setPeriod("week")}
           className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
             period === "week"
-              ? "bg-emerald-600 text-white"
-              : "text-slate-600 dark:text-gray-400"
+              ? "bg-emerald-600 text-white shadow-md"
+              : "text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
           هفته جاری
@@ -139,8 +168,8 @@ export default function AnalyticsPage() {
           onClick={() => setPeriod("month")}
           className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
             period === "month"
-              ? "bg-emerald-600 text-white"
-              : "text-slate-600 dark:text-gray-400"
+              ? "bg-emerald-600 text-white shadow-md"
+              : "text-slate-600 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
           ماه جاری
@@ -149,7 +178,7 @@ export default function AnalyticsPage() {
 
       {/* Stats Cards - ردیف اول */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Eye className="w-5 h-5 text-emerald-500" />
             <span className="text-xs text-slate-400">کل بازدید</span>
@@ -159,7 +188,7 @@ export default function AnalyticsPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Users className="w-5 h-5 text-emerald-500" />
             <span className="text-xs text-slate-400">بازدید یکتا</span>
@@ -172,21 +201,21 @@ export default function AnalyticsPage() {
 
       {/* Stats Cards - ردیف دوم */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center border border-slate-200 dark:border-white/10 shadow-sm">
           <TrendingUp className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
           <p className="text-xl font-bold text-slate-800 dark:text-white">
             {data.todayVisits}
           </p>
           <p className="text-xs text-slate-500">بازدید امروز</p>
         </div>
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center border border-slate-200 dark:border-white/10 shadow-sm">
           <Clock className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
           <p className="text-xl font-bold text-slate-800 dark:text-white">
             {formatTime(data.avgTimeOnPage)}
           </p>
           <p className="text-xs text-slate-500">میانگین زمان</p>
         </div>
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center border border-slate-200 dark:border-white/10 shadow-sm">
           <MousePointer className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
           <p className="text-xl font-bold text-slate-800 dark:text-white">
             {data.bounceRate}%
@@ -195,8 +224,8 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* نمودار */}
-      <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+      {/* نمودار بازدیدها */}
+      <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
         <h3 className="font-semibold text-slate-800 dark:text-white mb-4">
           بازدیدهای {period === "week" ? "هفته جاری" : "۳۰ روز اخیر"}
         </h3>
@@ -224,7 +253,7 @@ export default function AnalyticsPage() {
 
       {/* آمار تعامل */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <CalendarCheck className="w-5 h-5 text-emerald-500" />
             <span className="text-sm font-medium">درخواست نوبت</span>
@@ -236,7 +265,7 @@ export default function AnalyticsPage() {
             نرخ تبدیل: {data.conversionRate}%
           </p>
         </div>
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Star className="w-5 h-5 text-emerald-500" />
             <span className="text-sm font-medium">نظرات</span>
@@ -244,14 +273,14 @@ export default function AnalyticsPage() {
           <p className="text-2xl font-bold text-slate-800 dark:text-white">
             {data.totalReviews}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
-            میانگین امتیاز: {data.avgRating.toFixed(1)}
-          </p>
+    <p className="text-xs text-slate-500 mt-1">
+  میانگین امتیاز: {typeof data.avgRating === 'number' ? data.avgRating.toFixed(1) : Number(data.avgRating || 0).toFixed(1)}
+</p>
         </div>
       </div>
 
       {/* آمار دستگاه‌ها */}
-      <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+      <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
         <h3 className="font-semibold text-slate-800 dark:text-white mb-3">
           دستگاه‌های بازدیدکننده
         </h3>
@@ -305,49 +334,50 @@ export default function AnalyticsPage() {
       </div>
 
       {/* کلیک روی شبکه‌های اجتماعی */}
-      <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+      <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
         <h3 className="font-semibold text-slate-800 dark:text-white mb-3">
           کلیک روی شبکه‌های اجتماعی
         </h3>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-500/10">
-            <Instagram className="w-5 h-5 text-pink-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-pink-600">
-              {data.socialClicks.instagram}
-            </p>
-            <p className="text-[10px] text-slate-500">اینستاگرام</p>
+        {activeSocials.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {activeSocials.map((social) => {
+              const Icon = social.icon;
+              const count = data.socialClicks[social.key as keyof typeof data.socialClicks];
+              if (!count) return null;
+              return (
+                <div key={social.key} className={`p-3 rounded-xl ${social.bg} text-center`}>
+                  <Icon className={`w-6 h-6 ${social.color} mx-auto mb-1`} />
+                  <p className={`text-xl font-bold ${social.color}`}>
+                    {count}
+                  </p>
+                  <p className="text-[10px] text-slate-500">{social.name}</p>
+                </div>
+              );
+            })}
           </div>
-          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10">
-            <Send className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-blue-600">
-              {data.socialClicks.telegram}
-            </p>
-            <p className="text-[10px] text-slate-500">تلگرام</p>
+        ) : (
+          <div className="text-center py-6 text-slate-500">
+            <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">هیچ کلیکی روی شبکه‌های اجتماعی ثبت نشده است</p>
+            <p className="text-xs mt-1">لینک خود را در شبکه‌های اجتماعی به اشتراک بگذارید</p>
           </div>
-          <div className="p-2 rounded-xl bg-green-50 dark:bg-green-500/10">
-            <Phone className="w-5 h-5 text-green-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-green-600">
-              {data.socialClicks.whatsapp}
-            </p>
-            <p className="text-[10px] text-slate-500">واتساپ</p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* ساعات پربازدید */}
       {data.popularHours.length > 0 && (
-        <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-4 border border-slate-200 dark:border-white/10 shadow-sm">
           <h3 className="font-semibold text-slate-800 dark:text-white mb-3">
             ⏰ ساعات پربازدید
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {data.popularHours.map((item) => (
               <div
                 key={item.hour}
-                className="flex-1 text-center p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl"
+                className="text-center p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl"
               >
-                <p className="text-lg font-bold text-emerald-600">
-                  {item.hour}:00
+                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {item.hour.toString().padStart(2, "0")}:00
                 </p>
                 <p className="text-[10px] text-slate-500">{item.count} بازدید</p>
               </div>
@@ -357,8 +387,8 @@ export default function AnalyticsPage() {
       )}
 
       {/* نکته پایانی */}
-      <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-4 border border-emerald-200 dark:border-emerald-500/20">
-        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400 text-center">
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 rounded-xl p-4 border border-emerald-200 dark:border-emerald-500/20">
+        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400 text-center flex items-center justify-center gap-2">
           💡 برای افزایش بازدید، لینک خود را در شبکه‌های اجتماعی به اشتراک بگذارید
         </p>
       </div>

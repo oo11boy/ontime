@@ -3,7 +3,26 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import type { NextRequest } from "next/server";
-
+interface CustomerLink {
+  id: number;
+  slug: string;
+  full_url: string;
+  business_name: string;
+  business_address: string;
+  phone: string;
+  bio: string;
+  logo: string | null;
+  avatar_image: string | null;
+  cover_image: string | null;
+  social_media: string | null;
+  services: string | null;
+  work_shifts: string | null;
+  off_days: string | null;
+  total_visits: number;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
 // ==================== GET - دریافت لینک اختصاصی ====================
 export const GET = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
@@ -187,7 +206,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
     } = body;
 
     // بررسی وجود لینک
-    const existingLink = await query(
+  const existingLink = await query<any>(
       "SELECT id, slug FROM customer_links WHERE user_id = ? AND is_deleted = 0",
       [userId]
     );

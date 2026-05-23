@@ -29,13 +29,7 @@ const tabs = [
   { id: "bookings", label: "نوبت‌ها", icon: Calendar, activeIcon: Calendar, href: "/clientdashboard/customer-link/bookings" },
   { id: "reviews", label: "نظرات", icon: Star, activeIcon: Star, href: "/clientdashboard/customer-link/reviews" },
   { id: "plans", label: "پلن‌ها", icon: Crown, activeIcon: Crown, href: "/clientdashboard/customer-link/plans" },
- { 
-    id: "reschedule-requests", 
-    label: "درخواست‌ها", 
-    icon: MessageSquare, 
-    activeIcon: MessageSquare, 
-    href: "/clientdashboard/customer-link/reschedule-requests" 
-  },
+ 
 ];
 
 export default function CustomerLinkLayout({

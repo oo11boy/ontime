@@ -405,7 +405,7 @@ export function DateTimeSelector({
             isCalendarOpen={isCalendarOpen}
             setIsCalendarOpen={setIsCalendarOpen}
             offDays={[]}
-            isEmbedded={true}
+         
           />
         </div>
 

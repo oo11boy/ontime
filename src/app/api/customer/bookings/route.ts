@@ -35,8 +35,7 @@ export async function GET(req: NextRequest) {
       [slug, cleanedPhone]
     );
     
-    console.log("تاریخ از دیتابیس:", bookings[0]?.booking_date);
-    
+
     return NextResponse.json({ success: true, bookings });
   } catch (error) {
     console.error("Error fetching customer bookings:", error);
