@@ -18,11 +18,14 @@ export interface BusinessData {
   phone: string;
   bio: string;
   logo: string | null;
+  avatar_image:string | null;
+  cover_image:string | null;
   social_media: any;
   services: Service[];
   work_shifts: Shift[];
   off_days: number[];
   total_visits: number;
+  
 }
 
 export interface CustomerBooking {

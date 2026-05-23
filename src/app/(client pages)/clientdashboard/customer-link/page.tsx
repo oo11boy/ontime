@@ -60,6 +60,8 @@ interface ExistingLink {
   phone: string;
   bio: string;
   logo: string | null;
+  avatar_image?: string | null;  // ← اضافه شود
+  cover_image?: string | null;    // ← اضافه شود
   social_media?: SocialMedia;
   services?: Service[];
   work_shifts?: Shift[];
@@ -371,41 +373,48 @@ export default function CustomerLinkHomePage() {
   const [showEditModal, setShowEditModal] = useState(false);
 
   // دریافت لینک اختصاصی از API
-  const fetchCustomerLink = async () => {
-    try {
-      const res = await fetch("/api/client/customer-link");
-      const data = await res.json();
-      
-      if (data.success && data.hasLink && data.link) {
-        setExistingLink({
-          id: data.link.id,
-          slug: data.link.slug,
-          fullUrl: data.link.fullUrl,
-          createdAt: data.link.createdAt,
-          totalVisits: data.link.totalVisits || 0,
-          isActive: data.link.isActive,
-          business_name: data.link.business_name || "",
-          business_address: data.link.business_address || "",
-          phone: data.link.phone || "",
-          bio: data.link.bio || "",
-          logo: data.link.logo || null,
-          social_media: data.link.social_media,
-          services: data.link.services,
-          work_shifts: data.link.work_shifts,
-          off_days: data.link.off_days,
-        });
-        setHasLink(true);
-      } else {
-        setHasLink(false);
-        setExistingLink(null);
-      }
-    } catch (error) {
-      console.error("Error fetching customer link:", error);
+const fetchCustomerLink = async () => {
+  try {
+    const res = await fetch("/api/client/customer-link");
+    const data = await res.json();
+    
+    console.log("=== API RESPONSE ===");
+    console.log("data.link.cover_image:", data.link?.cover_image);
+    console.log("data.link.avatar_image:", data.link?.avatar_image);
+    console.log("===================");
+    
+    if (data.success && data.hasLink && data.link) {
+      setExistingLink({
+        id: data.link.id,
+        slug: data.link.slug,
+        fullUrl: data.link.fullUrl,
+        createdAt: data.link.createdAt,
+        totalVisits: data.link.totalVisits || 0,
+        isActive: data.link.isActive,
+        business_name: data.link.business_name || "",
+        business_address: data.link.business_address || "",
+        phone: data.link.phone || "",
+        bio: data.link.bio || "",
+        logo: data.link.logo || null,
+        avatar_image: data.link.avatar_image || null,  // ← اضافه شود
+        cover_image: data.link.cover_image || null,    // ← اضافه شود
+        social_media: data.link.social_media,
+        services: data.link.services,
+        work_shifts: data.link.work_shifts,
+        off_days: data.link.off_days,
+      });
+      setHasLink(true);
+    } else {
       setHasLink(false);
-    } finally {
-      setIsLoading(false);
+      setExistingLink(null);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching customer link:", error);
+    setHasLink(false);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchCustomerLink();
@@ -419,22 +428,24 @@ export default function CustomerLinkHomePage() {
 
   const handleEditLink = () => {
     if (existingLink) {
-      setEditData({
-        slug: existingLink.slug,
-        business_name: existingLink.business_name,
-        business_address: existingLink.business_address,
-        phone: existingLink.phone,
-        bio: existingLink.bio,
-        logo: existingLink.logo,
-        social_media: existingLink.social_media || {
-          instagram: "", telegram: "", rubika: "", whatsapp: "", eitaa: "", bale: "", soroush: ""
-        },
-        selected_services: existingLink.services || [],
-        work_shifts: existingLink.work_shifts || [],
-        off_days: existingLink.off_days || [],
-      });
-      setShowEditModal(true);
-    }
+     setEditData({
+      slug: existingLink.slug,
+      business_name: existingLink.business_name,
+      business_address: existingLink.business_address,
+      phone: existingLink.phone,
+      bio: existingLink.bio,
+      logo: existingLink.logo,
+      avatar_image: (existingLink as any).avatar_image,  // ← اضافه شود
+      cover_image: (existingLink as any).cover_image,    // ← اضافه شود
+      social_media: existingLink.social_media || {
+        instagram: "", telegram: "", rubika: "", whatsapp: "", eitaa: "", bale: "", soroush: ""
+      },
+      selected_services: existingLink.services || [],
+      work_shifts: existingLink.work_shifts || [],
+      off_days: existingLink.off_days || [],
+    });
+    setShowEditModal(true);
+  }
   };
 
   const handleRefresh = async () => {

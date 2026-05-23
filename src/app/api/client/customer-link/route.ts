@@ -1,3 +1,4 @@
+// src/app/api/client/customer-link/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -8,14 +9,14 @@ export const GET = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
 
   try {
-    const result = await query<any>(
-      `SELECT id, slug, full_url, business_name, business_address, phone, bio, logo,
-              social_media, services, work_shifts, off_days, total_visits, is_active, 
-              created_at, updated_at
-       FROM customer_links 
-       WHERE user_id = ? AND is_deleted = 0`,
-      [userId]
-    );
+const result = await query<any>(
+  `SELECT id, slug, full_url, business_name, business_address, phone, bio, logo, avatar_image, cover_image,
+          social_media, services, work_shifts, off_days, total_visits, is_active, 
+          created_at, updated_at
+   FROM customer_links 
+   WHERE user_id = ? AND is_deleted = 0`,
+  [userId]
+);
 
     const hasLink = result && result.length > 0;
     const link = hasLink ? result[0] : null;
@@ -32,6 +33,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         phone: link.phone,
         bio: link.bio,
         logo: link.logo,
+        avatar_image: link.avatar_image,
+        cover_image: link.cover_image,
         social_media: link.social_media ? JSON.parse(link.social_media) : null,
         services: link.services ? JSON.parse(link.services) : [],
         work_shifts: link.work_shifts ? JSON.parse(link.work_shifts) : [],
@@ -64,6 +67,8 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       phone,
       bio,
       logo,
+      avatar_image,
+      cover_image,
       social_media,
       services,
       work_shifts,
@@ -95,9 +100,9 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     // ذخیره لینک اختصاصی
     await query(
       `INSERT INTO customer_links 
-       (user_id, slug, full_url, business_name, business_address, phone, bio, logo, 
+       (user_id, slug, full_url, business_name, business_address, phone, bio, logo, avatar_image, cover_image,
         social_media, services, work_shifts, off_days, total_visits, is_active, is_deleted, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, NOW())`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, NOW())`,
       [
         userId,
         slug,
@@ -107,6 +112,8 @@ export const POST = withAuth(async (req: NextRequest, context) => {
         phone || null,
         bio || null,
         logo || null,
+        avatar_image || null,
+        cover_image || null,
         social_media ? JSON.stringify(social_media) : null,
         services ? JSON.stringify(services) : null,
         work_shifts ? JSON.stringify(work_shifts) : null,
@@ -171,6 +178,8 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
       phone,
       bio,
       logo,
+      avatar_image,
+      cover_image,
       social_media,
       services,
       work_shifts,
@@ -200,6 +209,8 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
            phone = ?, 
            bio = ?, 
            logo = ?,
+           avatar_image = ?,
+           cover_image = ?,
            social_media = ?, 
            services = ?, 
            work_shifts = ?, 
@@ -212,6 +223,8 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
         phone || null,
         bio || null,
         logo || null,
+        avatar_image || null,
+        cover_image || null,
         social_media ? JSON.stringify(social_media) : null,
         services ? JSON.stringify(services) : null,
         work_shifts ? JSON.stringify(work_shifts) : null,

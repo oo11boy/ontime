@@ -11,6 +11,7 @@
 !.yarn/versions
 # training images
 **/uploads/training/
+**/uploads/customer-links/
 **/uploads/**/*.jpg
 **/uploads/**/*.png
 **/uploads/**/*.webp

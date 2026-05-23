@@ -30,9 +30,12 @@ import {
   AtSign,
   Edit2,
   AlertTriangle,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
+import { ImageUploader } from "./ImageUploader";
 
 // ==================== Types ====================
 interface Service {
@@ -64,6 +67,8 @@ interface BusinessInfo {
   phone: string;
   bio: string;
   logo: string | null;
+  avatar_image: string | null;
+  cover_image: string | null;
 }
 
 interface CreateCustomerLinkWizardProps {
@@ -78,6 +83,8 @@ interface CreateCustomerLinkWizardProps {
     phone?: string;
     bio?: string;
     logo?: string;
+    avatar_image?: string;
+    cover_image?: string;
     social_media?: SocialMedia;
     selected_services?: Service[];
     work_shifts?: Shift[];
@@ -111,6 +118,22 @@ const defaultSocialMedia: SocialMedia = {
   bale: "",
   soroush: "",
 };
+
+// ==================== Image Uploader Component ====================
+interface ImageUploaderProps {
+  currentImage: string | null;
+  onImageUploaded: (imageUrl: string) => void;
+  onImageRemoved?: () => void;
+  aspectRatio?: number;
+  maxSizeMB?: number;
+  quality?: number;
+  title?: string;
+  description?: string;
+  shape?: "circle" | "square" | "cover";
+  className?: string;
+}
+
+
 
 // ==================== Step Indicator ====================
 function StepIndicator({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
@@ -312,34 +335,18 @@ function SlugStep({
 function BasicInfoStep({
   data,
   socialMedia,
-  onChange,
+  onDataChange,
   onSocialChange,
   onNext,
   onBack,
 }: {
   data: BusinessInfo;
   socialMedia: SocialMedia;
-  onChange: (data: Partial<BusinessInfo>) => void;
+  onDataChange: (data: Partial<BusinessInfo>) => void;
   onSocialChange: (social: Partial<SocialMedia>) => void;
   onNext: () => void;
   onBack: () => void;
 }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(data.logo || null);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-        onChange({ logo: result });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const isValid = data.business_name && data.business_address && data.phone;
 
   return (
@@ -349,23 +356,41 @@ function BasicInfoStep({
         <p className="text-sm text-slate-500 dark:text-gray-400">اطلاعات پایه و شبکه‌های اجتماعی</p>
       </div>
 
-      {/* Logo Upload */}
-      <div className="flex justify-center">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/20 flex items-center justify-center overflow-hidden border-2 border-emerald-200 dark:border-emerald-800">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Logo" className="w-full h-full object-cover" />
-            ) : (
-              <Camera className="w-8 h-8 text-emerald-400" />
-            )}
+      {/* Images Section */}
+      <div className="space-y-4">
+        {/* Cover Image */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+            تصویر کاور صفحه
+          </label>
+          <ImageUploader
+            currentImage={data.cover_image}
+            onImageUploaded={(url) => onDataChange({ cover_image: url })}
+            onImageRemoved={() => onDataChange({ cover_image: null })}
+            shape="cover"
+            title="آپلود تصویر کاور"
+            description="PNG, JPG یا JPEG، حداکثر ۵ مگابایت"
+          />
+        </div>
+
+        {/* Avatar/Logo */}
+        <div className="flex items-center gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              تصویر پروفایل
+            </label>
+            <ImageUploader
+              currentImage={data.avatar_image || data.logo}
+              onImageUploaded={(url) => onDataChange({ avatar_image: url, logo: url })}
+              onImageRemoved={() => onDataChange({ avatar_image: null, logo: null })}
+              shape="circle"
+              title="آپلود لوگو"
+            />
           </div>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="absolute bottom-0 right-0 p-1.5 bg-emerald-600 rounded-full text-white shadow-lg"
-          >
-            <Camera className="w-3 h-3" />
-          </button>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          <div className="flex-1 text-xs text-slate-500">
+            <p>این تصویر در کنار نام کسب‌وکار شما نمایش داده می‌شود</p>
+            <p className="mt-1">ابعاد پیشنهادی: 200x200 پیکسل</p>
+          </div>
         </div>
       </div>
 
@@ -378,7 +403,7 @@ function BasicInfoStep({
           <input
             type="text"
             value={data.business_name || ""}
-            onChange={(e) => onChange({ business_name: e.target.value })}
+            onChange={(e) => onDataChange({ business_name: e.target.value })}
             placeholder="مثال: آرایشگاه مدرن سارا"
             className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors"
           />
@@ -389,11 +414,11 @@ function BasicInfoStep({
             آدرس <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center gap-2 p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
-            <MapPin className="w-5 h-5 text-emerald-500" />
+            <MapPin className="w-5 h-5 text-emerald-500 shrink-0" />
             <input
               type="text"
               value={data.business_address || ""}
-              onChange={(e) => onChange({ business_address: e.target.value })}
+              onChange={(e) => onDataChange({ business_address: e.target.value })}
               placeholder="استان، شهر، خیابان، پلاک"
               className="flex-1 bg-transparent outline-none"
             />
@@ -405,11 +430,11 @@ function BasicInfoStep({
             شماره تماس <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center gap-2 p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
-            <Phone className="w-5 h-5 text-emerald-500" />
+            <Phone className="w-5 h-5 text-emerald-500 shrink-0" />
             <input
               type="tel"
               value={data.phone || ""}
-              onChange={(e) => onChange({ phone: e.target.value })}
+              onChange={(e) => onDataChange({ phone: e.target.value })}
               placeholder="۰۹۱۲۳۴۵۶۷۸۹"
               className="flex-1 bg-transparent outline-none"
             />
@@ -422,7 +447,7 @@ function BasicInfoStep({
           </label>
           <textarea
             value={data.bio || ""}
-            onChange={(e) => onChange({ bio: e.target.value })}
+            onChange={(e) => onDataChange({ bio: e.target.value })}
             placeholder="درباره کسب‌وکار خود بنویسید..."
             rows={3}
             className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 resize-none"
@@ -430,7 +455,7 @@ function BasicInfoStep({
         </div>
       </div>
 
-      {/* Social Media Section - تمام شبکه‌های اجتماعی */}
+      {/* Social Media Section */}
       <div className="space-y-3 pt-2">
         <p className="font-medium text-slate-700 dark:text-gray-300">شبکه‌های اجتماعی:</p>
         
@@ -939,7 +964,6 @@ function FinalReviewStep({
     ? "۰۸:۰۰ تا ۲۲:۰۰ (پیش‌فرض)"
     : workShifts.map(s => `${s.start} تا ${s.end}`).join(" و ");
 
-  // شبکه‌های اجتماعی فعال
   const activeSocials = [];
   if (socialMedia?.instagram) activeSocials.push({ name: "اینستاگرام", icon: "📷", value: socialMedia.instagram });
   if (socialMedia?.telegram) activeSocials.push({ name: "تلگرام", icon: "📨", value: socialMedia.telegram });
@@ -963,10 +987,30 @@ function FinalReviewStep({
         </p>
       </div>
 
-      {/* Link Preview */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-4 text-white text-center">
-        <p className="text-xs opacity-80 mb-1">لینک اختصاصی شما</p>
-        <p className="text-sm font-mono break-all">{fullUrl}</p>
+      {/* Preview Card */}
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl overflow-hidden">
+        {businessInfo.cover_image && (
+          <div className="h-32 w-full overflow-hidden">
+            <img src={businessInfo.cover_image} alt="Cover" className="w-full h-full object-cover" />
+          </div>
+        )}
+        <div className="p-4 flex items-center gap-3">
+          {businessInfo.avatar_image || businessInfo.logo ? (
+            <img
+              src={businessInfo.avatar_image || businessInfo.logo || ""}
+              alt="Logo"
+              className="w-16 h-16 rounded-full border-4 border-white object-cover"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center border-4 border-white">
+              <Building2 className="w-8 h-8 text-white" />
+            </div>
+          )}
+          <div className="flex-1">
+            <p className="text-white font-bold">{businessInfo.business_name}</p>
+            <p className="text-emerald-100 text-xs mt-1">{fullUrl}</p>
+          </div>
+        </div>
       </div>
 
       {/* Business Info */}
@@ -1137,6 +1181,8 @@ export function CreateCustomerLinkWizard({
     phone: "",
     bio: "",
     logo: null,
+    avatar_image: null,
+    cover_image: null,
   });
 
   const [socialMedia, setSocialMedia] = useState<SocialMedia>({ ...defaultSocialMedia });
@@ -1145,7 +1191,6 @@ export function CreateCustomerLinkWizard({
   const [workShifts, setWorkShifts] = useState<Shift[]>([]);
   const [offDays, setOffDays] = useState<number[]>([]);
 
-  // بارگذاری اطلاعات موجود در حالت ویرایش
   useEffect(() => {
     if (isOpen) {
       if (editMode && existingData) {
@@ -1156,6 +1201,8 @@ export function CreateCustomerLinkWizard({
           phone: existingData.phone || "",
           bio: existingData.bio || "",
           logo: existingData.logo || null,
+          avatar_image: existingData.avatar_image || null,
+          cover_image: existingData.cover_image || null,
         });
         setSocialMedia(existingData.social_media || { ...defaultSocialMedia });
         setSelectedServices(existingData.selected_services || []);
@@ -1163,7 +1210,6 @@ export function CreateCustomerLinkWizard({
         setOffDays(existingData.off_days || []);
         setIsLoading(false);
       } else {
-        // بارگذاری تنظیمات پیش‌فرض از API
         const fetchSettings = async () => {
           setIsLoading(true);
           try {
@@ -1176,6 +1222,8 @@ export function CreateCustomerLinkWizard({
                 phone: data.user.phone || "",
                 bio: "",
                 logo: null,
+                avatar_image: null,
+                cover_image: null,
               });
               setWorkShifts(data.user.work_shifts ? JSON.parse(data.user.work_shifts) : []);
               setOffDays(data.user.off_days ? JSON.parse(data.user.off_days) : []);
@@ -1216,6 +1264,8 @@ export function CreateCustomerLinkWizard({
           phone: businessInfo.phone,
           bio: businessInfo.bio,
           logo: businessInfo.logo,
+          avatar_image: businessInfo.avatar_image,
+          cover_image: businessInfo.cover_image,
           social_media: socialMedia,
           services: selectedServices,
           work_shifts: workShifts,
@@ -1318,7 +1368,7 @@ export function CreateCustomerLinkWizard({
                   <BasicInfoStep 
                     data={businessInfo}
                     socialMedia={socialMedia}
-                    onChange={updateBusinessInfo}
+                    onDataChange={updateBusinessInfo}
                     onSocialChange={updateSocialMedia}
                     onNext={handleNext}
                     onBack={handleBack}
