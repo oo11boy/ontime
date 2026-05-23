@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  Link as LinkIcon,
+  LinkIcon,
   Copy,
   CheckCircle,
   Edit,
@@ -15,12 +15,17 @@ import {
   ExternalLink,
   Instagram,
   Rocket,
-  Gift,
   Loader2,
   Calendar as CalendarIcon,
   RefreshCw,
   MessageCircle,
-  Check
+  Check,
+  Zap,
+  Users,
+  Globe,
+  Smartphone,
+  Share,
+  TrendingUp
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { CreateCustomerLinkWizard } from "./components/CreateCustomerLinkWizard";
@@ -60,8 +65,8 @@ interface ExistingLink {
   phone: string;
   bio: string;
   logo: string | null;
-  avatar_image?: string | null;  // ← اضافه شود
-  cover_image?: string | null;    // ← اضافه شود
+  avatar_image?: string | null;
+  cover_image?: string | null;
   social_media?: SocialMedia;
   services?: Service[];
   work_shifts?: Shift[];
@@ -81,11 +86,12 @@ function ExistingLinkCard({
   isLoading: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+  const router = useRouter();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`https://${link.fullUrl}`);
     setCopied(true);
-    toast.success("لینک کپی شد");
+    toast.success("✅ لینک کپی شد");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -105,258 +111,209 @@ function ExistingLinkCard({
     window.open(`https://${link.fullUrl}`, "_blank");
   };
 
-  // نمایش شبکه‌های اجتماعی فعال
-  const activeSocials = [];
-  if (link.social_media?.instagram) activeSocials.push({ name: "اینستاگرام", icon: "📷", value: link.social_media.instagram });
-  if (link.social_media?.telegram) activeSocials.push({ name: "تلگرام", icon: "📨", value: link.social_media.telegram });
-  if (link.social_media?.whatsapp) activeSocials.push({ name: "واتساپ", icon: "💬", value: link.social_media.whatsapp });
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center shadow-sm border border-slate-200 dark:border-white/10">
           <Eye className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
           <p className="text-xl font-bold text-slate-800 dark:text-white">
             {link.totalVisits.toLocaleString()}
           </p>
-          <p className="text-xs text-slate-500">کل بازدید</p>
+          <p className="text-xs text-slate-500">بازدید از صفحه</p>
         </div>
         <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center shadow-sm border border-slate-200 dark:border-white/10">
           <Share2 className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
           <p className="text-xl font-bold text-slate-800 dark:text-white">۰</p>
-          <p className="text-xs text-slate-500">اشتراک‌گذاری</p>
-        </div>
-        <div className="bg-white dark:bg-[#1a1e26] rounded-xl p-3 text-center shadow-sm border border-slate-200 dark:border-white/10">
-          <CalendarIcon className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-          <p className="text-xl font-bold text-slate-800 dark:text-white">
-            {new Date(link.createdAt).toLocaleDateString("fa-IR")}
-          </p>
-          <p className="text-xs text-slate-500">تاریخ ساخت</p>
+          <p className="text-xs text-slate-500">دفعه اشتراک</p>
         </div>
       </div>
 
       {/* Link Card */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-5 text-white">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5" />
-            <span className="text-sm font-medium">لینک اختصاصی شما</span>
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-4 text-white">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1">
+            <Crown className="w-4 h-4" />
+            <span className="text-xs font-medium">لینک اختصاصی شما</span>
           </div>
-          <button
-            onClick={onEdit}
-            className="px-3 py-1 bg-white/20 rounded-full text-sm flex items-center gap-1 hover:bg-white/30 transition"
-          >
+          <button onClick={onEdit} className="px-2 py-1 bg-white/20 rounded-full text-xs flex items-center gap-1">
             <Edit className="w-3 h-3" /> ویرایش
           </button>
         </div>
         
-        <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-          <p className="text-xs opacity-80 mb-1">آدرس صفحه اختصاصی:</p>
+        <div className="bg-white/10 rounded-xl p-2">
+          <p className="text-[10px] opacity-80 mb-1">آدرس صفحه:</p>
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-mono truncate">
-              {link.fullUrl}
-            </p>
-            <button
-              onClick={handleCopy}
-              className="p-1.5 bg-white/20 rounded-lg shrink-0 hover:bg-white/30 transition-colors"
-            >
-              {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <p className="text-xs font-mono truncate">{link.fullUrl}</p>
+            <button onClick={handleCopy} className="p-1.5 bg-white/20 rounded-lg shrink-0">
+              {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
             </button>
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="flex gap-2 mt-3">
-          <button 
-            onClick={handleShare}
-            className="flex-1 py-2 bg-white/10 rounded-xl text-sm flex items-center justify-center gap-1 hover:bg-white/20 transition"
-          >
-            <Share2 className="w-4 h-4" /> اشتراک
+          <button onClick={handleShare} className="flex-1 py-1.5 bg-white/10 rounded-xl text-xs flex items-center justify-center gap-1">
+            <Share2 className="w-3 h-3" /> اشتراک
           </button>
-          <button 
-            onClick={handlePreview}
-            className="flex-1 py-2 bg-white/20 rounded-xl text-sm flex items-center justify-center gap-1 hover:bg-white/30 transition"
-          >
-            <ExternalLink className="w-4 h-4" /> پیش‌نمایش
+          <button onClick={handlePreview} className="flex-1 py-1.5 bg-white/20 rounded-xl text-xs flex items-center justify-center gap-1">
+            <ExternalLink className="w-3 h-3" /> پیش‌نمایش
           </button>
         </div>
       </div>
 
-      {/* Business Info Preview */}
-      <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
-        <h4 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-          <Crown className="w-4 h-4 text-emerald-500" />
-          خلاصه اطلاعات
-        </h4>
-        <div className="space-y-1 text-sm text-slate-600 dark:text-gray-400">
-          <p>📛 {link.business_name}</p>
-          <p>📍 {link.business_address}</p>
-          <p>📞 {link.phone}</p>
-          {link.bio && <p>📝 {link.bio.substring(0, 50)}...</p>}
+      {/* اطلاع از قابلیت ثبت نوبت - بدون ذکر قیمت */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3 border border-blue-200">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="w-5 h-5 text-blue-600 shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-blue-800 dark:text-blue-400">✨ قابلیت ثبت نوبت آنلاین</p>
+            <p className="text-[11px] text-blue-600 dark:text-blue-500">برای فعال‌سازی به بخش پلن‌ها بروید</p>
+          </div>
         </div>
       </div>
 
-      {/* Services Preview */}
+      {/* خلاصه اطلاعات */}
+      <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
+        <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">📋 اطلاعات کسب‌وکار</h4>
+        <div className="space-y-1 text-xs text-slate-600 dark:text-gray-400">
+          <p className="truncate">🏢 {link.business_name}</p>
+          <p className="truncate">📍 {link.business_address}</p>
+          <p dir="ltr">📞 {link.phone}</p>
+        </div>
+      </div>
+
+      {/* خدمات */}
       {link.services && link.services.length > 0 && (
-        <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
-          <h4 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-500" />
-            خدمات ({link.services.length})
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {link.services.slice(0, 3).map((service) => (
-              <span key={service.id} className="px-2 py-1 bg-white dark:bg-[#0f1115] rounded-full text-xs">
+        <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
+          <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">🛎️ خدمات شما</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {link.services.slice(0, 4).map((service) => (
+              <span key={service.id} className="px-2 py-0.5 bg-white dark:bg-[#0f1115] rounded-full text-[11px]">
                 {service.name}
               </span>
             ))}
-            {link.services.length > 3 && (
-              <span className="px-2 py-1 bg-white dark:bg-[#0f1115] rounded-full text-xs">
-                +{link.services.length - 3} مورد دیگر
+            {link.services.length > 4 && (
+              <span className="px-2 py-0.5 bg-white dark:bg-[#0f1115] rounded-full text-[11px]">
+                +{link.services.length - 4} مورد
               </span>
             )}
           </div>
         </div>
       )}
 
-      {/* Social Media Preview */}
-      {activeSocials.length > 0 && (
-        <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
-          <h4 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-            <Instagram className="w-4 h-4 text-emerald-500" />
-            شبکه‌های اجتماعی
-          </h4>
+      {/* شبکه‌های اجتماعی */}
+      {link.social_media && Object.values(link.social_media).some(v => v) && (
+        <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
+          <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">📱 شبکه‌های اجتماعی</h4>
           <div className="flex flex-wrap gap-2">
-            {activeSocials.map((social) => (
-              <span key={social.name} className="px-2 py-1 bg-white dark:bg-[#0f1115] rounded-full text-xs flex items-center gap-1">
-                <span>{social.icon}</span> {social.value}
-              </span>
-            ))}
+            {link.social_media.instagram && (
+              <span className="text-xs flex items-center gap-1">📷 اینستاگرام: {link.social_media.instagram}</span>
+            )}
+            {link.social_media.telegram && (
+              <span className="text-xs flex items-center gap-1">📨 تلگرام: {link.social_media.telegram}</span>
+            )}
           </div>
         </div>
       )}
 
-      {/* Instagram Tip */}
-      <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-4 border border-emerald-200 dark:border-emerald-500/20">
-        <div className="flex items-center gap-2">
-          <Instagram className="w-5 h-5 text-emerald-600" />
-          <div>
-            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">
-              این لینک را در بیوگرافی اینستاگرام خود قرار دهید
-            </p>
-            <p className="text-xs text-emerald-600 dark:text-emerald-500/70 mt-0.5">
-              مشتریان با کلیک روی لینک، مستقیماً به صفحه اختصاصی شما می‌روند
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Refresh Button */}
-      <button
-        onClick={onRefresh}
-        disabled={isLoading}
-        className="w-full py-3 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center gap-2 text-slate-600 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 transition disabled:opacity-50"
-      >
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <RefreshCw className="w-4 h-4" />
-        )}
+      <button onClick={onRefresh} disabled={isLoading} className="w-full py-2.5 border rounded-xl flex items-center justify-center gap-2 text-sm">
+        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
         بروزرسانی آمار
       </button>
     </div>
   );
 }
 
-// ==================== کامپوننت دعوت به ساخت لینک ====================
+// ==================== صفحه اول (بدون لینک) - کاملاً رایگان و ترغیبی ====================
 function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="text-center max-w-md mx-auto">
-        {/* Animated Icon */}
-        <div className="relative w-32 h-32 mx-auto mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl animate-pulse opacity-20" />
-          <div className="relative w-full h-full bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center shadow-2xl">
-            <LinkIcon className="w-12 h-12 text-white" />
-          </div>
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center animate-bounce">
-            <Sparkles className="w-4 h-4 text-amber-800" />
-          </div>
+    <div className="space-y-5">
+      {/* هدر */}
+      <div className="text-center">
+        <div className="inline-flex items-center gap-1 bg-emerald-100 px-3 py-1 rounded-full mb-3">
+          <Rocket className="w-4 h-4 text-emerald-600" />
+          <span className="text-xs font-medium text-emerald-700">کاملاً رایگان</span>
         </div>
-
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">
-          صفحه اختصاصی برای کسب‌وکارتان بسازید
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+          یه <span className="text-emerald-600">صفحه اختصاصی</span> برای کسب‌وکارت بساز
         </h1>
+        <p className="text-gray-500 text-sm mt-2">مشتریات با یه کلیک، همه چی رو ببینن</p>
+      </div>
+
+      {/* مزایا - بدون اشاره به پول */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <Globe className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <p className="font-bold text-gray-800 text-sm">🌐 نمایش در گوگل</p>
+            <p className="text-xs text-gray-500">صفحه اختصاصی شما در نتایج جستجوی گوگل نمایش داده میشه</p>
+          </div>
+        </div>
         
-        <p className="text-slate-500 dark:text-gray-400 text-sm mb-6">
-          با ساختن صفحه اختصاصی، مشتریان شما می‌توانند:
-        </p>
-
-        <div className="space-y-3 mb-8 text-right">
-          <div className="flex items-center gap-3 p-3 bg-slate-100 dark:bg-white/5 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
-              <Check className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-slate-800 dark:text-white">ثبت نوبت آنلاین</p>
-              <p className="text-xs text-slate-500">مشتریان ۲۴ ساعته نوبت بگیرند</p>
-            </div>
+        <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <Share className="w-5 h-5 text-emerald-600" />
           </div>
-          
-          <div className="flex items-center gap-3 p-3 bg-slate-100 dark:bg-white/5 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
-              <Eye className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-slate-800 dark:text-white">مشاهده خدمات و قیمت‌ها</p>
-              <p className="text-xs text-slate-500">نمایش کامل خدمات کسب‌وکار شما</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3 p-3 bg-slate-100 dark:bg-white/5 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
-              <MessageCircle className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-slate-800 dark:text-white">ارسال نظر و امتیاز</p>
-              <p className="text-xs text-slate-500">مشتریان تجربه خود را به اشتراک بگذارند</p>
-            </div>
+          <div>
+            <p className="font-bold text-gray-800 text-sm">📱 اشتراک در شبکه‌های اجتماعی</p>
+            <p className="text-xs text-gray-500">لینک صفحه رو میتونی در اینستاگرام، واتساپ، تلگرام و... بذاری</p>
           </div>
         </div>
+        
+        <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <p className="font-bold text-gray-800 text-sm">👥 معرفی کامل کسب‌وکار</p>
+            <p className="text-xs text-gray-500">خدمات، ساعات کاری، آدرس، شماره تماس و نظرات مشتریان</p>
+          </div>
+        </div>
+      </div>
 
-        {/* Main CTA Button */}
-        <button
-          onClick={onCreate}
-          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
-        >
-          <Rocket className="w-5 h-5" />
-          بسازید صفحه اختصاصی کسب‌وکارتان
+      {/* اطلاع از قابلیت ثبت نوبت */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-3 text-center">
+        <p className="text-amber-700 text-sm flex items-center justify-center gap-1">
           <Sparkles className="w-4 h-4" />
-        </button>
+          <span>✨ بعد از ساخت صفحه، می‌تونی قابلیت <span className="font-bold">ثبت نوبت آنلاین</span> رو هم فعال کنی</span>
+        </p>
+      </div>
 
-        {/* Price Note */}
-        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
-          <Gift className="w-3 h-3" />
-          <span>۳ ماهه فقط ۲۵۷ هزار تومان</span>
-          <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-          <span>✨ پشتیبانی ۲۴/۷</span>
-        </div>
+      {/* دکمه اصلی */}
+      <button
+        onClick={onCreate}
+        className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg"
+      >
+        <Rocket className="w-5 h-5" />
+        بساز صفحه اختصاصی من
+        <Sparkles className="w-4 h-4" />
+      </button>
 
-        {/* Features Grid */}
-        <div className="mt-6 grid grid-cols-2 gap-2 text-xs text-slate-500">
-          <div className="flex items-center justify-center gap-1">
-            <Check className="w-3 h-3 text-emerald-500" /> ثبت نوبت
-          </div>
-          <div className="flex items-center justify-center gap-1">
-            <Check className="w-3 h-3 text-emerald-500" /> آمار بازدید
-          </div>
-          <div className="flex items-center justify-center gap-1">
-            <Check className="w-3 h-3 text-emerald-500" /> پیامک خودکار
-          </div>
-          <div className="flex items-center justify-center gap-1">
-            <Check className="w-3 h-3 text-emerald-500" /> پشتیبانی
-          </div>
+      {/* ویژگی‌های کلیدی */}
+      <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="p-2 bg-slate-50 rounded-xl">
+          <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+          <p className="text-xs font-medium">بیو اینستاگرام</p>
         </div>
+        <div className="p-2 bg-slate-50 rounded-xl">
+          <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+          <p className="text-xs font-medium">لینک واتساپ</p>
+        </div>
+        <div className="p-2 bg-slate-50 rounded-xl">
+          <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+          <p className="text-xs font-medium">نمایش در گوگل</p>
+        </div>
+        <div className="p-2 bg-slate-50 rounded-xl">
+          <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+          <p className="text-xs font-medium">کاملاً رایگان</p>
+        </div>
+      </div>
+
+      {/* آمار اعتماد */}
+      <div className="text-center pt-2">
+        <p className="text-[11px] text-gray-400">✨ بیش از ۱۰,۰۰۰ کسب‌وکار از آنتایم استفاده می‌کنن</p>
       </div>
     </div>
   );
@@ -364,6 +321,7 @@ function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
 
 // ==================== صفحه اصلی ====================
 export default function CustomerLinkHomePage() {
+  const router = useRouter();
   const [hasLink, setHasLink] = useState<boolean | null>(null);
   const [existingLink, setExistingLink] = useState<ExistingLink | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -372,116 +330,104 @@ export default function CustomerLinkHomePage() {
   const [editData, setEditData] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // دریافت لینک اختصاصی از API
-const fetchCustomerLink = async () => {
-  try {
-    const res = await fetch("/api/client/customer-link");
-    const data = await res.json();
-    
-    console.log("=== API RESPONSE ===");
-    console.log("data.link.cover_image:", data.link?.cover_image);
-    console.log("data.link.avatar_image:", data.link?.avatar_image);
-    console.log("===================");
-    
-    if (data.success && data.hasLink && data.link) {
-      setExistingLink({
-        id: data.link.id,
-        slug: data.link.slug,
-        fullUrl: data.link.fullUrl,
-        createdAt: data.link.createdAt,
-        totalVisits: data.link.totalVisits || 0,
-        isActive: data.link.isActive,
-        business_name: data.link.business_name || "",
-        business_address: data.link.business_address || "",
-        phone: data.link.phone || "",
-        bio: data.link.bio || "",
-        logo: data.link.logo || null,
-        avatar_image: data.link.avatar_image || null,  // ← اضافه شود
-        cover_image: data.link.cover_image || null,    // ← اضافه شود
-        social_media: data.link.social_media,
-        services: data.link.services,
-        work_shifts: data.link.work_shifts,
-        off_days: data.link.off_days,
-      });
-      setHasLink(true);
-    } else {
+  const fetchCustomerLink = async () => {
+    try {
+      const res = await fetch("/api/client/customer-link");
+      const data = await res.json();
+      
+      if (data.success && data.hasLink && data.link) {
+        setExistingLink({
+          id: data.link.id,
+          slug: data.link.slug,
+          fullUrl: data.link.fullUrl,
+          createdAt: data.link.createdAt,
+          totalVisits: data.link.totalVisits || 0,
+          isActive: data.link.isActive,
+          business_name: data.link.business_name || "",
+          business_address: data.link.business_address || "",
+          phone: data.link.phone || "",
+          bio: data.link.bio || "",
+          logo: data.link.logo || null,
+          avatar_image: data.link.avatar_image || null,
+          cover_image: data.link.cover_image || null,
+          social_media: data.link.social_media,
+          services: data.link.services,
+          work_shifts: data.link.work_shifts,
+          off_days: data.link.off_days,
+        });
+        setHasLink(true);
+      } else {
+        setHasLink(false);
+        setExistingLink(null);
+      }
+    } catch (error) {
+      console.error("Error fetching customer link:", error);
       setHasLink(false);
-      setExistingLink(null);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching customer link:", error);
-    setHasLink(false);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchCustomerLink();
   }, []);
 
-  const handleCreateSuccess = (link: string, slug: string) => {
+  const handleCreateSuccess = () => {
     setShowCreateModal(false);
-    toast.success("لینک اختصاصی با موفقیت ساخته شد!");
+    toast.success("✅ صفحه اختصاصی ساخته شد!");
     fetchCustomerLink();
   };
 
   const handleEditLink = () => {
     if (existingLink) {
-     setEditData({
-      slug: existingLink.slug,
-      business_name: existingLink.business_name,
-      business_address: existingLink.business_address,
-      phone: existingLink.phone,
-      bio: existingLink.bio,
-      logo: existingLink.logo,
-      avatar_image: (existingLink as any).avatar_image,  // ← اضافه شود
-      cover_image: (existingLink as any).cover_image,    // ← اضافه شود
-      social_media: existingLink.social_media || {
-        instagram: "", telegram: "", rubika: "", whatsapp: "", eitaa: "", bale: "", soroush: ""
-      },
-      selected_services: existingLink.services || [],
-      work_shifts: existingLink.work_shifts || [],
-      off_days: existingLink.off_days || [],
-    });
-    setShowEditModal(true);
-  }
+      setEditData({
+        slug: existingLink.slug,
+        business_name: existingLink.business_name,
+        business_address: existingLink.business_address,
+        phone: existingLink.phone,
+        bio: existingLink.bio,
+        logo: existingLink.logo,
+        avatar_image: (existingLink as any).avatar_image,
+        cover_image: (existingLink as any).cover_image,
+        social_media: existingLink.social_media || {
+          instagram: "", telegram: "", rubika: "", whatsapp: "", eitaa: "", bale: "", soroush: ""
+        },
+        selected_services: existingLink.services || [],
+        work_shifts: existingLink.work_shifts || [],
+        off_days: existingLink.off_days || [],
+      });
+      setShowEditModal(true);
+    }
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchCustomerLink();
     setIsRefreshing(false);
-    toast.success("آمار بروزرسانی شد");
+    toast.success("آمار بروز شد");
   };
 
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-500">در حال بارگذاری...</p>
-        </div>
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-20">
       <div className="max-w-2xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-bold text-slate-800 dark:text-white">
-            🔗 لینک اختصاصی
+        {/* هدر ساده */}
+        <div className="text-center mb-5">
+          <h1 className="text-lg font-bold text-gray-800 dark:text-white">
+            {hasLink ? "🔗 لینک اختصاصی شما" : "🚀 صفحه اختصاصی کسب‌وکار"}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {hasLink 
-              ? "لینک اختصاصی شما آماده است" 
-              : "یک صفحه اختصاصی برای کسب‌وکار خود بسازید"}
-          </p>
+          {hasLink && (
+            <p className="text-xs text-gray-500 mt-0.5">این لینک رو با مشتریات به اشتراک بذار</p>
+          )}
         </div>
 
-        {/* Content based on state */}
         {hasLink && existingLink ? (
           <ExistingLinkCard 
             link={existingLink} 
@@ -494,7 +440,7 @@ const fetchCustomerLink = async () => {
         )}
       </div>
 
-      {/* Create Wizard Modal */}
+      {/* مودال ساخت لینک */}
       {showCreateModal && (
         <CreateCustomerLinkWizard 
           isOpen={showCreateModal}
@@ -507,7 +453,7 @@ const fetchCustomerLink = async () => {
         />
       )}
 
-      {/* Edit Wizard Modal */}
+      {/* مودال ویرایش */}
       {showEditModal && editData && (
         <CreateCustomerLinkWizard 
           isOpen={showEditModal}
