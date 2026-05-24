@@ -1,4 +1,4 @@
-// src/app/api/client/jobs/list/route.ts
+// src/app/api/jobs/list/route.ts
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 

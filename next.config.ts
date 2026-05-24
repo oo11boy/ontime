@@ -65,7 +65,7 @@ const nextConfig: NextConfig = {
     return [
       {
         // اضافه کردن "c" به لیست استثناها
-        source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|blog|clientdashboard|admindashboard|login|admin-login|customer|c|_next|static|images|icons).*)",
+        source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|blog|clientdashboard|admindashboard|login|admin-login|customer|c|_next|static|images|icons|businesses).*)",
         destination: "/customer/booking/:token",
       },
     ];
