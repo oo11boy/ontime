@@ -25,7 +25,10 @@ import {
   Globe,
   Smartphone,
   Share,
-  TrendingUp
+  TrendingUp,
+  Send,
+  Phone,
+  AtSign
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { CreateCustomerLinkWizard } from "./components/CreateCustomerLinkWizard";
@@ -201,25 +204,160 @@ function ExistingLinkCard({
         </div>
       )}
 
-      {/* شبکه‌های اجتماعی */}
-      {link.social_media && Object.values(link.social_media).some(v => v) && (
-        <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
-          <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">📱 شبکه‌های اجتماعی</h4>
-          <div className="flex flex-wrap gap-2">
-            {link.social_media.instagram && (
-              <span className="text-xs flex items-center gap-1">📷 اینستاگرام: {link.social_media.instagram}</span>
-            )}
-            {link.social_media.telegram && (
-              <span className="text-xs flex items-center gap-1">📨 تلگرام: {link.social_media.telegram}</span>
-            )}
+{/* شبکه‌های اجتماعی */}
+{link.social_media && Object.values(link.social_media).some(v => v) && (
+  <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+    <div className="flex items-center gap-2 mb-4">
+      <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+        <Share2 className="w-4 h-4 text-white" />
+      </div>
+      <h4 className="font-bold text-gray-800 dark:text-white">شبکه‌های اجتماعی</h4>
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {link.social_media.instagram && (
+        <a
+          href={`https://instagram.com/${link.social_media.instagram}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-200 dark:border-pink-500/20 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-md">
+            <Instagram className="w-3.5 h-3.5 text-white" />
           </div>
-        </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">اینستاگرام</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-pink-600 transition">
+              {link.social_media.instagram}
+            </p>
+          </div>
+          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
+        </a>
       )}
+      
+      {link.social_media.telegram && (
+        <a
+          href={`https://t.me/${link.social_media.telegram}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-200 dark:border-blue-500/20 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-md">
+            <Send className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">تلگرام</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-blue-600 transition">
+              {link.social_media.telegram}
+            </p>
+          </div>
+          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
+        </a>
+      )}
+      
+      {link.social_media.whatsapp && (
+        <a
+          href={`https://wa.me/${link.social_media.whatsapp}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-200 dark:border-green-500/20 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md">
+            <Phone className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">واتساپ</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-green-600 transition">
+              {link.social_media.whatsapp}
+            </p>
+          </div>
+          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
+        </a>
+      )}
+      
+      {link.social_media.rubika && (
+        <a
+          href={`https://rubika.ir/${link.social_media.rubika}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-teal-500/10 to-green-500/10 border border-teal-200 dark:border-teal-500/20 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-green-600 flex items-center justify-center shadow-md">
+            <MessageCircle className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">روبیکا</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-teal-600 transition">
+              {link.social_media.rubika}
+            </p>
+          </div>
+          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
+        </a>
+      )}
+      
+      {link.social_media.eitaa && (
+        <a
+          href={`https://eitaa.com/${link.social_media.eitaa}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-200 dark:border-purple-500/20 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
+            <Globe className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">ایتا</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-purple-600 transition">
+              {link.social_media.eitaa}
+            </p>
+          </div>
+          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
+        </a>
+      )}
+      
+      {link.social_media.bale && (
+        <a
+          href={`https://ble.ir/${link.social_media.bale}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-200 dark:border-amber-500/20 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center shadow-md">
+            <AtSign className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">بله</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-amber-600 transition">
+              {link.social_media.bale}
+            </p>
+          </div>
+          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
+        </a>
+      )}
+      
+      {link.social_media.soroush && (
+        <a
+          href={`https://splus.ir/${link.social_media.soroush}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-500/10 to-blue-500/10 border border-indigo-200 dark:border-indigo-500/20 hover:scale-105 transition-all duration-300 group"
+        >
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-md">
+            <MessageCircle className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">سروش</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-indigo-600 transition">
+              {link.social_media.soroush}
+            </p>
+          </div>
+          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
+        </a>
+      )}
+    </div>
+  </div>
+)}
 
-      <button onClick={onRefresh} disabled={isLoading} className="w-full py-2.5 border rounded-xl flex items-center justify-center gap-2 text-sm">
-        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-        بروزرسانی آمار
-      </button>
+   
     </div>
   );
 }

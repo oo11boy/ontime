@@ -458,40 +458,6 @@ export function DateTimeSelector({
             </p>
           </div>
 
-          {/* ورود دستی زمان */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-emerald-400" />
-              <h4 className="text-sm font-semibold text-gray-300">ورود دستی زمان</h4>
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <input
-                  ref={hourInputRef}
-                  type="text"
-                  inputMode="numeric"
-                  value={hour}
-                  onChange={handleHourChange}
-                  onKeyPress={(e) => handleKeyPress(e, "hour")}
-                  placeholder="ساعت"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white text-center text-lg focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-              <div className="text-white text-2xl self-center">:</div>
-              <div className="flex-1">
-                <input
-                  ref={minuteInputRef}
-                  type="text"
-                  inputMode="numeric"
-                  value={minute}
-                  onChange={handleMinuteChange}
-                  onKeyPress={(e) => handleKeyPress(e, "minute")}
-                  placeholder="دقیقه"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white text-center text-lg focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
 
           {timeError && (
             <motion.div 

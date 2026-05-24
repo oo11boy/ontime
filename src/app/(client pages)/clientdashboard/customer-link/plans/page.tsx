@@ -211,16 +211,17 @@ export default function PlansPage() {
       {/* ========== کارت اصلی پلن (فقط وقتی فعال نیست) ========== */}
       {!isBookingEnabled && (
         <div className="relative bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl overflow-hidden border-2 border-emerald-300">
-          <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">🔥 پیشنهاد ویژه</div>
-          
+     
           <div className="p-5">
             {/* قیمت */}
             <div className="text-center mb-4">
               <div className="inline-flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-emerald-700">۲۵۸</span>
+                
                 <span className="text-gray-500">هزار تومان</span>
+                                <span className="text-4xl font-bold text-emerald-700">۳ ماهه</span>
               </div>
-              <p className="text-xs text-gray-500">برای ۳ ماه کامل</p>
+  
               <p className="text-sm text-emerald-600 font-bold mt-1">✨ فقط ۸۶ هزار تومان در ماه</p>
               <p className="text-xs text-gray-400 line-through">قبلاً ۳۲۴ هزار تومان</p>
             </div>

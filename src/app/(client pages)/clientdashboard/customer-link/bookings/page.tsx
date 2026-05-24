@@ -12,11 +12,11 @@ import {
   ChevronRight,
   CreditCard,
   X,
-  Lock,
   Crown,
   Sparkles,
   Rocket,
-  Shield,
+  Scissors,
+  Package,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,6 +44,8 @@ interface BookingChange {
   business_phone: string;
   cancelled_by?: "customer" | "admin" | null;
   current_status?: string;
+  service_name?: string | null;
+  services?: string | null;
 }
 
 const formatTime = (time: string): string => {
@@ -86,20 +88,60 @@ const formatRequestDate = (date: string): string => {
   });
 };
 
+// تابع کمکی برای نمایش سرویس
+const getServiceDisplay = (change: BookingChange): string | null => {
+  if (change.service_name && change.service_name.trim()) {
+    return change.service_name;
+  }
+  if (change.services && change.services.trim()) {
+    try {
+      const services = JSON.parse(change.services);
+      if (Array.isArray(services) && services.length > 0) {
+        if (services.length === 1) return services[0];
+        return `${services[0]} +${services.length - 1} سرویس دیگر`;
+      }
+    } catch (e) {
+      return change.services;
+    }
+  }
+  return null;
+};
+
+// تابع دریافت لیست کامل سرویس‌ها برای مودال
+const getFullServicesList = (change: BookingChange): string[] => {
+  if (change.service_name && change.service_name.trim()) {
+    return [change.service_name];
+  }
+  if (change.services && change.services.trim()) {
+    try {
+      const services = JSON.parse(change.services);
+      if (Array.isArray(services)) return services;
+    } catch (e) {
+      return [change.services];
+    }
+  }
+  return [];
+};
+
 const StatCard = ({
   label,
   value,
   color,
+  icon: Icon,
 }: {
   label: string;
   value: number;
   color: string;
+  icon?: React.ElementType;
 }) => (
   <div
-    className={`bg-white dark:bg-[#1a1d24] rounded-xl p-3 border ${color} transition-colors`}
+    className={`bg-white dark:bg-[#1a1d24] rounded-xl p-3 border ${color} transition-all hover:scale-105 active:scale-95`}
   >
-    <p className="text-slate-500 dark:text-gray-400 text-xs mb-1">{label}</p>
-    <p className="text-xl font-bold text-slate-800 dark:text-white">{value}</p>
+    <div className="flex items-center justify-between">
+      <p className="text-slate-500 dark:text-gray-400 text-xs">{label}</p>
+      {Icon && <Icon className="w-4 h-4 text-slate-400 dark:text-gray-500" />}
+    </div>
+    <p className="text-xl font-bold text-slate-800 dark:text-white mt-1">{value}</p>
   </div>
 );
 
@@ -135,6 +177,7 @@ const ChangeCard = ({
   const isCancel = change.request_type === "cancel";
   const isPending = change.status === "pending";
   const cancelledByInfo = getCancelledByLabel(change);
+  const serviceDisplay = getServiceDisplay(change);
   
   const canDirectCancel = isActiveBooking && change.current_status === "active";
 
@@ -175,8 +218,13 @@ const ChangeCard = ({
   };
 
   return (
-    <div className="bg-white dark:bg-[#1a1d24] rounded-xl p-4 border border-slate-200 dark:border-white/10 hover:border-emerald-400 dark:hover:border-emerald-500/30 transition-all">
-      <div className="flex items-center justify-between mb-3">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="bg-white dark:bg-[#1a1d24] rounded-xl p-4 border border-slate-200 dark:border-white/10 hover:border-emerald-400 dark:hover:border-emerald-500/30 transition-all shadow-sm hover:shadow-md"
+    >
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${getStatusStyle()}`}>
             {getStatusLabel()}
@@ -198,23 +246,39 @@ const ChangeCard = ({
         {isPending && (
           <button
             onClick={onReview}
-            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-xs font-bold transition"
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-xs font-bold transition active:scale-95"
           >
             بررسی
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-sm mb-3">
-        <User className="w-4 h-4 text-slate-500 dark:text-gray-500" />
-        <span className="text-slate-800 dark:text-white">{change.client_name}</span>
-        <Phone className="w-4 h-4 text-slate-500 dark:text-gray-500 mr-2" />
-        <span className="text-slate-500 dark:text-gray-400 text-xs" dir="ltr">
-          {change.client_phone}
-        </span>
+      {/* اطلاعات مشتری */}
+      <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
+        <div className="flex items-center gap-1">
+          <User className="w-4 h-4 text-slate-500 dark:text-gray-500" />
+          <span className="text-slate-800 dark:text-white">{change.client_name}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Phone className="w-4 h-4 text-slate-500 dark:text-gray-500" />
+          <span className="text-slate-500 dark:text-gray-400 text-xs" dir="ltr">
+            {change.client_phone}
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
+      {/* نمایش سرویس */}
+      {serviceDisplay && (
+        <div className="flex items-center gap-2 text-sm mb-3 bg-slate-100 dark:bg-white/5 rounded-lg p-2">
+          <Scissors className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-slate-700 dark:text-gray-300 text-xs font-medium">
+            {serviceDisplay}
+          </span>
+        </div>
+      )}
+
+      {/* اطلاعات زمان */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
         <div className="bg-slate-100 dark:bg-black/30 rounded-lg p-2">
           <p className="text-slate-500 dark:text-gray-500 text-[10px] mb-1">
             {isNewBooking ? "تاریخ درخواستی" : "تاریخ نوبت"}
@@ -253,6 +317,7 @@ const ChangeCard = ({
         )}
       </div>
 
+      {/* دلیل درخواست */}
       {change.reason && (
         <div className="bg-slate-100 dark:bg-gray-500/10 rounded-lg p-2 mb-2">
           <p className="text-slate-500 dark:text-gray-500 text-[10px] mb-1">
@@ -264,6 +329,7 @@ const ChangeCard = ({
         </div>
       )}
 
+      {/* دلیل رد */}
       {change.admin_reason && change.status === "rejected" && (
         <div className="bg-red-50 dark:bg-red-500/10 rounded-lg p-2 mb-2">
           <p className="text-red-600 dark:text-red-400 text-[10px] mb-1">
@@ -279,16 +345,17 @@ const ChangeCard = ({
         ثبت درخواست: {formatRequestDate(change.requested_at)}
       </p>
 
+      {/* دکمه لغو مستقیم */}
       {canDirectCancel && onDirectCancel && (
         <button
           onClick={() => onDirectCancel(change.booking_id, change.client_name, change.client_phone)}
-          className="mt-3 w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-xs font-bold transition flex items-center justify-center gap-1"
+          className="mt-3 w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95"
         >
           <X className="w-3 h-3" />
           لغو نوبت
         </button>
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -308,6 +375,7 @@ const ReviewModal = ({
   const [reason, setReason] = useState("");
   const isReschedule = change.request_type === "reschedule";
   const isNewBooking = change.request_type === "new_booking";
+  const fullServices = getFullServicesList(change);
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 dark:bg-black/80 backdrop-blur-sm">
@@ -324,7 +392,7 @@ const ReviewModal = ({
             </h3>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10"
+              className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition"
             >
               <X className="w-5 h-5 text-slate-500 dark:text-gray-400" />
             </button>
@@ -332,10 +400,9 @@ const ReviewModal = ({
         </div>
 
         <div className="p-4 space-y-4">
+          {/* اطلاعات مشتری */}
           <div className="bg-slate-100 dark:bg-black/30 rounded-xl p-3">
-            <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
-              مشتری
-            </p>
+            <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">مشتری</p>
             <p className="text-slate-800 dark:text-white font-medium">
               {change.client_name}
             </p>
@@ -344,6 +411,29 @@ const ReviewModal = ({
             </p>
           </div>
 
+          {/* نمایش سرویس‌ها */}
+          {fullServices.length > 0 && (
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 border border-emerald-200 dark:border-emerald-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                  سرویس‌های درخواستی
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {fullServices.map((service, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-white dark:bg-black/30 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs"
+                  >
+                    {service}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* زمان نوبت فعلی */}
           <div className="bg-slate-100 dark:bg-black/30 rounded-xl p-3">
             <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
               {isNewBooking ? "تاریخ درخواستی نوبت" : "زمان فعلی نوبت"}
@@ -353,6 +443,7 @@ const ReviewModal = ({
             </p>
           </div>
 
+          {/* زمان جدید برای درخواست تغییر */}
           {isReschedule && change.new_date && change.new_time && (
             <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 border border-emerald-200 dark:border-emerald-500/20">
               <p className="text-emerald-700 dark:text-emerald-400 text-xs mb-1">
@@ -364,6 +455,7 @@ const ReviewModal = ({
             </div>
           )}
 
+          {/* دلیل درخواست */}
           {change.reason && (
             <div className="bg-slate-100 dark:bg-gray-500/10 rounded-xl p-3">
               <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
@@ -375,6 +467,7 @@ const ReviewModal = ({
             </div>
           )}
 
+          {/* هشدار هزینه */}
           {(isReschedule || isNewBooking) && (
             <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 border border-emerald-200 dark:border-emerald-500/20">
               <div className="flex items-center gap-2 mb-2">
@@ -391,6 +484,7 @@ const ReviewModal = ({
             </div>
           )}
 
+          {/* دلیل رد */}
           <div>
             <label className="block text-sm text-slate-600 dark:text-gray-400 mb-2">
               در صورت رد، دلیل را وارد کنید
@@ -399,30 +493,31 @@ const ReviewModal = ({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="دلیل رد درخواست..."
-              rows={2}
+              rows={3}
               className="w-full bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500/50 resize-none"
             />
           </div>
         </div>
 
+        {/* دکمه‌های اقدام */}
         <div className="sticky bottom-0 bg-white dark:bg-[#1a1d24] p-4 border-t border-slate-200 dark:border-white/10 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition"
+            className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition active:scale-95"
           >
             انصراف
           </button>
           <button
             onClick={() => onReject(reason)}
             disabled={isProcessing}
-            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium transition disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium transition disabled:opacity-50 active:scale-95"
           >
             رد
           </button>
           <button
             onClick={onApprove}
             disabled={isProcessing}
-            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-1"
+            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-1 active:scale-95"
           >
             {isReschedule && <CreditCard className="w-4 h-4" />}
             تایید
@@ -453,7 +548,6 @@ const UpgradeRequiredModal = ({
         exit={{ opacity: 0, scale: 0.9 }}
         className="bg-white dark:bg-[#1a1d24] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
       >
-        {/* هدر گرادیان */}
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-center">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
             <Crown className="w-8 h-8 text-white" />
@@ -464,7 +558,6 @@ const UpgradeRequiredModal = ({
           </p>
         </div>
 
-        {/* محتوا */}
         <div className="p-6">
           <div className="text-center mb-6">
             <p className="text-gray-700 dark:text-gray-300 text-base">
@@ -473,7 +566,6 @@ const UpgradeRequiredModal = ({
             </p>
           </div>
 
-          {/* مزایا */}
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 mb-6">
             <p className="text-sm font-bold text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
@@ -487,27 +579,26 @@ const UpgradeRequiredModal = ({
             </ul>
           </div>
 
-          {/* قیمت */}
           <div className="text-center mb-6">
             <p className="text-gray-500 text-sm line-through">قبلاً ۳۲۴,۰۰۰ تومان</p>
             <div className="flex items-baseline justify-center gap-1 mt-1">
               <span className="text-3xl font-bold text-amber-600">۲۵۸</span>
               <span className="text-gray-500">هزار تومان</span>
+              <span className="text-3xl font-bold text-amber-600">۳ ماهه</span>
             </div>
-            <p className="text-xs text-emerald-600 mt-1">✨ فقط برای ۳ ماه (معادل ۸۶ هزار تومان در ماه)</p>
+            <p className="text-lg text-emerald-600 mt-1">✨ (معادل ۸۶ هزار تومان در ماه)</p>
           </div>
 
-          {/* دکمه‌ها */}
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 transition"
+              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 transition active:scale-95"
             >
               بعداً
             </button>
             <button
               onClick={onUpgrade}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg transition"
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg transition active:scale-95"
             >
               <Rocket className="w-4 h-4" />
               فعال‌سازی ثبت نوبت
@@ -538,7 +629,6 @@ export default function BookingChangesPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const itemsPerPage = 8;
 
-  // تابع بررسی دسترسی به قابلیت ثبت نوبت
   const checkBookingFeatureAccess = useCallback(async () => {
     setCheckingAccess(true);
     try {
@@ -546,7 +636,6 @@ export default function BookingChangesPage() {
       const data = await res.json();
       
       if (!data.success || !data.isEnabled) {
-        // به جای ریدایرکت، مودال نشون بده
         setShowUpgradeModal(true);
         return false;
       }
@@ -578,7 +667,6 @@ export default function BookingChangesPage() {
     }
   }, []);
 
-  // بررسی دسترسی هنگام لود صفحه
   useEffect(() => {
     checkBookingFeatureAccess().then((hasAccess) => {
       if (hasAccess) {
@@ -711,7 +799,6 @@ export default function BookingChangesPage() {
     active: changes.filter((c) => c.request_type === "active_booking").length,
   };
 
-  // در حال بررسی دسترسی - نمایش لودینگ
   if (checkingAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0f1115]">
@@ -724,10 +811,9 @@ export default function BookingChangesPage() {
   }
 
   return (
-    <div className="min-h-screen max-w-md m-auto bg-slate-50 dark:bg-[#0f1115] text-slate-800 dark:text-white transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0f1115] text-slate-800 dark:text-white transition-colors">
       <Toaster position="top-center" />
 
-      {/* مودال نیاز به ارتقا */}
       <UpgradeRequiredModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
@@ -735,78 +821,68 @@ export default function BookingChangesPage() {
       />
 
       {!showUpgradeModal && (
-        <div className="pb-20 px-4 max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <StatCard
-              label="کل درخواست‌ها"
-              value={stats.total}
-              color="border-slate-200 dark:border-white/10"
-            />
-            <StatCard
-              label="در انتظار تایید"
-              value={stats.pending}
-              color="border-yellow-200 dark:border-yellow-500/20"
-            />
-            <StatCard
-              label="درخواست لغو"
-              value={stats.cancelled}
-              color="border-red-200 dark:border-red-500/20"
-            />
-            <StatCard
-              label="درخواست تغییر"
-              value={stats.reschedule}
-              color="border-blue-200 dark:border-blue-500/20"
-            />
-            <StatCard
-              label="نوبت‌های فعال"
-              value={stats.active}
-              color="border-emerald-200 dark:border-emerald-500/20"
-            />
+        <div className="pb-20 px-4 max-w-7xl mx-auto">
+          {/* آمار */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
+            <StatCard label="کل درخواست‌ها" value={stats.total} color="border-slate-200 dark:border-white/10" icon={CheckCircle} />
+            <StatCard label="در انتظار تایید" value={stats.pending} color="border-yellow-200 dark:border-yellow-500/20" />
+            <StatCard label="درخواست لغو" value={stats.cancelled} color="border-red-200 dark:border-red-500/20" />
+            <StatCard label="درخواست تغییر" value={stats.reschedule} color="border-blue-200 dark:border-blue-500/20" />
+            <StatCard label="نوبت‌های فعال" value={stats.active} color="border-emerald-200 dark:border-emerald-500/20" />
           </div>
 
+          {/* فیلترها */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {["all", "pending", "approved", "rejected"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  filterStatus === status
-                    ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
-                }`}
-              >
-                {status === "all" && "همه"}
-                {status === "pending" && "در انتظار"}
-                {status === "approved" && "تایید شده"}
-                {status === "rejected" && "رد شده"}
-              </button>
-            ))}
-            <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1" />
-            {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
-              <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  filterType === type
-                    ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
-                }`}
-              >
-                {type === "all" && "همه نوع"}
-                {type === "reschedule" && "تغییر زمان"}
-                {type === "cancel" && "لغو نوبت"}
-                {type === "new_booking" && "ثبت جدید"}
-                {type === "active_booking" && "نوبت‌های فعال"}
-              </button>
-            ))}
+            <div className="flex flex-wrap gap-2">
+              {["all", "pending", "approved", "rejected"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition active:scale-95 ${
+                    filterStatus === status
+                      ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                      : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                  }`}
+                >
+                  {status === "all" && "همه"}
+                  {status === "pending" && "در انتظار"}
+                  {status === "approved" && "تایید شده"}
+                  {status === "rejected" && "رد شده"}
+                </button>
+              ))}
+            </div>
+            
+            <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1 hidden sm:block" />
+            
+            <div className="flex flex-wrap gap-2">
+              {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setFilterType(type)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition active:scale-95 ${
+                    filterType === type
+                      ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                      : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                  }`}
+                >
+                  {type === "all" && "همه نوع"}
+                  {type === "reschedule" && "تغییر زمان"}
+                  {type === "cancel" && "لغو نوبت"}
+                  {type === "new_booking" && "ثبت جدید"}
+                  {type === "active_booking" && "نوبت‌های فعال"}
+                </button>
+              ))}
+            </div>
+            
             <button
               onClick={fetchChanges}
-              className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
+              className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition active:scale-95"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
 
+          {/* لیست درخواست‌ها */}
           {loading ? (
             <div className="flex justify-center py-20">
               <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
@@ -819,7 +895,7 @@ export default function BookingChangesPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedChanges.map((change) => (
                 <ChangeCard
                   key={change.id}
@@ -831,22 +907,23 @@ export default function BookingChangesPage() {
             </div>
           )}
 
+          {/* صفحه‌بندی */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-6">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
+                className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40 active:scale-95 transition"
               >
                 <ChevronRight className="w-4 h-4 text-slate-600 dark:text-white" />
               </button>
               <span className="text-sm text-slate-500 dark:text-gray-400">
-                {currentPage} / {totalPages}
+                صفحه {currentPage} از {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
+                className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40 active:scale-95 transition"
               >
                 <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-white" />
               </button>

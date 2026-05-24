@@ -5,6 +5,7 @@ import { WorkingHours } from "../../shared/WorkingHours";
 import { SocialMedia } from "../../shared/SocialMedia";
 import { BusinessData } from "../../shared/types";
 import { Calendar } from "lucide-react";
+import Link from "next/link";
 
 interface InfoTabProps {
   business: BusinessData;
@@ -23,7 +24,7 @@ export function InfoTab({
     <div>
       <Header business={business} isWorkingNow={isWorkingNow} />
       <div className="px-4 mt-20">
-        <StatsCards business={business} />
+        {/* <StatsCards business={business} /> */}
 
         {/* بیوگرافی کسب‌وکار */}
         {business.bio && (
@@ -60,9 +61,9 @@ export function InfoTab({
         {/* اگر اشتراک ثبت نوبت فعال نیست، پیام نمایش بده */}
         {!isBookingEnabled && (
           <div className="mt-6 p-3 bg-gray-800/50 rounded-xl text-center border border-gray-700">
-            <p className="text-gray-500 text-sm">
-              🔒 امکان ثبت نوبت آنلاین برای این کسب‌وکار فعال نیست
-            </p>
+            <Link href={"../"} className="text-gray-500 text-sm ">
+              قدرت گرفته از آنتایم
+            </Link>
           </div>
         )}
       </div>

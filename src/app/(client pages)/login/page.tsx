@@ -26,6 +26,7 @@ import {
   Plus,
   Trash2,
   Eye,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
@@ -39,86 +40,142 @@ interface Job {
   persian_name: string;
 }
 
-// ==================== کامپوننت پیشنهاد ساخت لینک ====================
-function OfferCustomerLinkModal({ 
-  onStart, 
-  onSkip,
-  userName 
-}: { 
+// ==================== کامپوننت پیشنهاد ساخت لینک (هماهنگ با تم اصلی) ====================
+
+interface OfferCustomerLinkModalProps {
   onStart: () => void;
   onSkip: () => void;
   userName: string;
-}) {
+}
+
+export function OfferCustomerLinkModal({ 
+  onStart, 
+  onSkip,
+  userName 
+}: OfferCustomerLinkModalProps) {
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleSkip = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onSkip();
+    }, 200);
+  };
+
+  const handleStart = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onStart();
+    }, 200);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl"
-      >
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-center">
-          <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3">
-            <Crown className="w-10 h-10 text-white" />
-          </div>
-          <h3 className="text-white font-bold text-xl">✨ صفحه اختصاصی کسب‌وکار</h3>
-          <p className="text-purple-100 text-sm mt-1">یک صفحه اختصاصی برای برند خود بسازید</p>
+    <AnimatePresence>
+      {!isExiting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="w-full max-w-md bg-[#0a0e13] rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+          >
+            {/* هدر با گرادینت هماهنگ با تم اصلی (emerald) */}
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-6 text-center relative">
+              <button 
+                onClick={handleSkip}
+                className="absolute left-4 top-4 text-white/70 hover:text-white transition-colors"
+                aria-label="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3 backdrop-blur-sm">
+                <Crown className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-white font-bold text-xl">✨ صفحه اختصاصی کسب‌وکار</h3>
+              <p className="text-emerald-100 text-sm mt-1">یک صفحه اختصاصی برای برند خود بسازید</p>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-300 text-center mb-4">
+                سلام <span className="text-emerald-400 font-semibold">{userName}</span> عزیز! 
+                <br />
+                با ساختن صفحه اختصاصی، کسب‌وکارت رو حرفه‌ای‌تر نشون بده:
+              </p>
+              
+              <div className="space-y-3 mb-6">
+                <motion.div 
+                  whileHover={{ x: 5 }}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-sm text-gray-300">✅ مشتریان می‌توانند آنلاین نوبت بگیرند</span>
+                </motion.div>
+                
+                <motion.div 
+                  whileHover={{ x: 5 }}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-sm text-gray-300">📊 آمار بازدید لینک را ببینید</span>
+                </motion.div>
+                
+                <motion.div 
+                  whileHover={{ x: 5 }}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="text-sm text-gray-300">💬 نظرات مشتریان را مدیریت کنید</span>
+                </motion.div>
+              </div>
+
+              {/* بخش اضافی برای افزایش تعامل (مچاب شدن) */}
+              <div className="bg-gradient-to-r from-emerald-500/10 to-emerald-700/10 rounded-xl p-3 mb-6 text-center border border-emerald-500/20">
+                <p className="text-xs text-emerald-300 font-medium">
+                  🔥 بیش از ۸۰٪ کسب‌وکارها پس از ساخت صفحه اختصاصی، فروش خود را افزایش داده‌اند
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 0.98 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={handleSkip}
+                  className="flex-1 py-3 border border-white/20 rounded-xl font-medium text-gray-300 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  بعداً تصمیم می‌گیرم
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleStart}
+                  className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/25 transition-all relative overflow-hidden group"
+                >
+                  <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                  شروع ساخت رایگان
+                  <span className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"></span>
+                </motion.button>
+              </div>
+
+              <p className="text-center text-xs text-gray-500 mt-4">
+                ⏱ فقط ۲ دقیقه زمان نیاز دارد • می‌توانید بعداً از بخش لینک اختصاصی نیز اقدام کنید
+              </p>
+            </div>
+          </motion.div>
         </div>
-
-        <div className="p-6">
-          <p className="text-gray-700 dark:text-gray-300 text-center mb-4">
-            {userName} عزیز، با ساختن صفحه اختصاصی:
-          </p>
-          
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center gap-3 p-2">
-              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-              </div>
-              <span className="text-sm">مشتریان می‌توانند آنلاین نوبت بگیرند</span>
-            </div>
-            <div className="flex items-center gap-3 p-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <Eye className="w-4 h-4 text-blue-600" />
-              </div>
-              <span className="text-sm">آمار بازدید لینک را ببینید</span>
-            </div>
-            <div className="flex items-center gap-3 p-2">
-              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                <MessageCircle className="w-4 h-4 text-purple-600" />
-              </div>
-              <span className="text-sm">نظرات مشتریان را مدیریت کنید</span>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-3 text-center mb-6">
-            <p className="text-sm font-bold text-purple-700">🔥 فقط ۲۵۷ هزار تومان - دوره ۳ ماهه</p>
-            <p className="text-xs text-gray-500">معادل ۸۵,۶۰۰ تومان در ماه</p>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={onSkip}
-              className="flex-1 py-3 border border-gray-300 rounded-xl font-medium"
-            >
-              رد کردن
-            </button>
-            <button
-              onClick={onStart}
-              className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              شروع ساخت
-            </button>
-          </div>
-
-          <p className="text-center text-xs text-gray-400 mt-4">
-            می‌توانید بعداً از بخش لینک اختصاصی نیز اقدام کنید
-          </p>
-        </div>
-      </motion.div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }
+
 
 // ==================== صفحه اصلی لاگین ====================
 export default function LoginPage(): JSX.Element {

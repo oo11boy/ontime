@@ -194,6 +194,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         bc.staff_id,
         b.cancelled_by,
         b.cancel_reason,
+        b.service_name,
+        b.services,
         s.name as staff_name,
         u.business_name,
         u.phone as business_phone,
@@ -236,6 +238,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         b.staff_id,
         NULL as cancelled_by,
         NULL as cancel_reason,
+        b.service_name,
+        b.services,
         s.name as staff_name,
         u.business_name,
         u.phone as business_phone,
@@ -248,6 +252,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
       WHERE b.status = 'pending' 
         AND b.source = 'customer_link'
     `;
+
     const newBookingsParams: any[] = [];
 
     if (userType === "staff" && staffId) {
@@ -282,6 +287,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
       calendar_type: booking.calendar_type,
       staff_phone: booking.staff_phone,
       cancelled_by: null,
+      service_name: booking.service_name,  // ✅ اضافه شد
+      services: booking.services,          // ✅ اضافه شد
     }));
 
     allRequests.push(...formattedNewBookings);
@@ -303,6 +310,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         b.updated_at as processed_at,
         b.staff_id,
         b.cancelled_by,
+        b.service_name,
+        b.services,
         s.name as staff_name,
         u.business_name,
         u.phone as business_phone,
@@ -351,6 +360,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     );
   }
 });
+
 
 export const PUT = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;

@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
+import { IRAN_CITIES_BY_PROVINCE, IRAN_PROVINCES } from "./iranProvinces";
 
 // ==================== Types ====================
 interface Service {
@@ -107,7 +108,9 @@ const DAYS_OF_WEEK = [
 ];
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const hour = Math.floor(i / 2).toString().padStart(2, "0");
+  const hour = Math.floor(i / 2)
+    .toString()
+    .padStart(2, "0");
   const min = i % 2 === 0 ? "00" : "30";
   return `${hour}:${min}`;
 });
@@ -122,75 +125,7 @@ const defaultSocialMedia: SocialMedia = {
   soroush: "",
 };
 
-// لیست استان‌ها و شهرهای ایران
-const IRAN_PROVINCES = [
-  "آذربایجان شرقی",
-  "آذربایجان غربی",
-  "اردبیل",
-  "اصفهان",
-  "البرز",
-  "ایلام",
-  "بوشهر",
-  "تهران",
-  "چهارمحال و بختیاری",
-  "خراسان جنوبی",
-  "خراسان رضوی",
-  "خراسان شمالی",
-  "خوزستان",
-  "زنجان",
-  "سمنان",
-  "سیستان و بلوچستان",
-  "فارس",
-  "قزوین",
-  "قم",
-  "کردستان",
-  "کرمان",
-  "کرمانشاه",
-  "کهگیلویه و بویراحمد",
-  "گلستان",
-  "گیلان",
-  "لرستان",
-  "مازندران",
-  "مرکزی",
-  "هرمزگان",
-  "همدان",
-  "یزد",
-];
-
-const IRAN_CITIES_BY_PROVINCE: Record<string, string[]> = {
-  "تهران": ["تهران", "کرج", "اسلامشهر", "قدس", "ملارد", "ورامین", "پردیس", "قرچک", "شهریار", "رباط کریم", "اندیشه", "سایر"],
-  "اصفهان": ["اصفهان", "کاشان", "خمینی‌شهر", "نجف‌آباد", "شاهین‌شهر", "مبارکه", "فلاورجان", "زرین‌شهر", "آران و بیدگل", "سایر"],
-  "خراسان رضوی": ["مشهد", "نیشابور", "سبزوار", "تربت حیدریه", "قوچان", "کاشمر", "تربت جام", "چناران", "فریمان", "گناباد", "سایر"],
-  "فارس": ["شیراز", "مرودشت", "کازرون", "لارستان", "فسا", "جهرم", "داراب", "ممسنی", "آباده", "اقلید", "سایر"],
-  "خوزستان": ["اهواز", "دزفول", "آبادان", "خرمشهر", "اندیمشک", "بهبهان", "شوشتر", "مسجدسلیمان", "ایذه", "شوش", "سایر"],
-  "مازندران": ["ساری", "بابل", "آمل", "قائم‌شهر", "بهشهر", "نوشهر", "چالوس", "تنکابن", "نور", "محمودآباد", "بابلسر", "سایر"],
-  "گیلان": ["رشت", "بندر انزلی", "لاهیجان", "لنگرود", "تالش", "آستارا", "رودسر", "صومعه سرا", "فومن", "رودبار", "سایر"],
-  "کرمانشاه": ["کرمانشاه", "اسلام‌آباد غرب", "هرسین", "کنگاور", "سنقر", "صحنه", "پاوه", "سرپل ذهاب", "گیلانغرب", "سایر"],
-  "کرمان": ["کرمان", "سیرجان", "رفسنجان", "جیرفت", "بم", "زرند", "کهنوج", "شهربابک", "بافت", "منوجان", "سایر"],
-  "آذربایجان شرقی": ["تبریز", "مراغه", "مرند", "میاندوآب", "اهر", "بناب", "سراب", "آذر‌شهر", "سایر"],
-  "آذربایجان غربی": ["ارومیه", "خوی", "بوکان", "مهاباد", "سلماس", "نقده", "پیرانشهر", "سایر"],
-  "البرز": ["کرج", "فردیس", "مهرشهر", "اشتهارد", "طالقان", "نظرآباد", "هشتگرد", "سایر"],
-  "اردبیل": ["اردبیل", "پارس‌آباد", "مشگین‌شهر", "خلخال", "بیله‌سوار", "گرمی", "نمین", "سرعین", "سایر"],
-  "ایلام": ["ایلام", "دهلران", "ایوان", "مهران", "دره‌شهر", "آبدانان", "چرداول", "سایر"],
-  "بوشهر": ["بوشهر", "برازجان", "کنگان", "گناوه", "دشتستان", "دشتی", "جم", "دیر", "عسلویه", "سایر"],
-  "چهارمحال و بختیاری": ["شهرکرد", "بروجن", "فارسان", "لردگان", "کوهرنگ", "اردل", "کیار", "سامان", "سایر"],
-  "خراسان جنوبی": ["بیرجند", "قائنات", "فردوس", "طبس", "نهبندان", "سربیشه", "خوسف", "سایر"],
-  "خراسان شمالی": ["بجنورد", "شیروان", "اسفراین", "جاجرم", "مانه و سملقان", "گرمه", "سایر"],
-  "زنجان": ["زنجان", "ابهر", "خرمدره", "ماهنشان", "طارم", "ایجرود", "سلطانیه", "سایر"],
-  "سمنان": ["سمنان", "شاهرود", "دامغان", "گرمسار", "مهدی‌شهر", "میامی", "سرخه", "سایر"],
-  "سیستان و بلوچستان": ["زاهدان", "زابل", "چابهار", "ایرانشهر", "سراوان", "خاش", "نیکشهر", "کنارک", "زهک", "سایر"],
-  "قزوین": ["قزوین", "البرز", "آبیک", "تاکستان", "بوئین زهرا", "آوج", "سایر"],
-  "قم": ["قم", "جعفریه", "کهک", "سلفچگان", "سایر"],
-  "کردستان": ["سنندج", "سقز", "مریوان", "بانه", "قروه", "کامیاران", "بیجار", "دیواندره", "دهگلان", "سایر"],
-  "کهگیلویه و بویراحمد": ["یاسوج", "گچساران", "دهدشت", "باشت", "سی‌سخت", "لنده", "چرام", "سایر"],
-  "گلستان": ["گرگان", "گنبد کاووس", "علی‌آباد کتول", "آق‌قلا", "کردکوی", "بندر ترکمن", "رامیان", "مینودشت", "کلاله", "سایر"],
-  "لرستان": ["خرم‌آباد", "بروجرد", "دورود", "کوهدشت", "الیگودرز", "الشتر", "نورآباد", "پلدختر", "ازنا", "سایر"],
-  "مرکزی": ["اراک", "ساوه", "خمین", "محلات", "دلیجان", "تفرش", "اشتیان", "شازند", "خنداب", "سایر"],
-  "هرمزگان": ["بندرعباس", "قشم", "کیش", "میناب", "بندر لنگه", "جاسک", "حاجی‌آباد", "رودان", "بستک", "سایر"],
-  "همدان": ["همدان", "ملایر", "نهاوند", "کبودرآهنگ", "اسدآباد", "تویسرکان", "رزن", "بهار", "سایر"],
-  "یزد": ["یزد", "میبد", "اردکان", "بافق", "مهریز", "ابرکوه", "تفت", "خاتم", "اشکذر", "بهاباد", "سایر"],
-};
-
+// ==================== Image Uploader Component ====================
 // ==================== Image Uploader Component ====================
 function ImageUploader({
   currentImage,
@@ -222,11 +157,13 @@ function ImageUploader({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // بررسی حجم
     if (file.size > maxSizeMB * 1024 * 1024) {
       toast.error(`حجم فایل نباید بیشتر از ${maxSizeMB} مگابایت باشد`);
       return;
     }
 
+    // بررسی نوع فایل
     if (!file.type.startsWith("image/")) {
       toast.error("لطفاً فایل تصویری انتخاب کنید");
       return;
@@ -234,14 +171,21 @@ function ImageUploader({
 
     setIsUploading(true);
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("image", file);
+
+    // تعیین نوع بر اساس shape
+    let type = "logo";
+    if (shape === "circle") type = "avatar";
+    if (shape === "cover") type = "cover";
+    formData.append("type", type);
 
     try {
-      const res = await fetch("/api/client/upload", {
+      const res = await fetch("/api/client/upload-image", {
         method: "POST",
         body: formData,
       });
       const data = await res.json();
+
       if (data.success && data.url) {
         onImageUploaded(data.url);
         toast.success("تصویر با موفقیت آپلود شد");
@@ -249,9 +193,14 @@ function ImageUploader({
         toast.error(data.message || "خطا در آپلود تصویر");
       }
     } catch (error) {
+      console.error("Upload error:", error);
       toast.error("خطا در ارتباط با سرور");
     } finally {
       setIsUploading(false);
+      // reset input تا بشه دوباره همون فایل رو انتخاب کرد
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -270,18 +219,25 @@ function ImageUploader({
         onChange={handleFileSelect}
         className="hidden"
       />
-      
+
       {currentImage ? (
-        <div className={`relative ${getShapeClass()} overflow-hidden bg-slate-100 dark:bg-white/5`}>
+        <div
+          className={`relative ${getShapeClass()} overflow-hidden bg-slate-100 dark:bg-white/5`}
+        >
           <img
             src={currentImage}
             alt="آپلود شده"
-            className={`w-full h-full object-cover ${shape === "circle" ? "rounded-full" : "rounded-xl"}`}
-            style={shape === "cover" ? { aspectRatio: "16/9" } : { aspectRatio: "1/1" }}
+            className={`w-30 h-30 object-cover ${shape === "circle" ? "rounded-full" : "rounded-xl"}`}
+            style={
+              shape === "cover"
+                ? { aspectRatio: "16/9" }
+                : { aspectRatio: "1/1" }
+            }
           />
           <button
             onClick={() => fileInputRef.current?.click()}
             className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
+            type="button"
           >
             <div className="bg-white rounded-full p-2">
               <Edit2 className="w-5 h-5 text-gray-800" />
@@ -291,6 +247,7 @@ function ImageUploader({
             <button
               onClick={() => onImageRemoved()}
               className="absolute top-2 right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors"
+              type="button"
             >
               <Trash2 className="w-4 h-4 text-white" />
             </button>
@@ -301,13 +258,16 @@ function ImageUploader({
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
           className={`w-full border-2 border-dashed border-gray-300 dark:border-gray-600 ${getShapeClass()} bg-slate-50 dark:bg-white/5 hover:border-emerald-500 transition-colors flex flex-col items-center justify-center p-6 ${shape === "cover" ? "aspect-video" : "aspect-square"}`}
+          type="button"
         >
           {isUploading ? (
             <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
           ) : (
             <>
               <Upload className="w-8 h-8 text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {title}
+              </p>
               <p className="text-xs text-gray-400 mt-1">{description}</p>
             </>
           )}
@@ -318,7 +278,12 @@ function ImageUploader({
 }
 
 // ==================== Step Indicator ====================
-function StepIndicator({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
+function StepIndicator({
+  currentStep,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) {
   const steps = [
     { number: 1, title: "آدرس دلخواه", icon: LinkIcon },
     { number: 2, title: "اطلاعات پایه", icon: User },
@@ -333,25 +298,27 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
           const isCompleted = currentStep > step.number;
           const isActive = currentStep === step.number;
           const Icon = step.icon;
-          
+
           return (
             <div key={step.number} className="flex-1 text-center">
               <div className="relative">
                 {index < steps.length - 1 && (
                   <div
                     className={`absolute top-4 left-1/2 w-full h-0.5 transition-all duration-300 ${
-                      isCompleted ? "bg-emerald-500" : "bg-gray-200 dark:bg-gray-700"
+                      isCompleted
+                        ? "bg-emerald-500"
+                        : "bg-gray-200 dark:bg-gray-700"
                     }`}
                   />
                 )}
-                
+
                 <div
                   className={`relative z-10 w-8 h-8 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
                     isActive
                       ? "bg-emerald-600 text-white ring-4 ring-emerald-200 dark:ring-emerald-900/50"
                       : isCompleted
-                      ? "bg-emerald-500 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+                        ? "bg-emerald-500 text-white"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-500"
                   }`}
                 >
                   {isCompleted ? (
@@ -360,10 +327,14 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
                     <Icon className="w-4 h-4" />
                   )}
                 </div>
-                
-                <p className={`text-xs mt-2 hidden sm:block transition-colors ${
-                  isActive ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-gray-500"
-                }`}>
+
+                <p
+                  className={`text-xs mt-2 hidden sm:block transition-colors ${
+                    isActive
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-gray-500"
+                  }`}
+                >
                   {step.title}
                 </p>
               </div>
@@ -398,7 +369,9 @@ function SlugStep({
     }
     setIsChecking(true);
     try {
-      const res = await fetch(`/api/client/customer-link/check-slug?slug=${value}`);
+      const res = await fetch(
+        `/api/client/customer-link/check-slug?slug=${value}`,
+      );
       const data = await res.json();
       setIsAvailable(data.available);
     } catch {
@@ -440,7 +413,9 @@ function SlugStep({
           {editMode ? "ویرایش آدرس صفحه اختصاصی" : "آدرس صفحه اختصاصی"}
         </h3>
         <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-          {editMode ? "آدرس قابل تغییر نیست" : "آدرسی که مشتریان با آن به صفحه شما می‌آیند"}
+          {editMode
+            ? "آدرس قابل تغییر نیست"
+            : "آدرسی که مشتریان با آن به صفحه شما می‌آیند"}
         </p>
       </div>
 
@@ -448,10 +423,17 @@ function SlugStep({
         <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
           آدرس دلخواه شما
         </label>
-        <div dir="ltr" className={`flex items-center gap-2 p-3 bg-white dark:bg-[#0f1115] border-2 rounded-xl transition-colors ${
-          editMode ? "border-gray-300 bg-gray-50 dark:bg-gray-800/50" : "focus-within:border-emerald-500"
-        }`}>
-          <span className="text-slate-500 text-sm font-mono shrink-0">ontimeapp.ir/c/</span>
+        <div
+          dir="ltr"
+          className={`flex items-center gap-2 p-3 bg-white dark:bg-[#0f1115] border-2 rounded-xl transition-colors ${
+            editMode
+              ? "border-gray-300 bg-gray-50 dark:bg-gray-800/50"
+              : "focus-within:border-emerald-500"
+          }`}
+        >
+          <span className="text-slate-500 text-sm font-mono shrink-0">
+            ontimeapp.ir/c/
+          </span>
           <input
             type="text"
             value={localSlug}
@@ -465,37 +447,45 @@ function SlugStep({
             autoFocus={!editMode}
           />
         </div>
-        
+
         {editMode && (
           <div className="flex items-center gap-2 mt-2 text-sm text-amber-600">
             <AlertTriangle className="w-4 h-4" />
             آدرس صفحه اختصاصی پس از ایجاد قابل تغییر نیست
           </div>
         )}
-        
+
         {!editMode && isChecking && (
           <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
             <Loader2 className="w-4 h-4 animate-spin" />
             در حال بررسی آدرس...
           </div>
         )}
-        {!editMode && !isChecking && isAvailable === true && localSlug.length >= 3 && (
-          <div className="flex items-center gap-2 mt-2 text-sm text-emerald-600">
-            <Check className="w-4 h-4" />
-            این آدرس قابل ثبت است ✓
-          </div>
-        )}
-        {!editMode && !isChecking && isAvailable === false && localSlug.length >= 3 && (
-          <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
-            <X className="w-4 h-4" />
-            این آدرس قبلاً ثبت شده است
-          </div>
-        )}
+        {!editMode &&
+          !isChecking &&
+          isAvailable === true &&
+          localSlug.length >= 3 && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-emerald-600">
+              <Check className="w-4 h-4" />
+              این آدرس قابل ثبت است ✓
+            </div>
+          )}
+        {!editMode &&
+          !isChecking &&
+          isAvailable === false &&
+          localSlug.length >= 3 && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
+              <X className="w-4 h-4" />
+              این آدرس قبلاً ثبت شده است
+            </div>
+          )}
       </div>
 
       {!editMode && (
         <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4 text-xs text-slate-500 dark:text-gray-400 space-y-1">
-          <p className="font-medium text-slate-700 dark:text-gray-300 mb-2">📝 قوانین انتخاب آدرس:</p>
+          <p className="font-medium text-slate-700 dark:text-gray-300 mb-2">
+            📝 قوانین انتخاب آدرس:
+          </p>
           <p>• فقط حروف انگلیسی (a-z)، اعداد (0-9) و خط تیره (-)</p>
           <p>• حداقل ۳ و حداکثر ۴۰ کاراکتر</p>
           <p>• آدرس قابل تغییر نیست، با دقت انتخاب کنید</p>
@@ -539,13 +529,22 @@ function BasicInfoStep({
     }
   }, [data.province]);
 
-  const isValid = data.business_name && data.province && data.city && data.business_address && data.phone;
+  const isValid =
+    data.business_name &&
+    data.province &&
+    data.city &&
+    data.business_address &&
+    data.phone;
 
   return (
     <div className="space-y-5">
       <div className="text-center mb-2">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white">اطلاعات کسب‌وکار</h3>
-        <p className="text-sm text-slate-500 dark:text-gray-400">اطلاعات پایه و شبکه‌های اجتماعی</p>
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+          اطلاعات کسب‌وکار
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-gray-400">
+          اطلاعات پایه و شبکه‌های اجتماعی
+        </p>
       </div>
 
       {/* Images Section */}
@@ -573,8 +572,12 @@ function BasicInfoStep({
             </label>
             <ImageUploader
               currentImage={data.avatar_image || data.logo}
-              onImageUploaded={(url) => onDataChange({ avatar_image: url, logo: url })}
-              onImageRemoved={() => onDataChange({ avatar_image: null, logo: null })}
+              onImageUploaded={(url) =>
+                onDataChange({ avatar_image: url, logo: url })
+              }
+              onImageRemoved={() =>
+                onDataChange({ avatar_image: null, logo: null })
+              }
               shape="circle"
               title="آپلود لوگو"
             />
@@ -597,7 +600,7 @@ function BasicInfoStep({
             value={data.business_name || ""}
             onChange={(e) => onDataChange({ business_name: e.target.value })}
             placeholder="مثال: آرایشگاه مدرن سارا"
-            className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors"
+            className="w-full p-3 border dark:text-white text-black dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors"
           />
         </div>
 
@@ -609,8 +612,10 @@ function BasicInfoStep({
           <div className="relative">
             <select
               value={data.province || ""}
-              onChange={(e) => onDataChange({ province: e.target.value, city: "" })}
-              className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
+              onChange={(e) =>
+                onDataChange({ province: e.target.value, city: "" })
+              }
+              className="w-full p-3 border dark:text-white text-black dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
             >
               <option value="">انتخاب استان...</option>
               {IRAN_PROVINCES.map((province) => (
@@ -633,7 +638,7 @@ function BasicInfoStep({
               <select
                 value={data.city || ""}
                 onChange={(e) => onDataChange({ city: e.target.value })}
-                className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
+                className="w-full p-3 border dark:text-white text-black dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
               >
                 <option value="">انتخاب شهر...</option>
                 {availableCities.map((city) => (
@@ -657,12 +662,16 @@ function BasicInfoStep({
             <input
               type="text"
               value={data.business_address || ""}
-              onChange={(e) => onDataChange({ business_address: e.target.value })}
+              onChange={(e) =>
+                onDataChange({ business_address: e.target.value })
+              }
               placeholder="خیابان، پلاک، واحد..."
-              className="flex-1 bg-transparent outline-none"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none"
             />
           </div>
-          <p className="text-xs text-slate-400 mt-1">مثال: خیابان رشیدی، پلاک ۱۲، واحد ۳</p>
+          <p className="text-xs text-slate-400 mt-1">
+            مثال: خیابان رشیدی، پلاک ۱۲، واحد ۳
+          </p>
         </div>
 
         <div>
@@ -676,7 +685,7 @@ function BasicInfoStep({
               value={data.phone || ""}
               onChange={(e) => onDataChange({ phone: e.target.value })}
               placeholder="۰۹۱۲۳۴۵۶۷۸۹"
-              className="flex-1 bg-transparent outline-none"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none"
             />
           </div>
         </div>
@@ -690,15 +699,17 @@ function BasicInfoStep({
             onChange={(e) => onDataChange({ bio: e.target.value })}
             placeholder="درباره کسب‌وکار خود بنویسید..."
             rows={3}
-            className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 resize-none"
+            className="w-full dark:text-white text-black p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 resize-none"
           />
         </div>
       </div>
 
       {/* Social Media Section */}
       <div className="space-y-3 pt-2">
-        <p className="font-medium text-slate-700 dark:text-gray-300">شبکه‌های اجتماعی:</p>
-        
+        <p className="font-medium text-slate-700 dark:text-gray-300">
+          شبکه‌های اجتماعی:
+        </p>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <Instagram className="w-5 h-5 text-pink-600 shrink-0" />
@@ -707,11 +718,11 @@ function BasicInfoStep({
               value={socialMedia?.instagram || ""}
               onChange={(e) => onSocialChange({ instagram: e.target.value })}
               placeholder="اینستاگرام (username)"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none text-sm"
               dir="ltr"
             />
           </div>
-          
+
           <div className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <Send className="w-5 h-5 text-blue-500 shrink-0" />
             <input
@@ -719,11 +730,11 @@ function BasicInfoStep({
               value={socialMedia?.telegram || ""}
               onChange={(e) => onSocialChange({ telegram: e.target.value })}
               placeholder="تلگرام (username)"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none text-sm"
               dir="ltr"
             />
           </div>
-          
+
           <div className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <MessageCircle className="w-5 h-5 text-green-500 shrink-0" />
             <input
@@ -731,11 +742,11 @@ function BasicInfoStep({
               value={socialMedia?.rubika || ""}
               onChange={(e) => onSocialChange({ rubika: e.target.value })}
               placeholder="روبیکا (username)"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none text-sm"
               dir="ltr"
             />
           </div>
-          
+
           <div className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <Phone className="w-5 h-5 text-green-600 shrink-0" />
             <input
@@ -743,11 +754,11 @@ function BasicInfoStep({
               value={socialMedia?.whatsapp || ""}
               onChange={(e) => onSocialChange({ whatsapp: e.target.value })}
               placeholder="واتساپ (شماره تماس)"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none text-sm"
               dir="ltr"
             />
           </div>
-          
+
           <div className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <Globe className="w-5 h-5 text-purple-500 shrink-0" />
             <input
@@ -755,23 +766,23 @@ function BasicInfoStep({
               value={socialMedia?.eitaa || ""}
               onChange={(e) => onSocialChange({ eitaa: e.target.value })}
               placeholder="ایتا (username)"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none text-sm"
               dir="ltr"
             />
           </div>
-          
-          <div className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
+
+          <div className="flex items-center dark:text-white text-black gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <AtSign className="w-5 h-5 text-amber-500 shrink-0" />
             <input
               type="text"
               value={socialMedia?.bale || ""}
               onChange={(e) => onSocialChange({ bale: e.target.value })}
               placeholder="بله (username)"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none text-sm"
               dir="ltr"
             />
           </div>
-          
+
           <div className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5">
             <MessageCircle className="w-5 h-5 text-indigo-500 shrink-0" />
             <input
@@ -779,7 +790,7 @@ function BasicInfoStep({
               value={socialMedia?.soroush || ""}
               onChange={(e) => onSocialChange({ soroush: e.target.value })}
               placeholder="سروش (username)"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 dark:text-white text-black bg-transparent outline-none text-sm"
               dir="ltr"
             />
           </div>
@@ -787,10 +798,17 @@ function BasicInfoStep({
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button onClick={onBack} className="flex-1 py-3 border border-gray-300 dark:border-gray-700 rounded-xl font-medium">
+        <button
+          onClick={onBack}
+          className="flex-1 dark:text-white text-black py-3 border border-gray-300 dark:border-gray-700 rounded-xl font-medium"
+        >
           قبلی
         </button>
-        <button onClick={onNext} disabled={!isValid} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold disabled:opacity-50">
+        <button
+          onClick={onNext}
+          disabled={!isValid}
+          className="flex-1 py-3 dark:text-white text-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold disabled:opacity-50"
+        >
           ادامه
         </button>
       </div>
@@ -820,10 +838,16 @@ function ServicesAndSettingsStep({
 }) {
   const [availableServices, setAvailableServices] = useState<Service[]>([]);
   const [isLoadingServices, setIsLoadingServices] = useState(true);
-  const [activeSection, setActiveSection] = useState<"services" | "shifts" | "holidays">("services");
-  
+  const [activeSection, setActiveSection] = useState<
+    "services" | "shifts" | "holidays"
+  >("services");
+
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
-  const [newService, setNewService] = useState({ name: "", price: "", duration: "30" });
+  const [newService, setNewService] = useState({
+    name: "",
+    price: "",
+    duration: "30",
+  });
   const [isCreatingService, setIsCreatingService] = useState(false);
 
   useEffect(() => {
@@ -856,7 +880,11 @@ function ServicesAndSettingsStep({
     onShiftsChange(workShifts.filter((_, i) => i !== index));
   };
 
-  const updateShift = (index: number, field: "start" | "end", value: string) => {
+  const updateShift = (
+    index: number,
+    field: "start" | "end",
+    value: string,
+  ) => {
     const newShifts = [...workShifts];
     newShifts[index][field] = value;
     onShiftsChange(newShifts);
@@ -871,9 +899,9 @@ function ServicesAndSettingsStep({
   };
 
   const toggleService = (service: Service) => {
-    const exists = selectedServices.some(s => s.id === service.id);
+    const exists = selectedServices.some((s) => s.id === service.id);
     if (exists) {
-      onServicesChange(selectedServices.filter(s => s.id !== service.id));
+      onServicesChange(selectedServices.filter((s) => s.id !== service.id));
     } else {
       onServicesChange([...selectedServices, service]);
     }
@@ -884,7 +912,7 @@ function ServicesAndSettingsStep({
       toast.error("نام خدمت الزامی است");
       return;
     }
-    
+
     setIsCreatingService(true);
     try {
       const res = await fetch("/api/client/services", {
@@ -896,7 +924,7 @@ function ServicesAndSettingsStep({
           duration_minutes: parseInt(newService.duration) || 30,
         }),
       });
-      
+
       const data = await res.json();
       if (data.success && data.service) {
         toast.success("خدمت با موفقیت اضافه شد");
@@ -956,8 +984,12 @@ function ServicesAndSettingsStep({
   return (
     <div className="space-y-5">
       <div className="text-center mb-2">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white">خدمات و تنظیمات</h3>
-        <p className="text-sm text-slate-500 dark:text-gray-400">خدمات، شیفت کاری و روزهای تعطیل را تنظیم کنید</p>
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+          خدمات و تنظیمات
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-gray-400">
+          خدمات، شیفت کاری و روزهای تعطیل را تنظیم کنید
+        </p>
       </div>
 
       <div className="flex gap-2 border-b border-slate-200 dark:border-gray-700 pb-2">
@@ -1015,27 +1047,35 @@ function ServicesAndSettingsStep({
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {availableServices.map((service) => {
-                const isSelected = selectedServices.some(s => s.id === service.id);
+                const isSelected = selectedServices.some(
+                  (s) => s.id === service.id,
+                );
                 return (
                   <button
                     key={service.id}
                     onClick={() => toggleService(service)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                    className={`w-full  flex items-center justify-between p-3 rounded-xl transition-all ${
                       isSelected
                         ? "bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-700"
                         : "bg-slate-100 dark:bg-white/5 border border-transparent"
                     }`}
                   >
                     <div className="text-right">
-                      <p className="font-medium text-slate-800 dark:text-white">{service.name}</p>
+                      <p className="font-medium text-slate-800 dark:text-white">
+                        {service.name}
+                      </p>
                       <div className="flex gap-3 mt-1 text-xs text-slate-500">
                         <span>{service.price.toLocaleString()} تومان</span>
                         <span>{service.duration_minutes} دقیقه</span>
                       </div>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      isSelected ? "bg-emerald-500 border-emerald-500" : "border-gray-400"
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        isSelected
+                          ? "bg-emerald-500 border-emerald-500"
+                          : "border-gray-400"
+                      }`}
+                    >
                       {isSelected && <Check className="w-3 h-3 text-white" />}
                     </div>
                   </button>
@@ -1068,7 +1108,9 @@ function ServicesAndSettingsStep({
                 >
                   <p className="text-xs text-slate-500 italic">
                     شیفت دستی انتخاب نشده؛ نوبت‌دهی خودکار{" "}
-                    <span className="text-blue-600 font-bold">۰۸:۰۰ الی ۲۲:۰۰</span>
+                    <span className="text-blue-600 font-bold">
+                      ۰۸:۰۰ الی ۲۲:۰۰
+                    </span>
                   </p>
                 </motion.div>
               ) : (
@@ -1084,20 +1126,28 @@ function ServicesAndSettingsStep({
                     <div className="flex-1 grid grid-cols-2 gap-2">
                       <select
                         value={shift.start}
-                        onChange={(e) => updateShift(index, "start", e.target.value)}
-                        className="bg-white dark:bg-[#0a0c10] border rounded-lg py-2 text-center text-xs font-bold outline-none"
+                        onChange={(e) =>
+                          updateShift(index, "start", e.target.value)
+                        }
+                        className="bg-white dark:text-white text-black dark:bg-[#0a0c10] border rounded-lg py-2 text-center text-xs font-bold outline-none"
                       >
                         {TIME_OPTIONS.map((t) => (
-                          <option key={t} value={t}>{t}</option>
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
                         ))}
                       </select>
                       <select
                         value={shift.end}
-                        onChange={(e) => updateShift(index, "end", e.target.value)}
-                        className="bg-white dark:bg-[#0a0c10] border rounded-lg py-2 text-center text-xs font-bold outline-none"
+                        onChange={(e) =>
+                          updateShift(index, "end", e.target.value)
+                        }
+                        className="bg-white dark:text-white text-black dark:bg-[#0a0c10] border rounded-lg py-2 text-center text-xs font-bold outline-none"
                       >
                         {TIME_OPTIONS.map((t) => (
-                          <option key={t} value={t}>{t}</option>
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -1117,7 +1167,9 @@ function ServicesAndSettingsStep({
 
       {activeSection === "holidays" && (
         <div className="space-y-4">
-          <span className="text-xs text-slate-500">روزهای غیرفعال هفته را انتخاب کنید</span>
+          <span className="text-xs text-slate-500">
+            روزهای غیرفعال هفته را انتخاب کنید
+          </span>
           <div className="grid grid-cols-4 gap-2">
             {DAYS_OF_WEEK.map((day) => {
               const isOff = offDays.includes(day.id);
@@ -1143,15 +1195,15 @@ function ServicesAndSettingsStep({
       )}
 
       <div className="flex gap-3 pt-4">
-        <button 
-          onClick={handlePrevSection} 
-          className="flex-1 py-3 border border-gray-300 dark:border-gray-700 rounded-xl font-medium"
+        <button
+          onClick={handlePrevSection}
+          className="flex-1 py-3  dark:text-white text-black border border-gray-300 dark:border-gray-700 rounded-xl font-medium"
         >
           {getPrevButtonText()}
         </button>
-        <button 
-          onClick={handleNextSection} 
-          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all"
+        <button
+          onClick={handleNextSection}
+          className="flex-1 py-3  bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all"
         >
           {getNextButtonText()}
         </button>
@@ -1161,30 +1213,41 @@ function ServicesAndSettingsStep({
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50">
           <div className="w-full sm:max-w-md bg-white dark:bg-[#1a1e26] rounded-t-2xl sm:rounded-2xl overflow-hidden">
             <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 dark:text-white">افزودن خدمت جدید</h3>
-              <button onClick={() => setShowAddServiceModal(false)} className="p-1 rounded-full hover:bg-gray-100">
-                <X className="w-5 h-5" />
+              <h3 className="font-bold text-slate-800 dark:text-white">
+                افزودن خدمت جدید
+              </h3>
+              <button
+                onClick={() => setShowAddServiceModal(false)}
+                className="p-1 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 dark:text-white text-black h-5" />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <input
                 type="text"
                 value={newService.name}
-                onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                onChange={(e) =>
+                  setNewService({ ...newService, name: e.target.value })
+                }
                 placeholder="نام خدمت"
-                className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5"
+                className="w-full p-3 border dark:text-white text-black dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5"
               />
               <input
                 type="number"
                 value={newService.price}
-                onChange={(e) => setNewService({ ...newService, price: e.target.value })}
+                onChange={(e) =>
+                  setNewService({ ...newService, price: e.target.value })
+                }
                 placeholder="قیمت (تومان)"
-                className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5"
+                className="w-full p-3 border dark:text-white text-black dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5"
               />
               <select
                 value={newService.duration}
-                onChange={(e) => setNewService({ ...newService, duration: e.target.value })}
-                className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5"
+                onChange={(e) =>
+                  setNewService({ ...newService, duration: e.target.value })
+                }
+                className="w-full p-3 border dark:text-white text-black dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5"
               >
                 <option value="15">۱۵ دقیقه</option>
                 <option value="30">۳۰ دقیقه</option>
@@ -1198,7 +1261,11 @@ function ServicesAndSettingsStep({
                 disabled={isCreatingService}
                 className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold disabled:opacity-50"
               >
-                {isCreatingService ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "افزودن خدمت"}
+                {isCreatingService ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  "افزودن خدمت"
+                )}
               </button>
             </div>
           </div>
@@ -1232,24 +1299,54 @@ function FinalReviewStep({
   onBack: () => void;
   editMode?: boolean;
 }) {
-  const fullUrl = `myapp.ir/c/${slug}`;
+  const fullUrl = `ontimeapp.ir/c/${slug}`;
 
   const getOffDayNames = () => {
-    return offDays.map(dayId => DAYS_OF_WEEK.find(d => d.id === dayId)?.name || "").filter(Boolean);
+    return offDays
+      .map((dayId) => DAYS_OF_WEEK.find((d) => d.id === dayId)?.name || "")
+      .filter(Boolean);
   };
 
-  const shiftsText = workShifts.length === 0 
-    ? "۰۸:۰۰ تا ۲۲:۰۰ (پیش‌فرض)"
-    : workShifts.map(s => `${s.start} تا ${s.end}`).join(" و ");
+  const shiftsText =
+    workShifts.length === 0
+      ? "۰۸:۰۰ تا ۲۲:۰۰ (پیش‌فرض)"
+      : workShifts.map((s) => `${s.start} تا ${s.end}`).join(" و ");
 
   const activeSocials = [];
-  if (socialMedia?.instagram) activeSocials.push({ name: "اینستاگرام", icon: "📷", value: socialMedia.instagram });
-  if (socialMedia?.telegram) activeSocials.push({ name: "تلگرام", icon: "📨", value: socialMedia.telegram });
-  if (socialMedia?.rubika) activeSocials.push({ name: "روبیکا", icon: "🟢", value: socialMedia.rubika });
-  if (socialMedia?.whatsapp) activeSocials.push({ name: "واتساپ", icon: "💬", value: socialMedia.whatsapp });
-  if (socialMedia?.eitaa) activeSocials.push({ name: "ایتا", icon: "🌐", value: socialMedia.eitaa });
-  if (socialMedia?.bale) activeSocials.push({ name: "بله", icon: "@", value: socialMedia.bale });
-  if (socialMedia?.soroush) activeSocials.push({ name: "سروش", icon: "💬", value: socialMedia.soroush });
+  if (socialMedia?.instagram)
+    activeSocials.push({
+      name: "اینستاگرام",
+      icon: "📷",
+      value: socialMedia.instagram,
+    });
+  if (socialMedia?.telegram)
+    activeSocials.push({
+      name: "تلگرام",
+      icon: "📨",
+      value: socialMedia.telegram,
+    });
+  if (socialMedia?.rubika)
+    activeSocials.push({
+      name: "روبیکا",
+      icon: "🟢",
+      value: socialMedia.rubika,
+    });
+  if (socialMedia?.whatsapp)
+    activeSocials.push({
+      name: "واتساپ",
+      icon: "💬",
+      value: socialMedia.whatsapp,
+    });
+  if (socialMedia?.eitaa)
+    activeSocials.push({ name: "ایتا", icon: "🌐", value: socialMedia.eitaa });
+  if (socialMedia?.bale)
+    activeSocials.push({ name: "بله", icon: "@", value: socialMedia.bale });
+  if (socialMedia?.soroush)
+    activeSocials.push({
+      name: "سروش",
+      icon: "💬",
+      value: socialMedia.soroush,
+    });
 
   return (
     <div className="space-y-5">
@@ -1261,14 +1358,20 @@ function FinalReviewStep({
           {editMode ? "بررسی و ذخیره تغییرات" : "بررسی نهایی"}
         </h3>
         <p className="text-sm text-slate-500 dark:text-gray-400">
-          {editMode ? "اطلاعات خود را بررسی کنید" : "اطلاعات خود را بررسی کنید و لینک را بسازید"}
+          {editMode
+            ? "اطلاعات خود را بررسی کنید"
+            : "اطلاعات خود را بررسی کنید و لینک را بسازید"}
         </p>
       </div>
 
       <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl overflow-hidden">
         {businessInfo.cover_image && (
           <div className="h-32 w-full overflow-hidden">
-            <img src={businessInfo.cover_image} alt="Cover" className="w-full h-full object-cover" />
+            <img
+              src={businessInfo.cover_image}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
         <div className="p-4 flex items-center gap-3">
@@ -1280,11 +1383,13 @@ function FinalReviewStep({
             />
           ) : (
             <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center border-4 border-white">
-              <Building2 className="w-8 h-8 text-white" />
+              <Building2 className="w-8  h-8 text-white" />
             </div>
           )}
           <div className="flex-1">
-            <p className="text-white font-bold">{businessInfo.business_name}</p>
+            <p className="text-white  font-bold">
+              {businessInfo.business_name}
+            </p>
             <p className="text-emerald-100 text-xs mt-1">{fullUrl}</p>
           </div>
         </div>
@@ -1295,13 +1400,31 @@ function FinalReviewStep({
           <Building2 className="w-4 h-4 text-emerald-500" />
           اطلاعات کسب‌وکار
         </h4>
-        <div className="space-y-2 text-sm">
-          <p><span className="text-slate-500">نام:</span> {businessInfo.business_name}</p>
-          <p><span className="text-slate-500">استان:</span> {businessInfo.province}</p>
-          <p><span className="text-slate-500">شهر:</span> {businessInfo.city}</p>
-          <p><span className="text-slate-500">آدرس:</span> {businessInfo.business_address}</p>
-          <p><span className="text-slate-500">تلفن:</span> {businessInfo.phone}</p>
-          {businessInfo.bio && <p><span className="text-slate-500">معرفی:</span> {businessInfo.bio.substring(0, 50)}...</p>}
+        <div className="space-y-2 dark:text-white text-black text-sm">
+          <p>
+            <span className="text-slate-500 ">نام:</span>{" "}
+            {businessInfo.business_name}
+          </p>
+          <p>
+            <span className="text-slate-500">استان:</span>{" "}
+            {businessInfo.province}
+          </p>
+          <p>
+            <span className="text-slate-500">شهر:</span> {businessInfo.city}
+          </p>
+          <p>
+            <span className="text-slate-500">آدرس:</span>{" "}
+            {businessInfo.business_address}
+          </p>
+          <p>
+            <span className="text-slate-500">تلفن:</span> {businessInfo.phone}
+          </p>
+          {businessInfo.bio && (
+            <p>
+              <span className="text-slate-500">معرفی:</span>{" "}
+              {businessInfo.bio.substring(0, 50)}...
+            </p>
+          )}
         </div>
       </div>
 
@@ -1313,7 +1436,10 @@ function FinalReviewStep({
           </h4>
           <div className="flex flex-wrap gap-2">
             {activeSocials.map((social) => (
-              <span key={social.name} className="px-2 py-1 bg-white dark:bg-[#0f1115] rounded-full text-xs flex items-center gap-1">
+              <span
+                key={social.name}
+                className="px-2 py-1 dark:text-white text-black bg-white dark:bg-[#0f1115] rounded-full text-xs flex items-center gap-1"
+              >
                 <span>{social.icon}</span> {social.value}
               </span>
             ))}
@@ -1326,7 +1452,7 @@ function FinalReviewStep({
           <Clock className="w-4 h-4 text-emerald-500" />
           ساعت کاری
         </h4>
-        <p className="text-sm">{shiftsText}</p>
+        <p className="text-sm dark:text-white text-black">{shiftsText}</p>
       </div>
 
       {offDays.length > 0 && (
@@ -1336,8 +1462,11 @@ function FinalReviewStep({
             روزهای تعطیل هفته
           </h4>
           <div className="flex flex-wrap gap-2">
-            {getOffDayNames().map(day => (
-              <span key={day} className="px-2 py-1 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 rounded-full text-xs">
+            {getOffDayNames().map((day) => (
+              <span
+                key={day}
+                className="px-2 py-1 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 rounded-full text-xs"
+              >
                 {day}
               </span>
             ))}
@@ -1351,11 +1480,13 @@ function FinalReviewStep({
             <Plus className="w-4 h-4 text-emerald-500" />
             خدمات ({selectedServices.length})
           </h4>
-          <div className="space-y-1 text-sm">
+          <div className="space-y-1 text-sm dark:text-white text-black">
             {selectedServices.map((service) => (
               <div key={service.id} className="flex justify-between">
                 <span>{service.name}</span>
-                <span className="text-slate-500">{service.price.toLocaleString()} تومان</span>
+                <span className="text-slate-500">
+                  {service.price.toLocaleString()} تومان
+                </span>
               </div>
             ))}
           </div>
@@ -1363,13 +1494,24 @@ function FinalReviewStep({
       )}
 
       <div className="flex gap-3 pt-2">
-        <button onClick={onBack} className="flex-1 py-3 border rounded-xl">قبلی</button>
+        <button
+          onClick={onBack}
+          className="flex-1 dark:text-white text-black py-3 border rounded-xl"
+        >
+          قبلی
+        </button>
         <button
           onClick={onSubmit}
           disabled={isSubmitting}
           className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (editMode ? <Edit2 className="w-5 h-5" /> : <Crown className="w-5 h-5" />)}
+          {isSubmitting ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : editMode ? (
+            <Edit2 className="w-5 h-5" />
+          ) : (
+            <Crown className="w-5 h-5" />
+          )}
           {editMode ? "ذخیره تغییرات" : "ساخت لینک اختصاصی"}
         </button>
       </div>
@@ -1378,7 +1520,15 @@ function FinalReviewStep({
 }
 
 // ==================== Success Modal ====================
-function SuccessModal({ link, onClose, isEditMode = false }: { link: string; onClose: () => void; isEditMode?: boolean }) {
+function SuccessModal({
+  link,
+  onClose,
+  isEditMode = false,
+}: {
+  link: string;
+  onClose: () => void;
+  isEditMode?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -1403,19 +1553,30 @@ function SuccessModal({ link, onClose, isEditMode = false }: { link: string; onC
             {isEditMode ? "✨ ویرایش با موفقیت انجام شد!" : "🎉 تبریک!"}
           </h3>
           <p className="text-emerald-100 text-sm mt-1">
-            {isEditMode ? "تغییرات لینک اختصاصی شما ذخیره شد" : "لینک اختصاصی شما ساخته شد"}
+            {isEditMode
+              ? "تغییرات لینک اختصاصی شما ذخیره شد"
+              : "لینک اختصاصی شما ساخته شد"}
           </p>
         </div>
 
         <div className="p-6">
           <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-4 text-center">
-            <p className="text-xs text-slate-500 dark:text-gray-400 mb-1">لینک اختصاصی شما:</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mb-1">
+              لینک اختصاصی شما:
+            </p>
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-mono text-emerald-600 dark:text-emerald-400 break-all flex-1">
                 {link}
               </p>
-              <button onClick={handleCopy} className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg shrink-0">
-                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-emerald-600" />}
+              <button
+                onClick={handleCopy}
+                className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg shrink-0"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <Copy className="w-4 h-4 text-emerald-600" />
+                )}
               </button>
             </div>
           </div>
@@ -1426,12 +1587,16 @@ function SuccessModal({ link, onClose, isEditMode = false }: { link: string; onC
                 📌 این لینک را در بیوگرافی اینستاگرام خود قرار دهید
               </p>
               <p className="text-xs text-slate-500 dark:text-gray-400 text-center mt-1">
-                مشتریان با کلیک روی لینک، مستقیماً به صفحه اختصاصی شما هدایت می‌شوند
+                مشتریان با کلیک روی لینک، مستقیماً به صفحه اختصاصی شما هدایت
+                می‌شوند
               </p>
             </div>
           )}
 
-          <button onClick={onClose} className="w-full mt-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium">
+          <button
+            onClick={onClose}
+            className="w-full mt-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium"
+          >
             رفتن به داشبورد
           </button>
         </div>
@@ -1467,7 +1632,9 @@ export function CreateCustomerLinkWizard({
     cover_image: null,
   });
 
-  const [socialMedia, setSocialMedia] = useState<SocialMedia>({ ...defaultSocialMedia });
+  const [socialMedia, setSocialMedia] = useState<SocialMedia>({
+    ...defaultSocialMedia,
+  });
 
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [workShifts, setWorkShifts] = useState<Shift[]>([]);
@@ -1511,8 +1678,12 @@ export function CreateCustomerLinkWizard({
                 avatar_image: null,
                 cover_image: null,
               });
-              setWorkShifts(data.user.work_shifts ? JSON.parse(data.user.work_shifts) : []);
-              setOffDays(data.user.off_days ? JSON.parse(data.user.off_days) : []);
+              setWorkShifts(
+                data.user.work_shifts ? JSON.parse(data.user.work_shifts) : [],
+              );
+              setOffDays(
+                data.user.off_days ? JSON.parse(data.user.off_days) : [],
+              );
             }
           } catch (error) {
             console.error("Error fetching settings:", error);
@@ -1535,11 +1706,11 @@ export function CreateCustomerLinkWizard({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
+
     try {
       const url = "/api/client/customer-link";
       const method = editMode ? "PUT" : "POST";
-      
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -1562,10 +1733,10 @@ export function CreateCustomerLinkWizard({
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
-        const finalLink = `myapp.ir/c/${slug}`;
-        
+        const finalLink = `ontimeapp.ir/c/${slug}`;
+
         if (!editMode) {
           setCreatedLink(finalLink);
           setShowSuccess(true);
@@ -1573,7 +1744,7 @@ export function CreateCustomerLinkWizard({
           setCreatedLink(finalLink);
           setShowSuccess(true);
         }
-        
+
         if (onSuccess) {
           onSuccess(finalLink, slug);
         }
@@ -1609,7 +1780,9 @@ export function CreateCustomerLinkWizard({
       <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
         <div className="bg-white dark:bg-[#1a1e26] rounded-2xl p-8 text-center">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-3" />
-          <p className="text-slate-600 dark:text-gray-300">در حال بارگذاری اطلاعات...</p>
+          <p className="text-slate-600 dark:text-gray-300">
+            در حال بارگذاری اطلاعات...
+          </p>
         </div>
       </div>
     );
@@ -1617,20 +1790,30 @@ export function CreateCustomerLinkWizard({
 
   return (
     <>
-      <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      
+      <div
+        className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
       <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto">
         <div className="w-full max-w-2xl bg-white dark:bg-[#1a1e26] rounded-2xl shadow-2xl overflow-hidden">
           <div className="sticky top-0 bg-white dark:bg-[#1a1e26] p-4 border-b border-slate-200 dark:border-emerald-500/30 flex justify-between items-center z-10">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center">
-                {editMode ? <Edit2 className="w-4 h-4 text-white" /> : <Crown className="w-4 h-4 text-white" />}
+                {editMode ? (
+                  <Edit2 className="w-4 h-4 text-white" />
+                ) : (
+                  <Crown className="w-4 h-4 text-white" />
+                )}
               </div>
               <h2 className="font-bold text-slate-800 dark:text-white">
                 {editMode ? "ویرایش لینک اختصاصی" : "ساخت لینک اختصاصی"}
               </h2>
             </div>
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            >
               <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
@@ -1640,10 +1823,15 @@ export function CreateCustomerLinkWizard({
 
             <AnimatePresence mode="wait">
               {step === 1 && (
-                <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <SlugStep 
-                    slug={slug} 
-                    onSlugChange={setSlug} 
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
+                  <SlugStep
+                    slug={slug}
+                    onSlugChange={setSlug}
                     onNext={handleNext}
                     editMode={editMode}
                   />
@@ -1651,8 +1839,13 @@ export function CreateCustomerLinkWizard({
               )}
 
               {step === 2 && (
-                <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <BasicInfoStep 
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
+                  <BasicInfoStep
                     data={businessInfo}
                     socialMedia={socialMedia}
                     onDataChange={updateBusinessInfo}
@@ -1664,7 +1857,12 @@ export function CreateCustomerLinkWizard({
               )}
 
               {step === 3 && (
-                <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
                   <ServicesAndSettingsStep
                     selectedServices={selectedServices}
                     workShifts={workShifts}
@@ -1679,7 +1877,12 @@ export function CreateCustomerLinkWizard({
               )}
 
               {step === 4 && (
-                <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
                   <FinalReviewStep
                     slug={slug}
                     businessInfo={businessInfo}
@@ -1700,7 +1903,11 @@ export function CreateCustomerLinkWizard({
       </div>
 
       {showSuccess && (
-        <SuccessModal link={createdLink} onClose={onClose} isEditMode={editMode} />
+        <SuccessModal
+          link={createdLink}
+          onClose={onClose}
+          isEditMode={editMode}
+        />
       )}
     </>
   );

@@ -120,16 +120,21 @@ const StatCard = ({
   label,
   value,
   color,
+  icon: Icon,
 }: {
   label: string;
   value: number;
   color: string;
+  icon?: React.ElementType;
 }) => (
   <div
-    className={`bg-white dark:bg-[#1a1d24] rounded-xl p-3 border ${color} transition-colors`}
+    className={`bg-white dark:bg-[#1a1d24] rounded-xl p-3 border ${color} transition-all hover:scale-105 active:scale-95`}
   >
-    <p className="text-slate-500 dark:text-gray-400 text-xs mb-1">{label}</p>
-    <p className="text-xl font-bold text-slate-800 dark:text-white">{value}</p>
+    <div className="flex items-center justify-between">
+      <p className="text-slate-500 dark:text-gray-400 text-xs">{label}</p>
+      {Icon && <Icon className="w-4 h-4 text-slate-400 dark:text-gray-500" />}
+    </div>
+    <p className="text-xl font-bold text-slate-800 dark:text-white mt-1">{value}</p>
   </div>
 );
 
@@ -626,124 +631,115 @@ export default function BookingChangesPage() {
       <Toaster position="top-center" />
       <FixedHeader isStaff={isStaff} pendingCount={pendingCount} />
 
-      <div className="pt-24 pb-20 px-4 max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-          <StatCard
-            label="کل درخواست‌ها"
-            value={stats.total}
-            color="border-slate-200 dark:border-white/10"
-          />
-          <StatCard
-            label="در انتظار تایید"
-            value={stats.pending}
-            color="border-yellow-200 dark:border-yellow-500/20"
-          />
-          <StatCard
-            label="درخواست لغو"
-            value={stats.cancelled}
-            color="border-red-200 dark:border-red-500/20"
-          />
-          <StatCard
-            label="درخواست تغییر"
-            value={stats.reschedule}
-            color="border-blue-200 dark:border-blue-500/20"
-          />
-          <StatCard
-            label="نوبت‌های فعال"
-            value={stats.active}
-            color="border-emerald-200 dark:border-emerald-500/20"
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-2 mb-6">
-          {["all", "pending", "approved", "rejected"].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                filterStatus === status
-                  ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
-              }`}
-            >
-              {status === "all" && "همه"}
-              {status === "pending" && "در انتظار"}
-              {status === "approved" && "تایید شده"}
-              {status === "rejected" && "رد شده"}
-            </button>
-          ))}
-          <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1" />
-          {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                filterType === type
-                  ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
-              }`}
-            >
-              {type === "all" && "همه نوع"}
-              {type === "reschedule" && "تغییر زمان"}
-              {type === "cancel" && "لغو نوبت"}
-              {type === "new_booking" && "ثبت جدید"}
-              {type === "active_booking" && "نوبت‌های فعال"}
-            </button>
-          ))}
-          <button
-            onClick={fetchChanges}
-            className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+      <div className="pb-20 pt-20 px-4 max-w-7xl mx-auto">
+            {/* آمار */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
+              <StatCard label="کل درخواست‌ها" value={stats.total} color="border-slate-200 dark:border-white/10" icon={CheckCircle} />
+              <StatCard label="در انتظار تایید" value={stats.pending} color="border-yellow-200 dark:border-yellow-500/20" />
+              <StatCard label="درخواست لغو" value={stats.cancelled} color="border-red-200 dark:border-red-500/20" />
+              <StatCard label="درخواست تغییر" value={stats.reschedule} color="border-blue-200 dark:border-blue-500/20" />
+              <StatCard label="نوبت‌های فعال" value={stats.active} color="border-emerald-200 dark:border-emerald-500/20" />
+            </div>
+  
+            {/* فیلترها */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2">
+                {["all", "pending", "approved", "rejected"].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilterStatus(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition active:scale-95 ${
+                      filterStatus === status
+                        ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                        : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                    }`}
+                  >
+                    {status === "all" && "همه"}
+                    {status === "pending" && "در انتظار"}
+                    {status === "approved" && "تایید شده"}
+                    {status === "rejected" && "رد شده"}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1 hidden sm:block" />
+              
+              <div className="flex flex-wrap gap-2">
+                {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setFilterType(type)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition active:scale-95 ${
+                      filterType === type
+                        ? "bg-emerald-600 dark:bg-emerald-500 text-white"
+                        : "bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10"
+                    }`}
+                  >
+                    {type === "all" && "همه نوع"}
+                    {type === "reschedule" && "تغییر زمان"}
+                    {type === "cancel" && "لغو نوبت"}
+                    {type === "new_booking" && "ثبت جدید"}
+                    {type === "active_booking" && "نوبت‌های فعال"}
+                  </button>
+                ))}
+              </div>
+              
+              <button
+                onClick={fetchChanges}
+                className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition active:scale-95"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+  
+            {/* لیست درخواست‌ها */}
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+              </div>
+            ) : paginatedChanges.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-[#1a1d24]/50 rounded-2xl border border-dashed border-slate-300 dark:border-gray-700">
+                <CheckCircle className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-gray-600" />
+                <p className="text-slate-500 dark:text-gray-500">
+                  هیچ درخواستی یافت نشد
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {paginatedChanges.map((change) => (
+                  <ChangeCard
+                    key={change.id}
+                    change={change}
+                    onReview={() => openModal(change)}
+                    onDirectCancel={handleDirectCancel}
+                  />
+                ))}
+              </div>
+            )}
+  
+            {/* صفحه‌بندی */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40 active:scale-95 transition"
+                >
+                  <ChevronRight className="w-4 h-4 text-slate-600 dark:text-white" />
+                </button>
+                <span className="text-sm text-slate-500 dark:text-gray-400">
+                  صفحه {currentPage} از {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40 active:scale-95 transition"
+                >
+                  <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-white" />
+                </button>
+              </div>
+            )}
           </div>
-        ) : paginatedChanges.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#1a1d24]/50 rounded-2xl border border-dashed border-slate-300 dark:border-gray-700">
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-gray-600" />
-            <p className="text-slate-500 dark:text-gray-500">
-              هیچ درخواستی یافت نشد
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {paginatedChanges.map((change) => (
-              <ChangeCard
-                key={change.id}
-                change={change}
-                onReview={() => openModal(change)}
-                onDirectCancel={handleDirectCancel}
-              />
-            ))}
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-6">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
-            >
-              <ChevronRight className="w-4 h-4 text-slate-600 dark:text-white" />
-            </button>
-            <span className="text-sm text-slate-500 dark:text-gray-400">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40"
-            >
-              <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-white" />
-            </button>
-          </div>
-        )}
-      </div>
 
       <Footer />
 
