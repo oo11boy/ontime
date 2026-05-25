@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -16,35 +16,17 @@ export default function ClientDashboardLayout({
   const pathname = usePathname();
   const { theme, systemTheme } = useTheme();
 
-  const pricingPage = "/clientdashboard/pricingplan";
+  const pricingPage = "/clientdashboard/pricingplan?expired=true";
+const redirectPaths = ["/clientdashboard/bookingsubmit", "/clientdashboard/Staffs"];
 
   /**
-   * بررسی وضعیت انقضا بر اساس فیلد ended_at (مطابق دیتابیس)
+   * فقط ریدایرکت برای مسیر بوکینگ
    */
-  const isExpired = useMemo(() => {
-    if (isLoading || !dashboardData?.user) return false;
-
-    const endedAt = dashboardData.user.ended_at;
-
-    // اگر فیلد ended_at خالی باشد (null)، یعنی پلنی برای کاربر ثبت نشده است
-    if (!endedAt) return true;
-
-    const now = new Date();
-    const expiryDate = new Date(endedAt);
-
-    // مقایسه زمان فعلی با زمان پایان پلن
-    return expiryDate < now;
-  }, [dashboardData, isLoading]);
-
-  /**
-   * مدیریت ریدایرکت: اگر منقضی شده بود و در صفحه خرید نبود، ریدایرکت شود
-   */
-  useEffect(() => {
-    if (!isLoading && isExpired && pathname !== pricingPage) {
-      // استفاده از replace برای پاک کردن تاریخچه مرورگر و جلوگیری از برگشت کاربر
-      router.replace(`${pricingPage}?expired=true`);
-    }
-  }, [isExpired, isLoading, pathname, router]);
+useEffect(() => {
+  if (redirectPaths.includes(pathname)) {
+    router.replace(pricingPage);
+  }
+}, [pathname, router]);
 
   // تنظیم کلاس dark روی html بر اساس تم فعلی
   useEffect(() => {
@@ -58,12 +40,7 @@ export default function ClientDashboardLayout({
 
   if (isLoading) return <Loading />;
 
-  // ۲. قفل کردن محتوا: اگر منقضی شده و کاربر در صفحه خرید نیست، اصلاً children را رندر نکن
-  if (isExpired && pathname !== pricingPage) {
-    return <Loading />;
-  }
-
-  // ۳. نمایش محتوا فقط برای کاربران دارای اعتبار یا در صفحه خرید
+  // نمایش همه مسیرها بدون هیچ محدودیتی (حتی منقضی شده‌ها)
   return (
     <main dir="rtl" className="antialiased transition-colors duration-300">
       {children}
