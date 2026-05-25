@@ -22,6 +22,7 @@ import {
   Crown,
   MessageSquare,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const tabs = [
   { id: "create-link", label: "لینک من", icon: LinkIcon, activeIcon: Zap, href: "/clientdashboard/customer-link" },
@@ -29,7 +30,6 @@ const tabs = [
   { id: "bookings", label: "نوبت‌ها", icon: Calendar, activeIcon: Calendar, href: "/clientdashboard/customer-link/bookings" },
   { id: "reviews", label: "نظرات", icon: Star, activeIcon: Star, href: "/clientdashboard/customer-link/reviews" },
   { id: "plans", label: "پلن‌ها", icon: Crown, activeIcon: Crown, href: "/clientdashboard/customer-link/plans" },
- 
 ];
 
 export default function CustomerLinkLayout({
@@ -39,11 +39,59 @@ export default function CustomerLinkLayout({
 }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
   
-  const pendingCount = 3;
   const businessName = "آرایشگاه مدرن سارا";
+
+  // دریافت تعداد درخواست‌های نوبت در انتظار تایید
+  const fetchPendingBookings = async () => {
+    try {
+      const res = await fetch("/api/client/booking-changes");
+      const data = await res.json();
+      
+      if (data.success && data.changes) {
+        const pending = data.changes.filter(
+          (change: any) => change.status === "pending"
+        ).length;
+        setPendingBookingsCount(pending);
+      }
+    } catch (error) {
+      console.error("Error fetching pending bookings:", error);
+    }
+  };
+
+  // دریافت تعداد نظرات در انتظار تایید
+  const fetchPendingReviews = async () => {
+    try {
+      const res = await fetch("/api/client/reviews?status=pending");
+      const data = await res.json();
+      
+      if (data.success && data.data) {
+        setPendingReviewsCount(data.data.length);
+      }
+    } catch (error) {
+      console.error("Error fetching pending reviews:", error);
+    }
+  };
+
+  // دریافت هر دو تعداد
+  const fetchAllCounts = async () => {
+    await Promise.all([fetchPendingBookings(), fetchPendingReviews()]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchAllCounts();
+    
+    // آپدیت هر 30 ثانیه
+    const interval = setInterval(fetchAllCounts, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -64,8 +112,11 @@ export default function CustomerLinkLayout({
     }
   };
 
+  // محاسبه مجموع درخواست‌های در انتظار برای زنگوله
+  const totalPending = pendingBookingsCount + pendingReviewsCount;
+
   return (
-    <div className="min-h-screen  lg:w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rtl pb-20">
+    <div className="min-h-screen lg:w-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rtl pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="px-4 py-3 flex justify-between items-center">
@@ -101,8 +152,12 @@ export default function CustomerLinkLayout({
 
             <button className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 relative">
               <Bell className="w-5 h-5" />
-              {pendingCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              {totalPending > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
+                  <span className="text-white text-[10px] font-bold">
+                    {totalPending > 99 ? "99+" : totalPending}
+                  </span>
+                </span>
               )}
             </button>
 
@@ -116,7 +171,7 @@ export default function CustomerLinkLayout({
         </div>
       </header>
 
-      {/* Main Content - بدون انیمیشن */}
+      {/* Main Content */}
       <main className="px-4 py-4 pb-8 max-w-3xl mx-auto">
         {children}
       </main>
@@ -128,6 +183,11 @@ export default function CustomerLinkLayout({
             {tabs.map((tab) => {
               const isActive = pathname === tab.href;
               const Icon = tab.icon;
+              
+              // تعیین تعداد pending برای هر تب
+              let badgeCount = 0;
+              if (tab.id === "bookings") badgeCount = pendingBookingsCount;
+              if (tab.id === "reviews") badgeCount = pendingReviewsCount;
 
               return (
                 <Link
@@ -136,7 +196,7 @@ export default function CustomerLinkLayout({
                   replace
                   className="relative flex flex-col items-center justify-center flex-1 py-1 group"
                 >
-                  {/* فقط خط نشانگر فعال - بدون انیمیشن */}
+                  {/* خط نشانگر فعال */}
                   {isActive && (
                     <div className="absolute -top-2 w-8 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full" />
                   )}
@@ -157,10 +217,11 @@ export default function CustomerLinkLayout({
                     {tab.label}
                   </span>
 
-                  {tab.id === "bookings" && pendingCount > 0 && (
-                    <div className="absolute -top-1 right-1/4 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center">
+                  {/* Badge برای نوبت‌ها و نظرات */}
+                  {badgeCount > 0 && (
+                    <div className="absolute -top-1 right-1/4 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
                       <span className="text-white text-[10px] font-bold">
-                        {pendingCount}
+                        {badgeCount > 99 ? "99+" : badgeCount}
                       </span>
                     </div>
                   )}
@@ -201,21 +262,34 @@ export default function CustomerLinkLayout({
             </div>
 
             <div className="p-4 space-y-2">
-              {tabs.map((tab) => (
-                <Link
-                  key={tab.id}
-                  href={tab.href}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    pathname === tab.href
-                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5" />
-                  <span>{tab.label}</span>
-                </Link>
-              ))}
+              {tabs.map((tab) => {
+                let badgeCount = 0;
+                if (tab.id === "bookings") badgeCount = pendingBookingsCount;
+                if (tab.id === "reviews") badgeCount = pendingReviewsCount;
+
+                return (
+                  <Link
+                    key={tab.id}
+                    href={tab.href}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
+                      pathname === tab.href
+                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <tab.icon className="w-5 h-5" />
+                      <span>{tab.label}</span>
+                    </div>
+                    {badgeCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {badgeCount > 99 ? "99+" : badgeCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
 
               <div className="border-t dark:border-gray-700 my-4 pt-4">
                 <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">

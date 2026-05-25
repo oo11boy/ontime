@@ -28,6 +28,112 @@ interface CustomerBooking {
   user_id?: number;
 }
 
+// تابع ارسال پیامک مستقیم به IPPanel
+async function sendSmsToBusinessOwner(
+  ownerPhone: string,
+  customerName: string,
+  bookingDate: string,
+  bookingTime: string,
+  businessName: string,
+  isReschedule: boolean = false,
+  newDate?: string,
+  newTime?: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const IP_PANEL_API_KEY = process.env.IP_PANEL_API_KEY;
+    const SENDER_NUMBER = process.env.SENDER_NUMBER || "+983000505";
+    
+    if (!IP_PANEL_API_KEY) {
+      console.error("[SMS] IP_PANEL_API_KEY در env تنظیم نشده است");
+      return { success: false, message: "API Key تنظیم نشده است" };
+    }
+    
+    const cleanPhone = ownerPhone.replace(/\D/g, "").slice(-10);
+    const recipient = `+98${cleanPhone}`;
+    
+    // پیام مناسب برای تغییر نوبت
+    let messageText = "";
+    if (isReschedule && newDate && newTime) {
+      messageText = `مشتری ${customerName} درخواست تغییر زمان نوبت به تاریخ ${newDate} ساعت ${newTime} را ثبت کرد. لطفاً برای بررسی وارد پنل شوید.`;
+    } else {
+      messageText = `مشتری ${customerName} درخواست نوبت جدید برای تاریخ ${bookingDate} ساعت ${bookingTime} را ثبت کرد. لطفاً برای بررسی وارد پنل شوید.`;
+    }
+    
+    const payload = {
+      sending_type: "pattern",
+      from_number: SENDER_NUMBER,
+      code: "0y9hfxw9c5b0yh3",
+      recipients: [recipient],
+      params: {
+        name: customerName,
+        date: isReschedule && newDate ? newDate : bookingDate,
+        time: isReschedule && newTime ? newTime : bookingTime,
+        service: isReschedule ? "تغییر زمان نوبت" : "درخواست نوبت جدید",
+        salon: businessName,
+        phone: ownerPhone,
+      },
+    };
+    
+    console.log("[SMS] ارسال به IPPanel:", {
+      to: recipient,
+      template: "0y9hfxw9c5b0yh3",
+      isReschedule,
+    });
+    
+    const response = await fetch("https://edge.ippanel.com/v1/api/send", {
+      method: "POST",
+      headers: {
+        Authorization: IP_PANEL_API_KEY.trim(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      console.log("[SMS] پیامک با موفقیت ارسال شد");
+      return { success: true };
+    } else {
+      console.error("[SMS] خطا از IPPanel:", result);
+      return { success: false, message: result?.meta?.message || "خطا در ارسال" };
+    }
+  } catch (error) {
+    console.error("[SMS] خطای شبکه:", error);
+    return { success: false, message: error instanceof Error ? error.message : "خطای ناشناخته" };
+  }
+}
+
+// تابع کسر اعتبار
+async function deductSmsCredits(userId: number, bookingId: number, amount: number = 2): Promise<boolean> {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3000";
+    
+    const response = await fetch(`${appUrl}/api/customer/sms/deduct`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        amount: amount,
+        reason: "reschedule_request",
+        booking_id: bookingId,
+      }),
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+      console.log(`[DEDUCT] ${amount} واحد از اعتبار کاربر ${userId} کسر شد. باقیمانده: ${result.remainingBalance}`);
+      return true;
+    } else {
+      console.log(`[DEDUCT] خطا در کسر اعتبار: ${result.message}`);
+      return false;
+    }
+  } catch (error) {
+    console.error("[DEDUCT] خطا:", error);
+    return false;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -85,7 +191,6 @@ export async function GET(req: NextRequest) {
     const workShiftsArray = booking.work_shifts ? JSON.parse(booking.work_shifts) : [];
     const maxChangeCount = 1;
 
-    // بررسی وجود درخواست تغییر در انتظار تایید
     const pendingChanges = await query(
       `SELECT id FROM booking_changes 
        WHERE booking_id = ? AND request_type = 'reschedule' AND status = 'pending'`,
@@ -93,7 +198,6 @@ export async function GET(req: NextRequest) {
     );
     const hasPendingReschedule = pendingChanges.length > 0;
 
-    // بررسی درخواست لغو در انتظار تایید (فقط برای تغییر زمان، لغو مستقیم است)
     const pendingCancels = await query(
       `SELECT id FROM booking_changes 
        WHERE booking_id = ? AND request_type = 'cancel' AND status = 'pending'`,
@@ -145,6 +249,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
+  console.log(`\n========== [${requestId}] درخواست مشتری ==========`);
+  
   try {
     const body = await req.json();
     const { token, action, data } = body;
@@ -195,7 +302,7 @@ export async function POST(req: NextRequest) {
     const persianDate = formatPersianDate(booking.booking_date);
     const timeDisplay = booking.booking_time;
 
-    // ==================== عملیات لغو نوبت (مستقیم، بدون نیاز به تایید) ====================
+    // ==================== عملیات لغو نوبت ====================
     if (action === "cancel") {
       if (booking.status !== "active") {
         return NextResponse.json(
@@ -206,7 +313,6 @@ export async function POST(req: NextRequest) {
 
       const cancelReason = data?.reason || "بدون دلیل";
 
-      // لغو مستقیم نوبت در دیتابیس
       await query(
         `UPDATE booking 
          SET status = 'cancelled', 
@@ -218,7 +324,6 @@ export async function POST(req: NextRequest) {
         [cancelReason, booking.id]
       );
 
-      // ثبت در جدول booking_changes برای تاریخچه
       await query(
         `INSERT INTO booking_changes 
          (booking_id, client_name, client_phone, request_type, 
@@ -235,7 +340,6 @@ export async function POST(req: NextRequest) {
         ]
       );
 
-      // ثبت نوتیفیکیشن برای مدیر
       await query(
         `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
          VALUES (?, ?, 'cancel', ?, NOW())`,
@@ -246,24 +350,13 @@ export async function POST(req: NextRequest) {
         ]
       );
 
-      // ثبت در smslog برای تاریخچه پیامک (اختیاری)
-      await query(
-        `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
-         VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
-        [
-          booking.user_id,
-          booking.client_phone,
-          `نوبت شما در ${booking.business_name} لغو شد. تاریخ: ${persianDate} - زمان: ${timeDisplay}`,
-        ]
-      );
-
       return NextResponse.json({
         success: true,
         message: "نوبت شما با موفقیت لغو شد",
       });
     }
 
-    // ==================== عملیات تغییر زمان نوبت (نیاز به تایید مدیر) ====================
+    // ==================== عملیات تغییر زمان نوبت ====================
     if (action === "reschedule") {
       if (booking.status !== "active") {
         return NextResponse.json(
@@ -282,7 +375,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // بررسی وجود درخواست تغییر در انتظار تایید قبلی
       const existingPending = await query(
         `SELECT id FROM booking_changes 
          WHERE booking_id = ? AND request_type = 'reschedule' AND status = 'pending'`,
@@ -349,7 +441,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // ثبت درخواست تغییر زمان در جدول booking_changes
+      // ثبت درخواست تغییر زمان
       await query(
         `INSERT INTO booking_changes 
          (booking_id, client_name, client_phone, request_type, 
@@ -375,9 +467,33 @@ export async function POST(req: NextRequest) {
         [
           booking.user_id,
           booking.id,
-          `مشتری (${booking.client_name}) درخواست تغییر زمان نوبت از ${persianDate} ساعت ${timeDisplay} به تاریخ جدید ثبت کرد.`,
+          `مشتری (${booking.client_name}) درخواست تغییر زمان نوبت از ${persianDate} ساعت ${timeDisplay} به تاریخ ${newDate} ساعت ${newTime} ثبت کرد.`,
         ]
       );
+
+      // ========== کسر 2 واحد از اعتبار ==========
+      console.log(`[${requestId}] کسر 2 واحد از اعتبار برای درخواست تغییر...`);
+      await deductSmsCredits(booking.user_id, booking.id, 2);
+
+      // ========== ارسال پیامک به صاحب کسب‌وکار ==========
+      const ownerPhone = booking.business_phone;
+      const businessName = booking.business_name || "کسب‌وکار";
+      
+      if (ownerPhone) {
+        console.log(`[${requestId}] ارسال پیامک به صاحب کسب‌وکار (${ownerPhone})...`);
+        await sendSmsToBusinessOwner(
+          ownerPhone,
+          booking.client_name,
+          booking.booking_date,
+          booking.booking_time,
+          businessName,
+          true, // isReschedule
+          newDate,
+          newTime
+        );
+      } else {
+        console.log(`[${requestId}] ⚠️ شماره تلفن صاحب کسب‌وکار یافت نشد`);
+      }
 
       return NextResponse.json({
         success: true,
@@ -399,7 +515,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// برای متدهای دیگر که پشتیبانی نمی‌شوند
 export async function PUT() {
   return NextResponse.json(
     { success: false, message: "متد PUT پشتیبانی نمی‌شود" },
