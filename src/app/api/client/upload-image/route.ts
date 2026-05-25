@@ -7,7 +7,7 @@ import { existsSync } from "fs";
 
 export const POST = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
-
+ 
   try {
     const formData = await req.formData();
     const image = formData.get("image") as File;

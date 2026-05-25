@@ -36,6 +36,7 @@ import { BusinessInfoBox } from "./components/BusinessInfoBox";
 import { ServicesBox } from "./components/ServicesBox";
 import { WorkingHoursBox } from "./components/WorkingHoursBox";
 import { SocialMediaBox } from "./components/SocialMediaBox";
+import { GalleryBox } from "./components/GalleryBox";
 
 // ==================== Types ====================
 interface SocialMedia {
@@ -185,7 +186,10 @@ function ExistingLinkCard({
         </div>
       </div>
 
+<GalleryBox
+  linkId={parseInt(link.id)}  // تبدیل string به number
 
+/>
       {/* باکس اطلاعات کسب‌وکار */}
       <BusinessInfoBox
         businessName={link.business_name}

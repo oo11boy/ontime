@@ -40,7 +40,7 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
   return (
     <div className="relative mb-8 md:mb-10">
       {/* ========== بخش کاور ========== */}
-      <div className="relative h-64 sm:h-72 md:h-80 lg:h-96 w-full overflow-hidden rounded-b-3xl md:rounded-b-4xl shadow-2xl">
+      <div className="relative h-64 sm:h-72  w-full overflow-hidden rounded-b-3xl md:rounded-b-4xl shadow-2xl">
         {hasCover ? (
           <>
             <img

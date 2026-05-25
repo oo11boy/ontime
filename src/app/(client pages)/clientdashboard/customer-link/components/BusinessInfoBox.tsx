@@ -405,11 +405,9 @@ export function BusinessInfoBox({
                   <div className="relative rounded-xl overflow-hidden">
                     <img src={formData.cover_image} alt="کاور" className="w-full h-32 object-cover" />
                     <button onClick={() => removeImage("cover")} className="absolute top-2 right-2 bg-red-500 rounded-full p-1.5">
-                      <Trash2 className="w-4 h-4 text-white" />
+                      <Trash2 className="w-5 h-5 text-white" />
                     </button>
-                    <button onClick={() => document.getElementById("coverUpload")?.click()} className="absolute bottom-2 right-2 bg-black/50 rounded-full p-1.5">
-                      <Edit2 className="w-3.5 h-3.5 text-white" />
-                    </button>
+                  
                     <input id="coverUpload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, "cover")} />
                   </div>
                 ) : (
@@ -431,11 +429,9 @@ export function BusinessInfoBox({
                     <div className="relative">
                       <img src={formData.avatar_image} alt="آواتار" className="w-20 h-20 rounded-full object-cover border-2 border-emerald-500" />
                       <button onClick={() => removeImage("avatar")} className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1">
-                        <Trash2 className="w-3 h-3 text-white" />
+                        <Trash2 className="w-5 h-5 text-white" />
                       </button>
-                      <button onClick={() => document.getElementById("avatarUpload")?.click()} className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-1">
-                        <Edit2 className="w-3 h-3 text-white" />
-                      </button>
+                
                       <input id="avatarUpload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, "avatar")} />
                     </div>
                   ) : (

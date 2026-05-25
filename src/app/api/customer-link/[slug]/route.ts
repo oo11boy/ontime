@@ -29,15 +29,19 @@ export async function GET(
 
     const data = link[0];
     
+    // دریافت تصاویر گالری
+    const galleryImages = await query<any>(
+      `SELECT id, image_url, title, description, order_index 
+       FROM customer_link_gallery 
+       WHERE link_id = ? AND is_active = 1 
+       ORDER BY order_index ASC, created_at DESC`,
+      [data.id]
+    );
+    
     console.log("Retrieved data:", {
       slug: data.slug,
       business_name: data.business_name,
-      has_logo: !!data.logo,
-      has_avatar: !!data.avatar_image,
-      has_cover: !!data.cover_image,
-      logo_url: data.logo,
-      avatar_url: data.avatar_image,
-      cover_url: data.cover_image,
+      gallery_count: galleryImages?.length || 0,
     });
 
     return NextResponse.json({
@@ -57,6 +61,7 @@ export async function GET(
         work_shifts: data.work_shifts ? JSON.parse(data.work_shifts) : [],
         off_days: data.off_days ? JSON.parse(data.off_days) : [],
         total_visits: data.total_visits || 0,
+        gallery: galleryImages || [],
       },
     });
   } catch (error) {

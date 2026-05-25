@@ -1,3 +1,12 @@
+// src/app/c/[slug]/components/shared/types.ts
+export interface GalleryImage {
+  id: number;
+  image_url: string;
+  title: string | null;
+  description: string | null;
+  order_index: number;
+}
+
 export interface Service {
   id: number;
   name: string;
@@ -18,14 +27,14 @@ export interface BusinessData {
   phone: string;
   bio: string;
   logo: string | null;
-  avatar_image:string | null;
-  cover_image:string | null;
+  avatar_image: string | null;
+  cover_image: string | null;
   social_media: any;
   services: Service[];
   work_shifts: Shift[];
   off_days: number[];
   total_visits: number;
-  
+  gallery?: GalleryImage[]; // اضافه شد
 }
 
 export interface CustomerBooking {
