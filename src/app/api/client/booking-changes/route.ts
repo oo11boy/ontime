@@ -16,35 +16,25 @@ const formatTimeOnly = (time: string): string => {
   return time;
 };
 
-// ==================== توابع تبدیل تاریخ اصلاح شده ====================
-
-// تبدیل تاریخ میلادی به شمسی برای نمایش (بدون تغییر در ذخیره‌سازی)
-const convertToPersianDateForDisplay = (dateStr: string): string => {
+// تابع نرمالایز کردن تاریخ
+const normalizeDate = (dateStr: string): string => {
   if (!dateStr) return "";
   
-  try {
-    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [year, month, day] = dateStr.split("-").map(Number);
-      const date = new Date(year, month - 1, day, 12, 0, 0);
-      const jDate = moment(date);
-      
-      if (!jDate.isValid()) return dateStr;
-      
-      const jYear = jDate.jYear();
-      const jMonth = jDate.jMonth();
-      const jDay = jDate.jDate();
-      
-      const persianMonths = [
-        "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-        "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
-      ];
-      
-      return `${jDay} ${persianMonths[jMonth]} ${jYear}`;
-    }
-    return dateStr;
-  } catch (error) {
-    return dateStr;
+  let normalized = dateStr;
+  
+  if (normalized.includes("T")) {
+    normalized = normalized.split("T")[0];
   }
+  
+  if (normalized.includes("Z")) {
+    normalized = normalized.replace("Z", "");
+  }
+  
+  if (normalized.includes(" ")) {
+    normalized = normalized.split(" ")[0];
+  }
+  
+  return normalized;
 };
 
 // تبدیل تاریخ میلادی به شمسی برای پیامک (فرمت: YYYY/MM/DD)
@@ -52,12 +42,14 @@ const convertToPersianDateForSMS = (dateStr: string): string => {
   if (!dateStr) return "";
   
   try {
-    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [year, month, day] = dateStr.split("-").map(Number);
-      const date = new Date(year, month - 1, day, 12, 0, 0);
+    const normalizedDate = normalizeDate(dateStr);
+    
+    if (normalizedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = normalizedDate.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
       const jDate = moment(date);
       
-      if (!jDate.isValid()) return dateStr;
+      if (!jDate.isValid()) return normalizedDate;
       
       const jYear = jDate.jYear();
       const jMonth = jDate.jMonth() + 1;
@@ -65,7 +57,7 @@ const convertToPersianDateForSMS = (dateStr: string): string => {
       
       return `${jYear}/${jMonth.toString().padStart(2, "0")}/${jDay.toString().padStart(2, "0")}`;
     }
-    return dateStr;
+    return normalizedDate;
   } catch (error) {
     return dateStr;
   }
@@ -76,6 +68,7 @@ const PATTERNS = {
   APPROVED: "q40uuerggl4qodq",
   REJECTED: "eowphltmynwerv6",
   NEW_BOOKING_APPROVED: "dtqxphdv9epu14v",
+  NEW_BOOKING_REJECTED: "ajx0w6hmcqpw948",
 };
 
 // تابع ارسال پیامک نتیجه درخواست تغییر یا لغو
@@ -87,10 +80,16 @@ async function sendChangeNotification(
   contactPhone: string,
   newDate: string | null,
   newTime: string | null,
+  userId: number,
   req: NextRequest,
+  requestType?: string,
 ) {
-  const patternCode =
-    status === "approved" ? PATTERNS.APPROVED : PATTERNS.REJECTED;
+  let patternCode = status === "approved" ? PATTERNS.APPROVED : PATTERNS.REJECTED;
+  
+  if (status === "rejected" && requestType === "new_booking") {
+    patternCode = PATTERNS.NEW_BOOKING_REJECTED;
+  }
+
   const messageCount = 2;
 
   const baseUrl =
@@ -132,6 +131,20 @@ async function sendChangeNotification(
     });
 
     const result = await response.json();
+
+    await query(
+      `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at, message_count)
+       VALUES (?, ?, ?, 'booking_change_notification', 'sent', NOW(), ?)`,
+      [
+        userId,
+        customerPhone,
+        status === "approved"
+          ? `نوبت شما در ${salonName} با موفقیت ${newDate && newTime ? `به تاریخ ${params.date} ساعت ${params.time} تغییر یافت` : "لغو شد"}.`
+          : `درخواست شما توسط ${salonName} رد شد. برای اطلاعات بیشتر با ${contactPhone} تماس بگیرید.`,
+        messageCount,
+      ],
+    );
+
     return result.success;
   } catch (error) {
     console.error("Error sending change notification SMS:", error);
@@ -146,6 +159,7 @@ async function sendNewBookingApprovalSMS(
   salonName: string,
   bookingDate: string,
   bookingTime: string,
+  userId: number,
   req: NextRequest,
 ) {
   const baseUrl =
@@ -153,8 +167,10 @@ async function sendNewBookingApprovalSMS(
     req.headers.get("origin") ||
     "https://ontimeapp.ir";
 
-  const persianDate = convertToPersianDateForSMS(bookingDate);
+  const normalizedDate = normalizeDate(bookingDate);
+  const persianDate = convertToPersianDateForSMS(normalizedDate);
   const formattedTime = formatTimeOnly(bookingTime);
+  const messageCount = 2;
 
   try {
     const response = await fetch(`${baseUrl}/api/sms/send`, {
@@ -167,7 +183,7 @@ async function sendNewBookingApprovalSMS(
         to_phone: customerPhone,
         sms_type: "new_booking_approved",
         template_key: PATTERNS.NEW_BOOKING_APPROVED,
-        message_count: 1,
+        message_count: messageCount,
         name: customerName || "کاربر گرامی",
         salon: salonName,
         date: persianDate,
@@ -176,9 +192,75 @@ async function sendNewBookingApprovalSMS(
     });
 
     const result = await response.json();
+
+    await query(
+      `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at, message_count)
+       VALUES (?, ?, ?, 'new_booking_approved', 'sent', NOW(), ?)`,
+      [
+        userId,
+        customerPhone,
+        `نوبت شما در ${salonName} برای تاریخ ${persianDate} ساعت ${formattedTime} با موفقیت ثبت شد.`,
+        messageCount,
+      ],
+    );
+
     return result.success;
   } catch (error) {
     console.error("Error sending new booking approval SMS:", error);
+    return false;
+  }
+}
+
+// تابع ارسال پیامک رد نوبت جدید
+async function sendNewBookingRejectionSMS(
+  customerPhone: string,
+  customerName: string,
+  salonName: string,
+  contactPhone: string,
+  userId: number,
+  req: NextRequest,
+) {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    req.headers.get("origin") ||
+    "https://ontimeapp.ir";
+
+  const messageCount = 2;
+
+  try {
+    const response = await fetch(`${baseUrl}/api/sms/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: req.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({
+        to_phone: customerPhone,
+        sms_type: "new_booking_rejected",
+        template_key: PATTERNS.NEW_BOOKING_REJECTED,
+        message_count: messageCount,
+        name: customerName || "کاربر گرامی",
+        salon: salonName,
+        phone: contactPhone,
+      }),
+    });
+
+    const result = await response.json();
+
+    await query(
+      `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at, message_count)
+       VALUES (?, ?, ?, 'new_booking_rejected', 'sent', NOW(), ?)`,
+      [
+        userId,
+        customerPhone,
+        `درخواست نوبت شما در ${salonName} متاسفانه رد شد. برای اطلاعات بیشتر با ${contactPhone} تماس بگیرید.`,
+        messageCount,
+      ],
+    );
+
+    return result.success;
+  } catch (error) {
+    console.error("Error sending new booking rejection SMS:", error);
     return false;
   }
 }
@@ -214,6 +296,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         b.cancel_reason,
         b.service_name,
         b.services,
+        b.status as current_status,
         s.name as staff_name,
         u.business_name,
         u.phone as business_phone,
@@ -307,6 +390,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
       cancelled_by: null,
       service_name: booking.service_name,
       services: booking.services,
+      current_status: booking.status,
     }));
 
     allRequests.push(...formattedNewBookings);
@@ -330,6 +414,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         b.cancelled_by,
         b.service_name,
         b.services,
+        b.status as current_status,
         s.name as staff_name,
         u.business_name,
         u.phone as business_phone,
@@ -362,6 +447,53 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     );
     allRequests.push(...directlyCancelled);
 
+    // ========== 4. اضافه کردن نوبت‌های فعال ==========
+    let activeBookingsSql = `
+      SELECT 
+        b.id as booking_id,
+        b.client_name,
+        b.client_phone,
+        DATE_FORMAT(b.booking_date, '%Y-%m-%d') as old_date,
+        TIME_FORMAT(b.booking_time, '%H:%i') as old_time,
+        NULL as new_date,
+        NULL as new_time,
+        NULL as reason,
+        NULL as admin_reason,
+        'approved' as status,
+        b.created_at as requested_at,
+        NULL as processed_at,
+        b.staff_id,
+        NULL as cancelled_by,
+        NULL as cancel_reason,
+        b.service_name,
+        b.services,
+        b.status as current_status,
+        s.name as staff_name,
+        u.business_name,
+        u.phone as business_phone,
+        s.calendar_type,
+        s.phone as staff_phone,
+        'active_booking' as request_type
+      FROM booking b
+      LEFT JOIN staffs s ON b.staff_id = s.id
+      JOIN users u ON b.user_id = u.id
+      WHERE b.status = 'active'
+        AND b.booking_date >= CURDATE()
+    `;
+
+    const activeBookingsParams: any[] = [];
+
+    if (userType === "staff" && staffId) {
+      activeBookingsSql += " AND b.staff_id = ?";
+      activeBookingsParams.push(parseInt(staffId));
+    } else {
+      activeBookingsSql += ` AND b.user_id = ?`;
+      activeBookingsParams.push(userId);
+    }
+
+    const activeBookings = await query(activeBookingsSql, activeBookingsParams);
+    allRequests.push(...activeBookings);
+
     allRequests.sort((a, b) => {
       return (
         new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime()
@@ -386,7 +518,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
   try {
     const body = await req.json();
-    const { id, action, reason, booking_id } = body;
+    const { id, action, reason, booking_id, force } = body;
 
     // ==================== لغو مستقیم نوبت توسط مدیر ====================
     if (action === "direct_cancel" && booking_id) {
@@ -396,13 +528,13 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
          JOIN users u ON b.user_id = u.id
          LEFT JOIN staffs s ON b.staff_id = s.id
          WHERE b.id = ? AND b.user_id = ? AND b.status = 'active'`,
-        [booking_id, userId]
+        [booking_id, userId],
       );
 
       if (bookingData.length === 0) {
         return NextResponse.json(
           { success: false, message: "نوبت یافت نشد یا قابل لغو نیست" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -418,7 +550,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
              cancelled_by = 'admin',
              cancel_reason = ?
          WHERE id = ?`,
-        [reason || "لغو توسط مدیر", booking_id]
+        [reason || "لغو توسط مدیر", booking_id],
       );
 
       await query(
@@ -434,7 +566,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           booking.booking_time,
           reason || "لغو توسط مدیر",
           booking.staff_id,
-        ]
+        ],
       );
 
       await query(
@@ -444,7 +576,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           userId,
           booking.id,
           `نوبت ${booking.client_name} در تاریخ ${persianDate} ساعت ${timeDisplay} توسط مدیر لغو شد.`,
-        ]
+        ],
       );
 
       return NextResponse.json({
@@ -520,7 +652,6 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           new_date: null,
           new_time: null,
         };
-        isFromChanges = false;
       }
     }
 
@@ -560,71 +691,53 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
     if (action === "approve") {
       if (change.request_type === "reschedule") {
-        // ==================== اصلاح مهم برای reschedule ====================
-        // دریافت new_date از دیتابیس - این تاریخ به فرمت YYYY-MM-DD است
         let finalNewDate = change.new_date;
         const newTime = change.new_time;
-        
-        console.log("Reschedule - new_date from DB:", finalNewDate);
-        console.log("Reschedule - new_time from DB:", newTime);
-        
-        // اگر تاریخ به صورت Date object بود، تبدیل کن
+
         if (finalNewDate instanceof Date) {
           const year = finalNewDate.getFullYear();
-          const month = String(finalNewDate.getMonth() + 1).padStart(2, '0');
-          const day = String(finalNewDate.getDate()).padStart(2, '0');
+          const month = String(finalNewDate.getMonth() + 1).padStart(2, "0");
+          const day = String(finalNewDate.getDate()).padStart(2, "0");
           finalNewDate = `${year}-${month}-${day}`;
         }
-        
-        // اگر تاریخ شامل T بود (ISO format)، پاک کن
+
         if (typeof finalNewDate === "string" && finalNewDate.includes("T")) {
           finalNewDate = finalNewDate.split("T")[0];
         }
-        
-        console.log("Reschedule - final date to save:", finalNewDate);
-        
-        // بروزرسانی نوبت با تاریخ و زمان جدید
+
         await query(
           `UPDATE booking 
            SET booking_date = ?, booking_time = ?, change_count = change_count + 1, updated_at = NOW()
            WHERE id = ?`,
           [finalNewDate, newTime, change.booking_id],
         );
-        
-        // تایید درخواست در booking_changes
+
         await query(
           `UPDATE booking_changes 
            SET status = 'approved', admin_reason = ?, processed_at = NOW()
            WHERE id = ?`,
           [reason || null, id],
         );
-        
-        responseMessage = "درخواست تغییر زمان با موفقیت تایید شد";
 
-        // ارسال پیامک به مشتری
-        const salonName = change.business_name?.trim() || "مجموعه";
-        await sendChangeNotification(
-          change.client_phone,
-          change.client_name,
-          "approved",
-          salonName,
-          contactNumber || "",
-          finalNewDate,
-          newTime,
-          req,
-        );
-        
-        // ثبت در smslog
-        const persianDateDisplay = convertToPersianDateForDisplay(finalNewDate);
-        await query(
-          `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
-           VALUES (?, ?, ?, 'reschedule_approved', 'sent', NOW())`,
-          [
-            change.user_id,
+        responseMessage = force 
+          ? "درخواست تغییر زمان با موفقیت تایید شد (پیامکی ارسال نشد)"
+          : "درخواست تغییر زمان با موفقیت تایید شد";
+
+        if (!force) {
+          const salonName = change.business_name?.trim() || "مجموعه";
+          await sendChangeNotification(
             change.client_phone,
-            `نوبت شما در ${salonName} با موفقیت به تاریخ ${persianDateDisplay} ساعت ${formatTimeOnly(newTime)} تغییر یافت.`,
-          ],
-        );
+            change.client_name,
+            "approved",
+            salonName,
+            contactNumber || "",
+            finalNewDate,
+            newTime,
+            change.user_id,
+            req,
+            change.request_type,
+          );
+        }
         
       } else if (change.request_type === "cancel") {
         await query(
@@ -643,21 +756,25 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           );
         }
 
-        responseMessage = "درخواست لغو نوبت با موفقیت تایید شد";
-        
-        // ارسال پیامک به مشتری
-        const salonName = change.business_name?.trim() || "مجموعه";
-        const persianDate = formatPersianDate(change.old_date);
-        await sendChangeNotification(
-          change.client_phone,
-          change.client_name,
-          "approved",
-          salonName,
-          contactNumber || "",
-          null,
-          null,
-          req,
-        );
+        responseMessage = force
+          ? "درخواست لغو نوبت با موفقیت تایید شد (پیامکی ارسال نشد)"
+          : "درخواست لغو نوبت با موفقیت تایید شد";
+
+        if (!force) {
+          const salonName = change.business_name?.trim() || "مجموعه";
+          await sendChangeNotification(
+            change.client_phone,
+            change.client_name,
+            "approved",
+            salonName,
+            contactNumber || "",
+            null,
+            null,
+            change.user_id,
+            req,
+            change.request_type,
+          );
+        }
         
       } else if (change.request_type === "new_booking") {
         await query(
@@ -666,28 +783,34 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
            WHERE id = ?`,
           [change.booking_id],
         );
-        
+
         const bookingDetails: any[] = await query(
-          `SELECT booking_date, booking_time 
+          `SELECT DATE_FORMAT(booking_date, '%Y-%m-%d') as booking_date, 
+                  TIME_FORMAT(booking_time, '%H:%i') as booking_time
            FROM booking 
            WHERE id = ?`,
           [change.booking_id],
         );
-        
+
         const bookingDate = bookingDetails[0]?.booking_date;
         const bookingTime = bookingDetails[0]?.booking_time;
-        
-        const salonName = change.business_name?.trim() || "مجموعه";
-        await sendNewBookingApprovalSMS(
-          change.client_phone,
-          change.client_name,
-          salonName,
-          bookingDate,
-          bookingTime,
-          req,
-        );
-        
-        responseMessage = "نوبت جدید با موفقیت تایید شد";
+
+        responseMessage = force
+          ? "نوبت جدید با موفقیت تایید شد (پیامکی ارسال نشد)"
+          : "نوبت جدید با موفقیت تایید شد";
+
+        if (!force) {
+          const salonName = change.business_name?.trim() || "مجموعه";
+          await sendNewBookingApprovalSMS(
+            change.client_phone,
+            change.client_name,
+            salonName,
+            bookingDate,
+            bookingTime,
+            change.user_id,
+            req,
+          );
+        }
       }
       
     } else if (action === "reject") {
@@ -698,19 +821,25 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
            WHERE id = ?`,
           [reason || "بدون دلیل", id],
         );
-        responseMessage = "درخواست تغییر زمان رد شد";
+        responseMessage = force
+          ? "درخواست تغییر زمان رد شد (پیامکی ارسال نشد)"
+          : "درخواست تغییر زمان رد شد";
 
-        const salonName = change.business_name?.trim() || "مجموعه";
-        await sendChangeNotification(
-          change.client_phone,
-          change.client_name,
-          "rejected",
-          salonName,
-          contactNumber || "",
-          null,
-          null,
-          req,
-        );
+        if (!force) {
+          const salonName = change.business_name?.trim() || "مجموعه";
+          await sendChangeNotification(
+            change.client_phone,
+            change.client_name,
+            "rejected",
+            salonName,
+            contactNumber || "",
+            null,
+            null,
+            change.user_id,
+            req,
+            change.request_type,
+          );
+        }
         
       } else if (change.request_type === "cancel") {
         if (isFromChanges) {
@@ -721,20 +850,25 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
             [reason || "بدون دلیل", id],
           );
         }
-        responseMessage = "درخواست لغو نوبت رد شد";
-        
-        // ارسال پیامک رد به مشتری
-        const salonName = change.business_name?.trim() || "مجموعه";
-        await sendChangeNotification(
-          change.client_phone,
-          change.client_name,
-          "rejected",
-          salonName,
-          contactNumber || "",
-          null,
-          null,
-          req,
-        );
+        responseMessage = force
+          ? "درخواست لغو نوبت رد شد (پیامکی ارسال نشد)"
+          : "درخواست لغو نوبت رد شد";
+
+        if (!force) {
+          const salonName = change.business_name?.trim() || "مجموعه";
+          await sendChangeNotification(
+            change.client_phone,
+            change.client_name,
+            "rejected",
+            salonName,
+            contactNumber || "",
+            null,
+            null,
+            change.user_id,
+            req,
+            change.request_type,
+          );
+        }
         
       } else if (change.request_type === "new_booking") {
         await query(
@@ -743,20 +877,21 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
            WHERE id = ?`,
           [change.booking_id],
         );
-        responseMessage = "درخواست نوبت جدید رد شد";
-        
-        // ارسال پیامک رد به مشتری
-        const salonName = change.business_name?.trim() || "مجموعه";
-        await sendChangeNotification(
-          change.client_phone,
-          change.client_name,
-          "rejected",
-          salonName,
-          contactNumber || "",
-          null,
-          null,
-          req,
-        );
+        responseMessage = force
+          ? "درخواست نوبت جدید رد شد (پیامکی ارسال نشد)"
+          : "درخواست نوبت جدید رد شد";
+
+        if (!force) {
+          const salonName = change.business_name?.trim() || "مجموعه";
+          await sendNewBookingRejectionSMS(
+            change.client_phone,
+            change.client_name,
+            salonName,
+            contactNumber || "",
+            change.user_id,
+            req,
+          );
+        }
       }
     }
 

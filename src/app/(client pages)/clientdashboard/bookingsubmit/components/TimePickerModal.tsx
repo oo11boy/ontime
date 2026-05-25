@@ -484,7 +484,7 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                       </div>
                     </div>
                   )}
-
+                  
                   {availableTimes.length === 0 && !loading && (
                     <div className="text-center py-8">
                       <Clock className="w-10 h-10 text-slate-400 dark:text-gray-600 mx-auto mb-2" />

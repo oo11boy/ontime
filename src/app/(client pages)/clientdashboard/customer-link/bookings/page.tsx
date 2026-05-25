@@ -17,11 +17,14 @@ import {
   Rocket,
   Scissors,
   Package,
+  AlertCircle,
+  Zap,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatPersianDate } from "@/lib/date-utils";
 import { useUserType } from "@/hooks/useUserType";
+import { useSmsBalance } from "@/hooks/useSmsBalance";
 
 // Interface BookingChange
 interface BookingChange {
@@ -389,23 +392,95 @@ const ChangeCard = ({
   );
 };
 
+const InsufficientBalanceModal = ({
+  isOpen,
+  onClose,
+  onBuySms,
+  requiredAmount = 2,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onBuySms: () => void;
+  requiredAmount?: number;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 dark:bg-black/80 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white dark:bg-[#1a1d24] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+      >
+        <div className="bg-gradient-to-r from-red-500 to-orange-500 p-5 text-center">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-xl font-bold text-white">اعتبار پیامک کافی نیست!</h3>
+          <p className="text-red-100 text-sm mt-1">لطفاً اعتبار خود را افزایش دهید</p>
+        </div>
+
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <p className="text-gray-700 dark:text-gray-300 text-base">
+              برای تایید یا رد این درخواست نیاز به <span className="font-bold text-red-600">{requiredAmount} واحد</span> اعتبار پیامک دارید.
+            </p>
+            <p className="text-gray-500 text-sm mt-2">
+              موجودی فعلی شما کافی نیست.
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 transition active:scale-95"
+            >
+              بعداً
+            </button>
+            <button
+              onClick={onBuySms}
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg transition active:scale-95"
+            >
+              <CreditCard className="w-4 h-4" />
+              خرید اعتبار
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-gray-400 mt-4">
+            💡 هر درخواست ۲ واحد اعتبار مصرف می‌کند
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const ReviewModal = ({
   change,
   onClose,
   onApprove,
   onReject,
   isProcessing,
+  smsBalance,
+  isForceMode,
+  onForceModeChange,
 }: {
   change: BookingChange;
   onClose: () => void;
   onApprove: () => void;
   onReject: (reason: string) => void;
   isProcessing: boolean;
+  smsBalance: number;
+  isForceMode: boolean;
+  onForceModeChange: (value: boolean) => void;
 }) => {
   const [reason, setReason] = useState("");
   const isReschedule = change.request_type === "reschedule";
   const isNewBooking = change.request_type === "new_booking";
   const fullServices = getFullServicesList(change);
+  const needsSms = isReschedule || isNewBooking;
+  const hasEnoughBalance = smsBalance >= 2;
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 dark:bg-black/80 backdrop-blur-sm">
@@ -430,6 +505,47 @@ const ReviewModal = ({
         </div>
 
         <div className="p-4 space-y-4">
+          {/* نمایش موجودی */}
+          <div className={`rounded-xl p-3 ${needsSms && !hasEnoughBalance && !isForceMode ? 'bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30' : 'bg-slate-100 dark:bg-black/30'}`}>
+            <div className="flex items-center justify-between">
+              <p className="text-slate-500 dark:text-gray-500 text-xs">موجودی پیامک شما</p>
+              <p className={`text-lg font-bold ${needsSms && !hasEnoughBalance && !isForceMode ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                {smsBalance} واحد
+              </p>
+            </div>
+            {needsSms && !hasEnoughBalance && !isForceMode && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                اعتبار شما برای تایید این درخواست کافی نیست!
+              </p>
+            )}
+          </div>
+
+          {/* گزینه تایید اجباری */}
+          {(needsSms && !hasEnoughBalance) && (
+            <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-3 border border-amber-200 dark:border-amber-500/30">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isForceMode}
+                  onChange={(e) => onForceModeChange(e.target.checked)}
+                  className="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
+                      تایید اجباری (بدون ارسال پیامک)
+                    </p>
+                  </div>
+                  <p className="text-xs text-amber-600 dark:text-amber-300 mt-1">
+                    با فعال کردن این گزینه، درخواست بدون ارسال پیامک به مشتری تایید می‌شود.
+                  </p>
+                </div>
+              </label>
+            </div>
+          )}
+
           {/* اطلاعات مشتری */}
           <div className="bg-slate-100 dark:bg-black/30 rounded-xl p-3">
             <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
@@ -501,17 +617,18 @@ const ReviewModal = ({
 
           {/* هشدار هزینه */}
           {(isReschedule || isNewBooking) && (
-            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 border border-emerald-200 dark:border-emerald-500/20">
+            <div className={`rounded-xl p-3 border ${hasEnoughBalance || isForceMode ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20' : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30'}`}>
               <div className="flex items-center gap-2 mb-2">
-                <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <p className="text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                <CreditCard className={`w-4 h-4 ${hasEnoughBalance || isForceMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} />
+                <p className={`text-xs font-bold ${hasEnoughBalance || isForceMode ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
                   {isReschedule ? "هزینه پیامک" : "توجه"}
                 </p>
               </div>
-              <p className="text-emerald-700 dark:text-emerald-300 text-sm">
-                {isReschedule
-                  ? "با تایید این درخواست، ۲ واحد از اعتبار پیامک شما کسر خواهد شد"
-                  : "با تایید این درخواست، نوبت جدید برای مشتری رزرو خواهد شد"}
+              <p className={`text-sm ${hasEnoughBalance || isForceMode ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+                {isForceMode 
+                  ? "در حالت تایید اجباری، هیچ پیامکی برای مشتری ارسال نمی‌شود و هزینه‌ای کسر نمی‌گردد."
+                  : "با تایید یا رد این درخواست، یک پیامک اطلاع رسانی برای مشتری ارسال میشود و ۲ واحد از اعتبار پیامک شما کسر خواهد شد."
+                }
               </p>
             </div>
           )}
@@ -548,11 +665,16 @@ const ReviewModal = ({
           </button>
           <button
             onClick={onApprove}
-            disabled={isProcessing}
-            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-1 active:scale-95"
+            disabled={isProcessing || (needsSms && !hasEnoughBalance && !isForceMode)}
+            className={`flex-1 py-2.5 rounded-xl text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-1 active:scale-95 ${
+              needsSms && !hasEnoughBalance && !isForceMode
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600'
+            }`}
+            title={needsSms && !hasEnoughBalance && !isForceMode ? 'اعتبار پیامک کافی نیست. از گزینه تایید اجباری استفاده کنید.' : ''}
           >
             {isReschedule && <CreditCard className="w-4 h-4" />}
-            تایید
+            {isForceMode ? "تایید اجباری" : "تایید"}
           </button>
         </div>
       </motion.div>
@@ -664,18 +786,19 @@ const UpgradeRequiredModal = ({
 export default function BookingChangesPage() {
   const router = useRouter();
   const { userType } = useUserType();
+  const { balance: smsBalance, isLoading: balanceLoading } = useSmsBalance();
   const [changes, setChanges] = useState<BookingChange[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedChange, setSelectedChange] = useState<BookingChange | null>(
-    null,
-  );
+  const [selectedChange, setSelectedChange] = useState<BookingChange | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isForceMode, setIsForceMode] = useState(false);
   const itemsPerPage = 8;
 
   const checkBookingFeatureAccess = useCallback(async () => {
@@ -722,13 +845,23 @@ export default function BookingChangesPage() {
     checkBookingFeatureAccess().then((hasAccess) => {
       if (hasAccess) {
         fetchChanges();
+
       }
     });
   }, [checkBookingFeatureAccess, fetchChanges]);
 
+  const needsSmsForChange = (change: BookingChange): boolean => {
+    return change.request_type === "reschedule" || change.request_type === "new_booking";
+  };
+
   const handleUpgrade = () => {
     setShowUpgradeModal(false);
     router.push("/clientdashboard/customer-link/plans");
+  };
+
+  const handleBuySms = () => {
+    setShowInsufficientModal(false);
+    router.push("/clientdashboard/buysms");
   };
 
   const handleDirectCancel = async (
@@ -755,6 +888,7 @@ export default function BookingChangesPage() {
       if (data.success) {
         toast.success(data.message, { id: loadingToast });
         fetchChanges();
+      
       } else {
         toast.error(data.message, { id: loadingToast });
       }
@@ -767,28 +901,42 @@ export default function BookingChangesPage() {
 
   const handleApprove = async () => {
     if (!selectedChange) return;
-    setIsProcessing(true);
-    const loadingToast = toast.loading("در حال تایید درخواست...");
-    try {
-      const res = await fetch("/api/client/booking-changes", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selectedChange.id, action: "approve" }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message, { id: loadingToast });
-        fetchChanges();
-        setIsModalOpen(false);
-        setSelectedChange(null);
-      } else {
-        toast.error(data.message, { id: loadingToast });
+    
+    const doApprove = async () => {
+      setIsProcessing(true);
+      const loadingToast = toast.loading(isForceMode ? "در حال تایید اجباری درخواست..." : "در حال تایید درخواست...");
+      try {
+        const res = await fetch("/api/client/booking-changes", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            id: selectedChange.id, 
+            action: "approve",
+            force: isForceMode
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.success(data.message, { id: loadingToast });
+          fetchChanges();
+          setIsModalOpen(false);
+          setSelectedChange(null);
+          setIsForceMode(false);
+        } else {
+          toast.error(data.message, { id: loadingToast });
+        }
+      } catch {
+        toast.error("خطا در تایید درخواست", { id: loadingToast });
+      } finally {
+        setIsProcessing(false);
       }
-    } catch {
-      toast.error("خطا در تایید درخواست", { id: loadingToast });
-    } finally {
-      setIsProcessing(false);
+    };
+
+    if (!isForceMode && needsSmsForChange(selectedChange) && smsBalance < 2) {
+      setShowInsufficientModal(true);
+      return;
     }
+    doApprove();
   };
 
   const handleReject = async (reason: string) => {
@@ -797,35 +945,47 @@ export default function BookingChangesPage() {
       toast.error("لطفاً دلیل رد را وارد کنید");
       return;
     }
-    setIsProcessing(true);
-    const loadingToast = toast.loading("در حال رد درخواست...");
-    try {
-      const res = await fetch("/api/client/booking-changes", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: selectedChange.id,
-          action: "reject",
-          reason,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message, { id: loadingToast });
-        fetchChanges();
-        setIsModalOpen(false);
-        setSelectedChange(null);
-      } else {
-        toast.error(data.message, { id: loadingToast });
+    
+    const doReject = async () => {
+      setIsProcessing(true);
+      const loadingToast = toast.loading(isForceMode ? "در حال رد اجباری درخواست..." : "در حال رد درخواست...");
+      try {
+        const res = await fetch("/api/client/booking-changes", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: selectedChange.id,
+            action: "reject",
+            reason,
+            force: isForceMode
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.success(data.message, { id: loadingToast });
+          fetchChanges();
+          setIsModalOpen(false);
+          setSelectedChange(null);
+          setIsForceMode(false);
+        } else {
+          toast.error(data.message, { id: loadingToast });
+        }
+      } catch {
+        toast.error("خطا در رد درخواست", { id: loadingToast });
+      } finally {
+        setIsProcessing(false);
       }
-    } catch {
-      toast.error("خطا در رد درخواست", { id: loadingToast });
-    } finally {
-      setIsProcessing(false);
+    };
+
+    if (!isForceMode && needsSmsForChange(selectedChange) && smsBalance < 2) {
+      setShowInsufficientModal(true);
+      return;
     }
+    doReject();
   };
 
   const openModal = (change: BookingChange) => {
+    setIsForceMode(false);
     setSelectedChange(change);
     setIsModalOpen(true);
   };
@@ -877,8 +1037,35 @@ export default function BookingChangesPage() {
         onUpgrade={handleUpgrade}
       />
 
+      <InsufficientBalanceModal
+        isOpen={showInsufficientModal}
+        onClose={() => setShowInsufficientModal(false)}
+        onBuySms={handleBuySms}
+        requiredAmount={2}
+      />
+
       {!showUpgradeModal && (
-        <div className="pb-20 px-4 max-w-7xl  mx-auto">
+        <div className="pb-20 px-4 max-w-7xl mx-auto">
+          {/* هشدار اعتبار پایین */}
+          {!balanceLoading && smsBalance < 5 && (
+            <div className="mb-4 p-3  flex-col bg-yellow-100 dark:bg-yellow-500/20 rounded-xl border border-yellow-200 dark:border-yellow-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                <span className="text-yellow-700 dark:text-yellow-300 text-sm">
+          {smsBalance==0 ? " اعتبار پیامک شما به پایان رسیده برای ارسال پیامک تایید یا رد به مشتری اعتبار پیامکی رو شارژ کنید":` اعتبار پیامک شما در حال اتمام است  برای ارسال بدون مشکل پیامک تایید یا رد به مشتری  بهتر است اعتبار پیامکی را شارژ کنید  (${smsBalance} واحد باقیمانده)`}
+              
+     
+                </span>
+              </div>
+              <button
+                onClick={handleBuySms}
+                className="px-3 py-1.5 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-medium transition"
+              >
+                شارژ کنید
+              </button>
+            </div>
+          )}
+
           {/* آمار */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
             <StatCard
@@ -979,7 +1166,7 @@ export default function BookingChangesPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1  gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {paginatedChanges.map((change) => (
                 <ChangeCard
                   key={change.id}
@@ -1026,6 +1213,9 @@ export default function BookingChangesPage() {
             onApprove={handleApprove}
             onReject={handleReject}
             isProcessing={isProcessing}
+            smsBalance={smsBalance}
+            isForceMode={isForceMode}
+            onForceModeChange={setIsForceMode}
           />
         )}
       </AnimatePresence>
