@@ -4,55 +4,7 @@ import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { formatPersianDate } from "@/lib/date-utils";
-
-// تابع تبدیل تاریخ میلادی به شمسی
-function gregorianToJalali(g_y: number, g_m: number, g_d: number): string {
-  g_y = parseInt(g_y as any);
-  g_m = parseInt(g_m as any);
-  g_d = parseInt(g_d as any);
-  let gy = g_y - 1600;
-  let gm = g_m - 1;
-  let gd = g_d - 1;
-
-  let g_day_no =
-    365 * gy +
-    Math.floor((gy + 3) / 4) -
-    Math.floor((gy + 99) / 100) +
-    Math.floor((gy + 399) / 400);
-
-  const g_month_days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  for (let i = 0; i < gm; ++i) {
-    g_day_no += g_month_days[i];
-  }
-
-  if (gm > 1 && ((gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0))
-    g_day_no++;
-  g_day_no += gd;
-
-  let j_day_no = g_day_no - 79;
-  let j_np = Math.floor(j_day_no / 12053);
-  j_day_no = j_day_no % 12053;
-  let jy = 979 + 33 * j_np + 4 * Math.floor(j_day_no / 1461);
-  j_day_no %= 1461;
-
-  if (j_day_no >= 366) {
-    jy += Math.floor((j_day_no - 1) / 365);
-    j_day_no = (j_day_no - 1) % 365;
-  }
-
-  const j_month_days = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
-  let i = 0;
-  let days_sum = 0;
-  while (i < 11 && j_day_no >= days_sum + j_month_days[i]) {
-    days_sum += j_month_days[i];
-    i += 1;
-  }
-
-  let jm = i + 1;
-  let jd = j_day_no - days_sum + 1;
-
-  return `${jy}/${jm.toString().padStart(2, "0")}/${jd.toString().padStart(2, "0")}`;
-}
+import moment from "moment-jalaali";
 
 // تابع فرمت کردن زمان (حذف ثانیه)
 const formatTimeOnly = (time: string): string => {
@@ -64,37 +16,58 @@ const formatTimeOnly = (time: string): string => {
   return time;
 };
 
-// تبدیل تاریخ میلادی به شمسی با اصلاح منطقه زمانی
-const convertToPersianDate = (dateStr: string | Date): string => {
+// ==================== توابع تبدیل تاریخ اصلاح شده ====================
+
+// تبدیل تاریخ میلادی به شمسی برای نمایش (بدون تغییر در ذخیره‌سازی)
+const convertToPersianDateForDisplay = (dateStr: string): string => {
   if (!dateStr) return "";
-
+  
   try {
-    let year: number, month: number, day: number;
-
-    if (dateStr instanceof Date) {
-      year = dateStr.getUTCFullYear();
-      month = dateStr.getUTCMonth() + 1;
-      day = dateStr.getUTCDate();
-    } else if (typeof dateStr === "string") {
-      let cleanDate = dateStr;
-      if (dateStr.includes("T")) {
-        cleanDate = dateStr.split("T")[0];
-      }
-      if (cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        [year, month, day] = cleanDate.split("-").map(Number);
-      } else {
-        const parsedDate = new Date(cleanDate);
-        year = parsedDate.getUTCFullYear();
-        month = parsedDate.getUTCMonth() + 1;
-        day = parsedDate.getUTCDate();
-      }
-    } else {
-      return String(dateStr);
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const date = new Date(year, month - 1, day, 12, 0, 0);
+      const jDate = moment(date);
+      
+      if (!jDate.isValid()) return dateStr;
+      
+      const jYear = jDate.jYear();
+      const jMonth = jDate.jMonth();
+      const jDay = jDate.jDate();
+      
+      const persianMonths = [
+        "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+        "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
+      ];
+      
+      return `${jDay} ${persianMonths[jMonth]} ${jYear}`;
     }
-
-    return gregorianToJalali(year, month, day);
+    return dateStr;
   } catch (error) {
-    return String(dateStr);
+    return dateStr;
+  }
+};
+
+// تبدیل تاریخ میلادی به شمسی برای پیامک (فرمت: YYYY/MM/DD)
+const convertToPersianDateForSMS = (dateStr: string): string => {
+  if (!dateStr) return "";
+  
+  try {
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const date = new Date(year, month - 1, day, 12, 0, 0);
+      const jDate = moment(date);
+      
+      if (!jDate.isValid()) return dateStr;
+      
+      const jYear = jDate.jYear();
+      const jMonth = jDate.jMonth() + 1;
+      const jDay = jDate.jDate();
+      
+      return `${jYear}/${jMonth.toString().padStart(2, "0")}/${jDay.toString().padStart(2, "0")}`;
+    }
+    return dateStr;
+  } catch (error) {
+    return dateStr;
   }
 };
 
@@ -112,7 +85,7 @@ async function sendChangeNotification(
   status: "approved" | "rejected",
   salonName: string,
   contactPhone: string,
-  newDate: string | Date | null,
+  newDate: string | null,
   newTime: string | null,
   req: NextRequest,
 ) {
@@ -130,7 +103,7 @@ async function sendChangeNotification(
   };
 
   if (status === "approved" && newDate && newTime) {
-    const persianDate = convertToPersianDate(newDate);
+    const persianDate = convertToPersianDateForSMS(newDate);
     const formattedTime = formatTimeOnly(newTime);
     params.date = persianDate;
     params.time = formattedTime;
@@ -171,7 +144,7 @@ async function sendNewBookingApprovalSMS(
   customerPhone: string,
   customerName: string,
   salonName: string,
-  bookingDate: string | Date,
+  bookingDate: string,
   bookingTime: string,
   req: NextRequest,
 ) {
@@ -180,8 +153,7 @@ async function sendNewBookingApprovalSMS(
     req.headers.get("origin") ||
     "https://ontimeapp.ir";
 
-  // تبدیل تاریخ به شمسی
-  const persianDate = convertToPersianDate(bookingDate);
+  const persianDate = convertToPersianDateForSMS(bookingDate);
   const formattedTime = formatTimeOnly(bookingTime);
 
   try {
@@ -204,7 +176,6 @@ async function sendNewBookingApprovalSMS(
     });
 
     const result = await response.json();
-    console.log("New booking SMS result:", result);
     return result.success;
   } catch (error) {
     console.error("Error sending new booking approval SMS:", error);
@@ -391,7 +362,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     );
     allRequests.push(...directlyCancelled);
 
-    // مرتب‌سازی بر اساس تاریخ
     allRequests.sort((a, b) => {
       return (
         new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime()
@@ -418,18 +388,8 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
     const body = await req.json();
     const { id, action, reason, booking_id } = body;
 
-    console.log("PUT request received:", {
-      id,
-      action,
-      reason,
-      booking_id,
-      userType,
-      staffId,
-    });
-
     // ==================== لغو مستقیم نوبت توسط مدیر ====================
     if (action === "direct_cancel" && booking_id) {
-      // دریافت اطلاعات نوبت
       const bookingData: any[] = await query(
         `SELECT b.*, u.business_name, u.phone as business_phone, s.name as staff_name
          FROM booking b
@@ -450,7 +410,6 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
       const persianDate = formatPersianDate(booking.booking_date);
       const timeDisplay = booking.booking_time;
 
-      // لغو مستقیم نوبت
       await query(
         `UPDATE booking 
          SET status = 'cancelled', 
@@ -462,7 +421,6 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
         [reason || "لغو توسط مدیر", booking_id]
       );
 
-      // ثبت در جدول booking_changes برای تاریخچه
       await query(
         `INSERT INTO booking_changes 
          (booking_id, client_name, client_phone, request_type, 
@@ -479,25 +437,13 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
         ]
       );
 
-      // ثبت نوتیفیکیشن
       await query(
         `INSERT INTO notifications (user_id, booking_id, type, message, created_at)
          VALUES (?, ?, 'cancel', ?, NOW())`,
         [
           userId,
           booking.id,
-          `نوبت ${booking.client_name} در تاریخ ${persianDate} ساعت ${timeDisplay} توسط مدیر لغو شد. دلیل: ${reason || "بدون دلیل"}`,
-        ]
-      );
-
-      // ثبت در smslog
-      await query(
-        `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
-         VALUES (?, ?, ?, 'cancellation', 'sent', NOW())`,
-        [
-          userId,
-          booking.client_phone,
-          `نوبت شما در ${booking.business_name} توسط مدیر لغو شد. تاریخ: ${persianDate} - زمان: ${timeDisplay}${reason ? ` دلیل: ${reason}` : ''}`,
+          `نوبت ${booking.client_name} در تاریخ ${persianDate} ساعت ${timeDisplay} توسط مدیر لغو شد.`,
         ]
       );
 
@@ -515,8 +461,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    // ابتدا بررسی کنیم که این درخواست از کدام جدول است
-    // 1. بررسی در booking_changes
+    // بررسی در booking_changes
     const changeFromChanges: any[] = await query(
       `SELECT bc.*, 
               b.user_id, 
@@ -541,7 +486,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
     let isFromChanges = changeFromChanges.length > 0;
     let change: any = isFromChanges ? changeFromChanges[0] : null;
 
-    // 2. اگر در booking_changes نبود، بررسی در booking (درخواست نوبت جدید)
+    // بررسی در booking (درخواست نوبت جدید)
     if (!isFromChanges) {
       const newBookingRequest: any[] = await query(
         `SELECT 
@@ -580,17 +525,11 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
     }
 
     if (!change) {
-      console.log("Change not found for id:", id);
       return NextResponse.json(
         { success: false, message: "درخواست یافت نشد" },
         { status: 404 },
       );
     }
-
-    console.log("Change found:", {
-      changeId: change.id,
-      requestType: change.request_type,
-    });
 
     // بررسی دسترسی
     if (userType === "staff" && staffId) {
@@ -621,32 +560,48 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
     if (action === "approve") {
       if (change.request_type === "reschedule") {
+        // ==================== اصلاح مهم برای reschedule ====================
+        // دریافت new_date از دیتابیس - این تاریخ به فرمت YYYY-MM-DD است
         let finalNewDate = change.new_date;
+        const newTime = change.new_time;
+        
+        console.log("Reschedule - new_date from DB:", finalNewDate);
+        console.log("Reschedule - new_time from DB:", newTime);
+        
+        // اگر تاریخ به صورت Date object بود، تبدیل کن
         if (finalNewDate instanceof Date) {
-          finalNewDate = finalNewDate.toISOString().split("T")[0];
-        } else if (
-          typeof finalNewDate === "string" &&
-          finalNewDate.includes("T")
-        ) {
+          const year = finalNewDate.getFullYear();
+          const month = String(finalNewDate.getMonth() + 1).padStart(2, '0');
+          const day = String(finalNewDate.getDate()).padStart(2, '0');
+          finalNewDate = `${year}-${month}-${day}`;
+        }
+        
+        // اگر تاریخ شامل T بود (ISO format)، پاک کن
+        if (typeof finalNewDate === "string" && finalNewDate.includes("T")) {
           finalNewDate = finalNewDate.split("T")[0];
         }
-
+        
+        console.log("Reschedule - final date to save:", finalNewDate);
+        
+        // بروزرسانی نوبت با تاریخ و زمان جدید
         await query(
           `UPDATE booking 
            SET booking_date = ?, booking_time = ?, change_count = change_count + 1, updated_at = NOW()
            WHERE id = ?`,
-          [finalNewDate, change.new_time, change.booking_id],
+          [finalNewDate, newTime, change.booking_id],
         );
-
+        
+        // تایید درخواست در booking_changes
         await query(
           `UPDATE booking_changes 
            SET status = 'approved', admin_reason = ?, processed_at = NOW()
            WHERE id = ?`,
           [reason || null, id],
         );
-
+        
         responseMessage = "درخواست تغییر زمان با موفقیت تایید شد";
 
+        // ارسال پیامک به مشتری
         const salonName = change.business_name?.trim() || "مجموعه";
         await sendChangeNotification(
           change.client_phone,
@@ -655,9 +610,22 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           salonName,
           contactNumber || "",
           finalNewDate,
-          change.new_time,
+          newTime,
           req,
         );
+        
+        // ثبت در smslog
+        const persianDateDisplay = convertToPersianDateForDisplay(finalNewDate);
+        await query(
+          `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
+           VALUES (?, ?, ?, 'reschedule_approved', 'sent', NOW())`,
+          [
+            change.user_id,
+            change.client_phone,
+            `نوبت شما در ${salonName} با موفقیت به تاریخ ${persianDateDisplay} ساعت ${formatTimeOnly(newTime)} تغییر یافت.`,
+          ],
+        );
+        
       } else if (change.request_type === "cancel") {
         await query(
           `UPDATE booking 
@@ -676,8 +644,22 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
         }
 
         responseMessage = "درخواست لغو نوبت با موفقیت تایید شد";
+        
+        // ارسال پیامک به مشتری
+        const salonName = change.business_name?.trim() || "مجموعه";
+        const persianDate = formatPersianDate(change.old_date);
+        await sendChangeNotification(
+          change.client_phone,
+          change.client_name,
+          "approved",
+          salonName,
+          contactNumber || "",
+          null,
+          null,
+          req,
+        );
+        
       } else if (change.request_type === "new_booking") {
-        // ۱. آپدیت وضعیت نوبت به active
         await query(
           `UPDATE booking 
            SET status = 'active', updated_at = NOW()
@@ -685,7 +667,6 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           [change.booking_id],
         );
         
-        // ۲. دریافت اطلاعات کامل نوبت برای ارسال پیامک
         const bookingDetails: any[] = await query(
           `SELECT booking_date, booking_time 
            FROM booking 
@@ -696,7 +677,6 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
         const bookingDate = bookingDetails[0]?.booking_date;
         const bookingTime = bookingDetails[0]?.booking_time;
         
-        // ۳. ارسال پیامک تأیید نوبت با الگوی dtqxphdv9epu14v
         const salonName = change.business_name?.trim() || "مجموعه";
         await sendNewBookingApprovalSMS(
           change.client_phone,
@@ -707,20 +687,9 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           req,
         );
         
-        // ۴. ثبت در جدول smslog
-        const persianDate = convertToPersianDate(bookingDate);
-        await query(
-          `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
-           VALUES (?, ?, ?, 'new_booking_approved', 'sent', NOW())`,
-          [
-            change.user_id,
-            change.client_phone,
-            `نوبت جدید شما در ${salonName} با موفقیت ثبت شد. تاریخ: ${persianDate} - ساعت: ${formatTimeOnly(bookingTime)}`,
-          ],
-        );
-        
         responseMessage = "نوبت جدید با موفقیت تایید شد";
       }
+      
     } else if (action === "reject") {
       if (change.request_type === "reschedule") {
         await query(
@@ -742,6 +711,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           null,
           req,
         );
+        
       } else if (change.request_type === "cancel") {
         if (isFromChanges) {
           await query(
@@ -752,6 +722,20 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           );
         }
         responseMessage = "درخواست لغو نوبت رد شد";
+        
+        // ارسال پیامک رد به مشتری
+        const salonName = change.business_name?.trim() || "مجموعه";
+        await sendChangeNotification(
+          change.client_phone,
+          change.client_name,
+          "rejected",
+          salonName,
+          contactNumber || "",
+          null,
+          null,
+          req,
+        );
+        
       } else if (change.request_type === "new_booking") {
         await query(
           `UPDATE booking 
@@ -760,6 +744,19 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           [change.booking_id],
         );
         responseMessage = "درخواست نوبت جدید رد شد";
+        
+        // ارسال پیامک رد به مشتری
+        const salonName = change.business_name?.trim() || "مجموعه";
+        await sendChangeNotification(
+          change.client_phone,
+          change.client_name,
+          "rejected",
+          salonName,
+          contactNumber || "",
+          null,
+          null,
+          req,
+        );
       }
     }
 
@@ -767,6 +764,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
       success: true,
       message: responseMessage,
     });
+    
   } catch (error) {
     console.error("Error processing booking change:", error);
     return NextResponse.json(

@@ -25,10 +25,10 @@ export function Gallery({ images }: GalleryProps) {
             <ImageIcon className="w-3.5 h-3.5 text-purple-400" />
           </div>
           <h3 className="text-white font-bold text-base">گالری تصاویر</h3>
-          <span className="text-xs text-gray-400">({images.length})</span>
+       
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {images.map((image, index) => (
             <motion.div
               key={image.id}
