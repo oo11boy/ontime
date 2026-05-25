@@ -32,6 +32,10 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { CreateCustomerLinkWizard } from "./components/CreateCustomerLinkWizard";
+import { BusinessInfoBox } from "./components/BusinessInfoBox";
+import { ServicesBox } from "./components/ServicesBox";
+import { WorkingHoursBox } from "./components/WorkingHoursBox";
+import { SocialMediaBox } from "./components/SocialMediaBox";
 
 // ==================== Types ====================
 interface SocialMedia {
@@ -74,6 +78,8 @@ interface ExistingLink {
   services?: Service[];
   work_shifts?: Shift[];
   off_days?: number[];
+  province?: string;
+  city?: string;
 }
 
 // ==================== کامپوننت نمایش لینک موجود ====================
@@ -81,12 +87,29 @@ function ExistingLinkCard({
   link, 
   onEdit, 
   onRefresh,
-  isLoading 
+  isLoading,
+  onBusinessInfoSave,
+  onServicesChange,
+  onWorkingHoursChange,
+  onSocialMediaChange
 }: { 
   link: ExistingLink; 
   onEdit: () => void;
   onRefresh: () => void;
   isLoading: boolean;
+  onBusinessInfoSave: (data: {
+    business_name: string;
+    business_address: string;
+    bio: string;
+    avatar_image: string | null;
+    cover_image: string | null;
+    province: string;
+    city: string;
+    phone: string;
+  }) => Promise<void>;
+  onServicesChange: (services: Service[]) => Promise<void>;
+  onWorkingHoursChange: (shifts: Shift[], offDays: number[]) => Promise<void>;
+  onSocialMediaChange: (socialMedia: SocialMedia) => Promise<void>;
 }) {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
@@ -139,9 +162,7 @@ function ExistingLinkCard({
             <Crown className="w-4 h-4" />
             <span className="text-xs font-medium">لینک اختصاصی شما</span>
           </div>
-          <button onClick={onEdit} className="px-2 py-1 bg-white/20 rounded-full text-xs flex items-center gap-1">
-            <Edit className="w-3 h-3" /> ویرایش
-          </button>
+      
         </div>
         
         <div className="bg-white/10 rounded-xl p-2">
@@ -164,209 +185,48 @@ function ExistingLinkCard({
         </div>
       </div>
 
-      {/* اطلاع از قابلیت ثبت نوبت - بدون ذکر قیمت */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3 border border-blue-200">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5 text-blue-600 shrink-0" />
-          <div>
-            <p className="text-xs font-bold text-blue-800 dark:text-blue-400">✨ قابلیت ثبت نوبت آنلاین</p>
-            <p className="text-[11px] text-blue-600 dark:text-blue-500">برای فعال‌سازی به بخش پلن‌ها بروید</p>
-          </div>
-        </div>
-      </div>
 
-      {/* خلاصه اطلاعات */}
-      <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
-        <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">📋 اطلاعات کسب‌وکار</h4>
-        <div className="space-y-1 text-xs text-slate-600 dark:text-gray-400">
-          <p className="truncate">🏢 {link.business_name}</p>
-          <p className="truncate">📍 {link.business_address}</p>
-          <p dir="ltr">📞 {link.phone}</p>
-        </div>
-      </div>
+      {/* باکس اطلاعات کسب‌وکار */}
+      <BusinessInfoBox
+        businessName={link.business_name}
+        businessAddress={link.business_address}
+        bio={link.bio || ""}
+        avatarImage={link.avatar_image || null}
+        coverImage={link.cover_image || null}
+        province={link.province || ""}
+        city={link.city || ""}
+        phone={link.phone || ""}
+        onSave={onBusinessInfoSave}
+      />
 
-      {/* خدمات */}
-      {link.services && link.services.length > 0 && (
-        <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
-          <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">🛎️ خدمات شما</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {link.services.slice(0, 4).map((service) => (
-              <span key={service.id} className="px-2 py-0.5 bg-white dark:bg-[#0f1115] rounded-full text-[11px]">
-                {service.name}
-              </span>
-            ))}
-            {link.services.length > 4 && (
-              <span className="px-2 py-0.5 bg-white dark:bg-[#0f1115] rounded-full text-[11px]">
-                +{link.services.length - 4} مورد
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* باکس خدمات */}
+      <ServicesBox
+        selectedServices={link.services || []}
+        onServicesChange={onServicesChange}
+      />
 
-{/* شبکه‌های اجتماعی */}
-{link.social_media && Object.values(link.social_media).some(v => v) && (
-  <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-        <Share2 className="w-4 h-4 text-white" />
-      </div>
-      <h4 className="font-bold text-gray-800 dark:text-white">شبکه‌های اجتماعی</h4>
-    </div>
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-      {link.social_media.instagram && (
-        <a
-          href={`https://instagram.com/${link.social_media.instagram}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-200 dark:border-pink-500/20 hover:scale-105 transition-all duration-300 group"
-        >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-md">
-            <Instagram className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">اینستاگرام</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-pink-600 transition">
-              {link.social_media.instagram}
-            </p>
-          </div>
-          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
-        </a>
-      )}
-      
-      {link.social_media.telegram && (
-        <a
-          href={`https://t.me/${link.social_media.telegram}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-200 dark:border-blue-500/20 hover:scale-105 transition-all duration-300 group"
-        >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-md">
-            <Send className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">تلگرام</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-blue-600 transition">
-              {link.social_media.telegram}
-            </p>
-          </div>
-          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
-        </a>
-      )}
-      
-      {link.social_media.whatsapp && (
-        <a
-          href={`https://wa.me/${link.social_media.whatsapp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-200 dark:border-green-500/20 hover:scale-105 transition-all duration-300 group"
-        >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md">
-            <Phone className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">واتساپ</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-green-600 transition">
-              {link.social_media.whatsapp}
-            </p>
-          </div>
-          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
-        </a>
-      )}
-      
-      {link.social_media.rubika && (
-        <a
-          href={`https://rubika.ir/${link.social_media.rubika}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-teal-500/10 to-green-500/10 border border-teal-200 dark:border-teal-500/20 hover:scale-105 transition-all duration-300 group"
-        >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-green-600 flex items-center justify-center shadow-md">
-            <MessageCircle className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">روبیکا</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-teal-600 transition">
-              {link.social_media.rubika}
-            </p>
-          </div>
-          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
-        </a>
-      )}
-      
-      {link.social_media.eitaa && (
-        <a
-          href={`https://eitaa.com/${link.social_media.eitaa}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-200 dark:border-purple-500/20 hover:scale-105 transition-all duration-300 group"
-        >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
-            <Globe className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">ایتا</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-purple-600 transition">
-              {link.social_media.eitaa}
-            </p>
-          </div>
-          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
-        </a>
-      )}
-      
-      {link.social_media.bale && (
-        <a
-          href={`https://ble.ir/${link.social_media.bale}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-200 dark:border-amber-500/20 hover:scale-105 transition-all duration-300 group"
-        >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center shadow-md">
-            <AtSign className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">بله</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-amber-600 transition">
-              {link.social_media.bale}
-            </p>
-          </div>
-          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
-        </a>
-      )}
-      
-      {link.social_media.soroush && (
-        <a
-          href={`https://splus.ir/${link.social_media.soroush}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-500/10 to-blue-500/10 border border-indigo-200 dark:border-indigo-500/20 hover:scale-105 transition-all duration-300 group"
-        >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-md">
-            <MessageCircle className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">سروش</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate group-hover:text-indigo-600 transition">
-              {link.social_media.soroush}
-            </p>
-          </div>
-          <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
-        </a>
-      )}
-    </div>
-  </div>
-)}
+      {/* باکس ساعت کاری و تعطیلات */}
+      <WorkingHoursBox
+        workShifts={link.work_shifts || []}
+        offDays={link.off_days || []}
+        onWorkingHoursChange={onWorkingHoursChange}
+      />
 
-   
+      {/* باکس شبکه‌های اجتماعی */}
+      <SocialMediaBox
+        socialMedia={link.social_media || {
+          instagram: "", telegram: "", rubika: "", whatsapp: "", eitaa: "", bale: "", soroush: ""
+        }}
+        onSocialMediaChange={onSocialMediaChange}
+      />
     </div>
   );
 }
 
-// ==================== صفحه اول (بدون لینک) - کاملاً رایگان و ترغیبی ====================
+// ==================== صفحه اول (بدون لینک) ====================
 function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="space-y-5">
-      {/* هدر */}
       <div className="text-center">
         <div className="inline-flex items-center gap-1 bg-emerald-100 px-3 py-1 rounded-full mb-3">
           <Rocket className="w-4 h-4 text-emerald-600" />
@@ -378,7 +238,6 @@ function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
         <p className="text-gray-500 text-sm mt-2">مشتریات با یه کلیک، همه چی رو ببینن</p>
       </div>
 
-      {/* مزایا - بدون اشاره به پول */}
       <div className="space-y-2">
         <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border">
           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
@@ -411,7 +270,6 @@ function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
         </div>
       </div>
 
-      {/* اطلاع از قابلیت ثبت نوبت */}
       <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-3 text-center">
         <p className="text-amber-700 text-sm flex items-center justify-center gap-1">
           <Sparkles className="w-4 h-4" />
@@ -419,7 +277,6 @@ function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
         </p>
       </div>
 
-      {/* دکمه اصلی */}
       <button
         onClick={onCreate}
         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg"
@@ -429,7 +286,6 @@ function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
         <Sparkles className="w-4 h-4" />
       </button>
 
-      {/* ویژگی‌های کلیدی */}
       <div className="grid grid-cols-2 gap-2 text-center">
         <div className="p-2 bg-slate-50 rounded-xl">
           <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
@@ -449,7 +305,6 @@ function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
         </div>
       </div>
 
-      {/* آمار اعتماد */}
       <div className="text-center pt-2">
         <p className="text-[11px] text-gray-400">✨ بیش از ۱۰,۰۰۰ کسب‌وکار از آنتایم استفاده می‌کنن</p>
       </div>
@@ -492,6 +347,8 @@ export default function CustomerLinkHomePage() {
           services: data.link.services,
           work_shifts: data.link.work_shifts,
           off_days: data.link.off_days,
+          province: data.link.province || "",
+          city: data.link.city || "",
         });
         setHasLink(true);
       } else {
@@ -525,8 +382,10 @@ export default function CustomerLinkHomePage() {
         phone: existingLink.phone,
         bio: existingLink.bio,
         logo: existingLink.logo,
-        avatar_image: (existingLink as any).avatar_image,
-        cover_image: (existingLink as any).cover_image,
+        avatar_image: existingLink.avatar_image,
+        cover_image: existingLink.cover_image,
+        province: existingLink.province || "",
+        city: existingLink.city || "",
         social_media: existingLink.social_media || {
           instagram: "", telegram: "", rubika: "", whatsapp: "", eitaa: "", bale: "", soroush: ""
         },
@@ -545,6 +404,143 @@ export default function CustomerLinkHomePage() {
     toast.success("آمار بروز شد");
   };
 
+  const handleBusinessInfoSave = async (data: {
+    business_name: string;
+    business_address: string;
+    bio: string;
+    avatar_image: string | null;
+    cover_image: string | null;
+    province: string;
+    city: string;
+    phone: string;
+  }) => {
+    if (!existingLink) return;
+
+    const res = await fetch("/api/client/customer-link", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: existingLink.slug,
+        business_name: data.business_name,
+        business_address: data.business_address,
+        bio: data.bio,
+        avatar_image: data.avatar_image,
+        cover_image: data.cover_image,
+        phone: data.phone,
+        province: data.province,
+        city: data.city,
+        logo: data.avatar_image || existingLink.logo,
+        social_media: existingLink.social_media || {},
+        services: existingLink.services || [],
+        work_shifts: existingLink.work_shifts || [],
+        off_days: existingLink.off_days || [],
+      }),
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    
+    await fetchCustomerLink();
+  };
+
+  const handleServicesChange = async (services: Service[]) => {
+    if (!existingLink) return;
+
+    const res = await fetch("/api/client/customer-link", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: existingLink.slug,
+        business_name: existingLink.business_name,
+        business_address: existingLink.business_address,
+        bio: existingLink.bio || "",
+        avatar_image: existingLink.avatar_image || null,
+        cover_image: existingLink.cover_image || null,
+        phone: existingLink.phone,
+        logo: existingLink.logo,
+        province: existingLink.province || "",
+        city: existingLink.city || "",
+        social_media: existingLink.social_media || {},
+        services: services,
+        work_shifts: existingLink.work_shifts || [],
+        off_days: existingLink.off_days || [],
+      }),
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    
+    await fetchCustomerLink();
+  };
+
+  const handleWorkingHoursChange = async (shifts: Shift[], offDays: number[]) => {
+    if (!existingLink) return;
+
+    const res = await fetch("/api/client/customer-link", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: existingLink.slug,
+        business_name: existingLink.business_name,
+        business_address: existingLink.business_address,
+        bio: existingLink.bio || "",
+        avatar_image: existingLink.avatar_image || null,
+        cover_image: existingLink.cover_image || null,
+        phone: existingLink.phone,
+        logo: existingLink.logo,
+        province: existingLink.province || "",
+        city: existingLink.city || "",
+        social_media: existingLink.social_media || {},
+        services: existingLink.services || [],
+        work_shifts: shifts,
+        off_days: offDays,
+      }),
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    
+    await fetchCustomerLink();
+  };
+
+  const handleSocialMediaChange = async (socialMedia: SocialMedia) => {
+    if (!existingLink) return;
+
+    const res = await fetch("/api/client/customer-link", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: existingLink.slug,
+        business_name: existingLink.business_name,
+        business_address: existingLink.business_address,
+        bio: existingLink.bio || "",
+        avatar_image: existingLink.avatar_image || null,
+        cover_image: existingLink.cover_image || null,
+        phone: existingLink.phone,
+        logo: existingLink.logo,
+        province: existingLink.province || "",
+        city: existingLink.city || "",
+        social_media: socialMedia,
+        services: existingLink.services || [],
+        work_shifts: existingLink.work_shifts || [],
+        off_days: existingLink.off_days || [],
+      }),
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    
+    await fetchCustomerLink();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -554,9 +550,8 @@ export default function CustomerLinkHomePage() {
   }
 
   return (
-    <div className="min-h-screen  pb-20">
+    <div className="min-h-screen pb-20">
       <div className="max-w-2xl mx-auto px-4">
-        {/* هدر ساده */}
         <div className="text-center mb-5">
           <h1 className="text-lg font-bold text-gray-800 dark:text-white">
             {hasLink ? "🔗 لینک اختصاصی شما" : "🚀 صفحه اختصاصی کسب‌وکار"}
@@ -572,13 +567,16 @@ export default function CustomerLinkHomePage() {
             onEdit={handleEditLink}
             onRefresh={handleRefresh}
             isLoading={isRefreshing}
+            onBusinessInfoSave={handleBusinessInfoSave}
+            onServicesChange={handleServicesChange}
+            onWorkingHoursChange={handleWorkingHoursChange}
+            onSocialMediaChange={handleSocialMediaChange}
           />
         ) : (
           <CreateLinkCallToAction onCreate={() => setShowCreateModal(true)} />
         )}
       </div>
 
-      {/* مودال ساخت لینک */}
       {showCreateModal && (
         <CreateCustomerLinkWizard 
           isOpen={showCreateModal}
@@ -591,7 +589,6 @@ export default function CustomerLinkHomePage() {
         />
       )}
 
-      {/* مودال ویرایش */}
       {showEditModal && editData && (
         <CreateCustomerLinkWizard 
           isOpen={showEditModal}
