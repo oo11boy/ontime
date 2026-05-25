@@ -1,4 +1,3 @@
-
 // src/app/api/client/booking-changes/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
@@ -99,7 +98,14 @@ const convertToPersianDate = (dateStr: string | Date): string => {
   }
 };
 
-// تابع ارسال پیامک نتیجه درخواست
+// الگوهای پیامک
+const PATTERNS = {
+  APPROVED: "q40uuerggl4qodq",
+  REJECTED: "eowphltmynwerv6",
+  NEW_BOOKING_APPROVED: "dtqxphdv9epu14v",
+};
+
+// تابع ارسال پیامک نتیجه درخواست تغییر یا لغو
 async function sendChangeNotification(
   customerPhone: string,
   customerName: string,
@@ -110,11 +116,6 @@ async function sendChangeNotification(
   newTime: string | null,
   req: NextRequest,
 ) {
-  const PATTERNS = {
-    APPROVED: "q40uuerggl4qodq",
-    REJECTED: "eowphltmynwerv6",
-  };
-
   const patternCode =
     status === "approved" ? PATTERNS.APPROVED : PATTERNS.REJECTED;
   const messageCount = 2;
@@ -161,6 +162,52 @@ async function sendChangeNotification(
     return result.success;
   } catch (error) {
     console.error("Error sending change notification SMS:", error);
+    return false;
+  }
+}
+
+// تابع ارسال پیامک تأیید نوبت جدید
+async function sendNewBookingApprovalSMS(
+  customerPhone: string,
+  customerName: string,
+  salonName: string,
+  bookingDate: string | Date,
+  bookingTime: string,
+  req: NextRequest,
+) {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    req.headers.get("origin") ||
+    "https://ontimeapp.ir";
+
+  // تبدیل تاریخ به شمسی
+  const persianDate = convertToPersianDate(bookingDate);
+  const formattedTime = formatTimeOnly(bookingTime);
+
+  try {
+    const response = await fetch(`${baseUrl}/api/sms/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: req.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({
+        to_phone: customerPhone,
+        sms_type: "new_booking_approved",
+        template_key: PATTERNS.NEW_BOOKING_APPROVED,
+        message_count: 1,
+        name: customerName || "کاربر گرامی",
+        salon: salonName,
+        date: persianDate,
+        time: formattedTime,
+      }),
+    });
+
+    const result = await response.json();
+    console.log("New booking SMS result:", result);
+    return result.success;
+  } catch (error) {
+    console.error("Error sending new booking approval SMS:", error);
     return false;
   }
 }
@@ -287,8 +334,8 @@ export const GET = withAuth(async (req: NextRequest, context) => {
       calendar_type: booking.calendar_type,
       staff_phone: booking.staff_phone,
       cancelled_by: null,
-      service_name: booking.service_name,  // ✅ اضافه شد
-      services: booking.services,          // ✅ اضافه شد
+      service_name: booking.service_name,
+      services: booking.services,
     }));
 
     allRequests.push(...formattedNewBookings);
@@ -360,7 +407,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     );
   }
 });
-
 
 export const PUT = withAuth(async (req: NextRequest, context) => {
   const { userId } = context;
@@ -631,12 +677,48 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
 
         responseMessage = "درخواست لغو نوبت با موفقیت تایید شد";
       } else if (change.request_type === "new_booking") {
+        // ۱. آپدیت وضعیت نوبت به active
         await query(
           `UPDATE booking 
            SET status = 'active', updated_at = NOW()
            WHERE id = ?`,
           [change.booking_id],
         );
+        
+        // ۲. دریافت اطلاعات کامل نوبت برای ارسال پیامک
+        const bookingDetails: any[] = await query(
+          `SELECT booking_date, booking_time 
+           FROM booking 
+           WHERE id = ?`,
+          [change.booking_id],
+        );
+        
+        const bookingDate = bookingDetails[0]?.booking_date;
+        const bookingTime = bookingDetails[0]?.booking_time;
+        
+        // ۳. ارسال پیامک تأیید نوبت با الگوی dtqxphdv9epu14v
+        const salonName = change.business_name?.trim() || "مجموعه";
+        await sendNewBookingApprovalSMS(
+          change.client_phone,
+          change.client_name,
+          salonName,
+          bookingDate,
+          bookingTime,
+          req,
+        );
+        
+        // ۴. ثبت در جدول smslog
+        const persianDate = convertToPersianDate(bookingDate);
+        await query(
+          `INSERT INTO smslog (user_id, to_phone, content, sms_type, status, created_at)
+           VALUES (?, ?, ?, 'new_booking_approved', 'sent', NOW())`,
+          [
+            change.user_id,
+            change.client_phone,
+            `نوبت جدید شما در ${salonName} با موفقیت ثبت شد. تاریخ: ${persianDate} - ساعت: ${formatTimeOnly(bookingTime)}`,
+          ],
+        );
+        
         responseMessage = "نوبت جدید با موفقیت تایید شد";
       }
     } else if (action === "reject") {
