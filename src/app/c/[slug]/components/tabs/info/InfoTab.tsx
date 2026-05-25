@@ -47,17 +47,7 @@ export function InfoTab({
         {/* شبکه‌های اجتماعی */}
         <SocialMedia socialMedia={business.social_media} />
 
-        {/* دکمه ثبت نوبت - فقط در صورت فعال بودن اشتراک نمایش داده بشه */}
-        {isBookingEnabled && (
-          <button
-            onClick={onBookingClick}
-            className="w-full mt-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-500/20 transition-all"
-          >
-            <Calendar className="w-5 h-5" />
-            ثبت نوبت آنلاین
-          </button>
-        )}
-
+   
         {/* اگر اشتراک ثبت نوبت فعال نیست، پیام نمایش بده */}
         {!isBookingEnabled && (
           <div className="mt-6 p-3 bg-gray-800/50 rounded-xl text-center border border-gray-700">

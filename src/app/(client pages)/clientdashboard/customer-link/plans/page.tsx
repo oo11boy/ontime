@@ -158,22 +158,12 @@ export default function PlansPage() {
           
           {/* تایمر */}
           <div className="mt-4 p-3 bg-white/60 rounded-xl text-center">
-            <p className="text-xs text-emerald-600 mb-2">⏳ زمان باقیمانده</p>
+            <p className="text-xs text-emerald-600 mb-2">⏳ زمان باقیمانده از اشتراک</p>
             <div className="flex justify-center gap-3">
               <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.days}</div>
-                <p className="text-[10px] text-gray-500">روز</p>
+                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.days} روز</div>
               </div>
-              <span className="text-2xl text-emerald-500">:</span>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.hours.toString().padStart(2, '0')}</div>
-                <p className="text-[10px] text-gray-500">ساعت</p>
-              </div>
-              <span className="text-2xl text-emerald-500">:</span>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.minutes.toString().padStart(2, '0')}</div>
-                <p className="text-[10px] text-gray-500">دقیقه</p>
-              </div>
+             
             </div>
           </div>
           

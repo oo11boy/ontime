@@ -5,7 +5,7 @@ export default function ClientLayout({
   children: React.ReactNode
 }) {
   return (
-    <section className="bg-black">
+    <section className="bg-[#1C2737]">
       {children}
     </section>
   )

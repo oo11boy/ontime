@@ -74,7 +74,7 @@ export default function DashboardPage() {
           <div className="max-w-md mx-auto space-y-6">
             <AnnouncementBanner />
             <DownloadAppBanner />
-         
+
             <div className="space-y-2">
               <InstallPWA />
               <IosInstallPrompt />
@@ -92,12 +92,12 @@ export default function DashboardPage() {
             <div className="px-2">
               <DashboardAddAppointmentButton />
             </div>
-    <CustomerLinkWidget />
+            <CustomerLinkWidget />
             <DashboardQuickActions userType={userType} />
-           
-<div className="mt-8">
-  <VideoTrainings />
-</div>
+
+            <div className="mt-8">
+              <VideoTrainings />
+            </div>
             <div className="mt-8">
               <DashboardRecentAppointments />
             </div>

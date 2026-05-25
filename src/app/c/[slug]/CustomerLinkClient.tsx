@@ -134,7 +134,7 @@ export default function CustomerLinkClient({
         strategy="afterInteractive"
       />
 
-      <div className="min-h-screen max-w-md m-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rtl pb-20">
+      <div className="min-h-screen max-w-4xl border shadow-2xl m-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rtl pb-20">
         <Toaster position="top-center" />
 
         <AnimatePresence mode="wait">

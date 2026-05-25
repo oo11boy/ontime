@@ -141,7 +141,9 @@ const StatCard = ({
       <p className="text-slate-500 dark:text-gray-400 text-xs">{label}</p>
       {Icon && <Icon className="w-4 h-4 text-slate-400 dark:text-gray-500" />}
     </div>
-    <p className="text-xl font-bold text-slate-800 dark:text-white mt-1">{value}</p>
+    <p className="text-xl font-bold text-slate-800 dark:text-white mt-1">
+      {value}
+    </p>
   </div>
 );
 
@@ -150,13 +152,15 @@ const getCancelledByLabel = (change: BookingChange) => {
   if (change.cancelled_by === "customer") {
     return {
       text: "لغو توسط مشتری",
-      className: "bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400",
+      className:
+        "bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400",
     };
   }
   if (change.cancelled_by === "admin") {
     return {
       text: "لغو توسط مدیر",
-      className: "bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400",
+      className:
+        "bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400",
     };
   }
   return null;
@@ -169,7 +173,11 @@ const ChangeCard = ({
 }: {
   change: BookingChange;
   onReview: () => void;
-  onDirectCancel?: (bookingId: number, clientName: string, clientPhone: string) => void;
+  onDirectCancel?: (
+    bookingId: number,
+    clientName: string,
+    clientPhone: string,
+  ) => void;
 }) => {
   const isReschedule = change.request_type === "reschedule";
   const isNewBooking = change.request_type === "new_booking";
@@ -178,7 +186,7 @@ const ChangeCard = ({
   const isPending = change.status === "pending";
   const cancelledByInfo = getCancelledByLabel(change);
   const serviceDisplay = getServiceDisplay(change);
-  
+
   const canDirectCancel = isActiveBooking && change.current_status === "active";
 
   const getStatusStyle = () => {
@@ -210,10 +218,14 @@ const ChangeCard = ({
   };
 
   const getRequestTypeStyle = () => {
-    if (isReschedule) return "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400";
-    if (isCancel) return "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400";
-    if (isNewBooking) return "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400";
-    if (isActiveBooking) return "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400";
+    if (isReschedule)
+      return "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400";
+    if (isCancel)
+      return "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400";
+    if (isNewBooking)
+      return "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400";
+    if (isActiveBooking)
+      return "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400";
     return "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400";
   };
 
@@ -226,14 +238,20 @@ const ChangeCard = ({
     >
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${getStatusStyle()}`}>
+          <span
+            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${getStatusStyle()}`}
+          >
             {getStatusLabel()}
           </span>
-          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${getRequestTypeStyle()}`}>
+          <span
+            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${getRequestTypeStyle()}`}
+          >
             {getRequestTypeLabel()}
           </span>
           {cancelledByInfo && (
-            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${cancelledByInfo.className}`}>
+            <span
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${cancelledByInfo.className}`}
+            >
               {cancelledByInfo.text}
             </span>
           )}
@@ -257,7 +275,9 @@ const ChangeCard = ({
       <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
         <div className="flex items-center gap-1">
           <User className="w-4 h-4 text-slate-500 dark:text-gray-500" />
-          <span className="text-slate-800 dark:text-white">{change.client_name}</span>
+          <span className="text-slate-800 dark:text-white">
+            {change.client_name}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <Phone className="w-4 h-4 text-slate-500 dark:text-gray-500" />
@@ -306,12 +326,16 @@ const ChangeCard = ({
         )}
 
         {isCancel && change.cancelled_by && (
-          <div className={`rounded-lg p-2 ${change.cancelled_by === 'customer' ? 'bg-purple-50 dark:bg-purple-500/10' : 'bg-orange-50 dark:bg-orange-500/10'}`}>
+          <div
+            className={`rounded-lg p-2 ${change.cancelled_by === "customer" ? "bg-purple-50 dark:bg-purple-500/10" : "bg-orange-50 dark:bg-orange-500/10"}`}
+          >
             <p className="text-slate-500 dark:text-gray-500 text-[10px] mb-1">
               نحوه لغو
             </p>
-            <p className={`text-xs ${change.cancelled_by === 'customer' ? 'text-purple-700 dark:text-purple-300' : 'text-orange-700 dark:text-orange-300'}`}>
-              {change.cancelled_by === 'customer' ? 'توسط مشتری' : 'توسط مدیر'}
+            <p
+              className={`text-xs ${change.cancelled_by === "customer" ? "text-purple-700 dark:text-purple-300" : "text-orange-700 dark:text-orange-300"}`}
+            >
+              {change.cancelled_by === "customer" ? "توسط مشتری" : "توسط مدیر"}
             </p>
           </div>
         )}
@@ -348,7 +372,13 @@ const ChangeCard = ({
       {/* دکمه لغو مستقیم */}
       {canDirectCancel && onDirectCancel && (
         <button
-          onClick={() => onDirectCancel(change.booking_id, change.client_name, change.client_phone)}
+          onClick={() =>
+            onDirectCancel(
+              change.booking_id,
+              change.client_name,
+              change.client_phone,
+            )
+          }
           className="mt-3 w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95"
         >
           <X className="w-3 h-3" />
@@ -402,7 +432,9 @@ const ReviewModal = ({
         <div className="p-4 space-y-4">
           {/* اطلاعات مشتری */}
           <div className="bg-slate-100 dark:bg-black/30 rounded-xl p-3">
-            <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">مشتری</p>
+            <p className="text-slate-500 dark:text-gray-500 text-xs mb-1">
+              مشتری
+            </p>
             <p className="text-slate-800 dark:text-white font-medium">
               {change.client_name}
             </p>
@@ -477,7 +509,7 @@ const ReviewModal = ({
                 </p>
               </div>
               <p className="text-emerald-700 dark:text-emerald-300 text-sm">
-                {isReschedule 
+                {isReschedule
                   ? "با تایید این درخواست، ۲ واحد از اعتبار پیامک شما کسر خواهد شد"
                   : "با تایید این درخواست، نوبت جدید برای مشتری رزرو خواهد شد"}
               </p>
@@ -561,8 +593,11 @@ const UpgradeRequiredModal = ({
         <div className="p-6">
           <div className="text-center mb-6">
             <p className="text-gray-700 dark:text-gray-300 text-base">
-              قابلیت <span className="font-bold text-amber-600">مدیریت نوبت‌های مشتریان</span> 
-              {" "}نیاز به فعال‌سازی دارد.
+              قابلیت{" "}
+              <span className="font-bold text-amber-600">
+                مدیریت نوبت‌های مشتریان
+              </span>{" "}
+              نیاز به فعال‌سازی دارد.
             </p>
           </div>
 
@@ -572,21 +607,33 @@ const UpgradeRequiredModal = ({
               با فعال‌سازی این قابلیت:
             </p>
             <ul className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
-              <li className="flex items-center gap-2">✅ مشتریات ۲۴ ساعته آنلاین نوبت می‌گیرن</li>
-              <li className="flex items-center gap-2">✅ دیگه نیازی به تماس تلفنی برای هماهنگی نیست</li>
-              <li className="flex items-center gap-2">✅ تمام درخواست‌های نوبت رو اینجا می‌بینی</li>
-              <li className="flex items-center gap-2">✅ می‌تونی نوبت‌ها رو تایید یا رد کنی</li>
+              <li className="flex items-center gap-2">
+                ✅ مشتریات ۲۴ ساعته آنلاین نوبت می‌گیرن
+              </li>
+              <li className="flex items-center gap-2">
+                ✅ دیگه نیازی به تماس تلفنی برای هماهنگی نیست
+              </li>
+              <li className="flex items-center gap-2">
+                ✅ تمام درخواست‌های نوبت رو اینجا می‌بینی
+              </li>
+              <li className="flex items-center gap-2">
+                ✅ می‌تونی نوبت‌ها رو تایید یا رد کنی
+              </li>
             </ul>
           </div>
 
           <div className="text-center mb-6">
-            <p className="text-gray-500 text-sm line-through">قبلاً ۳۲۴,۰۰۰ تومان</p>
+            <p className="text-gray-500 text-sm line-through">
+              قبلاً ۳۲۴,۰۰۰ تومان
+            </p>
             <div className="flex items-baseline justify-center gap-1 mt-1">
               <span className="text-3xl font-bold text-amber-600">۲۵۸</span>
               <span className="text-gray-500">هزار تومان</span>
               <span className="text-3xl font-bold text-amber-600">۳ ماهه</span>
             </div>
-            <p className="text-lg text-emerald-600 mt-1">✨ (معادل ۸۶ هزار تومان در ماه)</p>
+            <p className="text-lg text-emerald-600 mt-1">
+              ✨ (معادل ۸۶ هزار تومان در ماه)
+            </p>
           </div>
 
           <div className="flex gap-3">
@@ -624,7 +671,9 @@ export default function BookingChangesPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedChange, setSelectedChange] = useState<BookingChange | null>(null);
+  const [selectedChange, setSelectedChange] = useState<BookingChange | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const itemsPerPage = 8;
@@ -632,9 +681,11 @@ export default function BookingChangesPage() {
   const checkBookingFeatureAccess = useCallback(async () => {
     setCheckingAccess(true);
     try {
-      const res = await fetch("/api/client/customer-link/booking-feature-status");
+      const res = await fetch(
+        "/api/client/customer-link/booking-feature-status",
+      );
       const data = await res.json();
-      
+
       if (!data.success || !data.isEnabled) {
         setShowUpgradeModal(true);
         return false;
@@ -654,7 +705,7 @@ export default function BookingChangesPage() {
     try {
       const res = await fetch("/api/client/booking-changes");
       const data = await res.json();
-      
+
       if (data.success) {
         setChanges(data.changes || []);
       } else {
@@ -680,20 +731,24 @@ export default function BookingChangesPage() {
     router.push("/clientdashboard/customer-link/plans");
   };
 
-  const handleDirectCancel = async (bookingId: number, clientName: string, clientPhone: string) => {
+  const handleDirectCancel = async (
+    bookingId: number,
+    clientName: string,
+    clientPhone: string,
+  ) => {
     const reason = prompt("لطفاً دلیل لغو نوبت را وارد کنید:", "لغو توسط مدیر");
     if (reason === null) return;
-    
+
     setIsProcessing(true);
     const loadingToast = toast.loading("در حال لغو نوبت...");
     try {
       const res = await fetch("/api/client/booking-changes", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          action: "direct_cancel", 
+        body: JSON.stringify({
+          action: "direct_cancel",
           booking_id: bookingId,
-          reason: reason.trim() || "لغو توسط مدیر"
+          reason: reason.trim() || "لغو توسط مدیر",
         }),
       });
       const data = await res.json();
@@ -804,7 +859,9 @@ export default function BookingChangesPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0f1115]">
         <div className="text-center">
           <RefreshCw className="w-12 h-12 animate-spin text-emerald-600 dark:text-emerald-400 mx-auto mb-4" />
-          <p className="text-slate-500 dark:text-gray-400">در حال بررسی دسترسی...</p>
+          <p className="text-slate-500 dark:text-gray-400">
+            در حال بررسی دسترسی...
+          </p>
         </div>
       </div>
     );
@@ -821,14 +878,35 @@ export default function BookingChangesPage() {
       />
 
       {!showUpgradeModal && (
-        <div className="pb-20 px-4 max-w-7xl mx-auto">
+        <div className="pb-20 px-4 max-w-7xl  mx-auto">
           {/* آمار */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
-            <StatCard label="کل درخواست‌ها" value={stats.total} color="border-slate-200 dark:border-white/10" icon={CheckCircle} />
-            <StatCard label="در انتظار تایید" value={stats.pending} color="border-yellow-200 dark:border-yellow-500/20" />
-            <StatCard label="درخواست لغو" value={stats.cancelled} color="border-red-200 dark:border-red-500/20" />
-            <StatCard label="درخواست تغییر" value={stats.reschedule} color="border-blue-200 dark:border-blue-500/20" />
-            <StatCard label="نوبت‌های فعال" value={stats.active} color="border-emerald-200 dark:border-emerald-500/20" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            <StatCard
+              label="کل درخواست‌ها"
+              value={stats.total}
+              color="border-slate-200 dark:border-white/10"
+              icon={CheckCircle}
+            />
+            <StatCard
+              label="در انتظار تایید"
+              value={stats.pending}
+              color="border-yellow-200 dark:border-yellow-500/20"
+            />
+            <StatCard
+              label="درخواست لغو"
+              value={stats.cancelled}
+              color="border-red-200 dark:border-red-500/20"
+            />
+            <StatCard
+              label="درخواست تغییر"
+              value={stats.reschedule}
+              color="border-blue-200 dark:border-blue-500/20"
+            />
+            <StatCard
+              label="نوبت‌های فعال"
+              value={stats.active}
+              color="border-emerald-200 dark:border-emerald-500/20"
+            />
           </div>
 
           {/* فیلترها */}
@@ -851,11 +929,17 @@ export default function BookingChangesPage() {
                 </button>
               ))}
             </div>
-            
+
             <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1 hidden sm:block" />
-            
+
             <div className="flex flex-wrap gap-2">
-              {["all", "reschedule", "cancel", "new_booking", "active_booking"].map((type) => (
+              {[
+                "all",
+                "reschedule",
+                "cancel",
+                "new_booking",
+                "active_booking",
+              ].map((type) => (
                 <button
                   key={type}
                   onClick={() => setFilterType(type)}
@@ -873,7 +957,7 @@ export default function BookingChangesPage() {
                 </button>
               ))}
             </div>
-            
+
             <button
               onClick={fetchChanges}
               className="mr-auto px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition active:scale-95"
@@ -895,7 +979,7 @@ export default function BookingChangesPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1  gap-4">
               {paginatedChanges.map((change) => (
                 <ChangeCard
                   key={change.id}
@@ -921,7 +1005,9 @@ export default function BookingChangesPage() {
                 صفحه {currentPage} از {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-lg bg-white dark:bg-white/5 disabled:opacity-40 active:scale-95 transition"
               >
