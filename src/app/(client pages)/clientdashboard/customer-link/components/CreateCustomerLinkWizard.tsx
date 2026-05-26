@@ -807,7 +807,7 @@ function BasicInfoStep({
         <button
           onClick={onNext}
           disabled={!isValid}
-          className="flex-1 py-3 dark:text-white text-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold disabled:opacity-50"
+          className="flex-1 py-3 dark:text-white text-black bg-emerald-600 hover:bg-emerald-700  rounded-xl font-bold disabled:opacity-50"
         >
           ادامه
         </button>

@@ -54,14 +54,14 @@ export function SocialMedia({ socialMedia }: SocialMediaProps) {
       icon: AtSign,
       iconColor: "text-amber-500",
       username: socialMedia?.bale,
-      url: `https://bale.ai/${socialMedia?.bale}`,
+      url: `https://ble.ir/${socialMedia?.bale}`,
     },
     {
       name: "سروش",
       icon: MessageCircle,
       iconColor: "text-indigo-500",
       username: socialMedia?.soroush,
-      url: `https://soroush.ai/${socialMedia?.soroush}`,
+      url: `https://splus.ir/${socialMedia?.soroush}`,
     },
   ].filter((s) => s.username && s.username.trim() !== "");
 

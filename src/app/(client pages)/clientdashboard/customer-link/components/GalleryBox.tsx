@@ -333,7 +333,7 @@ export function GalleryBox({ linkId, onGalleryChange }: GalleryBoxProps) {
                                 />
                               </div>
                               {/* دکمه‌ها - همیشه در موبایل نمایش داده می‌شوند */}
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                              <div className="absolute inset-0 bg-black/50  group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
                                 <button
                                   onClick={() => setPreviewImage(image.image_url)}
                                   className="p-2 md:p-1.5 bg-white/20 rounded-lg hover:bg-white/30 active:bg-white/40"

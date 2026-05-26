@@ -72,7 +72,7 @@ export default function InstallPWA() {
   if (!isVisible) return null;
 
   return (
-    <div className="w-[95%] mx-auto mb-4 p-4 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-xl">
+    <div className="w-[95%] mx-auto mb-4 p-4 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-500/20 dark:border-blue-500/20 rounded-xl">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-blue-500 p-2 rounded-lg">
@@ -83,8 +83,10 @@ export default function InstallPWA() {
             )}
           </div>
           <div>
-            <p className="text-white text-sm font-bold">نصب اپلیکیشن آنتایم</p>
-            <p className="text-gray-400 text-xs">
+            <p className="text-gray-800 dark:text-white text-sm font-bold">
+              نصب اپلیکیشن آنتایم
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
               {isIOS 
                 ? "Add to Home Screen از طریق Safari" 
                 : "نصب برای دسترسی سریع‌تر"}
@@ -108,28 +110,30 @@ export default function InstallPWA() {
       
       {/* راهنمای مرحله به مرحله برای iOS */}
       {isIOS && (
-        <div className="mt-3 pt-3 border-t border-blue-500/20">
-          <p className="text-gray-400 text-xs mb-2">مراحل نصب:</p>
+        <div className="mt-3 pt-3 border-t border-blue-500/20 dark:border-blue-500/20">
+          <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">
+            مراحل نصب:
+          </p>
           <div className="flex items-center justify-around text-center">
             <div className="flex flex-col items-center">
-              <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mb-1">
-                <Share2 className="w-4 h-4 text-blue-400" />
+              <div className="w-8 h-8 bg-blue-500/20 dark:bg-blue-500/20 rounded-full flex items-center justify-center mb-1">
+                <Share2 className="w-4 h-4 text-blue-500 dark:text-blue-400" />
               </div>
-              <span className="text-gray-500 text-[10px]">1. کلیک Share</span>
+              <span className="text-gray-500 dark:text-gray-500 text-[10px]">1. کلیک Share</span>
             </div>
-            <div className="text-blue-500">→</div>
+            <div className="text-blue-500 dark:text-blue-400">→</div>
             <div className="flex flex-col items-center">
-              <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mb-1">
-                <Plus className="w-4 h-4 text-blue-400" />
+              <div className="w-8 h-8 bg-blue-500/20 dark:bg-blue-500/20 rounded-full flex items-center justify-center mb-1">
+                <Plus className="w-4 h-4 text-blue-500 dark:text-blue-400" />
               </div>
-              <span className="text-gray-500 text-[10px]">2. Add to Home Screen</span>
+              <span className="text-gray-500 dark:text-gray-500 text-[10px]">2. Add to Home Screen</span>
             </div>
-            <div className="text-blue-500">→</div>
+            <div className="text-blue-500 dark:text-blue-400">→</div>
             <div className="flex flex-col items-center">
-              <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mb-1">
-                <Download className="w-4 h-4 text-blue-400" />
+              <div className="w-8 h-8 bg-blue-500/20 dark:bg-blue-500/20 rounded-full flex items-center justify-center mb-1">
+                <Download className="w-4 h-4 text-blue-500 dark:text-blue-400" />
               </div>
-              <span className="text-gray-500 text-[10px]">3. Add</span>
+              <span className="text-gray-500 dark:text-gray-500 text-[10px]">3. Add</span>
             </div>
           </div>
         </div>

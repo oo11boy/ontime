@@ -221,71 +221,126 @@ function CreateLinkCallToAction({ onCreate }: { onCreate: () => void }) {
         </h1>
         <p className="text-gray-500 text-sm mt-2">مشتریات با یه کلیک، همه چی رو ببینن</p>
       </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <Globe className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <p className="font-bold text-gray-800 text-sm">🌐 نمایش در گوگل</p>
-            <p className="text-xs text-gray-500">صفحه اختصاصی شما در نتایج جستجوی گوگل نمایش داده میشه</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <Share className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <p className="font-bold text-gray-800 text-sm">📱 اشتراک در شبکه‌های اجتماعی</p>
-            <p className="text-xs text-gray-500">لینک صفحه رو میتونی در اینستاگرام، واتساپ، تلگرام و... بذاری</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <p className="font-bold text-gray-800 text-sm">👥 معرفی کامل کسب‌وکار</p>
-            <p className="text-xs text-gray-500">خدمات، ساعات کاری، آدرس، شماره تماس و نظرات مشتریان</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-3 text-center">
-        <p className="text-amber-700 text-sm flex items-center justify-center gap-1">
-          <Sparkles className="w-4 h-4" />
-          <span>✨ بعد از ساخت صفحه، می‌تونی قابلیت <span className="font-bold">ثبت نوبت آنلاین</span> رو هم فعال کنی</span>
-        </p>
-      </div>
-
       <button
         onClick={onCreate}
         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg"
       >
         <Rocket className="w-5 h-5" />
-        بساز صفحه اختصاصی من
+       صفحه اختصاصی من را بساز
         <Sparkles className="w-4 h-4" />
       </button>
+
+<div className="space-y-3">
+  {/* ثبت نوبت آنلاین */}
+  <div className="flex items-start gap-3 p-3 bg-white dark:bg-[#1a1e26] rounded-xl shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-md transition-shadow">
+    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    </div>
+    <div>
+      <p className="font-bold text-slate-800 dark:text-white text-sm">📅 ثبت نوبت آنلاین ۲۴ ساعته</p>
+      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+        مشتریان شما در هر ساعت از شبانه‌روز می‌توانند نوبت ثبت کنند و شما درخواست‌ها را تأیید یا رد می‌کنید
+      </p>
+    </div>
+  </div>
+
+  {/* نمایش در گوگل */}
+  <div className="flex items-start gap-3 p-3 bg-white dark:bg-[#1a1e26] rounded-xl shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-md transition-shadow">
+    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4-3-9s1.34-9 3-9m-9 9a9 9 0 019-9" />
+      </svg>
+    </div>
+    <div>
+      <p className="font-bold text-slate-800 dark:text-white text-sm">🔍 نمایش در نتایج گوگل</p>
+      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+        صفحه اختصاصی شما در جستجوی گوگل نمایش داده می‌شود و مشتریان به راحتی شما را پیدا می‌کنند
+      </p>
+    </div>
+  </div>
+
+  {/* اشتراک در شبکه‌های اجتماعی */}
+  <div className="flex items-start gap-3 p-3 bg-white dark:bg-[#1a1e26] rounded-xl shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-md transition-shadow">
+    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+      </svg>
+    </div>
+    <div>
+      <p className="font-bold text-slate-800 dark:text-white text-sm">📱 اشتراک‌گذاری در شبکه‌های اجتماعی</p>
+      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+        لینک صفحه خود را در اینستاگرام، واتساپ، تلگرام و سایر شبکه‌های اجتماعی به اشتراک بگذارید
+      </p>
+    </div>
+  </div>
+
+  {/* معرفی کامل کسب‌وکار */}
+  <div className="flex items-start gap-3 p-3 bg-white dark:bg-[#1a1e26] rounded-xl shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-md transition-shadow">
+    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+    </div>
+    <div>
+      <p className="font-bold text-slate-800 dark:text-white text-sm">🏢 معرفی کامل کسب‌وکار</p>
+      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+        نمایش خدمات، ساعات کاری، آدرس، شماره تماس و نظرات مشتریان در صفحه اختصاصی
+      </p>
+    </div>
+  </div>
+
+  {/* نمایش گالری نمونه کارها */}
+  <div className="flex items-start gap-3 p-3 bg-white dark:bg-[#1a1e26] rounded-xl shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-md transition-shadow">
+    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    </div>
+    <div>
+      <p className="font-bold text-slate-800 dark:text-white text-sm">🖼️ گالری تصاویر نمونه کار</p>
+      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+        نمایش تصاویر نمونه کارهای خود در صفحه اختصاصی برای جلب اعتماد بیشتر مشتریان
+      </p>
+    </div>
+  </div>
+
+  {/* ثبت نظر توسط مشتری */}
+  <div className="flex items-start gap-3 p-3 bg-white dark:bg-[#1a1e26] rounded-xl shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-md transition-shadow">
+    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    </div>
+    <div>
+      <p className="font-bold text-slate-800 dark:text-white text-sm">⭐ ثبت نظر و امتیاز توسط مشتری</p>
+      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+        مشتریان می‌توانند نظر و امتیاز خود را ثبت کنند و شما نظرات را در صفحه نمایش دهید
+      </p>
+    </div>
+  </div>
+</div>
+
+ 
+
 
       <div className="grid grid-cols-2 gap-2 text-center">
         <div className="p-2 bg-slate-50 rounded-xl">
           <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-          <p className="text-xs font-medium">بیو اینستاگرام</p>
+          <p className="text-xs text-black  font-bold">بیو اینستاگرام</p>
         </div>
         <div className="p-2 bg-slate-50 rounded-xl">
           <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-          <p className="text-xs font-medium">لینک واتساپ</p>
+          <p className="text-xs text-black  font-bold">لینک واتساپ</p>
         </div>
         <div className="p-2 bg-slate-50 rounded-xl">
           <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-          <p className="text-xs font-medium">نمایش در گوگل</p>
+          <p className="text-xs text-black  font-bold">نمایش در گوگل</p>
         </div>
         <div className="p-2 bg-slate-50 rounded-xl">
           <Check className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-          <p className="text-xs font-medium">کاملاً رایگان</p>
+          <p className="text-xs text-black  font-bold">کاملاً رایگان</p>
         </div>
       </div>
 
