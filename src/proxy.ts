@@ -23,7 +23,6 @@ export async function proxy(request: NextRequest) {
   const userType = request.cookies.get("user_type")?.value;
 
   // ========== سرویس فایل‌های آپلودی ==========
-  // اگر درخواست برای فایل آپلودی بود، مستقیماً سرو کن
   if (pathname.startsWith("/uploads/")) {
     const filePath = join(process.cwd(), "public", pathname);
     
@@ -56,10 +55,8 @@ export async function proxy(request: NextRequest) {
       }
     }
     
-    // اگر فایل وجود نداشت، 404 برگردان
     return new NextResponse("File not found", { status: 404 });
   }
-  // ========== انتهای سرویس فایل‌های آپلودی ==========
 
   // دریافت کوکی‌های احراز هویت
   const clientToken = request.cookies.get("authToken")?.value;
@@ -79,12 +76,10 @@ export async function proxy(request: NextRequest) {
 
   // --- وضعیت ب: حفاظت از مسیرهای پنل کلاینت ---
   if (pathname.startsWith("/clientdashboard")) {
-    // ۱. اگر اصلاً لاگین نیست
     if (!clientToken) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // ۲. اعتبارسنجی توکن JWT
     const userId = verifyToken(clientToken);
     if (!userId) {
       const response = NextResponse.redirect(new URL("/login", request.url));
@@ -93,7 +88,6 @@ export async function proxy(request: NextRequest) {
       return response;
     }
 
-    // ۳. اگر لاگین هست ولی پروفایل را تکمیل نکرده
     if (isRegistered === "false") {
       return NextResponse.redirect(new URL("/login?step=signup", request.url));
     }
@@ -108,14 +102,12 @@ export async function proxy(request: NextRequest) {
       pathname === path || pathname.startsWith(path + "/")
     );
     
-    // فقط برای مسیرهایی که نیاز به اشتراک دارند بررسی کن
     if (requiresSubscription) {
       let connection = null;
       
       try {
         connection = await dbPool.getConnection();
         
-        // دریافت اطلاعات کاربر
         const [users]: any = await connection.execute(
           `SELECT 
             u.id, 
@@ -127,7 +119,6 @@ export async function proxy(request: NextRequest) {
           [userId]
         );
         
-        // اگر کاربر وجود نداشت، به لاگین برگردان
         if (!users || users.length === 0) {
           return NextResponse.redirect(new URL("/login", request.url));
         }
@@ -135,14 +126,31 @@ export async function proxy(request: NextRequest) {
         const user = users[0];
         const now = new Date();
         
-        // بررسی اشتراک فعال (فقط پلن غیر از free و free_trial و تاریخ انقضا معتبر)
-        const hasActivePlan = user.plan_key && 
-                             user.plan_key !== "free" &&
-                             user.plan_key !== "free_trial" &&
-                             user.ended_at && 
-                             new Date(user.ended_at) > now;
+        // اصلاح: بررسی اشتراک فعال - پلن‌های رایگان هم اگر تاریخ انقضا دارند معتبر هستند
+        let hasActivePlan = false;
         
-        // اگر اشتراک فعال ندارد، ریدایرکت به صفحه خرید پلن
+        // اگر تاریخ انقضا وجود دارد و معتبر است
+        if (user.ended_at && new Date(user.ended_at) > now) {
+          hasActivePlan = true;
+        }
+        
+        // اگر پلن خاصی دارد (غیر از null)
+        if (user.plan_key && user.plan_key !== "expired") {
+          // اگر تاریخ انقضا دارد که قبلاً بررسی شد
+          // اگر تاریخ انقضا ندارد، پلن‌های پولی را قبول کن
+          if (!user.ended_at && user.plan_key !== "free" && user.plan_key !== "free_trial") {
+            hasActivePlan = true;
+          }
+        }
+        
+        console.log("[Middleware] Subscription Check:", {
+          userId: user.id,
+          plan_key: user.plan_key,
+          ended_at: user.ended_at,
+          now: now.toISOString(),
+          hasActivePlan: hasActivePlan
+        });
+        
         if (!hasActivePlan) {
           const pricingUrl = new URL("/clientdashboard/pricingplan?expired=true", request.url);
           return NextResponse.redirect(pricingUrl);
@@ -150,7 +158,6 @@ export async function proxy(request: NextRequest) {
         
       } catch (error) {
         console.error("[Middleware] Error checking subscription:", error);
-        // در صورت خطا، اجازه دسترسی بده
         return NextResponse.next();
       } finally {
         if (connection) connection.release();
@@ -172,7 +179,6 @@ export async function proxy(request: NextRequest) {
     }
   }
   
-  // دسترسی کارمند (staff)
   if (
     userType === "staff" &&
     (pathname === "/clientdashboard/Staffs" ||
@@ -188,7 +194,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/uploads/:path*",  // اضافه کردن مسیر آپلودها
+    "/uploads/:path*",
     "/login",
     "/admin-login",
     "/clientdashboard/:path*",
