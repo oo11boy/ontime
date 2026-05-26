@@ -71,6 +71,22 @@ const PATTERNS = {
   NEW_BOOKING_REJECTED: "ajx0w6hmcqpw948",
 };
 
+// تابع دریافت تنظیمات پیامک تایید/رد
+async function getApprovalSmsSettings(userId: number): Promise<boolean> {
+  try {
+    const settings = await query<any>(
+      `SELECT sms_approval_enabled FROM customer_links 
+       WHERE user_id = ? AND is_deleted = 0 AND is_active = 1 
+       LIMIT 1`,
+      [userId]
+    );
+    return settings[0]?.sms_approval_enabled ?? 1;
+  } catch (error) {
+    console.error("Error getting approval SMS settings:", error);
+    return true; // پیش‌فرض: فعال
+  }
+}
+
 // تابع ارسال پیامک نتیجه درخواست تغییر یا لغو
 async function sendChangeNotification(
   customerPhone: string,
@@ -84,6 +100,13 @@ async function sendChangeNotification(
   req: NextRequest,
   requestType?: string,
 ) {
+  // بررسی تنظیمات قبل از ارسال
+  const isApprovalSmsEnabled = await getApprovalSmsSettings(userId);
+  if (!isApprovalSmsEnabled) {
+    console.log(`[SMS] ارسال پیامک نتیجه تایید/رد غیرفعال شده است (userId: ${userId})`);
+    return true;
+  }
+
   let patternCode = status === "approved" ? PATTERNS.APPROVED : PATTERNS.REJECTED;
   
   if (status === "rejected" && requestType === "new_booking") {
@@ -162,6 +185,13 @@ async function sendNewBookingApprovalSMS(
   userId: number,
   req: NextRequest,
 ) {
+  // بررسی تنظیمات قبل از ارسال
+  const isApprovalSmsEnabled = await getApprovalSmsSettings(userId);
+  if (!isApprovalSmsEnabled) {
+    console.log(`[SMS] ارسال پیامک تایید نوبت جدید غیرفعال شده است (userId: ${userId})`);
+    return true;
+  }
+
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ||
     req.headers.get("origin") ||
@@ -220,6 +250,13 @@ async function sendNewBookingRejectionSMS(
   userId: number,
   req: NextRequest,
 ) {
+  // بررسی تنظیمات قبل از ارسال
+  const isApprovalSmsEnabled = await getApprovalSmsSettings(userId);
+  if (!isApprovalSmsEnabled) {
+    console.log(`[SMS] ارسال پیامک رد نوبت جدید غیرفعال شده است (userId: ${userId})`);
+    return true;
+  }
+
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ||
     req.headers.get("origin") ||
@@ -723,6 +760,7 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           ? "درخواست تغییر زمان با موفقیت تایید شد (پیامکی ارسال نشد)"
           : "درخواست تغییر زمان با موفقیت تایید شد";
 
+        // فقط در صورت عدم وجود force، پیامک ارسال شود
         if (!force) {
           const salonName = change.business_name?.trim() || "مجموعه";
           await sendChangeNotification(

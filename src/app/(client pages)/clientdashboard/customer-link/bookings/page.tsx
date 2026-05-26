@@ -799,6 +799,7 @@ export default function BookingChangesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isForceMode, setIsForceMode] = useState(false);
+  const [isFeatureEnabled, setIsFeatureEnabled] = useState(false);
   const itemsPerPage = 8;
 
   const checkBookingFeatureAccess = useCallback(async () => {
@@ -811,12 +812,16 @@ export default function BookingChangesPage() {
 
       if (!data.success || !data.isEnabled) {
         setShowUpgradeModal(true);
+        setIsFeatureEnabled(false);
         return false;
       }
+      setIsFeatureEnabled(true);
+      setShowUpgradeModal(false);
       return true;
     } catch (error) {
       console.error("Error checking booking feature access:", error);
       setShowUpgradeModal(true);
+      setIsFeatureEnabled(false);
       return false;
     } finally {
       setCheckingAccess(false);
@@ -824,9 +829,17 @@ export default function BookingChangesPage() {
   }, []);
 
   const fetchChanges = useCallback(async () => {
+    if (!isFeatureEnabled) return;
+    
     setLoading(true);
     try {
       const res = await fetch("/api/client/booking-changes");
+      
+      if (res.status === 403) {
+        await checkBookingFeatureAccess();
+        return;
+      }
+      
       const data = await res.json();
 
       if (data.success) {
@@ -839,16 +852,26 @@ export default function BookingChangesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isFeatureEnabled, checkBookingFeatureAccess]);
 
   useEffect(() => {
-    checkBookingFeatureAccess().then((hasAccess) => {
-      if (hasAccess) {
-        fetchChanges();
+    checkBookingFeatureAccess();
+  }, [checkBookingFeatureAccess]);
 
-      }
-    });
-  }, [checkBookingFeatureAccess, fetchChanges]);
+  useEffect(() => {
+    if (isFeatureEnabled) {
+      fetchChanges();
+    }
+  }, [isFeatureEnabled, fetchChanges]);
+
+  // بررسی دوره‌ای هر 5 دقیقه
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkBookingFeatureAccess();
+    }, 300000); // 5 دقیقه
+    
+    return () => clearInterval(interval);
+  }, [checkBookingFeatureAccess]);
 
   const needsSmsForChange = (change: BookingChange): boolean => {
     return change.request_type === "reschedule" || change.request_type === "new_booking";

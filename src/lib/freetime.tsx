@@ -1,6 +1,6 @@
 // src/lib/freetime.ts
 export const freetime = {
-  sms: 100,        // عدد خام
+  sms: 50,        // عدد خام
   plan: "۲ هفته",   // متن آماده برای نمایش
   planValue: 2,     // مقدار عددی (برای محاسبات)
   planUnit: "week"  // واحد (month/week)

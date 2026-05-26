@@ -51,14 +51,6 @@ async function sendSmsToBusinessOwner(
     const cleanPhone = ownerPhone.replace(/\D/g, "").slice(-10);
     const recipient = `+98${cleanPhone}`;
     
-    // پیام مناسب برای تغییر نوبت
-    let messageText = "";
-    if (isReschedule && newDate && newTime) {
-      messageText = `مشتری ${customerName} درخواست تغییر زمان نوبت به تاریخ ${newDate} ساعت ${newTime} را ثبت کرد. لطفاً برای بررسی وارد پنل شوید.`;
-    } else {
-      messageText = `مشتری ${customerName} درخواست نوبت جدید برای تاریخ ${bookingDate} ساعت ${bookingTime} را ثبت کرد. لطفاً برای بررسی وارد پنل شوید.`;
-    }
-    
     const payload = {
       sending_type: "pattern",
       from_number: SENDER_NUMBER,
@@ -109,7 +101,7 @@ async function deductSmsCredits(userId: number, bookingId: number, amount: numbe
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3000";
     
-    const response = await fetch(`${appUrl}/api/customer/sms/deduct`, {
+    const response = await fetch(`${appUrl}/api/sms/deduct`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -302,6 +294,17 @@ export async function POST(req: NextRequest) {
     const persianDate = formatPersianDate(booking.booking_date);
     const timeDisplay = booking.booking_time;
 
+    // دریافت تنظیمات پیامک از جدول customer_links
+    const smsSettings = await query<any>(
+      `SELECT sms_reschedule_enabled FROM customer_links 
+       WHERE user_id = ? AND is_deleted = 0 AND is_active = 1 
+       LIMIT 1`,
+      [booking.user_id]
+    );
+    
+    const isRescheduleSmsEnabled = smsSettings[0]?.sms_reschedule_enabled ?? 1;
+    console.log(`[${requestId}] وضعیت ارسال پیامک تغییر نوبت: ${isRescheduleSmsEnabled ? "فعال" : "غیرفعال"}`);
+
     // ==================== عملیات لغو نوبت ====================
     if (action === "cancel") {
       if (booking.status !== "active") {
@@ -471,17 +474,27 @@ export async function POST(req: NextRequest) {
         ]
       );
 
-      // ========== کسر 2 واحد از اعتبار ==========
+      // ========== کسر 2 واحد از اعتبار (همیشه و اجباری) ==========
       console.log(`[${requestId}] کسر 2 واحد از اعتبار برای درخواست تغییر...`);
-      await deductSmsCredits(booking.user_id, booking.id, 2);
+      let deductSuccess = false;
+      try {
+        deductSuccess = await deductSmsCredits(booking.user_id, booking.id, 2);
+        if (deductSuccess) {
+          console.log(`[${requestId}] ✅ کسر اعتبار با موفقیت انجام شد`);
+        } else {
+          console.log(`[${requestId}] ⚠️ خطا در کسر اعتبار`);
+        }
+      } catch (deductError) {
+        console.error(`[${requestId}] ⚠️ خطا در کسر اعتبار:`, deductError);
+      }
 
-      // ========== ارسال پیامک به صاحب کسب‌وکار ==========
+      // ========== ارسال پیامک به صاحب کسب‌وکار (فقط در صورت فعال بودن) ==========
       const ownerPhone = booking.business_phone;
       const businessName = booking.business_name || "کسب‌وکار";
       
-      if (ownerPhone) {
-        console.log(`[${requestId}] ارسال پیامک به صاحب کسب‌وکار (${ownerPhone})...`);
-        await sendSmsToBusinessOwner(
+      if (isRescheduleSmsEnabled && ownerPhone) {
+        console.log(`[${requestId}] 📱 ارسال پیامک به صاحب کسب‌وکار (${ownerPhone}) (فعال)...`);
+        const smsResult = await sendSmsToBusinessOwner(
           ownerPhone,
           booking.client_name,
           booking.booking_date,
@@ -491,13 +504,28 @@ export async function POST(req: NextRequest) {
           newDate,
           newTime
         );
-      } else {
+        
+        if (smsResult.success) {
+          console.log(`[${requestId}] ✅ پیامک با موفقیت ارسال شد`);
+        } else {
+          console.log(`[${requestId}] ❌ خطا در ارسال پیامک: ${smsResult.message}`);
+        }
+      } else if (!isRescheduleSmsEnabled) {
+        console.log(`[${requestId}] ⚠️ ارسال پیامک تغییر نوبت غیرفعال شده است`);
+      } else if (!ownerPhone) {
         console.log(`[${requestId}] ⚠️ شماره تلفن صاحب کسب‌وکار یافت نشد`);
+      }
+
+      // پیام نهایی به مشتری
+      let finalMessage = "درخواست تغییر زمان نوبت با موفقیت ثبت شد. نتیجه درخواست شما از طریق پیامک اطلاع داده می‌شود.";
+      
+      if (!deductSuccess) {
+        finalMessage += " (توجه: امکان کسر اعتبار وجود نداشت، لطفاً با پشتیبانی تماس بگیرید)";
       }
 
       return NextResponse.json({
         success: true,
-        message: "درخواست تغییر زمان نوبت با موفقیت ثبت شد. نتیجه درخواست شما از طریق پیامک اطلاع داده می‌شود.",
+        message: finalMessage,
         requires_approval: true,
       });
     }

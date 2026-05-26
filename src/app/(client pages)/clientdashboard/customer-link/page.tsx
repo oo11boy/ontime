@@ -4,31 +4,20 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  LinkIcon,
   Copy,
   CheckCircle,
-  Edit,
   Sparkles,
   Crown,
   Eye,
   Share2,
   ExternalLink,
-  Instagram,
   Rocket,
   Loader2,
-  Calendar as CalendarIcon,
-  RefreshCw,
-  MessageCircle,
   Check,
   Zap,
   Users,
   Globe,
-  Smartphone,
   Share,
-  TrendingUp,
-  Send,
-  Phone,
-  AtSign
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { CreateCustomerLinkWizard } from "./components/CreateCustomerLinkWizard";
@@ -37,6 +26,7 @@ import { ServicesBox } from "./components/ServicesBox";
 import { WorkingHoursBox } from "./components/WorkingHoursBox";
 import { SocialMediaBox } from "./components/SocialMediaBox";
 import { GalleryBox } from "./components/GalleryBox";
+import { PlanStatusBox } from "./components/PlanStatusBox";
 
 // ==================== Types ====================
 interface SocialMedia {
@@ -86,18 +76,12 @@ interface ExistingLink {
 // ==================== کامپوننت نمایش لینک موجود ====================
 function ExistingLinkCard({ 
   link, 
-  onEdit, 
-  onRefresh,
-  isLoading,
   onBusinessInfoSave,
   onServicesChange,
   onWorkingHoursChange,
   onSocialMediaChange
 }: { 
   link: ExistingLink; 
-  onEdit: () => void;
-  onRefresh: () => void;
-  isLoading: boolean;
   onBusinessInfoSave: (data: {
     business_name: string;
     business_address: string;
@@ -113,7 +97,6 @@ function ExistingLinkCard({
   onSocialMediaChange: (socialMedia: SocialMedia) => Promise<void>;
 }) {
   const [copied, setCopied] = useState(false);
-  const router = useRouter();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`https://${link.fullUrl}`);
@@ -163,7 +146,6 @@ function ExistingLinkCard({
             <Crown className="w-4 h-4" />
             <span className="text-xs font-medium">لینک اختصاصی شما</span>
           </div>
-      
         </div>
         
         <div className="bg-white/10 rounded-xl p-2">
@@ -186,10 +168,8 @@ function ExistingLinkCard({
         </div>
       </div>
 
-<GalleryBox
-  linkId={parseInt(link.id)}  // تبدیل string به number
+      <GalleryBox linkId={parseInt(link.id)} />
 
-/>
       {/* باکس اطلاعات کسب‌وکار */}
       <BusinessInfoBox
         businessName={link.business_name}
@@ -323,9 +303,36 @@ export default function CustomerLinkHomePage() {
   const [existingLink, setExistingLink] = useState<ExistingLink | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [planStatus, setPlanStatus] = useState<{
+    isEnabled: boolean;
+    expiryDate: string | null;
+    daysRemaining: number;
+  }>({ isEnabled: false, expiryDate: null, daysRemaining: 0 });
+  const [hasPurchasedPlan, setHasPurchasedPlan] = useState(false);
+
+  const fetchPlanStatus = async () => {
+    try {
+      const res = await fetch("/api/client/customer-link/booking-feature-status");
+      const data = await res.json();
+      console.log("=== Plan Status Response ===", data);
+      
+      if (data.success) {
+        setPlanStatus({
+          isEnabled: data.isEnabled,
+          expiryDate: data.expiryDate,
+          daysRemaining: data.daysRemaining || 0,
+        });
+        
+        // اگر expiryDate وجود داشته باشد، یعنی قبلاً پلن خریده شده
+        // (حتی اگر منقضی شده باشد)
+        setHasPurchasedPlan(!!data.expiryDate);
+      }
+    } catch (error) {
+      console.error("Error fetching plan status:", error);
+    }
+  };
 
   const fetchCustomerLink = async () => {
     try {
@@ -369,6 +376,7 @@ export default function CustomerLinkHomePage() {
 
   useEffect(() => {
     fetchCustomerLink();
+    fetchPlanStatus();
   }, []);
 
   const handleCreateSuccess = () => {
@@ -399,13 +407,6 @@ export default function CustomerLinkHomePage() {
       });
       setShowEditModal(true);
     }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchCustomerLink();
-    setIsRefreshing(false);
-    toast.success("آمار بروز شد");
   };
 
   const handleBusinessInfoSave = async (data: {
@@ -566,16 +567,27 @@ export default function CustomerLinkHomePage() {
         </div>
 
         {hasLink && existingLink ? (
-          <ExistingLinkCard 
-            link={existingLink} 
-            onEdit={handleEditLink}
-            onRefresh={handleRefresh}
-            isLoading={isRefreshing}
-            onBusinessInfoSave={handleBusinessInfoSave}
-            onServicesChange={handleServicesChange}
-            onWorkingHoursChange={handleWorkingHoursChange}
-            onSocialMediaChange={handleSocialMediaChange}
-          />
+          <>
+            {/* باکس پلن - فقط در صورتی که قبلاً پلن خریده شده باشد */}
+            {hasPurchasedPlan && (
+              <div className="mb-4">
+                <PlanStatusBox 
+                  expiryDate={planStatus.expiryDate}
+                  daysRemaining={planStatus.daysRemaining}
+                  hasPurchasedPlan={hasPurchasedPlan}
+                  onRefresh={fetchPlanStatus}
+                />
+              </div>
+            )}
+            
+            <ExistingLinkCard 
+              link={existingLink} 
+              onBusinessInfoSave={handleBusinessInfoSave}
+              onServicesChange={handleServicesChange}
+              onWorkingHoursChange={handleWorkingHoursChange}
+              onSocialMediaChange={handleSocialMediaChange}
+            />
+          </>
         ) : (
           <CreateLinkCallToAction onCreate={() => setShowCreateModal(true)} />
         )}

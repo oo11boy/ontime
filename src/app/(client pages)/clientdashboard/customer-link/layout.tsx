@@ -21,15 +21,17 @@ import {
   Home,
   Crown,
   MessageSquare,
+  Settings, // اضافه کردن آیکون تنظیمات
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
+// حذف "plans" و اضافه کردن "settings"
 const tabs = [
   { id: "create-link", label: "لینک من", icon: LinkIcon, activeIcon: Zap, href: "/clientdashboard/customer-link" },
   { id: "analytics", label: "آمار", icon: BarChart3, activeIcon: TrendingUp, href: "/clientdashboard/customer-link/analytics" },
   { id: "bookings", label: "نوبت‌ها", icon: Calendar, activeIcon: Calendar, href: "/clientdashboard/customer-link/bookings" },
   { id: "reviews", label: "نظرات", icon: Star, activeIcon: Star, href: "/clientdashboard/customer-link/reviews" },
-  { id: "plans", label: "پلن‌ها", icon: Crown, activeIcon: Crown, href: "/clientdashboard/customer-link/plans" },
+  { id: "settings", label: "تنظیمات", icon: Settings, activeIcon: Settings, href: "/clientdashboard/customer-link/settings" }, // جدید
 ];
 
 export default function CustomerLinkLayout({

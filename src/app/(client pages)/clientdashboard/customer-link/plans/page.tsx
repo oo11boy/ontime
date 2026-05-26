@@ -1,7 +1,7 @@
 // src/app/clientdashboard/customer-link/plans/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
   Crown, 
@@ -13,14 +13,11 @@ import {
   Lock,
   Clock,
   Users,
-  Smartphone,
   Bell,
   TrendingUp,
   Rocket,
   Zap,
   ArrowLeft,
-  Gift,
-  Timer,
   ListTodo,
   XCircle,
   Edit2,
@@ -42,6 +39,9 @@ export default function PlansPage() {
     daysRemaining: number;
   }>({ isEnabled: false, expiryDate: null, daysRemaining: 0 });
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number }>({ days: 0, hours: 0, minutes: 0 });
+  
+  // ref برای جلوگیری از اجرای دوباره toast
+  const toastShownRef = useRef(false);
 
   useEffect(() => {
     const fetchUserStatus = async () => {
@@ -101,17 +101,64 @@ export default function PlansPage() {
     }
   }, [bookingFeatureStatus.isEnabled, bookingFeatureStatus.expiryDate]);
 
+  // حل مشکل دوبار تودیس و پاک نشدن خودکار
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     
-    if (paymentStatus === "success") {
-      toast.success("🎉 تبریک! ثبت نوبت مشتریان فعال شد!", { duration: 4000 });
-      setTimeout(() => {
-        window.location.href = "/clientdashboard/customer-link/plans";
-      }, 2000);
-    } else if (paymentStatus === "failed") {
-      toast.error("پرداخت ناموفق بود. دوباره تلاش کن.");
+    // فقط یکبار اجرا بشه و اگر قبلاً نشون داده شده تکرار نشه
+    if (paymentStatus === "success" && !toastShownRef.current) {
+      toastShownRef.current = true;
+      
+      // پاک کردن تودیس‌های قبلی قبل از نمایش جدید
+      toast.dismiss();
+      
+      toast.success("🎉 تبریک! ثبت نوبت مشتریان فعال شد!", { 
+        duration: 5000,
+        id: "payment-success" // id یکتا برای جلوگیری از داپلیکیت
+      });
+      
+      // پاک کردن پارامتر از URL بدون رفرش صفحه
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      window.history.replaceState({}, "", url.toString());
+      
+      // رفرش کردن دیتا بعد از پرداخت موفق
+      const refreshData = async () => {
+        try {
+          const featureRes = await fetch("/api/client/customer-link/booking-feature-status");
+          const featureData = await featureRes.json();
+          if (featureData.success) {
+            setBookingFeatureStatus({
+              isEnabled: featureData.isEnabled,
+              expiryDate: featureData.expiryDate,
+              daysRemaining: featureData.daysRemaining || 0
+            });
+          }
+        } catch (error) {
+          console.error("Error refreshing data:", error);
+        }
+      };
+      
+      refreshData();
+      
+    } else if (paymentStatus === "failed" && !toastShownRef.current) {
+      toastShownRef.current = true;
+      toast.dismiss();
+      toast.error("پرداخت ناموفق بود. دوباره تلاش کن.", { 
+        duration: 4000,
+        id: "payment-failed"
+      });
+      
+      // پاک کردن پارامتر از URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      window.history.replaceState({}, "", url.toString());
     }
+    
+    // ریست ref وقتی کامپوننت unmount میشه
+    return () => {
+      toastShownRef.current = false;
+    };
   }, [searchParams]);
 
   const handlePurchase = async () => {
@@ -136,7 +183,15 @@ export default function PlansPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-5 pb-28">
-      <Toaster position="top-center" />
+      <Toaster 
+        position="top-center" 
+        toastOptions={{
+          duration: 4000,
+          style: {
+            direction: "rtl",
+          },
+        }}
+      />
       
       {/* دکمه بازگشت */}
       <button onClick={() => router.back()} className="flex items-center gap-1 text-gray-500 text-sm">
@@ -161,15 +216,40 @@ export default function PlansPage() {
             <p className="text-xs text-emerald-600 mb-2">⏳ زمان باقیمانده از اشتراک</p>
             <div className="flex justify-center gap-3">
               <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.days} روز</div>
+                <div className="text-2xl font-bold text-emerald-700 bg-white px-3 py-1 rounded-lg min-w-[55px]">{timeLeft.days}</div>
+                <p className="text-xs text-emerald-600 mt-1">روز باقی مانده</p>
               </div>
-             
             </div>
+          </div>
+          
+          {/* بخش تمدید اشتراک */}
+          <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <p className="text-xs font-bold text-amber-700">تمدید اشتراک</p>
+            </div>
+            <p className="text-xs text-amber-600 mb-3">
+              با تمدید اشتراک، تاریخ جدید از <span className="font-bold">امروز</span> محاسبه می‌شود و 
+              {bookingFeatureStatus.expiryDate && (
+                <span> ۳ ماه به تاریخ فعلی اضافه می‌گردد</span>
+              )}
+            </p>
+            <button
+              onClick={handlePurchase}
+              disabled={isPending}
+              className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
+            >
+              {isPending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> در حال اتصال...</>
+              ) : (
+                <><Rocket className="w-4 h-4" /> تمدید اشتراک (۲۵۸ هزار تومان)</>
+              )}
+            </button>
           </div>
           
           <div className="mt-4 flex gap-3">
             <button onClick={() => router.push("/clientdashboard/customer-link")} className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium">لینک من</button>
-            <button onClick={() => router.push("/clientdashboard/booking-changes")} className="flex-1 py-2 border-2 border-emerald-400 text-emerald-700 rounded-xl text-sm font-medium">مدیریت نوبت‌ها</button>
+            <button onClick={() => router.push("/clientdashboard/customer-link/bookings")} className="flex-1 py-2 border-2 border-emerald-400 text-emerald-700 rounded-xl text-sm font-medium">مدیریت نوبت‌ها</button>
           </div>
         </div>
       )}
@@ -198,25 +278,32 @@ export default function PlansPage() {
         </>
       )}
 
-      {/* ========== کارت اصلی پلن (فقط وقتی فعال نیست) ========== */}
+      {/* ========== کارت اصلی پلن ========== */}
       {!isBookingEnabled && (
         <div className="relative bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl overflow-hidden border-2 border-emerald-300">
-     
           <div className="p-5">
             {/* قیمت */}
             <div className="text-center mb-4">
               <div className="inline-flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-emerald-700">۲۵۸</span>
-                
                 <span className="text-gray-500">هزار تومان</span>
-                                <span className="text-4xl font-bold text-emerald-700">۳ ماهه</span>
+                <span className="text-4xl font-bold text-emerald-700">۳ ماهه</span>
               </div>
-  
               <p className="text-sm text-emerald-600 font-bold mt-1">✨ فقط ۸۶ هزار تومان در ماه</p>
               <p className="text-xs text-gray-400 line-through">قبلاً ۳۲۴ هزار تومان</p>
             </div>
 
-            {/* مزایا - جدید با توضیحات کامل */}
+            {/* توضیح تمدید برای کسانی که قبلاً خرید داشتند */}
+            {bookingFeatureStatus.expiryDate && (
+              <div className="mb-3 p-2 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-[10px] text-amber-700 text-center flex items-center justify-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  با خرید مجدد، تاریخ اشتراک از امروز محاسبه می‌شود
+                </p>
+              </div>
+            )}
+
+            {/* مزایا */}
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 p-2 bg-white/50 rounded-xl">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
@@ -295,7 +382,7 @@ export default function PlansPage() {
               {isPending ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> در حال اتصال...</>
               ) : (
-                <><Rocket className="w-5 h-5" /> همین الان شروع کن!</>
+                <><Rocket className="w-5 h-5" /> {bookingFeatureStatus.expiryDate ? "تمدید اشتراک" : "همین الان شروع کن!"}</>
               )}
             </button>
 
@@ -391,7 +478,6 @@ export default function PlansPage() {
             <p className="font-medium text-gray-700 text-xs">❓ بعد ۳ ماه چی؟</p>
             <p className="text-xs text-gray-500">می‌تونی تمدید کنی یا بمونه همون حالت رایگان (فقط صفحه اختصاصی).</p>
           </div>
-       
         </div>
       </div>
 

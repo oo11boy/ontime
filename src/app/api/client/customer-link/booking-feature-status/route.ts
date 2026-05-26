@@ -14,38 +14,83 @@ export const GET = withAuth(async (req: NextRequest, context) => {
       `SELECT 
         id,
         booking_feature_enabled,
-        booking_feature_expiry,
-        CASE 
-          WHEN booking_feature_enabled = 1 AND booking_feature_expiry >= CURDATE() 
-          THEN 1 
-          ELSE 0 
-        END as is_active
+        booking_feature_expiry
       FROM customer_links 
-      WHERE user_id = ? AND is_deleted = 0
+      WHERE user_id = ? AND is_deleted = 0 AND is_active = 1
       LIMIT 1`,
       [userId]
     );
     
-    connection.release();
-    
     if (!links || links.length === 0) {
-      // کاربر لینک اختصاصی ندارد -> دسترسی ندارد
+      connection.release();
       return NextResponse.json({
         success: true,
         isEnabled: false,
         hasLink: false,
+        expiryDate: null,
+        daysRemaining: 0,
         message: "لینک اختصاصی ساخته نشده است"
       });
     }
     
     const link = links[0];
-    const isEnabled = link.is_active === 1;
+    let isEnabled = link.booking_feature_enabled === 1;
+    const expiryDate = link.booking_feature_expiry;
+    let needsUpdate = false;
+    
+    // بررسی تاریخ انقضا
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (expiryDate && isEnabled) {
+      const expiry = new Date(expiryDate);
+      expiry.setHours(0, 0, 0, 0);
+      
+      // اگر تاریخ انقضا گذشته باشد
+      if (expiry < today) {
+        isEnabled = false;
+        needsUpdate = true;
+        console.log(`[EXPIRY] Plan expired for user ${userId}. Expiry date: ${expiryDate}`);
+      }
+    }
+    
+    // آپدیت خودکار دیتابیس اگر تاریخ انقضا گذشته باشد
+    if (needsUpdate) {
+      await connection.execute(
+        `UPDATE customer_links 
+         SET booking_feature_enabled = 0, 
+             updated_at = NOW() 
+         WHERE id = ?`,
+        [link.id]
+      );
+      console.log(`[EXPIRY] Updated customer_links: set booking_feature_enabled = 0 for id ${link.id}`);
+    }
+    
+    connection.release();
+    
+    // محاسبه روزهای باقیمانده
+    let daysRemaining = 0;
+    if (isEnabled && expiryDate) {
+      const expiry = new Date(expiryDate);
+      expiry.setHours(0, 0, 0, 0);
+      const diffTime = expiry.getTime() - today.getTime();
+      daysRemaining = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    }
+    
+    console.log("Booking Feature Status:", {
+      userId,
+      isEnabled,
+      expiryDate,
+      daysRemaining,
+      needsUpdate
+    });
     
     return NextResponse.json({
       success: true,
       isEnabled: isEnabled,
       hasLink: true,
-      expiryDate: link.booking_feature_expiry,
+      expiryDate: expiryDate,
+      daysRemaining: daysRemaining,
       message: isEnabled ? "دسترسی فعال است" : "دسترسی فعال نیست"
     });
     

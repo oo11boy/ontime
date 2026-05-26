@@ -96,7 +96,6 @@ async function sendSmsToBusinessOwner(
     console.log("[SMS] ارسال به IPPanel:", {
       to: recipient,
       template: "0y9hfxw9c5b0yh3",
-      params: payload.params,
     });
     
     const response = await fetch("https://edge.ippanel.com/v1/api/send", {
@@ -111,7 +110,7 @@ async function sendSmsToBusinessOwner(
     const result = await response.json();
     
     if (response.ok) {
-      console.log("[SMS] پیامک با موفقیت ارسال شد:", result);
+      console.log("[SMS] پیامک با موفقیت ارسال شد");
       return { success: true };
     } else {
       console.error("[SMS] خطا از IPPanel:", result);
@@ -166,6 +165,15 @@ export async function POST(req: NextRequest) {
     
     const ownerPhone = userData[0]?.phone || "";
     const businessName = userData[0]?.business_name || userData[0]?.name || "کسب‌وکار";
+    
+    // دریافت تنظیمات پیامک از جدول customer_links
+    const smsSettings = await query<any>(
+      `SELECT sms_new_booking_enabled FROM customer_links WHERE slug = ? AND user_id = ?`,
+      [slug, userId]
+    );
+    
+    const isNewBookingSmsEnabled = smsSettings[0]?.sms_new_booking_enabled ?? 1;
+    console.log(`[${requestId}] وضعیت ارسال پیامک نوبت جدید: ${isNewBookingSmsEnabled ? "فعال" : "غیرفعال"}`);
     
     // دریافت اطلاعات خدمات
     const servicesList = await query(
@@ -251,28 +259,8 @@ export async function POST(req: NextRequest) {
       await query('COMMIT');
       console.log(`[${requestId}] ✅ نوبت با ID ${bookingId} ثبت شد`);
       
-      // ========== ارسال پیامک به صاحب کسب‌وکار ==========
-      if (ownerPhone) {
-        console.log(`[${requestId}] 📱 ارسال پیامک به ${ownerPhone}`);
-        const smsResult = await sendSmsToBusinessOwner(
-          ownerPhone,
-          customer_name,
-          booking_date,
-          booking_time,
-          servicesNames,
-          businessName
-        );
-        
-        if (smsResult.success) {
-          console.log(`[${requestId}] ✅ پیامک با موفقیت ارسال شد`);
-        } else {
-          console.log(`[${requestId}] ❌ خطا در ارسال پیامک: ${smsResult.message}`);
-        }
-      } else {
-        console.log(`[${requestId}] ⚠️ شماره تلفن صاحب کسب‌وکار یافت نشد`);
-      }
-      
-      // ========== کسر 2 واحد از اعتبار ==========
+      // ========== کسر 2 واحد از اعتبار (همیشه و اجباری) ==========
+      let deductSuccess = false;
       try {
         const deductResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/sms/deduct`, {
           method: "POST",
@@ -287,6 +275,7 @@ export async function POST(req: NextRequest) {
         
         const deductResult = await deductResponse.json();
         if (deductResult.success) {
+          deductSuccess = true;
           console.log(`[${requestId}] ✅ 2 واحد از اعتبار کسر شد. باقیمانده: ${deductResult.remainingBalance}`);
         } else {
           console.log(`[${requestId}] ⚠️ خطا در کسر اعتبار: ${deductResult.message}`);
@@ -295,9 +284,39 @@ export async function POST(req: NextRequest) {
         console.error(`[${requestId}] ⚠️ خطا در کسر اعتبار:`, deductError);
       }
       
+      // ========== ارسال پیامک به صاحب کسب‌وکار (فقط در صورت فعال بودن) ==========
+      if (isNewBookingSmsEnabled && ownerPhone) {
+        console.log(`[${requestId}] 📱 ارسال پیامک به ${ownerPhone} (فعال)`);
+        const smsResult = await sendSmsToBusinessOwner(
+          ownerPhone,
+          customer_name,
+          booking_date,
+          booking_time,
+          servicesNames,
+          businessName
+        );
+        
+        if (smsResult.success) {
+          console.log(`[${requestId}] ✅ پیامک با موفقیت ارسال شد`);
+        } else {
+          console.log(`[${requestId}] ❌ خطا در ارسال پیامک: ${smsResult.message}`);
+        }
+      } else if (!isNewBookingSmsEnabled) {
+        console.log(`[${requestId}] ⚠️ ارسال پیامک نوبت جدید غیرفعال شده است`);
+      } else if (!ownerPhone) {
+        console.log(`[${requestId}] ⚠️ شماره تلفن صاحب کسب‌وکار یافت نشد`);
+      }
+      
+      // پیام نهایی به مشتری
+      let finalMessage = "درخواست نوبت شما ثبت شد و پس از تأیید مدیر، پیامک تأیید برای شما ارسال می‌شود";
+      
+      if (!deductSuccess) {
+        finalMessage += " (توجه: امکان کسر اعتبار وجود نداشت، لطفاً با پشتیبانی تماس بگیرید)";
+      }
+      
       return NextResponse.json({
         success: true,
-        message: "درخواست نوبت شما ثبت شد و پس از تأیید مدیر، پیامک تأیید برای شما ارسال می‌شود",
+        message: finalMessage,
         bookingId: bookingId,
       });
       
