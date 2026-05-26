@@ -94,24 +94,7 @@ export function WorkingHours({ offDays = [], workShifts = [] }: WorkingHoursProp
         </div>
       </div>
 
-      {/* وضعیت امروز - با رنگ برجسته */}
-      <div className={`mb-3 p-3 rounded-xl ${isTodayOff ? 'bg-red-500/10 border border-red-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-sm text-gray-300">وضعیت امروز</span>
-            <span className="text-xs text-gray-400 mr-2">({todayName})</span>
-          </div>
-          <span className={`text-sm flex items-center gap-1 ${isTodayOff ? 'text-red-400' : 'text-emerald-400'}`}>
-            {isTodayOff ? <XCircle size={14} /> : <CheckCircle size={14} />}
-            {isTodayOff ? "تعطیل" : "فعال"}
-          </span>
-        </div>
-        {!isTodayOff && !isExpanded && (
-          <p className="text-xs text-gray-400 mt-1">
-            ساعت کاری امروز: {getWorkingHoursText()}
-          </p>
-        )}
-      </div>
+
 
       {/* لیست تمام روزهای هفته */}
       <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl overflow-hidden border border-white/10">
@@ -121,19 +104,13 @@ export function WorkingHours({ offDays = [], workShifts = [] }: WorkingHoursProp
             return (
               <div
                 key={day.id}
-                className={`flex justify-between p-3 ${
-                  status.isToday ? "bg-emerald-500/10" : ""
-                }`}
+                className={`flex justify-between p-3 `}
               >
                 <span
-                  className={`text-sm ${
-                    status.isToday ? "text-emerald-400 font-medium" : "text-gray-300"
-                  }`}
+                  className={`text-sm  text-gray-300`}
                 >
                   {day.persian}
-                  {status.isToday && (
-                    <span className="text-[10px] text-emerald-400 mr-1">(امروز)</span>
-                  )}
+             
                 </span>
                 <span
                   className={`text-sm flex items-center gap-1 ${
