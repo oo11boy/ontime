@@ -1,4 +1,3 @@
-// src/app/api/client/booking-changes/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -83,7 +82,7 @@ async function getApprovalSmsSettings(userId: number): Promise<boolean> {
     return settings[0]?.sms_approval_enabled ?? 1;
   } catch (error) {
     console.error("Error getting approval SMS settings:", error);
-    return true; // پیش‌فرض: فعال
+    return true;
   }
 }
 
@@ -100,7 +99,6 @@ async function sendChangeNotification(
   req: NextRequest,
   requestType?: string,
 ) {
-  // بررسی تنظیمات قبل از ارسال
   const isApprovalSmsEnabled = await getApprovalSmsSettings(userId);
   if (!isApprovalSmsEnabled) {
     console.log(`[SMS] ارسال پیامک نتیجه تایید/رد غیرفعال شده است (userId: ${userId})`);
@@ -185,7 +183,6 @@ async function sendNewBookingApprovalSMS(
   userId: number,
   req: NextRequest,
 ) {
-  // بررسی تنظیمات قبل از ارسال
   const isApprovalSmsEnabled = await getApprovalSmsSettings(userId);
   if (!isApprovalSmsEnabled) {
     console.log(`[SMS] ارسال پیامک تایید نوبت جدید غیرفعال شده است (userId: ${userId})`);
@@ -250,7 +247,6 @@ async function sendNewBookingRejectionSMS(
   userId: number,
   req: NextRequest,
 ) {
-  // بررسی تنظیمات قبل از ارسال
   const isApprovalSmsEnabled = await getApprovalSmsSettings(userId);
   if (!isApprovalSmsEnabled) {
     console.log(`[SMS] ارسال پیامک رد نوبت جدید غیرفعال شده است (userId: ${userId})`);
@@ -312,6 +308,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     let allRequests: any[] = [];
 
     // ========== 1. دریافت درخواست‌های تغییر و لغو از booking_changes ==========
+    // حذف b.service_name چون در دیتابیس وجود ندارد
     let changesSql = `
       SELECT 
         bc.id,
@@ -331,7 +328,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         bc.staff_id,
         b.cancelled_by,
         b.cancel_reason,
-        b.service_name,
         b.services,
         b.status as current_status,
         s.name as staff_name,
@@ -359,6 +355,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     allRequests.push(...changes);
 
     // ========== 2. دریافت درخواست‌های ثبت نوبت جدید (pending از لینک مشتری) ==========
+    // حذف b.service_name
     let newBookingsSql = `
       SELECT 
         b.id as booking_id,
@@ -376,7 +373,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         b.staff_id,
         NULL as cancelled_by,
         NULL as cancel_reason,
-        b.service_name,
         b.services,
         s.name as staff_name,
         u.business_name,
@@ -425,7 +421,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
       calendar_type: booking.calendar_type,
       staff_phone: booking.staff_phone,
       cancelled_by: null,
-      service_name: booking.service_name,
       services: booking.services,
       current_status: booking.status,
     }));
@@ -433,6 +428,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     allRequests.push(...formattedNewBookings);
 
     // ========== 3. اضافه کردن نوبت‌هایی که مستقیماً توسط ادمین لغو شده‌اند ==========
+    // حذف b.service_name
     let directlyCancelledSql = `
       SELECT 
         b.id as booking_id,
@@ -449,7 +445,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         b.updated_at as processed_at,
         b.staff_id,
         b.cancelled_by,
-        b.service_name,
         b.services,
         b.status as current_status,
         s.name as staff_name,
@@ -485,6 +480,7 @@ export const GET = withAuth(async (req: NextRequest, context) => {
     allRequests.push(...directlyCancelled);
 
     // ========== 4. اضافه کردن نوبت‌های فعال ==========
+    // حذف b.service_name
     let activeBookingsSql = `
       SELECT 
         b.id as booking_id,
@@ -502,7 +498,6 @@ export const GET = withAuth(async (req: NextRequest, context) => {
         b.staff_id,
         NULL as cancelled_by,
         NULL as cancel_reason,
-        b.service_name,
         b.services,
         b.status as current_status,
         s.name as staff_name,
@@ -760,7 +755,6 @@ export const PUT = withAuth(async (req: NextRequest, context) => {
           ? "درخواست تغییر زمان با موفقیت تایید شد (پیامکی ارسال نشد)"
           : "درخواست تغییر زمان با موفقیت تایید شد";
 
-        // فقط در صورت عدم وجود force، پیامک ارسال شود
         if (!force) {
           const salonName = change.business_name?.trim() || "مجموعه";
           await sendChangeNotification(
