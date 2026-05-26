@@ -79,6 +79,9 @@ export async function GET(req: NextRequest) {
           planId === "quarterly"
         );
         
+        // تعریف متغیر expiryDateForLink برای استفاده در ادامه
+        let expiryDateForLink = null;
+        
         if (isThreeMonthsPlan) {
           // دریافت لینک اختصاصی کاربر
           const [links]: any = await connection.execute(
@@ -86,10 +89,13 @@ export async function GET(req: NextRequest) {
             [userId]
           );
           
+          // محاسبه تاریخ انقضا (3 ماه بعد)
+          expiryDateForLink = new Date();
+          expiryDateForLink.setMonth(expiryDateForLink.getMonth() + 3);
+          const expiryDateStr = expiryDateForLink.toISOString().split('T')[0];
+          
           if (links && links.length > 0) {
             const linkId = links[0].id;
-            const expiryDate = new Date();
-            expiryDate.setMonth(expiryDate.getMonth() + 3); // +3 ماه
             
             // فعال‌سازی قابلیت ثبت نوبت
             await connection.execute(
@@ -98,10 +104,10 @@ export async function GET(req: NextRequest) {
                 booking_feature_expiry = ?,
                 booking_feature_payment_id = ?
               WHERE id = ?`,
-              [expiryDate.toISOString().split('T')[0], payment.id, linkId]
+              [expiryDateStr, payment.id, linkId]
             );
             
-            console.log(`✅ قابلیت ثبت نوبت برای لینک ${linkId} فعال شد تا ${expiryDate.toISOString().split('T')[0]}`);
+            console.log(`✅ قابلیت ثبت نوبت برای لینک ${linkId} فعال شد تا ${expiryDateStr}`);
           } else {
             console.warn(`⚠️ کاربر ${userId} لینک اختصاصی ندارد!`);
             // اگر لینک ندارد، یک لینک پیش‌فرض بسازیم
@@ -109,7 +115,7 @@ export async function GET(req: NextRequest) {
             await connection.execute(
               `INSERT INTO customer_links (user_id, slug, full_url, business_name, is_active, booking_feature_enabled, booking_feature_expiry, booking_feature_payment_id, created_at) 
                VALUES (?, ?, ?, ?, 1, 1, ?, ?, NOW())`,
-              [userId, defaultSlug, `c/${defaultSlug}`, "کسب‌وکار من", expiryDate.toISOString().split('T')[0], payment.id]
+              [userId, defaultSlug, `c/${defaultSlug}`, "کسب‌وکار من", expiryDateStr, payment.id]
             );
             console.log(`✅ لینک اختصاصی جدید برای کاربر ${userId} ساخته شد`);
           }
