@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { dbPool } from "@/lib/db";
 import jwt from 'jsonwebtoken';
+import { readFile } from "fs/promises";
+import { join } from "path";
+import { existsSync } from "fs";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -18,6 +21,45 @@ function verifyToken(token: string): number | null {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userType = request.cookies.get("user_type")?.value;
+
+  // ========== سرویس فایل‌های آپلودی ==========
+  // اگر درخواست برای فایل آپلودی بود، مستقیماً سرو کن
+  if (pathname.startsWith("/uploads/")) {
+    const filePath = join(process.cwd(), "public", pathname);
+    
+    if (existsSync(filePath)) {
+      try {
+        const fileBuffer = await readFile(filePath);
+        const ext = pathname.split('.').pop()?.toLowerCase();
+        
+        const contentTypes: Record<string, string> = {
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'png': 'image/png',
+          'webp': 'image/webp',
+          'gif': 'image/gif',
+          'svg': 'image/svg+xml',
+        };
+        
+        const contentType = contentTypes[ext || ''] || 'application/octet-stream';
+        
+        return new NextResponse(fileBuffer, {
+          headers: {
+            'Content-Type': contentType,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      } catch (error) {
+        console.error("Error serving file:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+      }
+    }
+    
+    // اگر فایل وجود نداشت، 404 برگردان
+    return new NextResponse("File not found", { status: 404 });
+  }
+  // ========== انتهای سرویس فایل‌های آپلودی ==========
 
   // دریافت کوکی‌های احراز هویت
   const clientToken = request.cookies.get("authToken")?.value;
@@ -146,6 +188,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/uploads/:path*",  // اضافه کردن مسیر آپلودها
     "/login",
     "/admin-login",
     "/clientdashboard/:path*",

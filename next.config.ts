@@ -45,6 +45,14 @@ const withPWA = withPWAInit({
         networkTimeoutSeconds: 10,
       },
     },
+    // استثنا برای فایل‌های آپلودی - همیشه از شبکه بگیر
+    {
+      urlPattern: /^\/uploads\/.*/i,
+      handler: "NetworkOnly", // فقط از شبکه، هیچ کشی نکن
+      options: {
+        cacheName: "uploaded-images",
+      },
+    },
   ],
 });
 
@@ -61,11 +69,37 @@ const nextConfig: NextConfig = {
     domains: ['localhost', 'ontimeapp.ir'],
   },
   
+  // اضافه کردن هدرهای ضد کش برای فایل‌های آپلودی
+  async headers() {
+    return [
+      {
+        source: '/uploads/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate, max-age=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+          {
+            key: 'Surrogate-Control',
+            value: 'no-store',
+          },
+        ],
+      },
+    ];
+  },
+  
   async rewrites() {
     return [
       {
-        // اضافه کردن "c" به لیست استثناها
-        source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|blog|clientdashboard|admindashboard|login|admin-login|customer|c|_next|static|images|icons|businesses).*)",
+        source: "/:token((?!robots\\.txt|sitemap\\.xml|favicon\\.ico|manifest\\.json|api|blog|clientdashboard|admindashboard|login|admin-login|customer|c|_next|static|images|icons|businesses|uploads).*)",
         destination: "/customer/booking/:token",
       },
     ];
