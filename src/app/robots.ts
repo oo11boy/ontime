@@ -34,6 +34,10 @@ export default function robots(): MetadataRoute.Robots {
         allow: [
           "/",
           "/blog",
+          "/c",
+          "/c/",
+          "/businesses",
+          "/businesses/",
           "/blog/",
           "/industries/",
           "/trainings",
@@ -55,6 +59,10 @@ export default function robots(): MetadataRoute.Robots {
           "/",
           "/blog",
           "/blog/",
+          "/c",
+          "/c/",
+          "/businesses",
+          "/businesses/",
           "/industries/", // اجازه به لندینگ‌های تخصصی مثل آرایشگری
           "/trainings",
           "/industries",

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ImageIcon, X, ZoomIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GalleryImage } from "./types";
+import Image from "next/image";
 
 interface GalleryProps {
   images: GalleryImage[];
@@ -39,7 +40,9 @@ export function Gallery({ images }: GalleryProps) {
               onClick={() => setSelectedImage(image.image_url)}
             >
               <div className="rounded-xl overflow-hidden aspect-square bg-gray-800/50">
-                <img
+                <Image
+                  width={100}
+              height={100}
                   src={image.image_url}
                   alt={image.title || "گالری"}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"

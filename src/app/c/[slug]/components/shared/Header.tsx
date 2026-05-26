@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Phone, MapPin, Share2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { BusinessData } from "./types";
+import Image from "next/image";
 
 interface HeaderProps {
   business: BusinessData;
@@ -43,8 +44,10 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
       <div className="relative h-64 sm:h-72  w-full overflow-hidden rounded-b-3xl md:rounded-b-4xl shadow-2xl">
         {hasCover ? (
           <>
-            <img
+            <Image
               src={business.cover_image!}
+              width={500}
+              height={500}
               alt="کاور بیزینس"
               className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
               loading="eager"
@@ -89,7 +92,9 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
               <div className="relative">
                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-white/30 shadow-xl bg-gradient-to-br from-gray-800 to-gray-900 flex-shrink-0">
                   {hasAvatar ? (
-                    <img
+                    <Image
+                      width={500}
+                      height={500}
                       src={avatarImage!}
                       alt={`لوگوی ${business.business_name}`}
                       className="w-full h-full object-cover"
@@ -119,8 +124,13 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
                 {/* آدرس */}
                 {business.business_address && (
                   <div className="flex items-center gap-1.5 mt-1.5 text-gray-200 text-xs md:text-sm">
-                    <MapPin size={14} className="text-emerald-400 flex-shrink-0" />
-                    <span className="line-clamp-2">{business.business_address}</span>
+                    <MapPin
+                      size={14}
+                      className="text-emerald-400 flex-shrink-0"
+                    />
+                    <span className="line-clamp-2">
+                      {business.business_address}
+                    </span>
                   </div>
                 )}
 
@@ -132,7 +142,10 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
                     aria-label="کپی شماره تماس"
                   >
                     <Phone size={12} className="text-emerald-400" />
-                    <span className="text-white text-xs md:text-sm font-medium tracking-tight" dir="ltr">
+                    <span
+                      className="text-white text-xs md:text-sm font-medium tracking-tight"
+                      dir="ltr"
+                    >
                       {business.phone}
                     </span>
                   </button>
@@ -149,7 +162,9 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
                   >
                     <div
                       className={`w-1.5 h-1.5 rounded-full ${
-                        isWorkingNow ? "bg-emerald-400 animate-pulse" : "bg-red-400"
+                        isWorkingNow
+                          ? "bg-emerald-400 animate-pulse"
+                          : "bg-red-400"
                       }`}
                     />
                     {isWorkingNow ? "فعال" : "هم اکنون تعطیل"}
