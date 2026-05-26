@@ -1,84 +1,49 @@
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const aiBots = [
-    "xai-crawler",
-    "GPTBot",
-    "ChatGPT-User",
-    "Google-Extended",
-    "DeepSeekBot",
-    "anthropic-ai",
-    "Claude-Web",
-    "PerplexityBot",
-    "MetaExternalAgent",
-    "Applebot-Extended",
-    "OAI-SearchBot",
-    "cohere-ai",
-    // ربات‌های موتورهای جستجو
-    "Googlebot",
-    "Bingbot",
-    "YandexBot",
-    "DuckDuckBot",
-    "Baiduspider",
-    // ربات‌های ایرانی
-    "ParsijooBot",
-    "SazitoBot",
-    "YaazahBot",
-  ];
-
   return {
     rules: [
+      // 1. ربات‌های AI (دسترسی محدود به محتوای عمومی)
       {
-        // دسترسی هوش مصنوعی به محتوای متنی جهت درک بیزینس
-        userAgent: aiBots,
-        allow: [
-          "/",
-          "/blog",
-          "/c",
-          "/c/",
-          "/businesses",
-          "/businesses/",
-          "/blog/",
-          "/industries/",
-          "/trainings",
-          "/industries",
-          "/trainings/",
+        userAgent: [
+          "GPTBot", "ChatGPT-User", "Google-Extended", "DeepSeekBot",
+          "anthropic-ai", "Claude-Web", "PerplexityBot", "MetaExternalAgent",
+          "Applebot-Extended", "OAI-SearchBot", "cohere-ai", "xai-crawler"
         ],
+        allow: ["/", "/blog", "/c", "/businesses", "/industries", "/trainings"],
         disallow: [
-          "/admindashboard",
-          "/clientdashboard",
-          "/api/",
-          "/admin-login",
-          "/login",
+          "/admindashboard", "/clientdashboard", "/api", "/admin-login",
+          "/login", "/private", "/customer/booking", "/*/edit", "/*/delete"
         ],
       },
+      
+      // 2. ربات‌های سنتی گوگل، بینگ و غیره (دسترسی بیشتر + اجازه به assets)
       {
-        // تنظیمات عمومی برای گوگل، بینگ و غیره
-        userAgent: "*",
-        allow: [
-          "/",
-          "/blog",
-          "/blog/",
-          "/c",
-          "/c/",
-          "/businesses",
-          "/businesses/",
-          "/industries/", // اجازه به لندینگ‌های تخصصی مثل آرایشگری
-          "/trainings",
-          "/industries",
-          "/trainings/",
-          "/_next/static/",
-          "/images/", // بسیار مهم: اجازه به گوگل برای ایندکس تصاویر گالری شما
-          "/icons/",
-        ],
+        userAgent: ["Googlebot", "Bingbot", "YandexBot", "DuckDuckBot", "Baiduspider"],
+        allow: ["/", "/blog", "/c", "/businesses", "/industries", "/trainings", "/_next/static", "/images", "/icons"],
         disallow: [
-          "/admindashboard",
-          "/clientdashboard",
-          "/api/",
-          "/admin-login",
-          "/login",
-          "/private",
-          "/customer/booking/", // جلوگیری از ایندکس شدن صفحات رزرو شخصی مشتریان
+          "/admindashboard", "/clientdashboard", "/api", "/admin-login",
+          "/login", "/private", "/customer/booking"
+        ],
+      },
+      
+      // 3. ربات‌های ایرانی
+      {
+        userAgent: ["ParsijooBot", "SazitoBot", "YaazahBot"],
+        allow: ["/", "/blog", "/c", "/businesses", "/industries", "/trainings"],
+        disallow: [
+          "/admindashboard", "/clientdashboard", "/api", "/admin-login",
+          "/login", "/private", "/customer/booking"
+        ],
+      },
+      
+      // 4. قانون عمومی (فقط مسیرهای عمومی)
+      {
+        userAgent: "*",
+        allow: ["/", "/blog", "/c", "/businesses", "/industries", "/trainings", "/images", "/icons"],
+        disallow: [
+          "/admindashboard", "/clientdashboard", "/api", "/admin-login",
+          "/login", "/private", "/customer/booking", "/*?*", "/_next"
         ],
       },
     ],

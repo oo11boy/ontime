@@ -39,7 +39,7 @@ export default function Navigation(): React.JSX.Element {
   }, [isOpen]);
 
 const menuItems = [
- { href: "../industries", label: "کسب و کارها", icon: <Briefcase size={18} /> },
+ { href: "../businesses", label: "کسب و کارها", icon: <Briefcase size={18} /> },
   { href: "../blog", label: "مجله آنتایم", icon: <Book size={18} /> },
   { href: "../#pricing", label: "تعرفه‌ها", icon: <CreditCard size={18} /> },
   { href: "../#faq", label: "سوالات متداول", icon: <HelpCircle size={18} /> },

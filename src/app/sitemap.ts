@@ -2,10 +2,8 @@
 import { MetadataRoute } from "next";
 import { query } from "@/lib/db";
 
-// ========== خودکار: بدون نیاز به تغییر دستی ==========
 export const revalidate = 86400; // 24 ساعت
 
-// تاریخ ثابت – فقط یک بار در زمان build محاسبه می‌شود
 const STATIC_DATE = (() => {
   if (process.env.NODE_ENV === "production") {
     return new Date();
@@ -17,104 +15,71 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://ontimeapp.ir";
 
   try {
-    // ========== 1. دریافت بلاگ پست‌ها ==========
+    // 1. دریافت بلاگ پست‌ها
     const posts = (await query(
       "SELECT slug, COALESCE(updated_at, created_at) as last_modified FROM blog_posts ORDER BY created_at DESC",
       []
     )) as any[];
 
-    const lastPostDate = posts?.[0]?.last_modified 
-      ? new Date(posts[0].last_modified) 
-      : STATIC_DATE;
-
-    // ========== 2. دریافت کسب و کارها ==========
+    // 2. دریافت کسب و کارها
     const businesses = (await query(
       `SELECT slug, COALESCE(updated_at, created_at) as last_modified 
        FROM customer_links 
-       WHERE is_active = 1 AND is_deleted = 0 
-       ORDER BY created_at DESC`,
+       WHERE is_active = 1 AND is_deleted = 0`,
       []
     )) as any[];
 
-    // ========== 3. دریافت دسته‌های شغلی دارای کسب و کار ==========
+    // 3. دریافت دسته‌های شغلی دارای کسب و کار
     const categories = (await query(
       `SELECT DISTINCT j.english_name, j.persian_name
        FROM jobs j
        INNER JOIN users u ON u.job_id = j.id
        INNER JOIN customer_links cl ON cl.user_id = u.id
-       WHERE cl.is_active = 1 AND cl.is_deleted = 0
-       ORDER BY j.persian_name ASC`,
+       WHERE cl.is_active = 1 AND cl.is_deleted = 0`,
       []
     )) as any[];
 
-    // ========== 4. دریافت شهرهای دارای کسب و کار ==========
+    // 4. دریافت شهرهای دارای کسب و کار
     const cities = (await query(
       `SELECT DISTINCT city 
        FROM customer_links 
        WHERE is_active = 1 AND is_deleted = 0 
-         AND city IS NOT NULL AND city != ''
-       ORDER BY city ASC`,
+         AND city IS NOT NULL AND city != ''`,
       []
     )) as any[];
 
-    // تاریخ آخرین بروزرسانی کسب و کارها
-    const lastBusinessDate = businesses?.[0]?.last_modified 
+    // 5. دریافت خدمات محبوب (برای ساخت صفحات جداگانه خدمات)
+    const popularServices = (await query(
+      `SELECT 
+        JSON_UNQUOTE(JSON_EXTRACT(cl.services, CONCAT('$[', n, '].name'))) as service_name
+       FROM customer_links cl
+       CROSS JOIN (
+         SELECT 0 as n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 
+         UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 
+         UNION SELECT 8 UNION SELECT 9
+       ) numbers
+       WHERE cl.is_active = 1 
+         AND cl.is_deleted = 0
+         AND cl.services IS NOT NULL
+         AND JSON_LENGTH(cl.services) > n
+       GROUP BY service_name
+       HAVING COUNT(*) > 5
+       LIMIT 50`,
+      []
+    )) as any[];
+
+    const lastBusinessDate = businesses[0]?.last_modified 
       ? new Date(businesses[0].last_modified) 
       : STATIC_DATE;
 
-    // تاریخ آخرین بروزرسانی دسته‌ها
-    const lastCategoryDate = categories?.length > 0 ? lastBusinessDate : STATIC_DATE;
-
-    // تاریخ آخرین بروزرسانی شهرها
-    const lastCityDate = cities?.length > 0 ? lastBusinessDate : STATIC_DATE;
-
     // ========== صفحات ثابت ==========
     const staticRoutes: MetadataRoute.Sitemap = [
-      {
-        url: baseUrl,
-        lastModified: STATIC_DATE,
-        changeFrequency: "monthly",
-        priority: 1.0,
-      },
-      {
-        url: `${baseUrl}/businesses`,
-        lastModified: lastBusinessDate,
-        changeFrequency: "daily",
-        priority: 1.0,
-      },
-      {
-        url: `${baseUrl}/blog`,
-        lastModified: lastPostDate,
-        changeFrequency: "daily",
-        priority: 0.9,
-      },
-      {
-        url: `${baseUrl}/industries`,
-        lastModified: STATIC_DATE,
-        changeFrequency: "monthly",
-        priority: 0.8,
-      },
-      {
-        url: `${baseUrl}/trainings`,
-        lastModified: STATIC_DATE,
-        changeFrequency: "weekly",
-        priority: 0.8,
-      },
-      {
-        url: `${baseUrl}/industries/beauty-salon`,
-        lastModified: STATIC_DATE,
-        changeFrequency: "weekly",
-        priority: 0.9,
-      },
-      {
-        url: `${baseUrl}/industries/nail-artist`,
-        lastModified: STATIC_DATE,
-        changeFrequency: "weekly",
-        priority: 0.9,
-      },
+      { url: baseUrl, lastModified: STATIC_DATE, changeFrequency: "monthly", priority: 1.0 },
+      { url: `${baseUrl}/businesses`, lastModified: lastBusinessDate, changeFrequency: "daily", priority: 1.0 },
+      { url: `${baseUrl}/blog`, lastModified: STATIC_DATE, changeFrequency: "daily", priority: 0.9 },
     ];
 
-    // ========== صفحات داینامیک بلاگ ==========
+    // ========== صفحات داینامیک ==========
     const blogRoutes = posts.map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
       lastModified: new Date(post.last_modified),
@@ -122,7 +87,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    // ========== صفحات داینامیک کسب و کارها ==========
     const businessRoutes = businesses.map((business) => ({
       url: `${baseUrl}/c/${business.slug}`,
       lastModified: new Date(business.last_modified),
@@ -130,23 +94,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     }));
 
-    // ========== صفحات دسته‌بندی مشاغل ==========
-    const categoryRoutes = categories.map((category) => ({
-      url: `${baseUrl}/businesses/${category.english_name}`,
-      lastModified: lastCategoryDate,
+    // صفحات فقط شهر
+    const cityOnlyRoutes = cities.map((city) => ({
+      url: `${baseUrl}/businesses/${city.city}`,
+      lastModified: lastBusinessDate,
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));
 
-    // ========== صفحات شهرها ==========
-    const cityRoutes = cities.map((city) => ({
-      url: `${baseUrl}/businesses/${city.city}`,
-      lastModified: lastCityDate,
+    // صفحات فقط دسته شغلی
+    const categoryOnlyRoutes = categories.map((category) => ({
+      url: `${baseUrl}/businesses/${category.english_name}`,
+      lastModified: lastBusinessDate,
       changeFrequency: "weekly" as const,
-      priority: 0.7,
+      priority: 0.8,
     }));
 
-    // ========== صفحات ترکیبی (شهر + دسته) ==========
+    // صفحات ترکیبی (شهر + دسته شغلی) ← مهمترین بخش
     const combinedRoutes: MetadataRoute.Sitemap = [];
     for (const city of cities) {
       for (const category of categories) {
@@ -159,35 +123,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
 
-    // ========== جمع‌آوری تمام صفحات ==========
+    // صفحات فقط خدمات (امکانات جدید)
+    const serviceRoutes = popularServices.map((service) => ({
+      url: `${baseUrl}/businesses?service=${encodeURIComponent(service.service_name)}`,
+      lastModified: lastBusinessDate,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+
     const allRoutes = [
       ...staticRoutes,
       ...blogRoutes,
       ...businessRoutes,
-      ...categoryRoutes,
-      ...cityRoutes,
+      ...cityOnlyRoutes,
+      ...categoryOnlyRoutes,
       ...combinedRoutes,
+      ...serviceRoutes,
     ];
 
-    // محدودیت 50,000 صفحه برای sitemap (گوگل)
-    const MAX_SITEMAP_URLS = 50000;
-    if (allRoutes.length > MAX_SITEMAP_URLS) {
-      console.warn(`Sitemap exceeds ${MAX_SITEMAP_URLS} URLs. Truncating.`);
-      return allRoutes.slice(0, MAX_SITEMAP_URLS);
-    }
+    // حذف موارد تکراری (بر اساس URL)
+    const uniqueRoutes = Array.from(
+      new Map(allRoutes.map(route => [route.url, route])).values()
+    );
 
-    return allRoutes;
+    return uniqueRoutes.slice(0, 50000);
     
   } catch (error) {
     console.error("Sitemap error:", error);
-    
-    // Fallback: صفحات اصلی در صورت خطا
     return [
       { url: baseUrl, lastModified: STATIC_DATE, changeFrequency: "monthly", priority: 1.0 },
       { url: `${baseUrl}/businesses`, lastModified: STATIC_DATE, changeFrequency: "daily", priority: 1.0 },
-      { url: `${baseUrl}/blog`, lastModified: STATIC_DATE, changeFrequency: "daily", priority: 0.9 },
-      { url: `${baseUrl}/industries/beauty-salon`, lastModified: STATIC_DATE, changeFrequency: "weekly", priority: 0.9 },
-      { url: `${baseUrl}/industries/nail-artist`, lastModified: STATIC_DATE, changeFrequency: "weekly", priority: 0.9 },
     ];
   }
 }

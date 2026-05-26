@@ -21,21 +21,21 @@ export default function EnhancedFooter(): React.JSX.Element {
     year: "numeric",
   });
   const AparatIcon = ({ size = 18 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
-  </svg>
-);
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+    </svg>
+  );
 
   const baseUrl = "https://ontimeapp.ir";
 
   // ========== اسکیماهای فوتر (برای کل سایت) ==========
-  
+
   // 1. Organization Schema
   const organizationSchema = {
     "@context": "https://schema.org",
@@ -51,7 +51,7 @@ export default function EnhancedFooter(): React.JSX.Element {
       "https://instagram.com/ontimeapp.ir",
       "https://t.me/ontime_sup",
       "https://ble.ir/ontimeapp",
-      "https://www.aparat.com/ontimeapp"
+      "https://www.aparat.com/ontimeapp",
     ],
     contactPoint: {
       "@type": "ContactPoint",
@@ -89,8 +89,18 @@ export default function EnhancedFooter(): React.JSX.Element {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "خانه", item: baseUrl },
-      { "@type": "ListItem", position: 2, name: "محصولات تخصصی", item: `${baseUrl}/#industries` },
-      { "@type": "ListItem", position: 3, name: "وبلاگ", item: `${baseUrl}/blog` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "محصولات تخصصی",
+        item: `${baseUrl}/#industries`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "وبلاگ",
+        item: `${baseUrl}/blog`,
+      },
     ],
   };
 
@@ -109,13 +119,17 @@ export default function EnhancedFooter(): React.JSX.Element {
       <Script
         id="footer-localbusiness-schema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(localBusinessSchema),
+        }}
         strategy="afterInteractive"
       />
       <Script
         id="footer-breadcrumb-schema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(footerBreadcrumbSchema) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(footerBreadcrumbSchema),
+        }}
         strategy="afterInteractive"
       />
 
@@ -124,7 +138,6 @@ export default function EnhancedFooter(): React.JSX.Element {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-16 mb-24">
-          
           {/* بخش برندینگ و درباره ما */}
           <div className="lg:col-span-2 space-y-8">
             <Link
@@ -168,14 +181,14 @@ export default function EnhancedFooter(): React.JSX.Element {
                 hoverColor="hover:bg-blue-500"
                 href="https://t.me/ontime_sup"
               />
-                    <SocialIcon
+              <SocialIcon
                 icon={<CheckCircle2Icon size={20} />}
                 label="کانال بله آنتایم"
                 hoverColor="hover:bg-blue-500"
                 href="https://ble.ir/ontimeapp"
               />
-                     <SocialIcon
-                icon={< AparatIcon/>}
+              <SocialIcon
+                icon={<AparatIcon />}
                 label="کانال آپارات آنتایم"
                 hoverColor="hover:bg-blue-500"
                 href="https://www.aparat.com/ontimeapp"
@@ -187,19 +200,24 @@ export default function EnhancedFooter(): React.JSX.Element {
           <div>
             <FooterHeader title="کسب و کار ها" color="bg-blue-500" />
             <ul className="space-y-4 font-bold text-sm">
+              <FooterLink href="/industries">
+                <div className="flex items-center gap-2">
+                  <Scissors size={14} className="text-pink-500" />
+                  لیست صنایع
+                </div>
+              </FooterLink>
               <FooterLink href="/industries/beauty-salon">
                 <div className="flex items-center gap-2">
                   <Scissors size={14} className="text-pink-500" />
-             نوبت دهی برای سالن های زیبایی و آرایشگاه
+                  نوبت دهی برای سالن های زیبایی و آرایشگاه
                 </div>
               </FooterLink>
               <FooterLink href="/industries/nail-artist">
                 <div className="flex items-center gap-2">
                   <Sparkles size={14} className="text-rose-400" />
-               نوبت دهی برای ناخن کارها
+                  نوبت دهی برای ناخن کارها
                 </div>
               </FooterLink>
-             
             </ul>
           </div>
 
@@ -210,7 +228,6 @@ export default function EnhancedFooter(): React.JSX.Element {
               <FooterLink href="../trainings">مرکز آموزش</FooterLink>
               <FooterLink href="../blog">وبلاگ و اخبار</FooterLink>
               <FooterLink href="../#faq">سوالات متداول</FooterLink>
-             
             </ul>
           </div>
 
@@ -228,7 +245,9 @@ export default function EnhancedFooter(): React.JSX.Element {
                 <div className="bg-white/5 p-2.5 rounded-xl group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
                   <Mail size={18} aria-hidden="true" />
                 </div>
-                <span className="text-sm tracking-tight">ontimeappir@gmail.com</span>
+                <span className="text-sm tracking-tight">
+                  ontimeappir@gmail.com
+                </span>
               </li>
               <li className="pt-4 flex gap-4">
                 <Link
@@ -236,9 +255,14 @@ export default function EnhancedFooter(): React.JSX.Element {
                   aria-label="نماد اعتماد الکترونیکی آنتایم"
                   className="w-full flex flex-col justify-center bg-white/5 rounded-2xl border border-white/10 items-center p-4 gap-3 grayscale hover:grayscale-0 transition-all cursor-pointer group"
                 >
-                  <ShieldCheck size={32} className="opacity-60 text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <ShieldCheck
+                    size={32}
+                    className="opacity-60 text-emerald-400 group-hover:scale-110 transition-transform"
+                  />
                   <span className="text-[10px] text-center leading-relaxed text-slate-400 group-hover:text-white">
-                    نماد اعتماد<br />الکترونیکی
+                    نماد اعتماد
+                    <br />
+                    الکترونیکی
                   </span>
                 </Link>
               </li>
