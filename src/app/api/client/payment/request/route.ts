@@ -48,19 +48,41 @@ export const POST = withAuth(async (req: NextRequest, context) => {
 
     // ۲. اگر قصد خرید بسته پیامکی (sms) را دارد
     else if (type === "sms") {
-      const userPlanSql = `
-        SELECT p.price_per_100_sms 
-        FROM users u 
-        JOIN plans p ON u.plan_key = p.plan_key 
-        WHERE u.id = ?
-      `;
-      const [results]: any = await connection.execute(userPlanSql, [userId]);
-
-      if (!results || results.length === 0) {
-        throw new Error("پلن فعلی شما یافت نشد.");
+      // ابتدا پلن کاربر را دریافت کن
+      const [users]: any = await connection.execute(
+        "SELECT plan_key FROM users WHERE id = ?",
+        [userId]
+      );
+      
+      if (!users || users.length === 0) {
+        throw new Error("کاربر یافت نشد.");
       }
-
-      const pricePer100 = results[0].price_per_100_sms;
+      
+      const userPlanKey = users[0].plan_key;
+      
+      // قیمت پیش‌فرض برای پلن‌های رایگان (price per 100 SMS)
+      let pricePer100 = 0;
+      
+      // اگر کاربر پلن رایگان دارد، از قیمت پیش‌فرض استفاده کن
+      if (userPlanKey === "free" || userPlanKey === "free_trial") {
+    
+        pricePer100 = 45000; // 5,000 تومان به ازای هر 100 پیامک
+        console.log(`User has free plan (${userPlanKey}), using default price: ${pricePer100} تومان per 100 SMS`);
+      } else {
+        // برای پلن‌های پولی، از دیتابیس بخوان
+        const [plans]: any = await connection.execute(
+          "SELECT price_per_100_sms FROM plans WHERE plan_key = ?",
+          [userPlanKey]
+        );
+        
+        if (!plans || plans.length === 0) {
+          throw new Error(`پلن فعلی شما (${userPlanKey}) یافت نشد.`);
+        }
+        
+        pricePer100 = plans[0].price_per_100_sms;
+      }
+      
+      // محاسبه مبلغ نهایی
       finalAmountToman = Math.round((Number(item_id) / 100) * pricePer100);
     }
 
