@@ -40,15 +40,13 @@ export default function CustomerLinkLayout({
   children: React.ReactNode;
 }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
   const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
   
-  const businessName = "آرایشگاه مدرن سارا";
-
   // دریافت تعداد درخواست‌های نوبت در انتظار تایید
   const fetchPendingBookings = async () => {
     try {
@@ -135,11 +133,9 @@ export default function CustomerLinkLayout({
               </div>
               <div>
                 <h1 className="font-bold text-gray-800 dark:text-white text-sm">
-                  لینک اختصاصی
+                  صفحه اختصاصی
                 </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {businessName}
-                </p>
+          
               </div>
             </div>
           </div>
@@ -163,12 +159,6 @@ export default function CustomerLinkLayout({
               )}
             </button>
 
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2 rounded-full bg-gray-100 dark:bg-gray-800"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </header>
@@ -238,71 +228,6 @@ export default function CustomerLinkLayout({
         </div>
       </nav>
 
-      {/* Mobile Sidebar */}
-      {isSidebarOpen && (
-        <>
-          <div
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/50 z-50"
-          />
-          <div className="fixed right-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-900 z-50 shadow-xl">
-            <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-bold text-gray-800 dark:text-white">
-                  لینک اختصاصی
-                </span>
-              </div>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 rounded-full bg-gray-100 dark:bg-gray-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-2">
-              {tabs.map((tab) => {
-                let badgeCount = 0;
-                if (tab.id === "bookings") badgeCount = pendingBookingsCount;
-                if (tab.id === "reviews") badgeCount = pendingReviewsCount;
-
-                return (
-                  <Link
-                    key={tab.id}
-                    href={tab.href}
-                    onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
-                      pathname === tab.href
-                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <tab.icon className="w-5 h-5" />
-                      <span>{tab.label}</span>
-                    </div>
-                    {badgeCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        {badgeCount > 99 ? "99+" : badgeCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-
-              <div className="border-t dark:border-gray-700 my-4 pt-4">
-                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                  <LogOut className="w-5 h-5" />
-                  <span>خروج</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
