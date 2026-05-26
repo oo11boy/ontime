@@ -1,49 +1,136 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { dbPool } from "@/lib/db";
+import jwt from 'jsonwebtoken';
 
-export function proxy(request: NextRequest) {
+const JWT_SECRET = process.env.JWT_SECRET!;
+
+function verifyToken(token: string): number | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+    return decoded.userId;
+  } catch (error) {
+    console.error("JWT Verification Failed:", error);
+    return null;
+  }
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userType = request.cookies.get("user_type")?.value;
 
-  // ۱. دریافت کوکی‌های احراز هویت
+  // دریافت کوکی‌های احراز هویت
   const clientToken = request.cookies.get("authToken")?.value;
   const isRegistered = request.cookies.get("is_registered")?.value;
-  const adminToken = request.cookies.get("adminAuthToken")?.value; // هماهنگ با API ادمین
+  const adminToken = request.cookies.get("adminAuthToken")?.value;
 
-  // --- وضعیت الف: مدیریت صفحات لاگین (جلوگیری از ورود مجدد) ---
-
-  // اگر کاربر کلاینت لاگین است و می‌خواهد به صفحه لاگین برود
+  // --- وضعیت الف: مدیریت صفحات لاگین ---
   if (pathname === "/login" && clientToken) {
     if (isRegistered === "true") {
       return NextResponse.redirect(new URL("/clientdashboard", request.url));
     }
-    // اگر ثبت‌نام ناقص است (isRegistered === "false")، اجازه بده وارد صفحه لاگین بشه تا مرحله signup رو ببینه
   }
 
-  // اگر ادمین لاگین است و می‌خواهد به صفحه لاگین ادمین برود
   if (pathname === "/admin-login" && adminToken) {
     return NextResponse.redirect(new URL("/admindashboard", request.url));
   }
 
-  // --- وضعیت ب: حفاظت از مسیرهای پنل کلاینت (داشبورد کلاینت) ---
+  // --- وضعیت ب: حفاظت از مسیرهای پنل کلاینت ---
   if (pathname.startsWith("/clientdashboard")) {
     // ۱. اگر اصلاً لاگین نیست
     if (!clientToken) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // ۲. اگر لاگین هست ولی پروفایل (نام و شغل) را تکمیل نکرده
+    // ۲. اعتبارسنجی توکن JWT
+    const userId = verifyToken(clientToken);
+    if (!userId) {
+      const response = NextResponse.redirect(new URL("/login", request.url));
+      response.cookies.delete("authToken");
+      response.cookies.delete("is_registered");
+      return response;
+    }
+
+    // ۳. اگر لاگین هست ولی پروفایل را تکمیل نکرده
     if (isRegistered === "false") {
       return NextResponse.redirect(new URL("/login?step=signup", request.url));
     }
+
+    // ========== بررسی اشتراک فعال برای مسیرهای خاص ==========
+    const subscriptionRequiredPaths = [
+      "/clientdashboard/bookingsubmit",
+      "/clientdashboard/Staffs",
+    ];
+    
+    const requiresSubscription = subscriptionRequiredPaths.some(path => 
+      pathname === path || pathname.startsWith(path + "/")
+    );
+    
+    // فقط برای مسیرهایی که نیاز به اشتراک دارند بررسی کن
+    if (requiresSubscription) {
+      let connection = null;
+      
+      try {
+        connection = await dbPool.getConnection();
+        
+        // دریافت اطلاعات کاربر
+        const [users]: any = await connection.execute(
+          `SELECT 
+            u.id, 
+            u.plan_key, 
+            u.ended_at
+          FROM users u
+          WHERE u.id = ?
+          LIMIT 1`,
+          [userId]
+        );
+        
+        // اگر کاربر وجود نداشت، به لاگین برگردان
+        if (!users || users.length === 0) {
+          return NextResponse.redirect(new URL("/login", request.url));
+        }
+        
+        const user = users[0];
+        const now = new Date();
+        
+        // بررسی اشتراک فعال (فقط پلن غیر از free و free_trial و تاریخ انقضا معتبر)
+        const hasActivePlan = user.plan_key && 
+                             user.plan_key !== "free" &&
+                             user.plan_key !== "free_trial" &&
+                             user.ended_at && 
+                             new Date(user.ended_at) > now;
+        
+        // اگر اشتراک فعال ندارد، ریدایرکت به صفحه خرید پلن
+        if (!hasActivePlan) {
+          const pricingUrl = new URL("/clientdashboard/pricingplan?expired=true", request.url);
+          return NextResponse.redirect(pricingUrl);
+        }
+        
+      } catch (error) {
+        console.error("[Middleware] Error checking subscription:", error);
+        // در صورت خطا، اجازه دسترسی بده
+        return NextResponse.next();
+      } finally {
+        if (connection) connection.release();
+      }
+    }
   }
 
-  // --- وضعیت ج: حفاظت از مسیرهای پنل ادمین (داشبورد مدیریت) ---
+  // --- وضعیت ج: حفاظت از مسیرهای پنل ادمین ---
   if (pathname.startsWith("/admindashboard")) {
     if (!adminToken) {
       return NextResponse.redirect(new URL("/admin-login", request.url));
     }
+    
+    const adminId = verifyToken(adminToken);
+    if (!adminId) {
+      const response = NextResponse.redirect(new URL("/admin-login", request.url));
+      response.cookies.delete("adminAuthToken");
+      return response;
+    }
   }
+  
+  // دسترسی کارمند (staff)
   if (
     userType === "staff" &&
     (pathname === "/clientdashboard/Staffs" ||
@@ -53,10 +140,10 @@ export function proxy(request: NextRequest) {
   ) {
     return NextResponse.redirect(new URL("/clientdashboard", request.url));
   }
+  
   return NextResponse.next();
 }
 
-// لیست تمام مسیرهایی که Middleware باید روی آن‌ها نظارت کند
 export const config = {
   matcher: [
     "/login",
