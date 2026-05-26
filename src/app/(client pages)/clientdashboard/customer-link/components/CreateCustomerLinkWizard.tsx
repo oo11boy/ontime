@@ -1227,9 +1227,13 @@ function ServicesAndSettingsStep({
               <input
                 type="text"
                 value={newService.name}
-                onChange={(e) =>
-                  setNewService({ ...newService, name: e.target.value })
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 21) {
+                    setNewService({ ...newService, name: value });
+                  }
+                }}
+                  maxLength={21}
                 placeholder="نام خدمت"
                 className="w-full p-3 border dark:text-white text-black dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5"
               />

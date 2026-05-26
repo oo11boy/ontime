@@ -1,6 +1,14 @@
 "use client";
 import React from "react";
-import { RefreshCw, X, Scissors, PlusCircle, Edit3, AlertTriangle, Lock } from "lucide-react";
+import {
+  RefreshCw,
+  X,
+  Scissors,
+  PlusCircle,
+  Edit3,
+  AlertTriangle,
+  Lock,
+} from "lucide-react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useUserType } from "@/hooks/useUserType";
 
@@ -11,13 +19,13 @@ const overlayVariants: Variants = {
 
 const modalVariants: Variants = {
   hidden: { opacity: 0, scale: 0.9, y: 30 },
-  visible: { 
-    opacity: 1, 
-    scale: 1, 
+  visible: {
+    opacity: 1,
+    scale: 1,
     y: 0,
-    transition: { type: "spring", damping: 25, stiffness: 300 }
+    transition: { type: "spring", damping: 25, stiffness: 300 },
   },
-  exit: { opacity: 0, scale: 0.9, y: 30 }
+  exit: { opacity: 0, scale: 0.9, y: 30 },
 };
 
 interface Service {
@@ -53,11 +61,14 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   onSubmit,
 }) => {
   const { userType } = useUserType();
-  
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4" dir="rtl">
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+          dir="rtl"
+        >
           <motion.div
             variants={overlayVariants}
             initial="hidden"
@@ -91,8 +102,8 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <button 
-                  onClick={onClose} 
+                <button
+                  onClick={onClose}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 transition-colors"
                 >
                   <X size={20} />
@@ -108,13 +119,21 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                     className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 focus:bg-white dark:focus:bg-white/[0.08] transition-all font-medium shadow-inner"
                     placeholder="مثال: اصلاح موی سر"
                     value={form.name}
-                    onChange={(e) => onFormChange("name", e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 30) {
+                        onFormChange("name", value);
+                      }
+                    }}
+                    maxLength={30}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 dark:text-gray-400 mr-2">قیمت (تومان)</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-gray-400 mr-2">
+                      قیمت (تومان)
+                    </label>
                     <input
                       type="number"
                       className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-slate-800 dark:text-white focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
@@ -124,13 +143,17 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 dark:text-gray-400 mr-2">زمان (دقیقه)</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-gray-400 mr-2">
+                      زمان (دقیقه)
+                    </label>
                     <input
                       type="number"
                       className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-slate-800 dark:text-white focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
                       placeholder="30"
                       value={form.duration_minutes}
-                      onChange={(e) => onFormChange("duration_minutes", e.target.value)}
+                      onChange={(e) =>
+                        onFormChange("duration_minutes", e.target.value)
+                      }
                     />
                   </div>
                 </div>
@@ -151,7 +174,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                   {isSubmitting ? (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 1,
+                        ease: "linear",
+                      }}
                     >
                       <RefreshCw className="w-5 h-5" />
                     </motion.div>
@@ -188,8 +215,8 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <button 
-                  onClick={onClose} 
+                <button
+                  onClick={onClose}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 transition-colors"
                 >
                   <X size={20} />
@@ -200,19 +227,21 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 <div className="w-20 h-20 rounded-full bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
                   <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
                 </div>
-                
+
                 <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
                   ویرایش خدمات مجاز نیست
                 </h3>
-                
+
                 <p className="text-slate-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
-                  شما به عنوان پرسنل، مجوز افزودن، ویرایش یا حذف خدمات را ندارید.
+                  شما به عنوان پرسنل، مجوز افزودن، ویرایش یا حذف خدمات را
+                  ندارید.
                 </p>
-                
+
                 <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-4 border border-amber-200 dark:border-amber-500/20">
                   <p className="text-slate-500 dark:text-gray-400 text-xs">
-                    لطفاً برای افزودن یا ویرایش خدمات، با مدیریت مجموعه خود تماس بگیرید.  
-                    مدیریت می‌تواند خدمات مجاز شما را در پنل مدیریتی خود تنظیم کند.
+                    لطفاً برای افزودن یا ویرایش خدمات، با مدیریت مجموعه خود تماس
+                    بگیرید. مدیریت می‌تواند خدمات مجاز شما را در پنل مدیریتی خود
+                    تنظیم کند.
                   </p>
                 </div>
               </div>

@@ -409,15 +409,19 @@ export function ServicesBox({
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <input
-                type="text"
-                value={newService.name}
-                onChange={(e) =>
-                  setNewService({ ...newService, name: e.target.value })
-                }
-                placeholder="نام خدمت (مثال: کوتاهی مو)"
-                className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 outline-none dark:text-white"
-              />
+             <input
+  type="text"
+  value={newService.name}
+  onChange={(e) => {
+    const value = e.target.value;
+    if (value.length <= 21) {
+      setNewService({ ...newService, name: value });
+    }
+  }}
+  placeholder="نام خدمت (مثال: کوتاهی مو)"
+  maxLength={21}
+  className="w-full p-3 border dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-white/5 focus:border-emerald-500 outline-none dark:text-white"
+/>
               <input
                 type="number"
                 value={newService.price}
