@@ -205,12 +205,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily", 
         priority: 1.0 
       },
-      { 
+            { 
         url: `${baseUrl}/blog`, 
         lastModified: STATIC_DATE, 
         changeFrequency: "daily", 
         priority: 0.9 
       },
+       { 
+        url: `${baseUrl}/trainings`, 
+        lastModified: STATIC_DATE, 
+        changeFrequency: "weekly", 
+        priority: 0.8 
+      },
+      { 
+        url: `${baseUrl}/industries`, 
+        lastModified: STATIC_DATE, 
+        changeFrequency: "weekly", 
+        priority: 0.8 
+      },
+            { 
+        url: `${baseUrl}/dl`, 
+        lastModified: STATIC_DATE, 
+        changeFrequency: "weekly", 
+        priority: 0.8 
+      },
+      { 
+        url: `${baseUrl}/namad`, 
+        lastModified: STATIC_DATE, 
+        changeFrequency: "monthly", 
+        priority: 0.6 
+      },
+
     ];
 
     // ========== صفحات داینامیک بلاگ ==========

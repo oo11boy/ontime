@@ -790,10 +790,7 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                       );
                     })}
                   </div>
-                  {/* لینک دیدن همه دسته‌بندی‌ها */}
-                  <Link href="/categories" className="inline-block mt-4 text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
-                    مشاهده همه دسته‌بندی‌ها →
-                  </Link>
+  
                 </div>
                 
                 {/* شهرها - H2 اضافه شد */}
@@ -831,10 +828,7 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                       );
                     })}
                   </div>
-                  {/* لینک دیدن همه شهرها */}
-                  <Link href="/cities" className="inline-block mt-4 text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
-                    مشاهده همه شهرها →
-                  </Link>
+           
                 </div>
                 
                 {/* خدمات محبوب - H2 اضافه شد */}
