@@ -27,14 +27,13 @@ const DownloadAppBanner: React.FC<DownloadAppBannerProps> = ({ onDownloadComplet
   }, []);
 
   useEffect(() => {
-    if (!isAndroid) return;
-    
+  
     const checkDownloadStatus = async () => {
       setIsLoading(true);
       try {
         const response = await fetch('/api/client/app-download');
         const data = await response.json();
-        
+        console.log(data)
         if (data.shouldShowBanner) {
           setIsVisible(true);
         }
@@ -90,7 +89,7 @@ const DownloadAppBanner: React.FC<DownloadAppBannerProps> = ({ onDownloadComplet
   return (
     <>
       {isVisible && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm md:max-w-md animate-slide-up">
+        <div className=" w-full z-50  max-w-sm md:max-w-md animate-slide-up">
           <div className="bg-white dark:bg-[#1a1e26] rounded-2xl shadow-xl border border-slate-200 dark:border-white/10 p-3 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               {/* آیکون اپلیکیشن */}

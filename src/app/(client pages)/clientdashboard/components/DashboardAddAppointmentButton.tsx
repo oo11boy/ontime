@@ -9,7 +9,7 @@ export const DashboardAddAppointmentButton: React.FC = () => {
     <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="w-full px-2"
+      className="w-full "
     >
       <Link href="../clientdashboard/bookingsubmit">
         <motion.button

@@ -47,7 +47,7 @@ export const DashboardStatusWidget: React.FC<DashboardStatusWidgetProps> = ({
   const isCritical = totalRemainingSms < 15;
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-2">
+    <div className="w-full max-w-2xl mx-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

@@ -90,7 +90,7 @@ export default function DashboardPage() {
               purchasedPackages={userData.purchased_packages ?? []}
             />
 
-            <div className="px-2">
+            <div>
               <DashboardAddAppointmentButton />
             </div>
             <CustomerLinkWidget />
