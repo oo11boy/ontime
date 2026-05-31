@@ -1,3 +1,4 @@
+// app/(landing)/page.tsx
 import Navigation from "@/components/Landing/Navigation";
 import HeroSection from "@/components/Landing/HeroSection";
 import StatsSection from "@/components/Landing/StatsSection";
@@ -19,6 +20,8 @@ import { mainmetadata } from "./metadata";
 import Script from "next/script";
 import { landingPageSchemas } from "@/components/Landing/schemas/landing-schemas";
 import UniversalAppGallery from "./industries/beauty-salon/components/BeautyGallery";
+import DedicatedBusinessPage from "./industries/beauty-salon/components/DedicatedBusinessPage";
+// 1. ایمپورت کامپوننت جدید صفحه اختصاصی
 
 export const metadata: Metadata = mainmetadata;
 
@@ -41,15 +44,10 @@ export default function OnTimeLandingPage() {
         />
       ))}
 
-      {/* ناوبری اصلی سایت */}
       <Navigation />
 
-      {/* استفاده از تگ main برای سئو حیاتی است (Semantic HTML) */}
       <main className="pt-20">
-        {/* ۱. بخش قهرمان (H1) - معرفی اصلی محصول و ارزش پیشنهادی */}
         <HeroSection />
-
-        {/* ۲. اعتبار سنجی (Social Proof) و آمار موفقیت */}
         <StatsSection />
         <UniversalAppGallery
           accentColor="blue"
@@ -62,36 +60,22 @@ export default function OnTimeLandingPage() {
           description="محیط کاربری اپلیکیشن نوبت دهی آنتایم ساده، سریع و متناسب با نیاز تمام کسب‌وکارهای نوبت‌محور طراحی شده است."
         />
 
-        {/* ۱۱. انتخاب سریع صنف و دعوت به اقدام نهایی */}
+        {/* 2. اضافه کردن بخش جدید صفحه اختصاصی کسب و کار - در جایگاهی استراتژیک */}
+        <DedicatedBusinessPage />
+
         <IndustrySelector />
-
-        {/* ۴. ویژگی‌های کلیدی - تمرکز بر رزرو وقت و مدیریت مشتری */}
         <FeaturesSection />
-
-        {/* ۵. اتوماسیون پیامکی (نقطه تمایز محصول) */}
         <DetailedSMS />
-
-        {/* ۶. تحلیل داده‌ها و اکوسیستم یکپارچه */}
         <AnalyticsSection />
         <IntegrationEcosystem />
-
-        {/* ۷. پیشنهاد ویژه (Free Trial) - نرخ تبدیل (Conversion) */}
         <FreeTrialPromo />
-
-        {/* ۸. ماشین حساب ROI - تعامل با کاربر (Engagement) */}
         <CalculatorEnhanced />
-
-        {/* ۹. پلن‌های قیمت‌گذاری شفاف */}
         <PricingSection />
-
-        {/* ۱۰. سوالات متداول و نمادهای اعتماد */}
         <FAQSection />
         <Namad />
-
         <FinalCTA />
       </main>
 
-      {/* فوتر بهینه شده برای لینک‌سازی داخلی و سئو */}
       <EnhancedFooter />
     </div>
   );

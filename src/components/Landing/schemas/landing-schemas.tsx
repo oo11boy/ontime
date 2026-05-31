@@ -310,4 +310,139 @@ export const landingPageSchemas = [
       },
     },
   },
+
+  
+
+  // ==============================================
+  // ۱۱. ⭐ اسکیما جدید و اختصاصی برای صفحه اختصاصی کسب و کار
+  // ==============================================
+  {
+    id: "dedicated-business-page-schema",
+    data: {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "ساخت صفحه اختصاصی رزرو نوبت برای کسب و کار | آنتایم",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web (PWA)",
+      abstract:
+        "یک صفحه وب اختصاصی و سفارشی با لینک یکتا برای هر کسب و کار که مشتریان می‌توانند بدون نیاز به نصب اپلیکیشن، نوبت خود را ثبت، تغییر یا لغو کنند و در صورت لغو، دلیل آن را ثبت نمایند.",
+      description: `صفحه اختصاصی رزرو نوبت آنتایم به کسب و کارها اجازه می‌دهد:
+• لینک اختصاصی رزرو با برند خود داشته باشند
+• مشتریان در کمتر از ۳۰ ثانیه نوبت ثبت کنند
+• مشتریان نوبت خود را آنلاین تغییر دهند (با محدودیت قابل تنظیم)
+• مشتریان نوبت خود را لغو کنند و دلیل آن را ثبت نمایند
+• لینک را در اینستاگرام، واتساپ و وبسایت به اشتراک بگذارند
+• بدون نیاز به نصب اپلیکیشن برای مشتری`,
+      featureList: [
+        "لینک اختصاصی و یکتا برای هر کسب و کار (ontime.ir/s/business-name)",
+        "صفحه کاملاً سفارشی با لوگو و رنگ‌های برند",
+        "نمایش لیست خدمات با قیمت و زمان",
+        "فرم ثبت نوبت آنلاین (بدون نیاز به ورود / ثبت‌نام مشتری)",
+        "قابلیت تغییر نوبت توسط مشتری (با محدودیت زمانی قابل تنظیم)",
+        "قابلیت لغو نوبت توسط مشتری با انتخاب دلیل از لیست",
+        "ذخیره خودکار دلایل لغو نوبت در پنل مدیریت",
+        "سئو شده و سازگار با موبایل (Mobile-First)",
+        "قابل اشتراک‌گذاری در تمام شبکه‌های اجتماعی",
+        "اتصال خودکار به سیستم پیامک یادآوری آنتایم",
+      ],
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "IRR",
+        priceValidUntil: "2030-12-31",
+        description:
+          "این قابلیت در تمام پلن‌های آنتایم (از جمله پلن رایگان) بدون محدودیت در دسترس است.",
+        availability: "https://schema.org/InStock",
+        availabilityStarts: "2024-01-01",
+      },
+      provider: {
+        "@type": "Organization",
+        name: "آنتایم",
+        url: "https://ontimeapp.ir",
+        logo: "https://ontimeapp.ir/icons/icon-512.png",
+      },
+      image: "https://ontimeapp.ir/images/dedicated-page-preview.jpg",
+      screenshot: [
+        "https://ontimeapp.ir/screenshots/business-page-mobile.jpg",
+        "https://ontimeapp.ir/screenshots/business-page-dashboard.jpg",
+      ],
+      url: "https://ontimeapp.ir/#business-page",
+      softwareVersion: "2.0",
+      keywords: "صفحه اختصاصی رزرو نوبت، لینک اختصاصی نوبت دهی، PWA نوبت دهی، مدیریت نوبت توسط مشتری",
+      potentialAction: {
+        "@type": "UseAction",
+        name: "ساخت صفحه اختصاصی رزرو نوبت",
+        description: "ثبت نام در آنتایم و ساخت صفحه اختصاصی رزرو نوبت برای کسب و کار خود",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: "https://ontimeapp.ir/clientdashboard",
+          actionPlatform: [
+            "http://schema.org/DesktopWebPlatform",
+            "http://schema.org/MobileWebPlatform",
+          ],
+        },
+      },
+      interactionStatistic: {
+        "@type": "InteractionCounter",
+        interactionType: {
+          "@type": "CreateAction",
+          name: "تعداد صفحات اختصاصی ساخته شده",
+        },
+        userInteractionCount: 1250,
+      },
+    },
+  },
+
+  // ==============================================
+  // ۱۲. ⭐ اسکیما برای قابلیت "تغییر و لغو نوبت توسط مشتری" (Action Schema)
+  // ==============================================
+  {
+    id: "appointment-self-management-schema",
+    data: {
+      "@context": "https://schema.org",
+      "@type": "WebAPI", // یا می‌تواند "Service" باشد
+      name: "مدیریت آنلاین نوبت توسط مشتری | تغییر و لغو نوبت با ثبت دلیل",
+      description:
+        "API و قابلیتی که به مشتریان کسب و کارها اجازه می‌دهد از طریق لینک اختصاصی، نوبت خود را تغییر دهند یا لغو کنند و در صورت لغو، دلیل آن را ثبت نمایند تا کسب و کار بازخورد بگیرد.",
+      provider: {
+        "@type": "Organization",
+        name: "آنتایم",
+        url: "https://ontimeapp.ir",
+      },
+      potentialAction: [
+        {
+          "@type": "ReserveAction", // برای ثبت نوبت
+          name: "ثبت نوبت جدید توسط مشتری",
+          description: "مشتری از طریق صفحه اختصاصی، نوبت جدید ثبت می‌کند",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: "https://ontimeapp.ir/s/{business-id}/book",
+          },
+        },
+        {
+          "@type": "ModifyAction", // برای تغییر نوبت
+          name: "تغییر نوبت توسط مشتری",
+          description: "مشتری نوبت خود را به زمان دیگری تغییر می‌دهد",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: "https://ontimeapp.ir/s/{business-id}/reschedule/{appointment-id}",
+          },
+        },
+        {
+          "@type": "CancelAction", // برای لغو نوبت
+          name: "لغو نوبت توسط مشتری با ثبت دلیل",
+          description: "مشتری نوبت خود را لغو می‌کند و دلیل آن را از لیست انتخاب می‌کند",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: "https://ontimeapp.ir/s/{business-id}/cancel/{appointment-id}",
+          },
+        },
+      ],
+      termsOfService: "https://ontimeapp.ir/terms",
+      audience: {
+        "@type": "BusinessAudience",
+        businessType: "خدمات نوبت‌محور (آرایشگاه، پزشکی، مشاوره، ورزشی، آموزشگاهی)",
+      },
+    },
+  },
 ];

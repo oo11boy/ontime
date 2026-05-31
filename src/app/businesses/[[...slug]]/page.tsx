@@ -39,16 +39,19 @@ async function getBusinessesAndFilters(
   let isValidCombination = true;
   let notFoundReason: string | null = null;
   
+  // گرفتن لیست شهرها
   const allCities = await query<any>(
     "SELECT DISTINCT city FROM customer_links WHERE is_active = 1 AND is_deleted = 0 AND city IS NOT NULL AND city != ''"
   );
   const cityNames = new Set(allCities.map((c: any) => c.city));
   
+  // گرفتن لیست مشاغل
   const allJobs = await query<any>(
     "SELECT english_name, id, persian_name FROM jobs WHERE english_name IS NOT NULL"
   );
   const jobMap = new Map(allJobs.map((j: any) => [j.english_name, { id: j.id, persian_name: j.persian_name }]));
   
+  // گرفتن لیست خدمات
   const allServices = await query<any>(
     `SELECT DISTINCT 
       JSON_UNQUOTE(JSON_EXTRACT(cl.services, CONCAT('$[', n, '].name'))) as service_name
@@ -64,93 +67,159 @@ async function getBusinessesAndFilters(
        AND JSON_LENGTH(cl.services) > n
      GROUP BY service_name`
   );
-  const serviceNames = new Set(allServices.map((s: any) => s.service_name));
+  const serviceNames = new Set(allServices.map((s: any) => s.service_name?.trim()));
+  
+  // تبدیل سلاگ‌های سرویس به فرمت قابل مقایسه
+  const normalizeServiceSlug = (str: string) => str.replace(/-/g, " ").toLowerCase().trim();
+  const normalizeServiceName = (str: string) => str.toLowerCase().trim();
   
   if (slug && slug.length > 0) {
     const decodedSlug = slug.map(s => decodeSlug(s));
     
     if (decodedSlug.length === 1) {
-      if (cityNames.has(decodedSlug[0])) {
-        city = decodedSlug[0];
-      } else if (jobMap.has(decodedSlug[0])) {
-        jobSlug = decodedSlug[0];
-        jobId = jobMap.get(decodedSlug[0])?.id;
-      } else {
+      const slugValue = decodedSlug[0];
+      const isCity = cityNames.has(slugValue);
+      const isJob = jobMap.has(slugValue);
+      const isService = serviceNames.has(normalizeServiceSlug(slugValue));
+      
+      if (isCity) {
+        city = slugValue;
+      } 
+      else if (isJob) {
+        jobSlug = slugValue;
+        jobId = jobMap.get(slugValue)?.id;
+      }
+      else if (isService) {
+        serviceSlug = slugValue;
+        serviceName = normalizeServiceSlug(slugValue);
+      }
+      else {
         isValidCombination = false;
-        notFoundReason = `"${decodedSlug[0]}" نه شهر معتبر است و نه شغل معتبر`;
+        notFoundReason = `"${slugValue}" نه شهر معتبر است، نه شغل معتبر و نه خدمت معتبر`;
       }
     } 
     else if (decodedSlug.length === 2) {
-      const firstIsCity = cityNames.has(decodedSlug[0]);
-      const firstIsJob = jobMap.has(decodedSlug[0]);
-      const secondIsJob = jobMap.has(decodedSlug[1]);
-      const secondIsService = serviceNames.has(decodedSlug[1].replace(/-/g, " "));
+      const first = decodedSlug[0];
+      const second = decodedSlug[1];
       
+      const firstIsCity = cityNames.has(first);
+      const firstIsJob = jobMap.has(first);
+      const firstIsService = serviceNames.has(normalizeServiceSlug(first));
+      
+      const secondIsCity = cityNames.has(second);
+      const secondIsJob = jobMap.has(second);
+      const secondIsService = serviceNames.has(normalizeServiceSlug(second));
+      
+      // شهر + شغل
       if (firstIsCity && secondIsJob) {
-        city = decodedSlug[0];
-        jobSlug = decodedSlug[1];
-        jobId = jobMap.get(decodedSlug[1])?.id;
+        city = first;
+        jobSlug = second;
+        jobId = jobMap.get(second)?.id;
       } 
+      // شغل + خدمت
       else if (firstIsJob && secondIsService) {
-        jobSlug = decodedSlug[0];
-        jobId = jobMap.get(decodedSlug[0])?.id;
-        serviceSlug = decodedSlug[1];
-        serviceName = serviceSlug?.replace(/-/g, " ");
+        jobSlug = first;
+        jobId = jobMap.get(first)?.id;
+        serviceSlug = second;
+        serviceName = normalizeServiceSlug(second);
       }
+      // شهر + خدمت
       else if (firstIsCity && secondIsService) {
-        city = decodedSlug[0];
-        serviceSlug = decodedSlug[1];
-        serviceName = serviceSlug?.replace(/-/g, " ");
+        city = first;
+        serviceSlug = second;
+        serviceName = normalizeServiceSlug(second);
       }
+      // شغل + شغل (غیرمعمول ولی برای سازگاری)
       else if (firstIsJob && secondIsJob) {
-        jobSlug = decodedSlug[0];
-        jobId = jobMap.get(decodedSlug[0])?.id;
+        jobSlug = first;
+        jobId = jobMap.get(first)?.id;
+      }
+      // شهر + شهر (غیرمعمول)
+      else if (firstIsCity && secondIsCity) {
+        city = first;
+      }
+      // فقط شهر اول معتبر است
+      else if (firstIsCity) {
+        city = first;
+      }
+      // فقط شغل اول معتبر است
+      else if (firstIsJob) {
+        jobSlug = first;
+        jobId = jobMap.get(first)?.id;
+      }
+      // فقط خدمت اول معتبر است
+      else if (firstIsService) {
+        serviceSlug = first;
+        serviceName = normalizeServiceSlug(first);
       }
       else {
         isValidCombination = false;
-        notFoundReason = `ترکیب "${decodedSlug[0]}/${decodedSlug[1]}" معتبر نیست`;
+        notFoundReason = `ترکیب "${first}/${second}" معتبر نیست`;
       }
     } 
     else if (decodedSlug.length === 3) {
-      const firstIsCity = cityNames.has(decodedSlug[0]);
-      const secondIsJob = jobMap.has(decodedSlug[1]);
-      const thirdIsService = serviceNames.has(decodedSlug[2].replace(/-/g, " "));
+      const first = decodedSlug[0];
+      const second = decodedSlug[1];
+      const third = decodedSlug[2];
+      
+      const firstIsCity = cityNames.has(first);
+      const secondIsJob = jobMap.has(second);
+      const thirdIsService = serviceNames.has(normalizeServiceSlug(third));
       
       if (firstIsCity && secondIsJob && thirdIsService) {
-        city = decodedSlug[0];
-        jobSlug = decodedSlug[1];
-        jobId = jobMap.get(decodedSlug[1])?.id;
-        serviceSlug = decodedSlug[2];
-        serviceName = serviceSlug?.replace(/-/g, " ");
+        city = first;
+        jobSlug = second;
+        jobId = jobMap.get(second)?.id;
+        serviceSlug = third;
+        serviceName = normalizeServiceSlug(third);
       } 
-      else if (firstIsCity && secondIsJob && !thirdIsService) {
-        city = decodedSlug[0];
-        jobSlug = decodedSlug[1];
-        jobId = jobMap.get(decodedSlug[1])?.id;
+      else if (firstIsCity && secondIsJob) {
+        city = first;
+        jobSlug = second;
+        jobId = jobMap.get(second)?.id;
       }
-      else if (firstIsCity && !secondIsJob && thirdIsService) {
-        city = decodedSlug[0];
-        serviceSlug = decodedSlug[2];
-        serviceName = serviceSlug?.replace(/-/g, " ");
+      else if (firstIsCity && thirdIsService) {
+        city = first;
+        serviceSlug = third;
+        serviceName = normalizeServiceSlug(third);
+      }
+      else if (firstIsCity) {
+        city = first;
+      }
+      else if (secondIsJob) {
+        jobSlug = second;
+        jobId = jobMap.get(second)?.id;
+      }
+      else if (thirdIsService) {
+        serviceSlug = third;
+        serviceName = normalizeServiceSlug(third);
       }
       else {
         isValidCombination = false;
-        notFoundReason = `ترکیب "${decodedSlug[0]}/${decodedSlug[1]}/${decodedSlug[2]}" معتبر نیست`;
+        notFoundReason = `ترکیب "${first}/${second}/${third}" معتبر نیست`;
       }
     }
     else if (decodedSlug.length > 3) {
-      const firstIsCity = cityNames.has(decodedSlug[0]);
-      const secondIsJob = jobMap.has(decodedSlug[1]);
+      const first = decodedSlug[0];
+      const second = decodedSlug[1];
+      const firstIsCity = cityNames.has(first);
+      const secondIsJob = jobMap.has(second);
       
       if (firstIsCity && secondIsJob) {
-        city = decodedSlug[0];
-        jobSlug = decodedSlug[1];
-        jobId = jobMap.get(decodedSlug[1])?.id;
-      } else if (firstIsCity) {
-        city = decodedSlug[0];
-      } else if (jobMap.has(decodedSlug[0])) {
-        jobSlug = decodedSlug[0];
-        jobId = jobMap.get(decodedSlug[0])?.id;
+        city = first;
+        jobSlug = second;
+        jobId = jobMap.get(second)?.id;
+      } 
+      else if (firstIsCity) {
+        city = first;
+      } 
+      else if (jobMap.has(first)) {
+        jobSlug = first;
+        jobId = jobMap.get(first)?.id;
+      }
+      else if (serviceNames.has(normalizeServiceSlug(first))) {
+        serviceSlug = first;
+        serviceName = normalizeServiceSlug(first);
       }
     }
   }
@@ -169,7 +238,7 @@ async function getBusinessesAndFilters(
   }
   
   if (serviceName) {
-    conditions.push(`JSON_SEARCH(cl.services, 'one', ?, NULL, '$[*].name') IS NOT NULL`);
+    conditions.push(`JSON_SEARCH(LOWER(cl.services), 'one', LOWER(?), NULL, '$[*].name') IS NOT NULL`);
     params.push(serviceName);
   }
   
@@ -301,12 +370,6 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     return `${url}${queryString ? `?${queryString}` : ""}`;
   };
   
-  const buildPrevNextUrls = () => {
-    const prevPage = currentPage > 1 ? currentPage - 1 : null;
-    const nextPage = null; // این رو بعداً با totalPages محاسبه می‌کنیم
-    return { prevPage, nextPage };
-  };
-  
   if (q) {
     const pageTitle = `جستجوی "${q}" | آنتایم | بهترین نتایج کسب و کار`;
     const pageDescription = `✨ نتایج جستجوی "${q}" در آنتایم — لیست کامل بهترین کسب و کارها، خدمات و ارائه‌دهندگان حرفه‌ای در ایران. آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین`;
@@ -333,46 +396,110 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const allCities = await query<any>("SELECT DISTINCT city FROM customer_links WHERE is_active = 1 AND city IS NOT NULL");
   const citySet = new Set(allCities.map((c: any) => c.city));
   
+  const allServicesData = await query<any>(
+    `SELECT DISTINCT 
+      JSON_UNQUOTE(JSON_EXTRACT(cl.services, CONCAT('$[', n, '].name'))) as service_name
+     FROM customer_links cl
+     CROSS JOIN (SELECT 0 as n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) numbers
+     WHERE cl.is_active = 1 AND cl.services IS NOT NULL AND JSON_LENGTH(cl.services) > n`
+  );
+  const serviceSet = new Set(allServicesData.map((s: any) => s.service_name?.trim()));
+  const normalizeSlug = (str: string) => str.replace(/-/g, " ").toLowerCase();
+  
   let title = "لیست کامل کسب و کارهای ایران | آنتایم | رزرو آنلاین خدمات";
   let description = "🔍 بهترین کسب و کارهای ایران را پیدا کنید — مقایسه، مشاهده نظرات کاربران و رزرو آنلاین نوبت از بهترین ارائه‌دهندگان خدمات در سراسر کشور";
   let keywords = "لیست کسب و کار, رزرو آنلاین, نوبت دهی, مشاغل برتر ایران";
   
   if (decodedSlug.length === 1) {
-    if (citySet.has(decodedSlug[0])) {
-      title = `لیست کامل کسب و کارهای ${decodedSlug[0]} | آنتایم | رزرو آنلاین نوبت`;
-      description = `🏙️ بهترین کسب و کارهای شهر ${decodedSlug[0]} شامل آرایشگران، پزشکان، وکلا، تعمیرکاران و... به همراه آدرس، شماره تماس، نظرات کاربران و امکان رزرو آنلاین. مقایسه و انتخاب بهترین ارائه‌دهندگان خدمات در ${decodedSlug[0]}`;
-      keywords = `کسب و کار ${decodedSlug[0]}, لیست مشاغل ${decodedSlug[0]}, رزرو نوبت ${decodedSlug[0]}, خدمات ${decodedSlug[0]}`;
-    } else if (jobMap.has(decodedSlug[0])) {
-      const jobName = jobMap.get(decodedSlug[0]);
+    const slugValue = decodedSlug[0];
+    if (citySet.has(slugValue)) {
+      title = `لیست کامل کسب و کارهای ${slugValue} | آنتایم | رزرو آنلاین نوبت`;
+      description = `🏙️ بهترین کسب و کارهای شهر ${slugValue} شامل آرایشگران، پزشکان، وکلا، تعمیرکاران و... به همراه آدرس، شماره تماس، نظرات کاربران و امکان رزرو آنلاین. مقایسه و انتخاب بهترین ارائه‌دهندگان خدمات در ${slugValue}`;
+      keywords = `کسب و کار ${slugValue}, لیست مشاغل ${slugValue}, رزرو نوبت ${slugValue}, خدمات ${slugValue}`;
+    } else if (jobMap.has(slugValue)) {
+      const jobName = jobMap.get(slugValue);
       title = `لیست بهترین ${jobName}‌های ایران | آنتایم | مقایسه و رزرو آنلاین`;
       description = `✨ بهترین ${jobName}‌های ایران به همراه آدرس، شماره تماس، نظرات کاربران و امتیازات — مقایسه و رزرو آنلاین نوبت از بهترین ارائه‌دهندگان خدمات ${jobName} در سراسر کشور`;
       keywords = `${jobName}, لیست ${jobName}‌های برتر, بهترین ${jobName} ایران, رزرو ${jobName}`;
+    } else if (serviceSet.has(normalizeSlug(slugValue))) {
+      const serviceName = normalizeSlug(slugValue);
+      title = `لیست بهترین ارائه‌دهندگان خدمات ${serviceName} در ایران | آنتایم`;
+      description = `✨ بهترین کسب و کارهایی که خدمات ${serviceName} را در ایران ارائه می‌دهند — آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین. مقایسه تخصص و تجربه ارائه‌دهندگان خدمات ${serviceName}`;
+      keywords = `${serviceName}, خدمات ${serviceName}, بهترین ${serviceName}, رزرو ${serviceName}, ارائه‌دهندگان ${serviceName}`;
     }
   } else if (decodedSlug.length === 2) {
-    if (citySet.has(decodedSlug[0]) && jobMap.has(decodedSlug[1])) {
-      const jobName = jobMap.get(decodedSlug[1]);
-      title = `بهترین ${jobName}‌های ${decodedSlug[0]} | لیست کامل + رزرو آنلاین | آنتایم`;
-      description = `📍 لیست بهترین ${jobName}‌های شهر ${decodedSlug[0]} به همراه آدرس، شماره تماس، نظرات کاربران و امتیازات — رزرو آنلاین نوبت از بهترین ${jobName}‌های ${decodedSlug[0]}. مقایسه کیفیت خدمات و هزینه`;
-      keywords = `${jobName} در ${decodedSlug[0]}, لیست ${jobName}‌های ${decodedSlug[0]}, رزرو نوبت ${jobName}, بهترین ${jobName} ${decodedSlug[0]}`;
-    } else if (jobMap.has(decodedSlug[0])) {
-      const jobName = jobMap.get(decodedSlug[0]);
-      const serviceName = decodedSlug[1].replace(/-/g, " ");
+    const first = decodedSlug[0];
+    const second = decodedSlug[1];
+    const firstIsCity = citySet.has(first);
+    const firstIsJob = jobMap.has(first);
+    const secondIsJob = jobMap.has(second);
+    const secondIsService = serviceSet.has(normalizeSlug(second));
+    
+    if (firstIsCity && secondIsJob) {
+      const jobName = jobMap.get(second);
+      title = `بهترین ${jobName}‌های ${first} | لیست کامل + رزرو آنلاین | آنتایم`;
+      description = `📍 لیست بهترین ${jobName}‌های شهر ${first} به همراه آدرس، شماره تماس، نظرات کاربران و امتیازات — رزرو آنلاین نوبت از بهترین ${jobName}‌های ${first}. مقایسه کیفیت خدمات و هزینه`;
+      keywords = `${jobName} در ${first}, لیست ${jobName}‌های ${first}, رزرو نوبت ${jobName}, بهترین ${jobName} ${first}`;
+    } else if (firstIsJob && secondIsService) {
+      const jobName = jobMap.get(first);
+      const serviceName = normalizeSlug(second);
       title = `بهترین ارائه‌دهندگان خدمات ${serviceName} (${jobName}) | آنتایم`;
       description = `✨ لیست بهترین ${jobName}‌های ایران که خدمات ${serviceName} را ارائه می‌دهند — آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین. مقایسه تخصص و تجربه ارائه‌دهندگان`;
       keywords = `${serviceName}, ${jobName} ${serviceName}, خدمات ${serviceName}, رزرو ${serviceName}`;
-    } else if (citySet.has(decodedSlug[0])) {
-      const serviceName = decodedSlug[1].replace(/-/g, " ");
-      title = `بهترین ارائه‌دهندگان خدمات ${serviceName} در ${decodedSlug[0]} | آنتایم`;
-      description = `🏢 لیست بهترین کسب و کارهای شهر ${decodedSlug[0]} که خدمات ${serviceName} را ارائه می‌دهند — آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین. انتخاب بهترین ${serviceName} در ${decodedSlug[0]}`;
-      keywords = `${serviceName} در ${decodedSlug[0]}, خدمات ${serviceName}, بهترین ${serviceName}, ${serviceName} حرفه‌ای`;
+    } else if (firstIsCity && secondIsService) {
+      const serviceName = normalizeSlug(second);
+      title = `بهترین ارائه‌دهندگان خدمات ${serviceName} در ${first} | آنتایم`;
+      description = `🏢 لیست بهترین کسب و کارهای شهر ${first} که خدمات ${serviceName} را ارائه می‌دهند — آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین. انتخاب بهترین ${serviceName} در ${first}`;
+      keywords = `${serviceName} در ${first}, خدمات ${serviceName}, بهترین ${serviceName}, ${serviceName} حرفه‌ای`;
+    } else if (firstIsCity) {
+      title = `لیست کامل کسب و کارهای ${first} | آنتایم | رزرو آنلاین نوبت`;
+      description = `🏙️ بهترین کسب و کارهای شهر ${first} به همراه آدرس، شماره تماس، نظرات کاربران و امکان رزرو آنلاین`;
+      keywords = `کسب و کار ${first}, لیست مشاغل ${first}, رزرو نوبت ${first}`;
+    } else if (firstIsJob) {
+      const jobName = jobMap.get(first);
+      title = `لیست بهترین ${jobName}‌های ایران | آنتایم`;
+      description = `✨ بهترین ${jobName}‌های ایران به همراه آدرس، شماره تماس و نظرات کاربران`;
+      keywords = `${jobName}, لیست ${jobName}‌های برتر`;
+    } else if (secondIsService) {
+      const serviceName = normalizeSlug(second);
+      title = `لیست بهترین ارائه‌دهندگان خدمات ${serviceName} در ایران | آنتایم`;
+      description = `✨ بهترین کسب و کارهایی که خدمات ${serviceName} را ارائه می‌دهند`;
+      keywords = `${serviceName}, خدمات ${serviceName}, بهترین ${serviceName}`;
     }
   } else if (decodedSlug.length === 3) {
-    if (citySet.has(decodedSlug[0]) && jobMap.has(decodedSlug[1])) {
-      const jobName = jobMap.get(decodedSlug[1]);
-      const serviceName = decodedSlug[2].replace(/-/g, " ");
-      title = `بهترین ارائه‌دهندگان خدمات ${serviceName} در ${decodedSlug[0]} (${jobName}) | آنتایم`;
-      description = `⭐ لیست بهترین ${jobName}‌های شهر ${decodedSlug[0]} که خدمات ${serviceName} را ارائه می‌دهند — به همراه آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین. مقایسه کیفیت و هزینه خدمات ${serviceName}`;
-      keywords = `${serviceName} در ${decodedSlug[0]}, ${jobName} ${serviceName}, رزرو ${serviceName}, بهترین ${serviceName} ${decodedSlug[0]}`;
+    const first = decodedSlug[0];
+    const second = decodedSlug[1];
+    const third = decodedSlug[2];
+    const firstIsCity = citySet.has(first);
+    const secondIsJob = jobMap.has(second);
+    const thirdIsService = serviceSet.has(normalizeSlug(third));
+    
+    if (firstIsCity && secondIsJob && thirdIsService) {
+      const jobName = jobMap.get(second);
+      const serviceName = normalizeSlug(third);
+      title = `بهترین ارائه‌دهندگان خدمات ${serviceName} در ${first} (${jobName}) | آنتایم`;
+      description = `⭐ لیست بهترین ${jobName}‌های شهر ${first} که خدمات ${serviceName} را ارائه می‌دهند — به همراه آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین. مقایسه کیفیت و هزینه خدمات ${serviceName}`;
+      keywords = `${serviceName} در ${first}, ${jobName} ${serviceName}, رزرو ${serviceName}, بهترین ${serviceName} ${first}`;
+    } else if (firstIsCity && secondIsJob) {
+      const jobName = jobMap.get(second);
+      title = `بهترین ${jobName}‌های ${first} | آنتایم`;
+      description = `📍 لیست بهترین ${jobName}‌های شهر ${first} به همراه آدرس، شماره تماس و نظرات کاربران`;
+      keywords = `${jobName} در ${first}, لیست ${jobName}‌های ${first}`;
+    } else if (firstIsCity && thirdIsService) {
+      const serviceName = normalizeSlug(third);
+      title = `بهترین ارائه‌دهندگان خدمات ${serviceName} در ${first} | آنتایم`;
+      description = `🏢 لیست بهترین کسب و کارهای شهر ${first} که خدمات ${serviceName} را ارائه می‌دهند`;
+      keywords = `${serviceName} در ${first}, خدمات ${serviceName}, بهترین ${serviceName}`;
+    } else if (secondIsJob) {
+      const jobName = jobMap.get(second);
+      title = `لیست بهترین ${jobName}‌های ایران | آنتایم`;
+      description = `✨ بهترین ${jobName}‌های ایران به همراه آدرس، شماره تماس و نظرات کاربران`;
+      keywords = `${jobName}, لیست ${jobName}‌های برتر`;
+    } else if (thirdIsService) {
+      const serviceName = normalizeSlug(third);
+      title = `لیست بهترین ارائه‌دهندگان خدمات ${serviceName} در ایران | آنتایم`;
+      description = `✨ بهترین کسب و کارهایی که خدمات ${serviceName} را ارائه می‌دهند`;
+      keywords = `${serviceName}, خدمات ${serviceName}, بهترین ${serviceName}`;
     }
   }
   
@@ -412,7 +539,7 @@ function buildBusinessUrl(city?: string, job?: string, service?: string, sort?: 
 }
 
 // ==================== تابع ساخت Breadcrumb ====================
-function buildBreadcrumbItems(slug: string[], categories: any[], currentFilters: any, q?: string) {
+function buildBreadcrumbItems(slug: string[], categories: any[], currentFilters: any, q?: string, popularServices?: any[]) {
   const items = [{ name: "خانه", url: "/" }, { name: "کسب و کارها", url: "/businesses" }];
   
   if (q) {
@@ -425,14 +552,20 @@ function buildBreadcrumbItems(slug: string[], categories: any[], currentFilters:
   if (decodedSlug[0]) {
     const isCity = currentFilters.city === decodedSlug[0];
     const isJob = categories.find(c => c.slug === decodedSlug[0]);
+    const isService = popularServices?.find(s => s.slug === decodedSlug[0]);
+    
     if (isCity) items.push({ name: `شهر ${decodedSlug[0]}`, url: `/businesses/${encodeURIComponent(decodedSlug[0])}` });
     else if (isJob) items.push({ name: isJob.name, url: `/businesses/${encodeURIComponent(decodedSlug[0])}` });
+    else if (isService) items.push({ name: isService.name, url: `/businesses/${encodeURIComponent(decodedSlug[0])}` });
     else items.push({ name: decodedSlug[0], url: `/businesses/${encodeURIComponent(decodedSlug[0])}` });
   }
   
   if (decodedSlug[1]) {
     const isJob = categories.find(c => c.slug === decodedSlug[1]);
+    const isService = popularServices?.find(s => s.slug === decodedSlug[1]);
+    
     if (isJob) items.push({ name: isJob.name, url: `/businesses/${encodeURIComponent(decodedSlug[0])}/${encodeURIComponent(decodedSlug[1])}` });
+    else if (isService) items.push({ name: isService.name, url: `/businesses/${encodeURIComponent(decodedSlug[0])}/${encodeURIComponent(decodedSlug[1])}` });
     else items.push({ name: decodedSlug[1].replace(/-/g, " "), url: `/businesses/${encodeURIComponent(decodedSlug[0])}/${encodeURIComponent(decodedSlug[1])}` });
   }
   
@@ -452,45 +585,21 @@ function getFooterContent(currentFilters: any, categories: any[], total: number,
     };
   }
   
-  if (currentFilters.city && currentFilters.jobSlug && currentFilters.serviceName) {
-    const job = categories.find(c => c.slug === currentFilters.jobSlug);
+  if (currentFilters.serviceName && !currentFilters.city && !currentFilters.jobSlug) {
     return {
-      title: `راهنمای انتخاب ${job?.name || currentFilters.jobSlug} حرفه‌ای در ${currentFilters.city} برای خدمات ${currentFilters.serviceName} | آنتایم`,
-      content: `آنتایم سامانه هوشمند نوبت‌دهی آنلاین است. کسب و کارهای ${job?.name || currentFilters.jobSlug} در ${currentFilters.city} که خدمات ${currentFilters.serviceName} را ارائه میدهند، در آنتایم دارای صفحه اختصاصی هستند. مشتریان میتوانند با مراجعه به لینک اختصاصی هر کسب و کار، بدون نیاز به تماس تلفنی، نوبت خود را ثبت کنند. همچنین سیستم پیامک خودکار آنتایم، پیامک تأیید رزرو و یادآوری نوبت را برای مشتریان ارسال میکند.`
+      title: `راهنمای کامل انتخاب بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ایران | آنتایم`,
+      content: `آنتایم، بزرگترین سامانه نوبت‌دهی آنلاین ایران، لیست کاملی از بهترین کسب و کارهایی که خدمات ${currentFilters.serviceName} را ارائه می‌دهند گردآوری کرده است. هر کسب و کار در آنتایم یک صفحه اختصاصی دارد که مشتریان میتوانند با مراجعه به لینک اختصاصی، بدون نیاز به تماس تلفنی، نوبت خود را ثبت کنند و پیامک تأیید و یادآوری دریافت نمایند. خدمات ${currentFilters.serviceName} توسط متخصصین حرفه‌ای در سراسر ایران ارائه میشود. با آنتایم بهترین ارائه‌دهنده را پیدا کنید و به راحتی نوبت بگیرید.`
     };
   }
   
-  if (currentFilters.city && currentFilters.jobSlug) {
-    const job = categories.find(c => c.slug === currentFilters.jobSlug);
-    return {
-      title: `لیست کامل ${job?.name || currentFilters.jobSlug}‌های ${currentFilters.city} | نوبت‌دهی آنلاین با آنتایم`,
-      content: `آنتایم اپلیکیشن حرفه‌ای مدیریت نوبت‌دهی کسب و کارهاست. هر ${job?.name || currentFilters.jobSlug} در ${currentFilters.city} که در آنتایم ثبت‌نام کند، یک صفحه اختصاصی دریافت میکند. مشتریان میتوانند با دریافت لینک صفحه اختصاصی، به سادگی و در هر ساعت از شبانه‌روز نوبت خود را ثبت کنند. آنتایم علاوه بر ثبت نوبت آنلاین، پیامک تأیید رزرو و یادآوری خودکار نوبت را نیز ارسال میکند تا تجربه‌ای حرفه‌ای برای مشتریان شما رقم بخورد.`
-    };
-  }
-  
-  if (currentFilters.city && currentFilters.serviceName) {
-    return {
-      title: `بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ${currentFilters.city} | آنتایم`,
-      content: `با آنتایم، بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ${currentFilters.city} را پیدا کنید. آنتایم یک پلتفرم نوبت‌دهی آنلاین است که به هر کسب و کار یک صفحه اختصاصی میدهد. مشتریان میتوانند با استفاده از لینک اختصاصی کسب و کار، بدون تماس تلفنی و فقط در چند کلیک، نوبت خود را ثبت کنند. همچنین سیستم هوشمند آنتایم، پیامک تأیید و یادآوری نوبت را به صورت خودکار ارسال میکند.`
-    };
-  }
-  
-  if (currentFilters.jobSlug && currentFilters.serviceName) {
-    const job = categories.find(c => c.slug === currentFilters.jobSlug);
-    return {
-      title: `راهنمای انتخاب ${job?.name || currentFilters.jobSlug} برای خدمات ${currentFilters.serviceName} | آنتایم`,
-      content: `آنتایم، سامانه جامع نوبت‌دهی آنلاین، به شما کمک میکند بهترین ${job?.name || currentFilters.jobSlug}‌های ارائه‌دهنده خدمات ${currentFilters.serviceName} را پیدا کنید. کسب و کارهای عضو آنتایم، یک صفحه اختصاصی با لینک سفارشی دارند. مشتریان میتوانند با ورود به این لینک، نوبت خود را ثبت کنند و پیامک تأیید و یادآوری را دریافت نمایند. دیگر خبری از تماس‌های مکرر تلفنی و فراموشی نوبت نیست!`
-    };
-  }
-  
-  if (currentFilters.city) {
+  if (currentFilters.city && !currentFilters.jobSlug && !currentFilters.serviceName) {
     return {
       title: `راهنمای کامل کسب و کارهای ${currentFilters.city} | رزرو آنلاین نوبت با آنتایم`,
       content: `آنتایم اپلیکیشن هوشمند نوبت‌دهی است که به کسب و کارهای شهر ${currentFilters.city} امکان میدهد صفحه اختصاصی خود را داشته باشند. مشتریان میتوانند با دریافت لینک اختصاصی هر کسب و کار، به سادگی نوبت خود را ثبت کنند. سیستم آنتایم به طور خودکار پیامک تأیید رزرو و پیامک یادآوری نوبت را برای مشتریان ارسال میکند. این یعنی مدیریت حرفه‌ای نوبت‌دهی بدون سردرد و تماس‌های بی‌نتیجه!`
     };
   }
   
-  if (currentFilters.jobSlug) {
+  if (currentFilters.jobSlug && !currentFilters.city && !currentFilters.serviceName) {
     const job = categories.find(c => c.slug === currentFilters.jobSlug);
     return {
       title: `لیست بهترین ${job?.name || currentFilters.jobSlug}‌های ایران | مقایسه و رزرو آنلاین با آنتایم`,
@@ -498,10 +607,34 @@ function getFooterContent(currentFilters: any, categories: any[], total: number,
     };
   }
   
-  if (currentFilters.serviceName) {
+  if (currentFilters.city && currentFilters.jobSlug && !currentFilters.serviceName) {
+    const job = categories.find(c => c.slug === currentFilters.jobSlug);
     return {
-      title: `راهنمای انتخاب بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ایران | آنتایم`,
-      content: `به دنبال خدمات ${currentFilters.serviceName} هستید؟ آنتایم به شما کمک میکند بهترین ارائه‌دهندگان را پیدا کنید. آنتایم یک اپلیکیشن حرفه‌ای نوبت‌دهی است که به کسب و کارها صفحه اختصاصی میدهد. مشتریان میتوانند با لینک اختصاصی، آنلاین نوبت بگیرند و پیامک تأیید و یادآوری دریافت کنند. برای کسب و کارها نیز، آنتایم راهکاری ساده برای مدیریت نوبت‌ها و کاهش عدم حضور مشتریان است.`
+      title: `لیست کامل ${job?.name || currentFilters.jobSlug}‌های ${currentFilters.city} | نوبت‌دهی آنلاین با آنتایم`,
+      content: `آنتایم اپلیکیشن حرفه‌ای مدیریت نوبت‌دهی کسب و کارهاست. هر ${job?.name || currentFilters.jobSlug} در ${currentFilters.city} که در آنتایم ثبت‌نام کند، یک صفحه اختصاصی دریافت میکند. مشتریان میتوانند با دریافت لینک صفحه اختصاصی، به سادگی و در هر ساعت از شبانه‌روز نوبت خود را ثبت کنند. آنتایم علاوه بر ثبت نوبت آنلاین، پیامک تأیید رزرو و یادآوری خودکار نوبت را نیز ارسال میکند تا تجربه‌ای حرفه‌ای برای مشتریان شما رقم بخورد.`
+    };
+  }
+  
+  if (currentFilters.serviceName && currentFilters.jobSlug && !currentFilters.city) {
+    const job = categories.find(c => c.slug === currentFilters.jobSlug);
+    return {
+      title: `راهنمای انتخاب ${job?.name || currentFilters.jobSlug} برای خدمات ${currentFilters.serviceName} | آنتایم`,
+      content: `آنتایم، سامانه جامع نوبت‌دهی آنلاین، به شما کمک میکند بهترین ${job?.name || currentFilters.jobSlug}‌های ارائه‌دهنده خدمات ${currentFilters.serviceName} را پیدا کنید. کسب و کارهای عضو آنتایم، یک صفحه اختصاصی با لینک سفارشی دارند. مشتریان میتوانند با ورود به این لینک، نوبت خود را ثبت کنند و پیامک تأیید و یادآوری را دریافت نمایند. دیگر خبری از تماس‌های مکرر تلفنی و فراموشی نوبت نیست!`
+    };
+  }
+  
+  if (currentFilters.city && currentFilters.serviceName && !currentFilters.jobSlug) {
+    return {
+      title: `بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ${currentFilters.city} | آنتایم`,
+      content: `با آنتایم، بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ${currentFilters.city} را پیدا کنید. آنتایم یک پلتفرم نوبت‌دهی آنلاین است که به هر کسب و کار یک صفحه اختصاصی میدهد. مشتریان میتوانند با استفاده از لینک اختصاصی کسب و کار، بدون تماس تلفنی و فقط در چند کلیک، نوبت خود را ثبت کنند. همچنین سیستم هوشمند آنتایم، پیامک تأیید و یادآوری نوبت را به صورت خودکار ارسال میکند.`
+    };
+  }
+  
+  if (currentFilters.city && currentFilters.jobSlug && currentFilters.serviceName) {
+    const job = categories.find(c => c.slug === currentFilters.jobSlug);
+    return {
+      title: `راهنمای انتخاب ${job?.name || currentFilters.jobSlug} حرفه‌ای در ${currentFilters.city} برای خدمات ${currentFilters.serviceName} | آنتایم`,
+      content: `آنتایم سامانه هوشمند نوبت‌دهی آنلاین است. کسب و کارهای ${job?.name || currentFilters.jobSlug} در ${currentFilters.city} که خدمات ${currentFilters.serviceName} را ارائه میدهند، در آنتایم دارای صفحه اختصاصی هستند. مشتریان میتوانند با مراجعه به لینک اختصاصی هر کسب و کار، بدون نیاز به تماس تلفنی، نوبت خود را ثبت کنند. همچنین سیستم پیامک خودکار آنتایم، پیامک تأیید رزرو و یادآوری نوبت را برای مشتریان ارسال میکند.`
     };
   }
   
@@ -533,6 +666,9 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
   
   const getPageTitle = () => {
     if (q) return `🔍 نتایج جستجو: "${q}"`;
+    if (currentFilters.serviceName && !currentFilters.city && !currentFilters.jobSlug) {
+      return `✨ لیست بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ایران`;
+    }
     if (currentFilters.city && currentFilters.jobSlug && currentFilters.serviceName) {
       const job = categories.find(c => c.slug === currentFilters.jobSlug);
       return `✨ خدمات ${currentFilters.serviceName} توسط ${job?.name || currentFilters.jobSlug}‌های ${currentFilters.city}`;
@@ -560,6 +696,9 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
   const getPageDescription = () => {
     if (total === 0) return "😕 هیچ کسب و کاری با این فیلترها یافت نشد. لطفاً فیلترهای دیگری را امتحان کنید یا عبارت جستجو را تغییر دهید.";
     if (q) return `🎯 نتایج عالی برای جستجوی "${q}" در آنتایم پیدا شد. بهترین کسب و کارها و خدمات مرتبط را مشاهده کنید. آدرس، شماره تماس و نظرات کاربران در دسترس شماست.`;
+    if (currentFilters.serviceName && !currentFilters.city && !currentFilters.jobSlug) {
+      return `✨ لیست کسب و کارهای معتبر که خدمات ${currentFilters.serviceName} را با بهترین کیفیت ارائه می‌دهند — رزرو آنلاین و مشاهده نظرات کاربران. بهترین ارائه‌دهندگان خدمات ${currentFilters.serviceName} در ایران را پیدا کنید.`;
+    }
     if (currentFilters.city && currentFilters.jobSlug && currentFilters.serviceName) {
       const job = categories.find(c => c.slug === currentFilters.jobSlug);
       return `⭐ لیست ${job?.name || currentFilters.jobSlug}‌های حرفه‌ای در ${currentFilters.city} که خدمات ${currentFilters.serviceName} را با کیفیت بالا ارائه می‌دهند. آدرس، شماره تماس و نظرات کاربران را مقایسه کنید.`;
@@ -584,10 +723,9 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
     return `🎉 لیست کسب و کارهای برتر آماده ارائه خدمات حرفه‌ای در آنتایم — با ما بهترین‌ها را پیدا کنید. مشاهده آدرس، شماره تماس، نظرات کاربران و رزرو آنلاین نوبت.`;
   };
 
-  const breadcrumbItems = buildBreadcrumbItems(slug, categories, currentFilters, q);
+  const breadcrumbItems = buildBreadcrumbItems(slug, categories, currentFilters, q, popularServices);
   const footerContent = getFooterContent(currentFilters, categories, total, q);
   
-  // ساخت لینک‌های صفحه‌بندی برای هدهای سئو
   const getPaginationLinks = () => {
     const links = [];
     const baseUrl = buildBusinessUrl(currentFilters.city || undefined, currentFilters.jobSlug || undefined, currentFilters.serviceSlug || undefined, sort, 1, q);
@@ -626,8 +764,6 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
           "reviewCount": business.review_count
         } : undefined,
         "image": business.avatar_image || business.cover_image,
-        "telephone": business.phone,
-        "priceRange": business.price_range
       }
     }))
   };
@@ -654,7 +790,6 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       
-      {/* لینک‌های صفحه‌بندی سئو */}
       {getPaginationLinks().map((link, idx) => (
         <link key={idx} rel={link.rel} href={link.href} />
       ))}
@@ -663,11 +798,10 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
       <div className="min-h-screen mt-20 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rtl">
         {/* هدر */}
         <div className="relative bg-gradient-to-r from-emerald-800 via-teal-800 to-cyan-800 text-white overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-3xl"></div>
           
           <div className="relative max-w-7xl mx-auto px-4 py-12 md:py-20">
-            {/* Breadcrumb */}
             <div className="mb-6 overflow-x-auto">
               <div className="flex items-center gap-2 text-sm text-emerald-100/80 whitespace-nowrap">
                 {breadcrumbItems.map((item, idx) => (
@@ -754,7 +888,6 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                   </div>
                 )}
                 
-                {/* دسته بندی مشاغل - H2 اضافه شد */}
                 <div className="mb-8">
                   <h2 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
                     <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
@@ -790,10 +923,8 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                       );
                     })}
                   </div>
-  
                 </div>
                 
-                {/* شهرها - H2 اضافه شد */}
                 <div className="mb-8">
                   <h2 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
                     <span className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
@@ -828,10 +959,8 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                       );
                     })}
                   </div>
-           
                 </div>
                 
-                {/* خدمات محبوب - H2 اضافه شد */}
                 {popularServices.length > 0 && (
                   <div>
                     <h2 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 text-lg">
@@ -875,6 +1004,7 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                 <p className="text-gray-600 dark:text-gray-400 text-sm bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 py-2 rounded-full">
                   نمایش <span className="font-bold text-emerald-600 dark:text-emerald-400 text-base">{total.toLocaleString()}</span> نتیجه
                   {q && <span className="text-emerald-600 dark:text-emerald-400"> برای "{q}"</span>}
+                  {currentFilters.serviceName && !q && <span className="text-emerald-600 dark:text-emerald-400"> برای خدمت "{currentFilters.serviceName}"</span>}
                 </p>
                 <div className="flex gap-2 flex-wrap">
                   {[
@@ -962,6 +1092,11 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                         حذف فیلتر شغل
                       </Link>
                     )}
+                    {currentFilters.serviceName && (
+                      <Link href={buildBusinessUrl(currentFilters.city || undefined, currentFilters.jobSlug || undefined, undefined, sort, 1, q)} className="inline-block px-8 py-3.5 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        حذف فیلتر سرویس
+                      </Link>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -1019,7 +1154,7 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                               </h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 flex items-center gap-1">
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 0111.314 0z" />
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                                 {business.city || business.province || "ایران"}
@@ -1057,7 +1192,6 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
                     ))}
                   </div>
                   
-                  {/* محتوای متنی پایین صفحه برای سئو */}
                   <div className="mt-12 p-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-3">
                       {footerContent.title}
@@ -1111,78 +1245,73 @@ export default async function BusinessesPage({ params, searchParams }: Props) {
             </main>
           </div>
         </div>
-        {/* بنر دعوت به ثبت کسب و کار */}
-<div className="mt-12 max-w-7xl m-auto my-30">
-  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-2xl">
-    {/* افکت‌های پس‌زمینه */}
-   <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/20 rounded-full blur-3xl"></div>
-    <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-400/30 rounded-full blur-3xl"></div>
-    
-    {/* محتوای بنر */}
-    <div className="relative p-6 md:p-8 text-center md:text-right">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        {/* راست: متن */}
-        <div className="flex-1">
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-4 py-1.5 text-sm mb-4">
-            <span className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse"></span>
-            <span className="text-white/90">فرصت ویژه برای کسب و کارها</span>
-          </div>
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
-            ✨ کسب و کار خود را در آنتایم ثبت کنید
-          </h3>
-          <p className="text-emerald-100 text-base md:text-lg mb-4 max-w-2xl">
-            با ثبت نام در اپلیکیشن نوبت دهی آنتایم، یک صفحه اختصاصی و حرفه‌ای برای کسب و کار خود دریافت کنید. 
-            مشتریان شما میتوانند به راحتی نوبت بگیرند، پیامک یادآوری دریافت کنند و شما هم همه چیز را مدیریت کنید.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-            <div className="flex items-center gap-2 text-sm text-white/90">
-              <svg className="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>صفحه اختصاصی با لینک سفارشی</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-white/90">
-              <svg className="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>نوبت‌دهی آنلاین ۲۴ ساعته</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-white/90">
-              <svg className="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>پیامک خودکار تأیید و یادآوری</span>
-            </div>
-          </div>
-        </div>
         
-        {/* چپ: دکمه و آیکون */}
-        <div className="flex-shrink-0 text-center">
-          <div className="w-20 h-20 md:w-28 md:h-28 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <svg className="w-10 h-10 md:w-14 md:h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
+        <div className="mt-12 max-w-7xl m-auto my-30">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-2xl">
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/20 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-400/30 rounded-full blur-3xl"></div>
+            
+            <div className="relative p-6 md:p-8 text-center md:text-right">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-4 py-1.5 text-sm mb-4">
+                    <span className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse"></span>
+                    <span className="text-white/90">فرصت ویژه برای کسب و کارها</span>
+                  </div>
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                    ✨ کسب و کار خود را در آنتایم ثبت کنید
+                  </h3>
+                  <p className="text-emerald-100 text-base md:text-lg mb-4 max-w-2xl">
+                    با ثبت نام در اپلیکیشن نوبت دهی آنتایم، یک صفحه اختصاصی و حرفه‌ای برای کسب و کار خود دریافت کنید. 
+                    مشتریان شما میتوانند به راحتی نوبت بگیرند، پیامک یادآوری دریافت کنند و شما هم همه چیز را مدیریت کنید.
+                  </p>
+                  <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                    <div className="flex items-center gap-2 text-sm text-white/90">
+                      <svg className="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>صفحه اختصاصی با لینک سفارشی</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-white/90">
+                      <svg className="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>نوبت‌دهی آنلاین ۲۴ ساعته</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-white/90">
+                      <svg className="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>پیامک خودکار تأیید و یادآوری</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex-shrink-0 text-center">
+                  <div className="w-20 h-20 md:w-28 md:h-28 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                    <svg className="w-10 h-10 md:w-14 md:h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <Link
+                    href="../"
+                    className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-white text-emerald-700 rounded-xl font-bold text-sm md:text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                  >
+                    <span>همین حالا ثبت‌نام کنید</span>
+                    <svg className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Link>
+                  <p className="text-emerald-200 text-xs mt-3">
+                    * ثبت‌نام رایگان • پشتیبانی ۲۴ ساعته
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-white/20 via-white to-white/20"></div>
           </div>
-          <Link
-            href="../"
-            className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-white text-emerald-700 rounded-xl font-bold text-sm md:text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
-          >
-            <span>همین حالا ثبت‌نام کنید</span>
-            <svg className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </Link>
-          <p className="text-emerald-200 text-xs mt-3">
-            * ثبت‌نام رایگان • پشتیبانی ۲۴ ساعته
-          </p>
         </div>
-      </div>
-    </div>
-    
-    {/* دکوراسیون پایین بنر */}
-    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-white/20 via-white to-white/20"></div>
-  </div>
-</div>
         <EnhancedFooter/>
       </div>
     </>
