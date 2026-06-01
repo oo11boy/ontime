@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const success = searchParams.get("success");
 
   let connection: PoolConnection | null = null;
-  let redirectPath = ""; // متغیر برای ذخیره مسیر ریدایرکت
+  let redirectPath = "";
 
   try {
     connection = await dbPool.getConnection();
@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
         ["canceled", trackId]
       );
       
-      // ریدایرکت به صفحه نتیجه پرداخت برای وضعیت کنسل شده
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`
       );
@@ -70,60 +69,43 @@ export async function GET(req: NextRequest) {
           [smsCount, userId]
         );
         
-        // ریدایرکت به صفحه نتیجه پرداخت برای خرید شارژ پیامکی
         redirectPath = `/clientdashboard/payment/result?status=success&trackId=${trackId}`;
       } 
       else if (payment.type === "plan") {
         const planId = payment.item_id;
         
-        // 🔥 فعال‌سازی قابلیت ثبت نوبت در لینک اختصاصی
-        const isThreeMonthsPlan = (
-          payment.amount === 2580000 ||
+        // تشخیص نوع پلن نوبت‌دهی (1 ماهه یا 3 ماهه)
+        const isOneMonthBookingPlan = (
+          payment.amount === 870000 || // 87,000 تومان = 870,000 ریال
+          planId === "pro_monthly" || 
+          planId === "monthly"
+        );
+        
+        const isThreeMonthsBookingPlan = (
+          payment.amount === 2580000 || // 258,000 تومان = 2,580,000 ریال
           planId === "pro_3months" || 
           planId === "pro_quarterly" || 
           planId === "quarterly"
         );
         
         let expiryDate: Date | null = null;
+        let durationMonths = 0;
         
-        if (isThreeMonthsPlan) {
-          // دریافت لینک اختصاصی کاربر
-          const [links]: any = await connection.execute(
-            "SELECT id FROM customer_links WHERE user_id = ? AND is_deleted = 0 LIMIT 1",
-            [userId]
-          );
-          
+        // محاسبه مدت اشتراک نوبت‌دهی
+        if (isOneMonthBookingPlan) {
+          durationMonths = 1;
+          expiryDate = new Date();
+          expiryDate.setMonth(expiryDate.getMonth() + 1);
+          console.log(`🎯 فعال‌سازی نوبت‌دهی ۱ ماهه برای کاربر ${userId}`);
+        } 
+        else if (isThreeMonthsBookingPlan) {
+          durationMonths = 3;
           expiryDate = new Date();
           expiryDate.setMonth(expiryDate.getMonth() + 3);
-          
-          if (links && links.length > 0) {
-            const linkId = links[0].id;
-            
-            await connection.execute(
-              `UPDATE customer_links SET 
-                booking_feature_enabled = 1,
-                booking_feature_expiry = ?,
-                booking_feature_payment_id = ?
-              WHERE id = ?`,
-              [expiryDate.toISOString().split('T')[0], payment.id, linkId]
-            );
-            
-            console.log(`✅ قابلیت ثبت نوبت برای لینک ${linkId} فعال شد`);
-          } else {
-            const defaultSlug = `business_${userId}_${Date.now()}`;
-            await connection.execute(
-              `INSERT INTO customer_links (user_id, slug, full_url, business_name, is_active, booking_feature_enabled, booking_feature_expiry, booking_feature_payment_id, created_at) 
-               VALUES (?, ?, ?, ?, 1, 1, ?, ?, NOW())`,
-              [userId, defaultSlug, `c/${defaultSlug}`, "کسب‌وکار من", expiryDate.toISOString().split('T')[0], payment.id]
-            );
-            console.log(`✅ لینک اختصاصی جدید برای کاربر ${userId} ساخته شد`);
-          }
-          
-          // ریدایرکت به صفحه پلن‌ها برای فعال‌سازی نوبت دهی
-          redirectPath = `/clientdashboard/customer-link/plans?payment=success&trackId=${trackId}`;
-        } 
+          console.log(`🎯 فعال‌سازی نوبت‌دهی ۳ ماهه برای کاربر ${userId}`);
+        }
         else {
-          // خرید اشتراک ماهانه معمولی
+          // این بخش برای پلن‌های ماهانه اپلیکیشن (غیر از نوبت‌دهی)保持不变
           if (planId && !isNaN(Number(planId))) {
             const [plans]: any = await connection.execute(
               "SELECT * FROM plans WHERE id = ?",
@@ -181,14 +163,68 @@ export async function GET(req: NextRequest) {
             }
           }
           
-          // ریدایرکت به صفحه نتیجه پرداخت برای اشتراک ماهانه
           redirectPath = `/clientdashboard/payment/result?status=success&trackId=${trackId}`;
+        }
+        
+        // فعال‌سازی نوبت‌دهی برای پلن‌های 1 ماهه و 3 ماهه
+        if (expiryDate && durationMonths > 0) {
+          // دریافت لینک اختصاصی کاربر
+          const [links]: any = await connection.execute(
+            "SELECT id, booking_feature_enabled, booking_feature_expiry FROM customer_links WHERE user_id = ? AND is_deleted = 0 LIMIT 1",
+            [userId]
+          );
+          
+          const expiryDateStr = expiryDate.toISOString().split('T')[0];
+          
+          if (links && links.length > 0) {
+            const linkId = links[0].id;
+            const currentExpiryRaw = links[0].booking_feature_expiry;
+            const isCurrentlyEnabled = links[0].booking_feature_enabled === 1;
+            
+            let finalExpiryDate = expiryDateStr;
+            
+            // اگر قبلاً فعال بوده، تاریخ جدید رو با قبلی جمع می‌کنیم
+            if (isCurrentlyEnabled && currentExpiryRaw) {
+              const currentExpiryDate = new Date(currentExpiryRaw);
+              if (!isNaN(currentExpiryDate.getTime()) && currentExpiryDate > new Date()) {
+                const newExpiryDate = new Date(currentExpiryDate);
+                newExpiryDate.setMonth(newExpiryDate.getMonth() + durationMonths);
+                finalExpiryDate = newExpiryDate.toISOString().split('T')[0];
+                console.log(`🔄 تمدید نوبت‌دهی برای لینک ${linkId} +${durationMonths} ماه`);
+              }
+            }
+            
+            await connection.execute(
+              `UPDATE customer_links SET 
+                booking_feature_enabled = 1,
+                booking_feature_expiry = ?,
+                booking_feature_payment_id = ?
+              WHERE id = ?`,
+              [finalExpiryDate, payment.id, linkId]
+            );
+            
+            console.log(`✅ نوبت‌دهی برای لینک ${linkId} فعال شد (${durationMonths} ماهه)`);
+          } else {
+            // ساخت لینک جدید برای کاربر
+            const defaultSlug = `business_${userId}_${Date.now()}`;
+            await connection.execute(
+              `INSERT INTO customer_links 
+                (user_id, slug, full_url, business_name, is_active, 
+                 booking_feature_enabled, booking_feature_expiry, 
+                 booking_feature_payment_id, created_at) 
+               VALUES (?, ?, ?, ?, 1, 1, ?, ?, NOW())`,
+              [userId, defaultSlug, `c/${defaultSlug}`, "کسب‌وکار من", expiryDateStr, payment.id]
+            );
+            console.log(`✅ لینک اختصاصی جدید برای کاربر ${userId} ساخته شد (${durationMonths} ماهه)`);
+          }
+          
+          // ریدایرکت به صفحه پلن‌های نوبت‌دهی
+          redirectPath = `/clientdashboard/customer-link/plans?payment=success&trackId=${trackId}`;
         }
       }
 
       await connection.commit();
       
-      // ریدایرکت به مسیر تعیین شده
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL}${redirectPath}`
       );
@@ -199,7 +235,6 @@ export async function GET(req: NextRequest) {
         ["failed", trackId]
       );
       
-      // ریدایرکت به صفحه نتیجه پرداخت برای وضعیت ناموفق
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL}/clientdashboard/payment/result?status=failed&trackId=${trackId}`
       );

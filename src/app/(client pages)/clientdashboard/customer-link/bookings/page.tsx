@@ -19,6 +19,9 @@ import {
   Package,
   AlertCircle,
   Zap,
+  Bell,
+  TrendingUp,
+  Shield,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -682,7 +685,8 @@ const ReviewModal = ({
   );
 };
 
-// مودال نیاز به خرید پلن
+// مودال نیاز به خرید پلن - نسخه بازطراحی شده
+// UpgradeRequiredModal - نسخه با پلن ماهانه
 const UpgradeRequiredModal = ({
   isOpen,
   onClose,
@@ -695,88 +699,99 @@ const UpgradeRequiredModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white dark:bg-[#1a1d24] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="bg-white dark:bg-[#1a1d24] rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl"
       >
-        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Crown className="w-8 h-8 text-white" />
+        {/* هدر جمع و جور */}
+        <div className="relative px-5 pt-5 pb-2 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 mb-3 shadow-lg">
+            <Sparkles className="w-7 h-7 text-white" />
           </div>
-          <h3 className="text-xl font-bold text-white">دسترسی محدود! 🚀</h3>
-          <p className="text-amber-100 text-sm mt-1">
-            برای مشاهده درخواست‌های نوبت مشتریان
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 p-1 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition"
+          >
+            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          </button>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+            🎯فعالسازی نوبت‌دهی آنلاین
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            مشتریات ۲۴ ساعته نوبت می‌گیرن
           </p>
         </div>
 
-        <div className="p-6">
-          <div className="text-center mb-6">
-            <p className="text-gray-700 dark:text-gray-300 text-base">
-              قابلیت{" "}
-              <span className="font-bold text-amber-600">
-                مدیریت نوبت‌های مشتریان
-              </span>{" "}
-              نیاز به فعال‌سازی دارد.
-            </p>
-          </div>
-
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 mb-6">
-            <p className="text-sm font-bold text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              با فعال‌سازی این قابلیت:
-            </p>
-            <ul className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
-              <li className="flex items-center gap-2">
-                ✅ مشتریات ۲۴ ساعته آنلاین نوبت می‌گیرن
-              </li>
-              <li className="flex items-center gap-2">
-                ✅ دیگه نیازی به تماس تلفنی برای هماهنگی نیست
-              </li>
-              <li className="flex items-center gap-2">
-                ✅ تمام درخواست‌های نوبت رو اینجا می‌بینی
-              </li>
-              <li className="flex items-center gap-2">
-                ✅ می‌تونی نوبت‌ها رو تایید یا رد کنی
-              </li>
-            </ul>
-          </div>
-
-          <div className="text-center mb-6">
-            <p className="text-gray-500 text-sm line-through">
-              قبلاً ۳۲۴,۰۰۰ تومان
-            </p>
-            <div className="flex items-baseline justify-center gap-1 mt-1">
-              <span className="text-3xl font-bold text-amber-600">۲۵۸</span>
-              <span className="text-gray-500">هزار تومان</span>
-              <span className="text-3xl font-bold text-amber-600">۳ ماهه</span>
+        {/* ۳ مزیت کلیدی به صورت لیبل */}
+        <div className="px-5">
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-full">
+              <Calendar className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">ثبت آنلاین</span>
             </div>
-            <p className="text-lg text-emerald-600 mt-1">
-              ✨ (معادل ۸۶ هزار تومان در ماه)
-            </p>
+            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-full">
+              <Bell className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">اعلان فوری</span>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-full">
+              <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">۳ برابر جذب</span>
+            </div>
           </div>
+        </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 transition active:scale-95"
-            >
-              بعداً
-            </button>
-            <button
-              onClick={onUpgrade}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg transition active:scale-95"
-            >
-              <Rocket className="w-4 h-4" />
-              فعال‌سازی ثبت نوبت
-            </button>
+        {/* قیمت - برجسته و واضح */}
+        <div className="text-center mb-4">
+          <div className="inline-flex items-baseline gap-1">
+                    <span className="text-sm text-gray-500">ماهانه</span>
+            <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400"> فقط ۸۷</span>
+            <span className="text-sm text-gray-500">هزار تومان</span>
           </div>
+          <p className="text-xs text-emerald-600 font-bold mt-0.5">✨ فقط ۲,۹۰۰ تومان در روز</p>
+      
+        </div>
 
-          <p className="text-center text-xs text-gray-400 mt-4">
-            🔒 پرداخت امن • ۷ روز ضمانت بازگشت وجه
-          </p>
+  
+
+        {/* CTA دکمه اصلی */}
+        <div className="px-5 pb-4">
+          <button
+            onClick={onUpgrade}
+            className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition transform hover:scale-[1.02] active:scale-95 shadow-md"
+          >
+            <Rocket className="w-4 h-4" />
+            فعال‌سازی نوبت‌دهی (ماهانه)
+          </button>
+
+          {/* گزینه بعداً */}
+          <button
+            onClick={onClose}
+            className="w-full mt-2 py-2 text-gray-500 text-xs font-medium hover:text-gray-700 transition"
+          >
+            بعداً تصمیم می‌گیرم
+          </button>
+
+          {/* امنیت و گارانتی */}
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <div className="flex items-center gap-1">
+              <Shield className="w-3 h-3 text-gray-400" />
+              <span className="text-[9px] text-gray-400">پرداخت امن</span>
+            </div>
+            <div className="w-0.5 h-0.5 bg-gray-300 rounded-full" />
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-3 h-3 text-gray-400" />
+              <span className="text-[9px] text-gray-400">۷ روز گارانتی</span>
+            </div>
+            <div className="w-0.5 h-0.5 bg-gray-300 rounded-full" />
+            <div className="flex items-center gap-1">
+              <Zap className="w-3 h-3 text-gray-400" />
+              <span className="text-[9px] text-gray-400">لغو آسان</span>
+            </div>
+          </div>
         </div>
       </motion.div>
     </div>

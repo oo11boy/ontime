@@ -13,21 +13,20 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     let finalAmountToman = 0;
     let planIdentifier = null;
 
-    // ۱. اگر قصد خرید پلن (فعال‌سازی ثبت نوبت) را دارد
+    // ۱. اگر قصد خرید پلن نوبت‌دهی را دارد
     if (type === "plan") {
-      // پشتیبانی از شناسه‌های مختلف پلن
+      // پلن ۳ ماهه نوبت‌دهی
       if (item_id === "pro_3months" || item_id === "pro_quarterly" || item_id === "quarterly") {
-        // پلن ۳ ماهه ۲۵۸ هزار تومانی
         finalAmountToman = 258000;
         planIdentifier = "pro_3months";
       } 
+      // پلن ۱ ماهه نوبت‌دهی
       else if (item_id === "pro_monthly" || item_id === "monthly") {
-        // پلن ماهانه (اگر بخواهید بعداً اضافه کنید)
         finalAmountToman = 87000;
         planIdentifier = "pro_monthly";
       }
+      // سایر پلن‌های اپلیکیشن (تغییر نمی‌کنیم)
       else {
-        // اگر با آیدی عددی اومد، از دیتابیس بخوان
         let query = "";
         let params: any[] = [];
         
@@ -46,9 +45,8 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       }
     }
 
-    // ۲. اگر قصد خرید بسته پیامکی (sms) را دارد
+    // ۲. خرید بسته پیامکی (تغییر نمی‌کنیم)
     else if (type === "sms") {
-      // ابتدا پلن کاربر را دریافت کن
       const [users]: any = await connection.execute(
         "SELECT plan_key FROM users WHERE id = ?",
         [userId]
@@ -59,17 +57,12 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       }
       
       const userPlanKey = users[0].plan_key;
-      
-      // قیمت پیش‌فرض برای پلن‌های رایگان (price per 100 SMS)
       let pricePer100 = 0;
       
-      // اگر کاربر پلن رایگان دارد، از قیمت پیش‌فرض استفاده کن
       if (userPlanKey === "free" || userPlanKey === "free_trial") {
-    
-        pricePer100 = 45000; // 5,000 تومان به ازای هر 100 پیامک
+        pricePer100 = 45000;
         console.log(`User has free plan (${userPlanKey}), using default price: ${pricePer100} تومان per 100 SMS`);
       } else {
-        // برای پلن‌های پولی، از دیتابیس بخوان
         const [plans]: any = await connection.execute(
           "SELECT price_per_100_sms FROM plans WHERE plan_key = ?",
           [userPlanKey]
@@ -82,21 +75,20 @@ export const POST = withAuth(async (req: NextRequest, context) => {
         pricePer100 = plans[0].price_per_100_sms;
       }
       
-      // محاسبه مبلغ نهایی
       finalAmountToman = Math.round((Number(item_id) / 100) * pricePer100);
     }
 
     if (finalAmountToman <= 0) throw new Error("مبلغ تراکنش محاسبه نشد.");
     const amountInRial = finalAmountToman * 10;
 
-    // ۳. ثبت تراکنش در جدول لاگ پرداخت‌ها
+    // ثبت تراکنش
     const [res]: any = await connection.execute(
       "INSERT INTO payments (user_id, amount, type, item_id, status) VALUES (?, ?, ?, ?, 'pending')",
       [userId, amountInRial, type, planIdentifier || item_id]
     );
     const localPaymentId = res.insertId;
 
-    // ========== درگاه زیبال ==========
+    // درگاه زیبال
     const zibalResponse = await fetch("https://gateway.zibal.ir/v1/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -104,7 +96,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
         merchant: process.env.ZIBAL_CODE,
         amount: amountInRial,
         callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/client/payment/verify`,
-        description: description || `خرید ${type === "sms" ? "پیامک" : "فعال‌سازی ثبت نوبت به مدت 3 ماه"}`,
+        description: description || `خرید ${type === "sms" ? "پیامک" : "فعال‌سازی ثبت نوبت"}`,
         orderId: localPaymentId.toString(),
       }),
     });
