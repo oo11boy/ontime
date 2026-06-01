@@ -12,6 +12,8 @@ interface InfoTabProps {
   isWorkingNow: boolean;
   onBookingClick: () => void;
   isBookingEnabled: boolean;
+  onSocialClick?: (socialType: string) => void;
+  onShareClick?: () => void;  // اضافه شد برای رهگیری اشتراک‌گذاری
 }
 
 export function InfoTab({
@@ -19,10 +21,16 @@ export function InfoTab({
   isWorkingNow,
   onBookingClick,
   isBookingEnabled,
+  onSocialClick,
+  onShareClick,  // اضافه شد
 }: InfoTabProps) {
   return (
     <div>
-      <Header business={business} isWorkingNow={isWorkingNow} />
+      <Header 
+        business={business} 
+        isWorkingNow={isWorkingNow} 
+        onShareClick={onShareClick}  // پاس دادن به Header
+      />
       <div className="px-4 mt-20">
         {/* بیوگرافی کسب‌وکار */}
         {business.bio && (
@@ -33,7 +41,7 @@ export function InfoTab({
           </div>
         )}
 
-        {/* گالری تصاویر - اضافه شد */}
+        {/* گالری تصاویر */}
         {business.gallery && business.gallery.length > 0 && (
           <Gallery images={business.gallery} />
         )}
@@ -49,9 +57,12 @@ export function InfoTab({
         <WorkingHours offDays={business.off_days} workShifts={business.work_shifts} />
 
         {/* شبکه‌های اجتماعی */}
-        <SocialMedia socialMedia={business.social_media} />
+        <SocialMedia 
+          socialMedia={business.social_media} 
+          onSocialClick={onSocialClick}
+        />
 
-        {/* اگر اشتراک ثبت نوبت فعال نیست، پیام نمایش بده */}
+        {/* پیام قدرت گرفته از آنتایم */}
         {!isBookingEnabled && (
           <div className="mt-6 p-3 bg-gray-800/50 rounded-xl text-center border border-gray-700">
             <Link href="/" className="text-gray-500 text-sm">

@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse, userAgent } from 'next/server';
 import { dbPool } from "@/lib/db";
 import jwt from 'jsonwebtoken';
 import { readFile } from "fs/promises";
@@ -22,7 +21,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userType = request.cookies.get("user_type")?.value;
 
-  // ========== سرویس فایل‌های آپلودی ==========
+  // ========== 1. سرویس فایل‌های آپلودی ==========
   if (pathname.startsWith("/uploads/")) {
     const filePath = join(process.cwd(), "public", pathname);
     
@@ -58,7 +57,26 @@ export async function proxy(request: NextRequest) {
     return new NextResponse("File not found", { status: 404 });
   }
 
-  // دریافت کوکی‌های احراز هویت
+  // ========== 2. اطلاعات جغرافیایی و User-Agent برای API ها ==========
+  if (pathname.startsWith("/api/")) {
+    const { device, browser, os } = userAgent(request);
+    // بررسی وجود geo (فقط در Vercel یا Edge Runtime)
+    const geo = (request as any).geo || {};
+    
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-agent-info', JSON.stringify({ device, browser, os, geo }));
+    
+    if (geo.city) requestHeaders.set('x-geo-city', geo.city);
+    if (geo.country) requestHeaders.set('x-geo-country', geo.country);
+    if (geo.latitude) requestHeaders.set('x-geo-latitude', geo.latitude.toString());
+    if (geo.longitude) requestHeaders.set('x-geo-longitude', geo.longitude.toString());
+    
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+  }
+
+  // ========== 3. دریافت کوکی‌های احراز هویت ==========
   const clientToken = request.cookies.get("authToken")?.value;
   const isRegistered = request.cookies.get("is_registered")?.value;
   const adminToken = request.cookies.get("adminAuthToken")?.value;
@@ -126,18 +144,13 @@ export async function proxy(request: NextRequest) {
         const user = users[0];
         const now = new Date();
         
-        // اصلاح: بررسی اشتراک فعال - پلن‌های رایگان هم اگر تاریخ انقضا دارند معتبر هستند
         let hasActivePlan = false;
         
-        // اگر تاریخ انقضا وجود دارد و معتبر است
         if (user.ended_at && new Date(user.ended_at) > now) {
           hasActivePlan = true;
         }
         
-        // اگر پلن خاصی دارد (غیر از null)
         if (user.plan_key && user.plan_key !== "expired") {
-          // اگر تاریخ انقضا دارد که قبلاً بررسی شد
-          // اگر تاریخ انقضا ندارد، پلن‌های پولی را قبول کن
           if (!user.ended_at && user.plan_key !== "free" && user.plan_key !== "free_trial") {
             hasActivePlan = true;
           }
@@ -179,6 +192,7 @@ export async function proxy(request: NextRequest) {
     }
   }
   
+  // --- وضعیت د: محدودیت دسترسی پرسنل ---
   if (
     userType === "staff" &&
     (pathname === "/clientdashboard/Staffs" ||

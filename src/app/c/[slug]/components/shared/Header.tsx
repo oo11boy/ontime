@@ -1,3 +1,4 @@
+// src/app/c/[slug]/components/shared/Header.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,9 +10,10 @@ import Image from "next/image";
 interface HeaderProps {
   business: BusinessData;
   isWorkingNow: boolean;
+  onShareClick?: () => void;  // اضافه شد
 }
 
-export function Header({ business, isWorkingNow }: HeaderProps) {
+export function Header({ business, isWorkingNow, onShareClick }: HeaderProps) {
   // State برای مدیریت خطای تصاویر
   const [coverError, setCoverError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
@@ -20,16 +22,31 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
   const avatarImage = business.avatar_image || business.logo;
   const hasAvatar = !!avatarImage && !avatarError;
 
-  // اشتراک‌گذاری
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: business.business_name,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("لینک صفحه کپی شد");
+  // اشتراک‌گذاری با لاگ
+  const handleShare = async () => {
+    // لاگ کلیک اشتراک
+    if (onShareClick) {
+      onShareClick();
+    }
+    
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: business.business_name,
+          text: `مشاهده پروفایل ${business.business_name} در آنتایم`,
+          url: window.location.href,
+        });
+        toast.success("با موفقیت به اشتراک گذاشته شد");
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("لینک صفحه کپی شد");
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+      // اگر کاربر خودش Cancel کرد، خطا نشون نده
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast.error("خطا در اشتراک‌گذاری");
+      }
     }
   };
 
@@ -41,16 +58,16 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
   return (
     <div className="relative mb-8 md:mb-10">
       {/* ========== بخش کاور ========== */}
-      <div className="relative h-64 sm:h-72  w-full overflow-hidden rounded-b-3xl md:rounded-b-4xl shadow-2xl">
+      <div className="relative h-64 sm:h-72 w-full overflow-hidden rounded-b-3xl md:rounded-b-4xl shadow-2xl">
         {hasCover ? (
           <>
             <Image
               src={business.cover_image!}
-              width={500}
-              height={500}
-              alt="کاور بیزینس"
+              width={800}
+              height={400}
+              alt={`کاور ${business.business_name}`}
               className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-              loading="eager"
+              priority
               onError={() => setCoverError(true)}
             />
             {/* لایه محو برای خوانایی متن */}
@@ -93,12 +110,12 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border-2 border-white/30 shadow-xl bg-gradient-to-br from-gray-800 to-gray-900 flex-shrink-0">
                   {hasAvatar ? (
                     <Image
-                      width={500}
-                      height={500}
+                      width={96}
+                      height={96}
                       src={avatarImage!}
                       alt={`لوگوی ${business.business_name}`}
                       className="w-full h-full object-cover"
-                      loading="eager"
+                      priority
                       onError={() => setAvatarError(true)}
                     />
                   ) : (
@@ -109,7 +126,7 @@ export function Header({ business, isWorkingNow }: HeaderProps) {
                     </div>
                   )}
                 </div>
-                {/* نشانگر آنلاین بودن (اختیاری - افکت لوکس دور آواتار) */}
+                {/* نشانگر آنلاین بودن */}
                 {isWorkingNow && (
                   <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white shadow-md animate-pulse" />
                 )}
