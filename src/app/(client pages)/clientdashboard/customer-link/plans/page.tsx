@@ -113,7 +113,7 @@ export default function PlansPage() {
       toastShownRef.current = true;
       toast.dismiss();
       toast.success("🎉 تبریک! ثبت نوبت مشتریان فعال شد!", { 
-        duration: 5000,
+        duration: 2000,
         id: "payment-success"
       });
       
