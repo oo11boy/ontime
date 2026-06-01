@@ -1,4 +1,3 @@
-// src/app/c/[slug]/components/tabs/info/InfoTab.tsx
 import { Header } from "../../shared/Header";
 import { ServicesList } from "../../shared/ServicesList";
 import { WorkingHours } from "../../shared/WorkingHours";
@@ -13,7 +12,7 @@ interface InfoTabProps {
   onBookingClick: () => void;
   isBookingEnabled: boolean;
   onSocialClick?: (socialType: string) => void;
-  onShareClick?: () => void;  // اضافه شد برای رهگیری اشتراک‌گذاری
+  onShareClick?: () => void;
 }
 
 export function InfoTab({
@@ -22,14 +21,14 @@ export function InfoTab({
   onBookingClick,
   isBookingEnabled,
   onSocialClick,
-  onShareClick,  // اضافه شد
+  onShareClick,
 }: InfoTabProps) {
   return (
     <div>
       <Header 
         business={business} 
         isWorkingNow={isWorkingNow} 
-        onShareClick={onShareClick}  // پاس دادن به Header
+        onShareClick={onShareClick}
       />
       <div className="px-4 mt-20">
         {/* بیوگرافی کسب‌وکار */}
@@ -49,7 +48,7 @@ export function InfoTab({
         {/* لیست خدمات */}
         <ServicesList
           services={business.services}
-          onBookingClick={isBookingEnabled ? onBookingClick : undefined}
+          onBookingClick={onBookingClick}
           showBookingButton={isBookingEnabled}
         />
         
@@ -62,15 +61,12 @@ export function InfoTab({
           onSocialClick={onSocialClick}
         />
 
-        {/* پیام قدرت گرفته از آنتایم */}
-        {!isBookingEnabled && (
-          <div className="mt-6 p-3 bg-gray-800/50 rounded-xl text-center border border-gray-700">
+     <div className="mt-6 p-3 bg-gray-800/50 rounded-xl text-center border border-gray-700">
             <Link href="/" className="text-gray-500 text-sm">
               قدرت گرفته از آنتایم
             </Link>
           </div>
-        )}
-      </div>
+       </div>
     </div>
   );
 }

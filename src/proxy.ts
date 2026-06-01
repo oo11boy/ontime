@@ -111,9 +111,23 @@ export async function proxy(request: NextRequest) {
     }
 
     // ========== بررسی اشتراک فعال برای مسیرهای خاص ==========
+    // مسیرهایی که نیاز به اشتراک فعال دارند (نوبت‌دهی و سایر امکانات)
     const subscriptionRequiredPaths = [
+      // مسیرهای ثبت نوبت
       "/clientdashboard/bookingsubmit",
       "/clientdashboard/Staffs",
+      
+      // ========== مسیرهای نوبت‌دهی (اضافه شده) ==========
+      "/clientdashboard/customer-link/bookings",        // مدیریت درخواست‌های نوبت
+      "/clientdashboard/customer-link/plans",           // صفحه پلن‌ها (برای تمدید)
+      "/api/client/booking-changes",                    // API مدیریت تغییرات نوبت
+      "/api/client/booking-changes/route",              // API مدیریت تغییرات نوبت
+      "/api/client/customer-link/booking",              // API ثبت نوبت
+      "/api/client/customer-link/booking/route",        // API ثبت نوبت
+      "/api/client/customer-link/booking-feature-status", // API وضعیت نوبت‌دهی
+      
+      // مسیرهای گالری و تصاویر (اختیاری - اگر می‌خوای فقط با اشتراک باشه)
+      // "/clientdashboard/gallery",
     ];
     
     const requiresSubscription = subscriptionRequiredPaths.some(path => 
@@ -146,32 +160,99 @@ export async function proxy(request: NextRequest) {
         
         let hasActivePlan = false;
         
+        // بررسی تاریخ انقضای اشتراک
         if (user.ended_at && new Date(user.ended_at) > now) {
           hasActivePlan = true;
         }
         
+        // بررسی پلن‌های ویژه (free, free_trial نباید به نوبت‌دهی دسترسی داشته باشند)
         if (user.plan_key && user.plan_key !== "expired") {
           if (!user.ended_at && user.plan_key !== "free" && user.plan_key !== "free_trial") {
             hasActivePlan = true;
           }
         }
         
-        console.log("[Middleware] Subscription Check:", {
+        console.log("[Middleware] Subscription Check for Booking:", {
           userId: user.id,
+          pathname: pathname,
           plan_key: user.plan_key,
           ended_at: user.ended_at,
           now: now.toISOString(),
           hasActivePlan: hasActivePlan
         });
         
+        // اگر اشتراک فعال نداره، به صفحه قیمت‌گذاری هدایت کن
         if (!hasActivePlan) {
-          const pricingUrl = new URL("/clientdashboard/pricingplan?expired=true", request.url);
+          const pricingUrl = new URL("/clientdashboard/pricingplan?expired=true&from=booking", request.url);
           return NextResponse.redirect(pricingUrl);
         }
         
       } catch (error) {
         console.error("[Middleware] Error checking subscription:", error);
-        return NextResponse.next();
+        // در صورت خطا، اجازه دسترسی نده (Safe approach)
+        const pricingUrl = new URL("/clientdashboard/pricingplan?expired=true&error=true", request.url);
+        return NextResponse.redirect(pricingUrl);
+      } finally {
+        if (connection) connection.release();
+      }
+    }
+    
+    // ========== بررسی دسترسی نوبت‌دهی برای API های خاص (لایه دوم امنیت) ==========
+    // این بخش برای API هایی که ممکن است مستقیماً فراخوانی شوند
+    const bookingApiPaths = [
+      "/api/client/booking-changes",
+      "/api/client/customer-link/booking",
+    ];
+    
+    const isBookingApi = bookingApiPaths.some(path => 
+      pathname === path || pathname.startsWith(path + "/")
+    );
+    
+    if (isBookingApi) {
+      let connection = null;
+      
+      try {
+        connection = await dbPool.getConnection();
+        
+        const [users]: any = await connection.execute(
+          `SELECT u.id, u.plan_key, u.ended_at 
+           FROM users u 
+           WHERE u.id = ?`,
+          [userId]
+        );
+        
+        if (users && users.length > 0) {
+          const user = users[0];
+          const now = new Date();
+          let hasActivePlan = false;
+          
+          if (user.ended_at && new Date(user.ended_at) > now) {
+            hasActivePlan = true;
+          }
+          
+          if (user.plan_key && user.plan_key !== "expired" && user.plan_key !== "free" && user.plan_key !== "free_trial") {
+            if (!user.ended_at) {
+              hasActivePlan = true;
+            }
+          }
+          
+          if (!hasActivePlan) {
+            return NextResponse.json(
+              { 
+                success: false, 
+                message: "دسترسی به نوبت‌دهی نیازمند اشتراک فعال است. لطفاً اشتراک خود را تمدید کنید.",
+                redirectTo: "/clientdashboard/pricingplan?expired=true"
+              },
+              { status: 403 }
+            );
+          }
+        }
+      } catch (error) {
+        console.error("[Middleware] Error checking booking API access:", error);
+        return NextResponse.json(
+          { success: false, message: "خطا در بررسی دسترسی" },
+          { status: 500 }
+        );
       } finally {
         if (connection) connection.release();
       }
@@ -198,7 +279,9 @@ export async function proxy(request: NextRequest) {
     (pathname === "/clientdashboard/Staffs" ||
       pathname === "/clientdashboard/pricingplan" ||
       pathname === "/clientdashboard/buysms" ||
-      pathname === "/clientdashboard/settings")
+      pathname === "/clientdashboard/settings" ||
+      pathname.startsWith("/clientdashboard/customer-link/plans") ||
+      pathname.startsWith("/clientdashboard/customer-link/bookings"))
   ) {
     return NextResponse.redirect(new URL("/clientdashboard", request.url));
   }
@@ -213,5 +296,7 @@ export const config = {
     "/admin-login",
     "/clientdashboard/:path*",
     "/admindashboard/:path*",
+    "/api/client/booking-changes/:path*",
+    "/api/client/customer-link/booking/:path*",
   ],
 };

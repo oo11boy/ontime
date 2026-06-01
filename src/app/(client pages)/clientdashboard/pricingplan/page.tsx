@@ -68,22 +68,38 @@ export default function PricingPlans() {
     popular: plan.plan_key === "pro",
   }));
 
-  const handlePlanSelection = (planKey: string) => {
-    const plan = processedPlans.find((p) => p.plan_key === planKey);
-    if (!plan) return;
+const handlePlanSelection = (planKey: string) => {
+  const plan = processedPlans.find((p) => p.plan_key === planKey);
+  if (!plan) return;
 
-    if (planKey === "free_trial" && hasUsedFreeTrial) {
-      return;
-    }
+  if (planKey === "free_trial" && hasUsedFreeTrial) {
+    return;
+  }
 
-    if (planKey === activePlanKey && !isExpired) {
-      setError("اشتراک فعلی شما هنوز معتبر است.");
-      return;
-    }
-
-    setError(null);
-    setSelectedPlanForModal(plan);
+  // محاسبه روزهای باقیمانده برای پلن فعلی
+  const getRemainingDays = () => {
+    if (!dashboardData?.user?.ended_at) return null;
+    const now = new Date();
+    const endedAt = new Date(dashboardData.user.ended_at);
+    const diffTime = endedAt.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
+  
+  const remainingDays = getRemainingDays();
+  const isExpiringSoon = remainingDays !== null && remainingDays <= 5 && remainingDays > 0;
+  const isExpired = remainingDays !== null && remainingDays <= 0;
+
+  // اگر پلن فعال است و منقضی نشده و نزدیک به انقضا هم نیست -> خطا بده
+  // اما اگر نزدیک به انقضاست -> اجازه تمدید بده
+  if (planKey === activePlanKey && !isExpired && !isExpiringSoon) {
+    setError("اشتراک فعلی شما هنوز معتبر است.");
+    return;
+  }
+
+  setError(null);
+  setSelectedPlanForModal(plan);
+};
 
   const confirmAndPay = async () => {
     if (!selectedPlanForModal) return;
@@ -149,7 +165,7 @@ export default function PricingPlans() {
           hasUsedFreeTrial={hasUsedFreeTrial}
           formatPrice={formatPrice}
           onSelectPlan={handlePlanSelection}
-          isExpired={isExpired}
+    currentPlanEndedAt={dashboardData?.user?.ended_at} 
         />
       </div>
 

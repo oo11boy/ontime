@@ -18,7 +18,7 @@ interface PlansListProps {
   hasUsedFreeTrial: boolean;
   formatPrice: (price: number) => string;
   onSelectPlan: (planKey: string) => void;
-  isExpired: boolean;
+  currentPlanEndedAt?: string | null;  // اضافه شد
 }
 
 export const PlansList: React.FC<PlansListProps> = ({
@@ -27,7 +27,7 @@ export const PlansList: React.FC<PlansListProps> = ({
   hasUsedFreeTrial,
   formatPrice,
   onSelectPlan,
-  isExpired,
+  currentPlanEndedAt,
 }) => {
   return (
     <div className="space-y-5">
@@ -42,7 +42,7 @@ export const PlansList: React.FC<PlansListProps> = ({
             hasUsedFreeTrial={hasUsedFreeTrial}
             formatPrice={formatPrice}
             onSelect={onSelectPlan}
-            isExpired={isExpired}
+            currentPlanEndedAt={currentPlanEndedAt}  // پاس داده شد
           />
         );
       })}

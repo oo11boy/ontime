@@ -1,4 +1,3 @@
-// src/app/clientdashboard/customer-link/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,19 +13,21 @@ import {
   Rocket,
   Loader2,
   Check,
+  Calendar,
+  Clock,
+  AlertTriangle,
   Zap,
-  Users,
-  Globe,
-  Share,
+  ArrowRight
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { motion } from "framer-motion";
 import { CreateCustomerLinkWizard } from "./components/CreateCustomerLinkWizard";
 import { BusinessInfoBox } from "./components/BusinessInfoBox";
 import { ServicesBox } from "./components/ServicesBox";
 import { WorkingHoursBox } from "./components/WorkingHoursBox";
 import { SocialMediaBox } from "./components/SocialMediaBox";
 import { GalleryBox } from "./components/GalleryBox";
-import { PlanStatusBox } from "./components/PlanStatusBox";
+import { useDashboard } from "@/hooks/useDashboard";
 
 // ==================== Types ====================
 interface SocialMedia {
@@ -71,6 +72,158 @@ interface ExistingLink {
   off_days?: number[];
   province?: string;
   city?: string;
+}
+
+// ==================== کامپوننت نمایش وضعیت اشتراک (نسخه مینیمال و اطلاع‌رسانی) ====================
+function SubscriptionStatusCard({ 
+  remainingDays, 
+  onRenew,
+  isLoading 
+}: { 
+  remainingDays: number | null;
+  onRenew: () => void;
+  isLoading: boolean;
+}) {
+  if (remainingDays === null) return null;
+  
+  const isExpiringSoon = remainingDays <= 5;
+  const isExpired = remainingDays <= 0;
+  const isVeryLow = remainingDays <= 3;
+  
+  // فرمت کردن عدد با کاما
+  const formattedDays = remainingDays.toLocaleString('fa-IR');
+  
+  if (isExpired) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="mb-4 rounded-xl bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/20 border border-red-200 dark:border-red-800/50 p-3"
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-red-700 dark:text-red-300">
+                اشتراک نوبت‌دهی منقضی شد
+              </p>
+              <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5">
+                مشتریان نمی‌توانند نوبت جدید ثبت کنند
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onRenew}
+            disabled={isLoading}
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-all flex items-center gap-1 shrink-0 disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <>
+                <Zap className="w-3 h-3" />
+                تمدید
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className={`mb-4 rounded-xl p-3 ${
+        isExpiringSoon 
+          ? "bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50" 
+          : "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+            isExpiringSoon 
+              ? "bg-amber-100 dark:bg-amber-900/50" 
+              : "bg-emerald-100 dark:bg-emerald-900/50"
+          }`}>
+            {isExpiringSoon ? (
+              <Clock className={`w-4 h-4 ${
+                isExpiringSoon 
+                  ? "text-amber-600 dark:text-amber-400" 
+                  : "text-emerald-600 dark:text-emerald-400"
+              }`} />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className={`text-sm font-bold ${
+                isExpiringSoon 
+                  ? "text-amber-700 dark:text-amber-300" 
+                  : "text-emerald-700 dark:text-emerald-300"
+              }`}>
+                {isExpiringSoon ? "⚡ در حال اتمام" : "✓ فعال"}
+              </p>
+              <div className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                isExpiringSoon 
+                  ? "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200" 
+                  : "bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200"
+              }`}>
+                {formattedDays} روز مانده
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              مشتریان تا {formattedDays} روز دیگر می‌توانند آنلاین نوبت ثبت کنند
+            </p>
+          </div>
+        </div>
+        
+        {isExpiringSoon && (
+          <button
+            onClick={onRenew}
+            disabled={isLoading}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 shrink-0 disabled:opacity-50 ${
+              isVeryLow
+                ? "bg-orange-600 hover:bg-orange-700 text-white"
+                : "bg-amber-500 hover:bg-amber-600 text-white"
+            }`}
+          >
+            {isLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <>
+                <Zap className="w-3 h-3" />
+                تمدید
+              </>
+            )}
+          </button>
+        )}
+      </div>
+      
+      {/* نوار پیشرفت کوچک برای حالت نزدیک به اتمام */}
+      {isExpiringSoon && (
+        <div className="mt-2">
+          <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${(remainingDays / 30) * 100}%` }}
+              transition={{ duration: 0.5 }}
+              className={`h-full rounded-full ${
+                isVeryLow ? "bg-orange-500" : "bg-amber-500"
+              }`}
+            />
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
 }
 
 // ==================== کامپوننت نمایش لینک موجود ====================
@@ -357,36 +510,35 @@ export default function CustomerLinkHomePage() {
   const [hasLink, setHasLink] = useState<boolean | null>(null);
   const [existingLink, setExistingLink] = useState<ExistingLink | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadings, setIsLoading] = useState(true);
   const [editData, setEditData] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [planStatus, setPlanStatus] = useState<{
-    isEnabled: boolean;
-    expiryDate: string | null;
-    daysRemaining: number;
-  }>({ isEnabled: false, expiryDate: null, daysRemaining: 0 });
-  const [hasPurchasedPlan, setHasPurchasedPlan] = useState(false);
+  const [isRenewing, setIsRenewing] = useState(false);
+  const { data: dashboardData, isLoading, error, refetch } = useDashboard();
 
-  const fetchPlanStatus = async () => {
+  // محاسبه روزهای باقیمانده (اصلاح شده)
+  const calculateRemainingDays = (endedAt: string | null | undefined): number | null => {
+    if (!endedAt) return null;
     try {
-      const res = await fetch("/api/client/customer-link/booking-feature-status");
-      const data = await res.json();
-      console.log("=== Plan Status Response ===", data);
-      
-      if (data.success) {
-        setPlanStatus({
-          isEnabled: data.isEnabled,
-          expiryDate: data.expiryDate,
-          daysRemaining: data.daysRemaining || 0,
-        });
-        
-        // اگر expiryDate وجود داشته باشد، یعنی قبلاً پلن خریده شده
-        // (حتی اگر منقضی شده باشد)
-        setHasPurchasedPlan(!!data.expiryDate);
-      }
+      const endDate = new Date(endedAt);
+      const now = new Date();
+      // تنظیم ساعت به صفر برای مقایسه فقط روزها
+      endDate.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      const diffTime = endDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
     } catch (error) {
-      console.error("Error fetching plan status:", error);
+      console.error("Error calculating days:", error);
+      return null;
     }
+  };
+  
+  const remainingDays = calculateRemainingDays(dashboardData?.user?.ended_at);
+
+  const handleRenewSubscription = () => {
+    setIsRenewing(true);
+    router.push("/clientdashboard/pricingplan");
   };
 
   const fetchCustomerLink = async () => {
@@ -431,7 +583,6 @@ export default function CustomerLinkHomePage() {
 
   useEffect(() => {
     fetchCustomerLink();
-    fetchPlanStatus();
   }, []);
 
   const handleCreateSuccess = () => {
@@ -601,7 +752,7 @@ export default function CustomerLinkHomePage() {
     await fetchCustomerLink();
   };
 
-  if (isLoading) {
+  if (isLoadings) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
@@ -623,16 +774,13 @@ export default function CustomerLinkHomePage() {
 
         {hasLink && existingLink ? (
           <>
-            {/* باکس پلن - فقط در صورتی که قبلاً پلن خریده شده باشد */}
-            {hasPurchasedPlan && (
-              <div className="mb-4">
-                <PlanStatusBox 
-                  expiryDate={planStatus.expiryDate}
-                  daysRemaining={planStatus.daysRemaining}
-                  hasPurchasedPlan={hasPurchasedPlan}
-                  onRefresh={fetchPlanStatus}
-                />
-              </div>
+            {/* کارت نمایش وضعیت اشتراک */}
+            {remainingDays !== null && (
+              <SubscriptionStatusCard 
+                remainingDays={remainingDays}
+                onRenew={handleRenewSubscription}
+                isLoading={isRenewing}
+              />
             )}
             
             <ExistingLinkCard 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Calendar, Star } from "lucide-react";
+import { Home, Calendar, Star, AlertTriangle } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import Script from "next/script";
 
@@ -21,7 +21,6 @@ interface Tab {
 
 interface CustomerLinkClientProps {
   initialBusiness: BusinessData;
-  initialBookingEnabled: boolean;
   slug: string;
 }
 
@@ -79,7 +78,6 @@ function detectAutoSource(): { source: string; medium: string; sourcePersian: st
   const userAgent = navigator.userAgent.toLowerCase();
   const referrer = document.referrer.toLowerCase();
 
-  // اولویت با Referrer
   if (referrer.includes('telegram') || referrer.includes('t.me')) return { source: 'telegram', medium: 'social', sourcePersian: '💬 تلگرام' };
   if (referrer.includes('whatsapp') || referrer.includes('wa.me')) return { source: 'whatsapp', medium: 'social', sourcePersian: '💚 واتساپ' };
   if (referrer.includes('instagram') || referrer.includes('instagr.am')) return { source: 'instagram', medium: 'social', sourcePersian: '📷 اینستاگرام' };
@@ -95,7 +93,6 @@ function detectAutoSource(): { source: string; medium: string; sourcePersian: st
   if (referrer.includes('linkedin.com')) return { source: 'linkedin', medium: 'social', sourcePersian: '🔗 لینکدین' };
   if (referrer.includes('aparat.com')) return { source: 'aparat', medium: 'social', sourcePersian: '🎬 آپارات' };
 
-  // سپس User‑Agent
   if (userAgent.includes('telegram')) return { source: 'telegram', medium: 'social', sourcePersian: '💬 تلگرام' };
   if (userAgent.includes('whatsapp')) return { source: 'whatsapp', medium: 'social', sourcePersian: '💚 واتساپ' };
   if (userAgent.includes('instagram')) return { source: 'instagram', medium: 'social', sourcePersian: '📷 اینستاگرام' };
@@ -108,13 +105,33 @@ function detectAutoSource(): { source: string; medium: string; sourcePersian: st
   return { source: 'direct', medium: 'none', sourcePersian: '🔵 مستقیم' };
 }
 
-export default function CustomerLinkClient({ initialBusiness, initialBookingEnabled, slug }: CustomerLinkClientProps) {
+export default function CustomerLinkClient({ initialBusiness, slug }: CustomerLinkClientProps) {
   const [business] = useState<BusinessData>(initialBusiness);
-  const [isBookingEnabled] = useState(initialBookingEnabled);
   const [activeTab, setActiveTab] = useState<"info" | "booking" | "reviews">("info");
   const customerPanelRef = useRef<CustomerPanelRef>(null);
   const [sessionId, setSessionId] = useState<string>("");
   const [isTrackingStarted, setIsTrackingStarted] = useState(false);
+  const [isSubscriptionActive, setIsSubscriptionActive] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // بررسی وضعیت اشتراک از سرور
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      try {
+        const response = await fetch(`/api/customer-link/${slug}/subscription-status`);
+        const data = await response.json();
+        setIsSubscriptionActive(data.isActive);
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+        // در صورت خطا، فرض می‌کنیم اشتراک فعال است (برای جلوگیری از اختلال)
+        setIsSubscriptionActive(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkSubscriptionStatus();
+  }, [slug]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -194,10 +211,7 @@ export default function CustomerLinkClient({ initialBusiness, initialBookingEnab
   };
 
   const handleBookingClick = () => {
-    if (!isBookingEnabled) {
-      toast.error("امکان ثبت نوبت آنلاین برای این کسب‌وکار فعال نیست");
-      return;
-    }
+
     if (activeTab === "booking") {
       customerPanelRef.current?.openNewBookingModal();
     } else {
@@ -208,15 +222,34 @@ export default function CustomerLinkClient({ initialBusiness, initialBookingEnab
     }
   };
 
+  // ساخت تب‌ها بر اساس وضعیت اشتراک
   const getVisibleTabs = (): Tab[] => {
     const tabs: Tab[] = [{ id: "info", label: "معرفی", icon: Home }];
-    if (isBookingEnabled) tabs.push({ id: "booking", label: "نوبت دهی", icon: Calendar });
+    
+    // فقط در صورتی که اشتراک فعال باشد، تب نوبت‌دهی را نشان بده
+    if (isSubscriptionActive) {
+      tabs.push({ id: "booking", label: "نوبت دهی", icon: Calendar });
+    }
+    
     tabs.push({ id: "reviews", label: "نظرات", icon: Star });
+    
     return tabs;
   };
 
   const visibleTabs = getVisibleTabs();
+
   const schemaMarkup = generateSchemaMarkup(business, slug);
+
+  // اگر در حال بارگذاری هستیم، یک اسکلتون ساده نشان بده
+  if (isLoading) {
+    return (
+      <div className="min-h-screen max-w-4xl border shadow-2xl m-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rtl">
+        <div className="flex items-center justify-center h-screen">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -228,6 +261,9 @@ export default function CustomerLinkClient({ initialBusiness, initialBookingEnab
       />
       <div className="min-h-screen max-w-4xl border shadow-2xl m-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rtl pb-20">
         <Toaster position="top-center" />
+        
+        {/* نمایش هشدار منقضی شده در بالای صفحه */}
+        
         <AnimatePresence mode="wait">
           {activeTab === "info" && (
             <motion.div
@@ -241,13 +277,13 @@ export default function CustomerLinkClient({ initialBusiness, initialBookingEnab
                 business={business}
                 isWorkingNow={isWorkingNow()}
                 onBookingClick={handleBookingClick}
-                isBookingEnabled={isBookingEnabled}
+                isBookingEnabled={isSubscriptionActive}
                 onSocialClick={handleSocialClick}
                 onShareClick={handleShareClick}
               />
             </motion.div>
           )}
-          {activeTab === "booking" && isBookingEnabled && (
+          {isSubscriptionActive && activeTab === "booking" && (
             <motion.div
               key="booking"
               initial={{ opacity: 0, y: 20 }}

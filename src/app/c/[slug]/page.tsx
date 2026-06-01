@@ -1,4 +1,3 @@
-// src/app/c/[slug]/page.tsx
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CustomerLinkClient from "./CustomerLinkClient";
@@ -17,22 +16,6 @@ async function getBusinessData(slug: string) {
   } catch (error) {
     console.error("Error fetching business data:", error);
     return null;
-  }
-}
-
-// تابع برای بررسی وضعیت اشتراک
-async function getBookingStatus(slug: string) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/customer-link/${slug}/feature-status`, {
-      cache: "no-store",
-    });
-    
-    if (!res.ok) return false;
-    const data = await res.json();
-    return data.success ? data.data.isBookingEnabled : false;
-  } catch (error) {
-    return false;
   }
 }
 
@@ -160,7 +143,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function CustomerLinkPublicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const business = await getBusinessData(slug);
-  const isBookingEnabled = await getBookingStatus(slug);
 
   if (!business) {
     notFound();
@@ -177,7 +159,6 @@ export default async function CustomerLinkPublicPage({ params }: { params: Promi
       />
       <CustomerLinkClient 
         initialBusiness={business} 
-        initialBookingEnabled={isBookingEnabled}
         slug={slug}
       />
     </>
