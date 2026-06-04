@@ -1,4 +1,3 @@
-// src/app/api/client/payment/request/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { dbPool } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -13,39 +12,26 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     let finalAmountToman = 0;
     let planIdentifier = null;
 
-    // ۱. اگر قصد خرید پلن نوبت‌دهی را دارد
+    // ۱. خرید پلن اصلی اپلیکیشن
     if (type === "plan") {
-      // پلن ۳ ماهه نوبت‌دهی
-      if (item_id === "pro_3months" || item_id === "pro_quarterly" || item_id === "quarterly") {
-        finalAmountToman = 258000;
-        planIdentifier = "pro_3months";
-      } 
-      // پلن ۱ ماهه نوبت‌دهی
-      else if (item_id === "pro_monthly" || item_id === "monthly") {
-        finalAmountToman = 87000;
-        planIdentifier = "pro_monthly";
+      let query = "";
+      let params: any[] = [];
+      
+      if (typeof item_id === "number" || !isNaN(Number(item_id))) {
+        query = "SELECT monthly_fee FROM plans WHERE id = ?";
+        params = [Number(item_id)];
+      } else {
+        query = "SELECT monthly_fee FROM plans WHERE plan_key = ?";
+        params = [item_id];
       }
-      // سایر پلن‌های اپلیکیشن (تغییر نمی‌کنیم)
-      else {
-        let query = "";
-        let params: any[] = [];
-        
-        if (typeof item_id === "number" || !isNaN(Number(item_id))) {
-          query = "SELECT monthly_fee FROM plans WHERE id = ?";
-          params = [Number(item_id)];
-        } else {
-          query = "SELECT monthly_fee FROM plans WHERE plan_key = ?";
-          params = [item_id];
-        }
-        
-        const [plans]: any = await connection.execute(query, params);
-        if (!plans || plans.length === 0) throw new Error("پلن معتبر نیست.");
-        finalAmountToman = plans[0].monthly_fee;
-        planIdentifier = item_id;
-      }
+      
+      const [plans]: any = await connection.execute(query, params);
+      if (!plans || plans.length === 0) throw new Error("پلن معتبر نیست.");
+      finalAmountToman = plans[0].monthly_fee;
+      planIdentifier = item_id;
     }
 
-    // ۲. خرید بسته پیامکی (تغییر نمی‌کنیم)
+    // ۲. خرید بسته پیامکی
     else if (type === "sms") {
       const [users]: any = await connection.execute(
         "SELECT plan_key FROM users WHERE id = ?",
@@ -96,7 +82,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
         merchant: process.env.ZIBAL_CODE,
         amount: amountInRial,
         callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/client/payment/verify`,
-        description: description || `خرید ${type === "sms" ? "پیامک" : "فعال‌سازی ثبت نوبت"}`,
+        description: description || `خرید ${type === "sms" ? "پیامک" : "اشتراک ${planIdentifier}"}`,
         orderId: localPaymentId.toString(),
       }),
     });
