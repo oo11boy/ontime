@@ -17,7 +17,6 @@ export const GET = withAdminAuth(async (req: NextRequest, context: { userId: num
        WHERE u.ended_at IS NOT NULL 
          AND u.ended_at <= CURDATE()
          AND u.has_received_expired_notification = 1
-         AND u.plan_key NOT IN ('free_trial', 'free')
        ORDER BY u.ended_at DESC
        LIMIT 200`,
       []

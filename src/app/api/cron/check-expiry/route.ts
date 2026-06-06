@@ -135,7 +135,7 @@ async function checkAndSendExpiryNotifications() {
          AND u.ended_at > CURDATE() 
          AND DATEDIFF(u.ended_at, CURDATE()) = 2
          AND (u.has_received_expiry_notification = 0 OR u.has_received_expiry_notification IS NULL)
-         AND u.plan_key NOT IN ('free_trial', 'free')
+  
        ORDER BY u.id
        LIMIT ?`,
       [MAX_PER_RUN]
@@ -230,7 +230,7 @@ async function checkAndSendExpiredNotifications() {
        WHERE u.ended_at IS NOT NULL 
          AND u.ended_at <= CURDATE()
          AND (u.has_received_expired_notification = 0 OR u.has_received_expired_notification IS NULL)
-         AND u.plan_key NOT IN ('free_trial', 'free')
+   
          AND u.has_received_expiry_notification = 1
        ORDER BY u.id
        LIMIT ?`,

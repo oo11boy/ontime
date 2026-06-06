@@ -78,7 +78,7 @@ export const POST = withAdminAuth(async (req: NextRequest, context: { userId: nu
          AND DATEDIFF(u.ended_at, CURDATE()) <= 3
          AND DATEDIFF(u.ended_at, CURDATE()) >= 1
          AND (u.has_received_expiry_notification = 0 OR u.has_received_expiry_notification IS NULL)
-         AND u.plan_key NOT IN ('free_trial', 'free')
+
        LIMIT 50`,
       []
     );
@@ -112,7 +112,7 @@ export const POST = withAdminAuth(async (req: NextRequest, context: { userId: nu
          AND u.ended_at <= CURDATE()
          AND u.ended_at >= DATE_SUB(CURDATE(), INTERVAL 3 DAY)
          AND (u.has_received_expired_notification = 0 OR u.has_received_expired_notification IS NULL)
-         AND u.plan_key NOT IN ('free_trial', 'free')
+    
        LIMIT 50`,
       []
     );

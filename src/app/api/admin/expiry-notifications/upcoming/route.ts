@@ -12,10 +12,15 @@ export const GET = withAdminAuth(async (req: NextRequest, context: { userId: num
        WHERE u.ended_at IS NOT NULL 
          AND u.ended_at > CURDATE() 
          AND DATEDIFF(u.ended_at, CURDATE()) = 2
-         AND u.plan_key NOT IN ('free_trial', 'free')
+         AND u.business_name IS NOT NULL
+         AND u.business_name != ''
+         AND u.business_name != 'NULL'
+         AND (u.has_received_expiry_notification = 0 OR u.has_received_expiry_notification IS NULL)
        ORDER BY u.ended_at ASC`,
       []
     );
+    
+    console.log(`Found ${users.length} upcoming users (2 days left, without notification)`);
     
     return NextResponse.json({ success: true, users });
   } catch (error) {
