@@ -5,7 +5,7 @@ import { withAdminAuth } from "@/lib/auth";
 
 export const GET = withAdminAuth(async (req: NextRequest, context: { userId: number; role: string }) => {
   try {
-    // نمایش همه کاربران منقضی شده (مهم نیست پیامک گرفته باشند یا نه)
+    // نمایش کاربران منقضی شده که دارای نام کسب‌وکار هستند (business_name不为空且不为空字符串)
     const users = await query<any>(
       `SELECT u.id, u.phone, u.business_name, u.ended_at, u.plan_key,
               u.has_received_expiry_notification,
@@ -16,13 +16,15 @@ export const GET = withAdminAuth(async (req: NextRequest, context: { userId: num
        FROM users u 
        WHERE u.ended_at IS NOT NULL 
          AND u.ended_at <= CURDATE()
-         AND u.plan_key NOT IN ('free_trial', 'free')
+         AND u.business_name IS NOT NULL
+         AND u.business_name != ''
+         AND u.business_name != 'NULL'
        ORDER BY u.ended_at DESC
        LIMIT 200`,
       []
     );
     
-    console.log(`Found ${users.length} expired users`);
+    console.log(`Found ${users.length} expired users with business name`);
     
     return NextResponse.json({ success: true, users });
   } catch (error) {
