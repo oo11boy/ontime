@@ -106,6 +106,9 @@ const menuItems = [
   { href: "/admindashboard/plans", icon: Layers, label: "پلن‌های سرویس" },
   { href: "/admindashboard/sms", icon: Smartphone, label: "پلن‌های پیامکی" },
 
+// ========== اطلاع‌رسانی انقضا ==========
+{ title: "اطلاع‌رسانی انقضا" },
+{ href: "/admindashboard/expiry-notifications", icon: Bell, label: "مدیریت اطلاع‌رسانی انقضا" },
   // ========== گزارشات و آمار ==========
   { title: "گزارشات و تحلیل" },
   { href: "/admindashboard/reports", icon: BarChart4, label: "گزارشات و آمار" },

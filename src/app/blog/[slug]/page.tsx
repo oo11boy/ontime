@@ -198,7 +198,6 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-
   // ۱. دریافت مقاله اصلی
   const posts: any[] = await query(`SELECT * FROM blog_posts WHERE slug = ?`, [
     slug,
