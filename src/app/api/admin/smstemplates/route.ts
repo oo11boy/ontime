@@ -33,11 +33,17 @@ const templatesHandler = withAdminAuth(async (request) => {
                 return NextResponse.json({ message: 'نام الگو و کد پترن الزامی هستند' }, { status: 400 });
             }
 
+            // اصلاح: اگر نوع bulk است و sub_type none است یا خالی است، به info تبدیل کن
+            let finalSubType = sub_type || 'none';
+            if (type === 'bulk' && (finalSubType === 'none' || finalSubType === '' || !finalSubType)) {
+                finalSubType = 'info';
+            }
+
             await query(
                 `INSERT INTO smstemplates 
                  (name, type, sub_type, payamresan_id, content, message_count, job_id, created_at) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
-                [name, type || 'generic', sub_type || 'none', payamresan_id, content || '', message_count, job_id || null]
+                [name, type || 'generic', finalSubType, payamresan_id, content || '', message_count, job_id || null]
             );
             return NextResponse.json({ message: 'الگو با موفقیت ایجاد شد' }, { status: 201 });
         } catch (error) {
@@ -55,11 +61,17 @@ const templatesHandler = withAdminAuth(async (request) => {
 
             const { name, type, sub_type, payamresan_id, content, message_count = 1, job_id } = await request.json();
 
+            // اصلاح: اگر نوع bulk است و sub_type none است یا خالی است، به info تبدیل کن
+            let finalSubType = sub_type || 'none';
+            if (type === 'bulk' && (finalSubType === 'none' || finalSubType === '' || !finalSubType)) {
+                finalSubType = 'info';
+            }
+
             const result: any = await query(
                 `UPDATE smstemplates 
                  SET name = ?, type = ?, sub_type = ?, payamresan_id = ?, content = ?, message_count = ?, job_id = ? 
                  WHERE id = ?`,
-                [name, type, sub_type || 'none', payamresan_id, content || '', message_count, job_id || null, id]
+                [name, type, finalSubType, payamresan_id, content || '', message_count, job_id || null, id]
             );
 
             if (result.affectedRows === 0) {

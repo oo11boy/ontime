@@ -80,7 +80,6 @@ const InternalTemplateModal = ({
     if (selectedSubType === "all") return templates;
     return templates.filter((t: any) => t.sub_type === selectedSubType);
   }, [templates, selectedSubType]);
-
   const groupedTemplates = useMemo(() => {
     const groups: { [key: string]: any[] } = {
       all: [],
@@ -250,7 +249,7 @@ const InternalTemplateModal = ({
                         <category.icon size={12} className="sm:size-3.5" />
                         <span className="hidden xs:inline">{category.name}</span>
                         <span className="inline xs:hidden">
-                          {category.name.slice(0, 4)}
+                          {category.name}
                         </span>
                         <span
                           className={`text-[8px] sm:text-[9px] px-1 py-0.5 rounded-full ${
@@ -310,12 +309,8 @@ const InternalTemplateModal = ({
                     >
                       <div className="flex flex-wrap justify-between items-start gap-2 mb-2 sm:mb-3">
                         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center">
-                            <FileText size={10} className="text-emerald-600 dark:text-emerald-400 sm:size-3" />
-                          </div>
-                          <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 sm:px-2 bg-emerald-100 dark:bg-emerald-500/10 rounded-lg">
-                            {template.title}
-                          </span>
+                     
+                  
                           {template.sub_type === "cancel" && (
                             <span className="text-red-700 dark:text-red-400 text-[8px] sm:text-[10px] font-medium bg-red-100 dark:bg-red-500/10 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 sm:gap-1">
                               <AlertTriangle size={8} className="sm:size-2.5" />

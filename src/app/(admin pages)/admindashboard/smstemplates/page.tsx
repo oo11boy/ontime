@@ -174,12 +174,15 @@ export default function AdminTemplatesPage() {
   };
 
   // تابع نمایش برچسب نوع همگانی
-  const getBulkTypeLabel = (subType: string) => {
-    if (subType === "cancel") {
-      return { text: "❌ کنسلی", color: "bg-red-500/10 text-red-400" };
-    }
+const getBulkTypeLabel = (subType: string) => {
+  if (subType === "cancel") {
+    return { text: "❌ کنسلی", color: "bg-red-500/10 text-red-400" };
+  }
+  if (subType === "info") {
     return { text: "📢 اطلاع‌رسانی", color: "bg-emerald-500/10 text-emerald-400" };
-  };
+  }
+  return { text: "📢 اطلاع‌رسانی", color: "bg-emerald-500/10 text-emerald-400" };
+};
 
   return (
     <div className="p-6 bg-[#0f0f0f] min-h-screen text-white">
