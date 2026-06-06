@@ -230,7 +230,6 @@ async function checkAndSendExpiredNotifications() {
        WHERE u.ended_at IS NOT NULL 
          AND u.ended_at <= CURDATE()
          AND (u.has_received_expired_notification = 0 OR u.has_received_expired_notification IS NULL)
-   
          AND u.has_received_expiry_notification = 1
        ORDER BY u.id
        LIMIT ?`,
