@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Scissors, Sparkles, Stethoscope, Dumbbell, UtensilsCrossed, Calendar, MessageSquare, Users, ArrowLeft } from "lucide-react";
+import { Scissors, Sparkles, Stethoscope, Dumbbell, UtensilsCrossed, Calendar, MessageSquare, Users, ArrowLeft, Brain, Globe } from "lucide-react";
 import Script from "next/script";
 import EnhancedFooter from "@/components/Landing/EnhancedFooter";
 import Navigation from "@/components/Landing/Navigation";
@@ -9,7 +9,7 @@ import Navigation from "@/components/Landing/Navigation";
 export const metadata: Metadata = {
   title: "راهکارهای تخصصی آنتایم برای صنایع مختلف | نوبت‌دهی هوشمند",
   description:
-    "آنتایم راهکارهای تخصصی نوبت‌دهی و مدیریت مشتریان را برای آرایشگاه‌ها، سالن‌های زیبایی، ناخن‌کاران، پزشکان، باشگاه‌های ورزشی و رستوران‌ها ارائه می‌دهد. سیستم هوشمند و تحت وب.",
+    "آنتایم راهکارهای تخصصی نوبت‌دهی و مدیریت مشتریان را برای آرایشگاه‌ها، سالن‌های زیبایی، ناخن‌کاران، پزشکان، روانشناسان، باشگاه‌های ورزشی و رستوران‌ها ارائه می‌دهد. سیستم هوشمند و تحت وب.",
   keywords: [
     "نوبت دهی آرایشگاه",
     "مدیریت سالن زیبایی",
@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     "سیستم نوبت دهی پزشکان",
     "رزرو آنلاین باشگاه ورزشی",
     "رزرو میز رستوران",
+    "نرم افزار نوبت دهی باشگاه",
+    "نرم افزار نوبت دهی روانشناس",
+    "ساخت صفحه اختصاصی نوبت دهی",
   ],
   alternates: {
     canonical: "https://ontimeapp.ir/industries",
@@ -91,33 +94,75 @@ const industries = [
     bgColor: "from-blue-50 to-white",
     borderColor: "hover:border-blue-200",
     iconBg: "bg-blue-50",
-    href: "#",
+    href: "/industries/doctors",
     features: [
       "مدیریت چند پزشک و متخصص",
       "نوبت‌دهی آنلاین بیماران",
-      "پیامک یادآوری نوبت",
+      "پیامک یادآوری نوبت ویزیت",
       "تاریخچه پزشکی بیماران",
+      "کاهش ۸۰ درصدی کنسلی",
     ],
-    isReady: false,
+    isReady: true,
   },
   {
     slug: "fitness",
     title: "باشگاه‌های ورزشی",
     shortTitle: "باشگاه ورزشی",
     description:
-      "رزرو آنلاین کلاس‌های گروهی و مدیریت ظرفیت سالن‌های ورزشی و بدنسازی.",
+      "رزرو آنلاین کلاس‌های گروهی بدنسازی، یوگا و کراس فیت و مدیریت ظرفیت سالن‌های ورزشی.",
     icon: <Dumbbell size={48} className="text-emerald-500" />,
     bgColor: "from-emerald-50 to-white",
     borderColor: "hover:border-emerald-200",
     iconBg: "bg-emerald-50",
-    href: "#",
+    href: "/industries/gym",
     features: [
       "رزرو کلاس‌های گروهی",
       "مدیریت مربیان و برنامه‌ها",
       "ظرفیت‌سازی هوشمند",
-      "پیامک تایید و یادآوری",
+      "پیامک تایید و یادآوری تمرین",
+      "کاهش ۸۰ درصدی کنسلی",
     ],
-    isReady: false,
+    isReady: true,
+  },
+  {
+    slug: "consulting",
+    title: "مشاوره و روانشناسی",
+    shortTitle: "مراکز مشاوره",
+    description:
+      "مدیریت هوشمند جلسات مشاوره و روانشناسی. جلوگیری از تداخل جلسات و پیامک یادآوری خودکار.",
+    icon: <Brain size={48} className="text-indigo-500" />,
+    bgColor: "from-indigo-50 to-white",
+    borderColor: "hover:border-indigo-200",
+    iconBg: "bg-indigo-50",
+    href: "/industries/consulting",
+    features: [
+      "مدیریت چند مشاور و روانشناس",
+      "نوبت‌دهی آنلاین مراجعان",
+      "یادآوری خودکار جلسات",
+      "تاریخچه مشاوره‌ها",
+      "کاهش ۸۰ درصدی کنسلی",
+    ],
+    isReady: true,
+  },
+  {
+    slug: "custom-booking",
+    title: "ساخت صفحه اختصاصی نوبت دهی",
+    shortTitle: "صفحه اختصاصی",
+    description:
+      "یک صفحه اختصاصی کامل برای کسب‌وکارتان با لینک یکتا، گالری نمونه کار، لیست خدمات با قیمت و نظرات مشتریان.",
+    icon: <Globe size={48} className="text-cyan-500" />,
+    bgColor: "from-cyan-50 to-white",
+    borderColor: "hover:border-cyan-200",
+    iconBg: "bg-cyan-50",
+    href: "/industries/custom-booking-page",
+    features: [
+      "لینک اختصاصی یکتا",
+      "گالری نمونه کارها",
+      "لیست خدمات با قیمت",
+      "نظرات و امتیازدهی مشتریان",
+      "تغییر و لغو نوبت توسط مشتری",
+    ],
+    isReady: true,
   },
   {
     slug: "restaurant",
@@ -135,25 +180,6 @@ const industries = [
       "مدیریت ظرفیت سالن",
       "پیش‌سفارش غذا",
       "یادآوری نوبت مشتری",
-    ],
-    isReady: false,
-  },
-  {
-    slug: "consulting",
-    title: "مشاوره و روانشناسی",
-    shortTitle: "مراکز مشاوره",
-    description:
-      "مدیریت جلسات مشاوره و روانشناسی. جلوگیری از تداخل جلسات و مدیریت زمان‌های خالی.",
-    icon: <MessageSquare size={48} className="text-indigo-500" />,
-    bgColor: "from-indigo-50 to-white",
-    borderColor: "hover:border-indigo-200",
-    iconBg: "bg-indigo-50",
-    href: "#",
-    features: [
-      "مدیریت چند مشاور",
-      "نوبت‌دهی آنلاین مراجعان",
-      "یادآوری جلسات",
-      "تاریخچه مشاوره‌ها",
     ],
     isReady: false,
   },
@@ -267,14 +293,14 @@ export default function IndustriesPage() {
       {/* هدر صفحه */}
       <section className="relative pt-32 pb-16 lg:pt-40 lg:pb-24 overflow-hidden bg-white">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent -z-10"></div>
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-4xl lg:text-6xl font-black mb-6 text-slate-900 leading-tight">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black mb-4 md:mb-6 text-slate-900 leading-tight">
             راهکارهای تخصصی{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
               آنتایم برای صنایع مختلف
             </span>
           </h1>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed">
             آنتایم یک پلتفرم منعطف و حرفه‌ای است که برای هر صنفی، امکانات تخصصی
             مدیریت نوبت و مشتریان را فراهم می‌کند.
           </p>
@@ -283,58 +309,58 @@ export default function IndustriesPage() {
 
       {/* صنایع آماده */}
       <section className="py-16 lg:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-1 bg-emerald-500 rounded-full"></div>
-            <h2 className="text-2xl lg:text-3xl font-black text-slate-800">
-            صفحات اختصاصی کسب و کار ها
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-3 mb-8 md:mb-12">
+            <div className="w-8 sm:w-10 md:w-12 h-1 bg-emerald-500 rounded-full"></div>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800">
+              صفحات اختصاصی کسب و کار ها
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid sm:grid-cols-2 gap-5 md:gap-6 lg:gap-8">
             {readyIndustries.map((industry) => (
               <Link
                 key={industry.slug}
                 href={industry.href}
-                className={`group relative bg-gradient-to-br ${industry.bgColor} rounded-3xl border-2 border-slate-100 ${industry.borderColor} transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 overflow-hidden`}
+                className={`group relative bg-gradient-to-br ${industry.bgColor} rounded-2xl md:rounded-3xl border-2 border-slate-100 ${industry.borderColor} transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 overflow-hidden`}
               >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="p-8 lg:p-10">
-                  <div className="flex items-start justify-between mb-6">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="p-5 md:p-6 lg:p-8 xl:p-10">
+                  <div className="flex items-start justify-between mb-4 md:mb-6">
                     <div
-                      className={`w-20 h-20 ${industry.iconBg} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500`}
+                      className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 ${industry.iconBg} rounded-xl md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500`}
                     >
                       {industry.icon}
                     </div>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full">
+                    <span className="px-2 md:px-3 py-0.5 md:py-1 bg-emerald-100 text-emerald-700 text-[8px] md:text-[10px] font-black rounded-full">
                       فعال
                     </span>
                   </div>
-                  <h3 className="text-2xl lg:text-3xl font-black mb-3 text-slate-800 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-black mb-2 md:mb-3 text-slate-800 group-hover:text-blue-600 transition-colors">
                     {industry.title}
                   </h3>
-                  <p className="text-slate-500 leading-relaxed mb-6">
+                  <p className="text-slate-500 text-sm sm:text-base leading-relaxed mb-4 md:mb-6">
                     {industry.description}
                   </p>
-                  <div className="flex flex-wrap gap-2 mb-6">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4 md:mb-6">
                     {industry.features.map((feature, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full"
+                        className="text-[9px] md:text-[10px] font-bold bg-slate-100 text-slate-600 px-2 md:px-3 py-1 md:py-1.5 rounded-full"
                       >
                         ✓ {feature}
                       </span>
                     ))}
                   </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <span className="text-blue-600 font-bold text-sm group-hover:gap-2 transition-all flex items-center gap-1">
+                  <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-slate-100">
+                    <span className="text-blue-600 font-bold text-xs md:text-sm group-hover:gap-2 transition-all flex items-center gap-1">
                       مشاهده جزئیات{" "}
                       <ArrowLeft
-                        size={14}
-                        className="group-hover:-translate-x-1 transition-transform"
+                        size={12}
+                        className="group-hover:-translate-x-1 transition-transform md:w-3.5 md:h-3.5"
                       />
                     </span>
                     <svg
-                      className="w-12 h-12 text-slate-100 group-hover:scale-110 transition-transform"
+                      className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-slate-100 group-hover:scale-110 transition-transform"
                       viewBox="0 0 24 24"
                       fill="none"
                     >
@@ -350,34 +376,34 @@ export default function IndustriesPage() {
 
       {/* صنایع در دست توسعه */}
       <section className="py-16 lg:py-24 bg-slate-50/50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-1 bg-amber-500 rounded-full"></div>
-            <h2 className="text-2xl lg:text-3xl font-black text-slate-800">
-          سایر اصناف
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-3 mb-8 md:mb-12">
+            <div className="w-8 sm:w-10 md:w-12 h-1 bg-amber-500 rounded-full"></div>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800">
+              سایر اصناف
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
             {comingSoonIndustries.map((industry) => (
               <div
                 key={industry.slug}
-                className={`relative bg-gradient-to-br ${industry.bgColor} rounded-2xl border border-slate-200 opacity-80 transition-all duration-300`}
+                className={`relative bg-gradient-to-br ${industry.bgColor} rounded-xl md:rounded-2xl border border-slate-200 opacity-80 transition-all duration-300`}
               >
-                <div className="p-6 lg:p-8">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="p-4 md:p-5 lg:p-6">
+                  <div className="flex items-center justify-between mb-3 md:mb-4">
                     <div
-                      className={`w-14 h-14 ${industry.iconBg} rounded-xl flex items-center justify-center`}
+                      className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 ${industry.iconBg} rounded-lg md:rounded-xl flex items-center justify-center`}
                     >
                       {industry.icon}
                     </div>
-                    <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-[8px] font-black rounded-full">
+                    <span className="px-1.5 md:px-2 py-0.5 bg-slate-200 text-slate-500 text-[7px] md:text-[8px] font-black rounded-full">
                       به‌زودی
                     </span>
                   </div>
-                  <h3 className="text-xl font-black mb-2 text-slate-700">
+                  <h3 className="text-base sm:text-lg md:text-xl font-black mb-1 md:mb-2 text-slate-700">
                     {industry.title}
                   </h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
                     {industry.description}
                   </p>
                 </div>

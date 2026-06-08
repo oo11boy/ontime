@@ -11,6 +11,16 @@ const STATIC_DATE = (() => {
   return new Date("2025-01-01");
 })();
 
+// ========== صفحات لندینگ تخصصی صنایع ==========
+const INDUSTRY_LANDING_PAGES = [
+  { slug: "beauty-salon", path: "/industries/beauty-salon", priority: 0.9, changeFrequency: "weekly" as const },
+  { slug: "nail-artist", path: "/industries/nail-artist", priority: 0.9, changeFrequency: "weekly" as const },
+  { slug: "doctors", path: "/industries/doctors", priority: 0.9, changeFrequency: "weekly" as const },
+  { slug: "gym", path: "/industries/gym", priority: 0.9, changeFrequency: "weekly" as const },
+  { slug: "consulting", path: "/industries/consulting", priority: 0.9, changeFrequency: "weekly" as const },
+  { slug: "custom-booking-page", path: "/industries/custom-booking-page", priority: 0.9, changeFrequency: "weekly" as const },
+];
+
 // ========== تعریف تایپ‌ها ==========
 type CityCategoryCombo = {
   city: string;
@@ -205,13 +215,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily", 
         priority: 1.0 
       },
-            { 
+      { 
         url: `${baseUrl}/blog`, 
         lastModified: STATIC_DATE, 
         changeFrequency: "daily", 
         priority: 0.9 
       },
-       { 
+      { 
         url: `${baseUrl}/trainings`, 
         lastModified: STATIC_DATE, 
         changeFrequency: "weekly", 
@@ -221,9 +231,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${baseUrl}/industries`, 
         lastModified: STATIC_DATE, 
         changeFrequency: "weekly", 
-        priority: 0.8 
+        priority: 0.9 
       },
-            { 
+      { 
         url: `${baseUrl}/dl`, 
         lastModified: STATIC_DATE, 
         changeFrequency: "weekly", 
@@ -235,8 +245,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "monthly", 
         priority: 0.6 
       },
-
     ];
+
+    // ========== صفحات لندینگ تخصصی صنایع (جدید) ==========
+    const industryLandingRoutes: MetadataRoute.Sitemap = INDUSTRY_LANDING_PAGES.map((page) => ({
+      url: `${baseUrl}${page.path}`,
+      lastModified: STATIC_DATE,
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+    }));
 
     // ========== صفحات داینامیک بلاگ ==========
     const blogRoutes = posts.map((post) => ({
@@ -325,6 +342,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // ========== جمع‌آوری تمام صفحات ==========
     const allRoutes = [
       ...staticRoutes,
+      ...industryLandingRoutes,
       ...blogRoutes,
       ...businessRoutes,
       ...cityOnlyRoutes,
@@ -349,6 +367,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     console.log(`✅ Sitemap generated successfully with ${uniqueRoutes.length} URLs`);
+    console.log(`   - Industry landing pages: ${industryLandingRoutes.length}`);
     console.log(`   - City+Category: ${cityCategoryRoutes.length}`);
     console.log(`   - City+Service: ${cityServiceRoutes.length}`);
     console.log(`   - Category+Service: ${categoryServiceRoutes.length}`);
@@ -379,6 +398,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily", 
         priority: 0.9 
       },
+      // اضافه کردن صفحات صنایع در حالت fallback
+      ...INDUSTRY_LANDING_PAGES.map((page) => ({
+        url: `${baseUrl}${page.path}`,
+        lastModified: STATIC_DATE,
+        changeFrequency: page.changeFrequency,
+        priority: page.priority,
+      })),
     ];
   }
 }

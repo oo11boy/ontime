@@ -1,6 +1,6 @@
 "use client";
 
-import { Gift, Phone, Sparkles, Zap, ArrowLeft, Users, CheckCircle2 } from "lucide-react";
+import { Gift, Phone, Sparkles, Zap, ArrowLeft, Users, CheckCircle2, CalendarCheck, MessageSquare } from "lucide-react";
 import React from "react";
 import Link from "next/link";
 import { freetime } from "@/lib/freetime";
@@ -19,36 +19,46 @@ export default function NailFinalCTA() {
           <div className="relative z-10">
             {/* نشان هدیه ورودی ویژه ناخن‌کاران */}
             <div className="inline-flex items-center gap-3 bg-rose-500/10 text-rose-400 px-6 py-3 rounded-2xl mb-10 border border-rose-500/20 shadow-inner">
-              <Sparkles size={20} className="animate-pulse" />
+              <Gift size={20} className="animate-bounce" />
               <span className="font-black text-xs lg:text-sm uppercase tracking-widest">
-                پیشنهاد ویژه برای ارتقای میز ناخن شما
+                ★ ۲ هفته رایگان ★ هدیه ویژه برای ناخن‌کاران حرفه‌ای
               </span>
             </div>
 
-            <h2 className="text-4xl lg:text-7xl font-black mb-12 leading-[1.1] tracking-tight">
-              نظم حرفه‌ای را به <br />
+            {/* H2 بهینه شده برای سئو */}
+            <h2 className="text-4xl lg:text-7xl font-black mb-8 leading-[1.1] tracking-tight">
+              آماده‌اید مدیریت نوبت{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-rose-300 to-rose-400">
-                 میز ناخن خود
+                کاشت و ترمیم ناخن
               </span>{" "}
-              هدیه دهید
+              خود را حرفه‌ای کنید؟
             </h2>
+
+            {/* توضیحات سئو زیر H2 */}
+            <p className="text-slate-400 text-base max-w-2xl mx-auto mb-12">
+              با <strong className="text-rose-400">نرم افزار نوبت دهی ناخن کار آنتایم</strong>، مدیریت نوبت کاشت، ترمیم و ژلیش را هوشمندانه شروع کنید. 
+              پیامک یادآوری خودکار و لینک اختصاصی برای هر مشتری.
+            </p>
 
             {/* کارت‌های مزیت اختصاصی ناخن‌کارها */}
             <div className="grid md:grid-cols-3 gap-6 mb-20 max-w-5xl mx-auto">
               <BenefitCard
                 icon={<Gift className="text-rose-400" size={32} />}
-                title={`${freetime.plan} پنل رایگان`}
-                desc="تمام امکانات مدیریت نوبت و مشتری بدون هزینه"
+                title={`${freetime.plan} هفته پنل رایگان`}
+                desc="تمام امکانات مدیریت نوبت کاشت و ترمیم بدون هزینه"
+                seoDesc="۲ هفته استفاده رایگان از نرم افزار نوبت دهی ناخن کار با تمام امکانات"
               />
               <BenefitCard
-                icon={<Zap className="text-emerald-400" size={32} />}
-                title={`${freetime.sms} پیامک رایگان`}
-                desc="ارسال خودکار زمان ترمیم برای مشتریان شما"
+                icon={<MessageSquare className="text-emerald-400" size={32} />}
+                title={`${freetime.sms} پیامک یادآوری ترمیم`}
+                desc="ارسال خودکار پیامک یادآوری نوبت ترمیم برای مشتریان شما"
+                seoDesc="سیستم پیامک یادآوری خودکار نوبت ترمیم و کاشت ناخن"
               />
               <BenefitCard
-                icon={<CheckCircle2 className="text-blue-400" size={32} />}
-                title="بدون نیاز به نصب"
-                desc="دسترسی فوری با موبایل در هر زمان و مکان"
+                icon={<Sparkles className="text-amber-400" size={32} />}
+                title="راه اندازی فوری بدون نصب"
+                desc="دسترسی فوری با موبایل در هر زمان و مکان، بدون نیاز به نصب اپلیکیشن"
+                seoDesc="فعال سازی سریع سیستم نوبت دهی کاشت ناخن در کمتر از ۲ دقیقه"
               />
             </div>
 
@@ -58,7 +68,7 @@ export default function NailFinalCTA() {
                 href="/clientdashboard"
                 className="group relative w-full sm:w-auto px-12 py-7 bg-rose-600 text-white rounded-[2.5rem] font-black text-2xl hover:bg-rose-500 transition-all transform hover:scale-[1.03] active:scale-95 shadow-[0_20px_40px_-10px_rgba(225,29,72,0.4)] flex items-center justify-center gap-4"
               >
-                فعالسازی اشتراک رایگان
+                شروع {freetime.plan} هفته رایگان
                 <ArrowLeft
                   className="group-hover:-translate-x-2 transition-transform"
                   strokeWidth={3}
@@ -84,15 +94,20 @@ export default function NailFinalCTA() {
                     key={i}
                     className="w-12 h-12 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center shadow-2xl overflow-hidden"
                   >
-                     <div className="w-full h-full bg-gradient-to-br from-rose-400 to-rose-600 opacity-80" />
+                    <div className="w-full h-full bg-gradient-to-br from-rose-400 to-rose-600 opacity-80" />
                   </div>
                 ))}
                 <div className="w-12 h-12 rounded-full border-4 border-slate-900 bg-rose-500 flex items-center justify-center text-[10px] font-black text-white shadow-2xl z-10">
-                  +۸۰۰
+                  +۸۵۰
                 </div>
               </div>
               <p className="text-slate-400 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-                بیش از <span className="text-rose-400 font-black">۸۰۰ ناخن‌کار</span> حرفه‌ای در سراسر ایران، مدیریت نوبت‌های خود را به آنتایم سپرده‌اند.
+                بیش از <span className="text-rose-400 font-black">۸۵۰ ناخن‌کار حرفه‌ای</span> در سراسر ایران، مدیریت نوبت‌های 
+                <strong className="text-white"> کاشت و ترمیم ناخن</strong> خود را به <strong className="text-rose-400">نرم افزار آنتایم</strong> سپرده‌اند.
+              </p>
+              {/* کلمات کلیدی مخفی برای سئو */}
+              <p className="text-slate-600 text-xs hidden md:block">
+                ★ سیستم نوبت دهی تخصصی کاشت ناخن ★ مدیریت نوبت ترمیم ★ پیامک یادآوری خودکار ★
               </p>
             </div>
           </div>
@@ -106,10 +121,12 @@ function BenefitCard({
   icon,
   title,
   desc,
+  seoDesc,
 }: {
   icon: React.ReactNode;
   title: string;
   desc: string;
+  seoDesc?: string;
 }) {
   return (
     <div className="bg-white/5 p-10 rounded-[3rem] backdrop-blur-md border border-white/5 hover:border-rose-500/30 hover:bg-white/10 transition-all duration-500 group/card transform hover:-translate-y-2 text-right">
@@ -122,6 +139,11 @@ function BenefitCard({
       <p className="text-slate-400 text-sm font-bold leading-relaxed">
         {desc}
       </p>
+      {seoDesc && (
+        <p className="text-slate-500 text-[10px] mt-3 hidden md:block">
+          {seoDesc}
+        </p>
+      )}
     </div>
   );
 }

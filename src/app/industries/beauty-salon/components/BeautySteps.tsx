@@ -1,20 +1,23 @@
 // components/BeautySalon/BeautySteps.tsx
-import { UserPlus, Settings, CalendarCheck } from "lucide-react";
+import { UserPlus, Settings, CalendarCheck, Zap } from "lucide-react";
 
 const steps = [
   { 
     title: "ثبت‌نام سریع", 
     desc: "با شماره موبایل خود وارد شوید و در کمتر از ۱ دقیقه پنل مدیریت خود را فعال کنید.", 
+    seoDesc: "فعال سازی پنل مدیریت نرم افزار نوبت دهی آرایشگاه در کمتر از ۱ دقیقه",
     icon: <UserPlus size={32} /> 
   },
   { 
     title: "تعریف خدمات و قیمت", 
     desc: "لیست خدماتی که ارائه می‌دهید را به همراه قیمت و مدت زمان هر کدام وارد کنید.", 
+    seoDesc: "ثبت نامحدود خدمات، قیمت و زمان در سیستم نوبت دهی سالن زیبایی",
     icon: <Settings size={32} /> 
   },
   { 
     title: "ثبت نوبت و تمام!", 
     desc: "نوبت مشتری را ثبت کنید؛ لینک اختصاصی مدیریت نوبت فوراً برای مشتری پیامک می‌شود.", 
+    seoDesc: "ارسال خودکار پیامک حاوی لینک اختصاصی مدیریت نوبت به مشتری",
     icon: <CalendarCheck size={32} /> 
   }
 ];
@@ -29,8 +32,17 @@ export default function BeautySteps() {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-20">
-          <h2 className="text-3xl lg:text-5xl font-black mb-6">شروع کار با آنتایم چقدر ساده است؟</h2>
-          <p className="text-slate-400 font-medium">بدون پیچیدگی، مدیریت سالن خود را از همین امروز شروع کنید</p>
+          {/* H2 بهینه شده برای سئو */}
+          <h2 className="text-3xl lg:text-5xl font-black mb-6">
+            شروع کار با <span className="text-pink-500">نرم افزار نوبت دهی آرایشگاه آنتایم</span> چقدر ساده است؟
+          </h2>
+          <p className="text-slate-400 font-medium max-w-2xl mx-auto">
+            بدون پیچیدگی، مدیریت سالن خود را از همین امروز با <strong className="text-white">۲ هفته رایگان</strong> شروع کنید
+          </p>
+          {/* کلمات کلیدی مخفی برای سئو */}
+          <p className="text-slate-600 text-xs mt-4 hidden md:block">
+            ★ راه اندازی سریع سیستم نوبت دهی ★ بدون نیاز به کارت بانکی ★ پشتیبانی ۲۴ ساعته ★
+          </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-12 lg:gap-20 relative">
@@ -50,6 +62,10 @@ export default function BeautySteps() {
               <h3 className="text-2xl font-black mb-4 group-hover:text-pink-400 transition-colors">{step.title}</h3>
               <p className="text-slate-400 text-sm leading-relaxed font-medium px-4">
                 {step.desc}
+              </p>
+              {/* توضیحات سئو مخفی */}
+              <p className="text-slate-600 text-xs mt-3 hidden md:block">
+                {step.seoDesc}
               </p>
             </div>
           ))}

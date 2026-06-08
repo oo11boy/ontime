@@ -9,51 +9,53 @@ import NailSmsNotify from "./components/NailSmsNotify";
 import PricingSection from "@/components/Landing/PricingSection";
 import NailFAQ from "./components/NailFAQ";
 import NailFinalCTA from "./components/NailFinalCTA";
-import BeautyGallery from "../beauty-salon/components/BeautyGallery";
 import NailNavigation from "./components/NailNavigation";
 import Script from "next/script";
 import Link from "next/link";
 import { Home, ChevronLeft } from "lucide-react";
+import BeautyGallery from "../beauty-salon/components/BeautyGallery";
 
-// ========== متادیتا (بهینه شده) ==========
+// ========== متادیتا (بهینه شده برای سئوی ناخن‌کاران) ==========
 export const metadata: Metadata = {
-  title: "اپلیکیشن نوبت دهی پیامکی کاشت و ترمیم ناخن | مدیریت مشتریان ناخن",
+  title: "نرم افزار نوبت دهی ناخن کار و کاشت ناخن ★ ۲ هفته رایگان | آنتایم",
   description:
-    "بهترین نرم‌افزار نوبت‌دهی پیامکی ویژه ناخن‌کاران. مدیریت هوشمند زمان ترمیم، یادآوری خودکار پیامکی به کلاینت، حذف دفترچه کاغذی و آرایش دیجیتال سوابق کاشت و ژلیش.",
+    "مدیریت نوبت کاشت، ترمیم و ژلیش ناخن با نرم افزار آنتایم. پیامک یادآوری خودکار نوبت ترمیم، لینک اختصاصی و ۲ هفته رایگان. کاهش ۸۰ درصدی کنسلی.",
   keywords: [
-    "نوبت دهی پیامکی ناخن",
-    "مدیریت مشتریان کاشت ناخن",
-    "برنامه نوبت دهی ترمیم ناخن",
-    "نرم افزار مدیریت ناخن کار",
-    "یادآوری پیامکی ترمیم ناخن",
+    "نرم افزار نوبت دهی ناخن کار",
+    "سیستم نوبت دهی تخصصی کاشت ناخن",
+    "مدیریت نوبت کاشت و ترمیم ناخن",
+    "اپلیکیشن نوبت دهی کاشت ناخن",
+    "پیامک یادآوری نوبت ترمیم ناخن",
+    "نرم افزار مدیریت ناخن کاران",
     "رزرو آنلاین کاشت ناخن",
-    "پنل مدیریت ناخن کاران",
+    "لینک اختصاصی مدیریت نوبت کاشت ناخن",
+    "کاهش کنسلی نوبت ترمیم",
   ],
   alternates: {
     canonical: "https://ontimeapp.ir/industries/nail-artist",
   },
   openGraph: {
-    title: "پنل هوشمند مدیریت نوبت و ترمیم ویژه متخصصین ناخن",
+    title: "نرم افزار نوبت دهی ناخن کار و کاشت ناخن ★ ۲ هفته رایگان",
     description:
-      "میز ناخن خود را با آنتایم دیجیتال کنید. کاهش کنسلی و نظم‌دهی به نوبت‌های ترمیم با سیستم یادآوری هوشمند.",
+      "مدیریت هوشمند نوبت کاشت، ترمیم و ژلیش با سیستم پیامک یادآوری خودکار. صفحه اختصاصی برای هر ناخن‌کار. شروع ۲ هفته رایگان.",
     url: "https://ontimeapp.ir/industries/nail-artist",
     siteName: "آنتایم",
     locale: "fa_IR",
     type: "website",
     images: [
       {
-        url: "/images/screens/newmain.jpg",
+        url: "/images/screens/nail-appointment.jpg",
         width: 1200,
         height: 630,
-        alt: "مدیریت هوشمند نوبت‌های کاشت و ترمیم ناخن با آنتایم",
+        alt: "نرم افزار نوبت دهی کاشت ناخن آنتایم - پنل مدیریت تخصصی ناخن‌کاران",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "پنل هوشمند مدیریت نوبت و ترمیم ویژه متخصصین ناخن",
-    description: "میز ناخن خود را با آنتایم دیجیتال کنید. کاهش کنسلی و نظم‌دهی به نوبت‌های ترمیم با سیستم یادآوری هوشمند.",
-    images: ["/images/screens/newmain.jpg"],
+    title: "نرم افزار نوبت دهی ناخن کار و کاشت ناخن ★ ۲ هفته رایگان",
+    description: "مدیریت هوشمند نوبت کاشت، ترمیم و ژلیش با سیستم پیامک یادآوری خودکار. شروع ۲ هفته رایگان.",
+    images: ["/images/screens/nail-appointment.jpg"],
   },
   robots: {
     index: true,
@@ -71,7 +73,7 @@ export const metadata: Metadata = {
 export default function NailArtistLanding() {
   const baseUrl = "https://ontimeapp.ir";
 
-  // ========== اسکیماهای جامع (7 عدد) ==========
+  // ========== اسکیماهای جامع (۸ عدد) ==========
 
   // 1. WebSite Schema
   const websiteSchema = {
@@ -80,22 +82,22 @@ export default function NailArtistLanding() {
     "@id": `${baseUrl}/#website`,
     url: baseUrl,
     name: "آنتایم",
-    alternateName: ["OnTime", "اپلیکیشن آنتایم", "سامانه آنتایم"],
-    description: "هوشمندترین سامانه نوبت‌دهی آنلاین برای کسب‌وکارهای خدماتی",
+    alternateName: ["OnTime", "نرم افزار آنتایم", "سیستم نوبت دهی آنتایم"],
+    description: "هوشمندترین نرم افزار نوبت دهی آنلاین برای ناخن‌کاران و متخصصان کاشت ناخن",
     inLanguage: "fa-IR",
   };
 
-  // 2. SoftwareApplication Schema (برای اپلیکیشن ناخن)
+  // 2. SoftwareApplication Schema (برای نرم افزار ناخن)
   const softwareSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "@id": `${baseUrl}/industries/nail-artist#software`,
-    name: "آنتایم (OnTime) - نسخه ناخن‌کار",
+    name: "نرم افزار نوبت دهی ناخن کار آنتایم",
     operatingSystem: "Web, Android, iOS",
     applicationCategory: "BusinessApplication",
-    url: baseUrl,
+    url: `${baseUrl}/industries/nail-artist`,
     description:
-      "اپلیکیشن تخصصی نوبت دهی ناخن‌کاران با قابلیت ارسال پیامک یادآوری ترمیم و لینک اختصاصی مدیریت نوبت",
+      "نرم افزار تخصصی نوبت دهی ناخن‌کاران و متخصصان کاشت ناخن با قابلیت ارسال پیامک یادآوری خودکار نوبت ترمیم، لینک اختصاصی مدیریت نوبت و ۲ هفته استفاده رایگان",
     offers: {
       "@type": "Offer",
       price: "0",
@@ -106,15 +108,16 @@ export default function NailArtistLanding() {
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: "4.9",
-      reviewCount: "1240",
+      reviewCount: "850",
     },
     featureList: [
       "ارسال خودکار پیامک یادآوری نوبت ترمیم",
       "لینک اختصاصی مدیریت نوبت برای مشتری",
-      "پرونده الکترونیک مشتریان ناخن",
+      "پرونده الکترونیک مشتریان با ثبت رنگ و مدل کاشت",
       "لیست سیاه مشتریان بدقول",
-      "مدیریت چندین پرسنل و لاین",
-      "تقویم آنلاین شمسی با فیلتر خدمات (کاشت، ترمیم، ژلیش)",
+      "تفکیک تخصصی خدمات کاشت، ترمیم، ژلیش و طراحی",
+      "تقویم شمسی هوشمند با فیلتر خدمات ناخن",
+      "کاهش ۸۰ درصدی کنسلی نوبت ترمیم",
     ],
   };
 
@@ -145,7 +148,7 @@ export default function NailArtistLanding() {
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
-    serviceType: "نرم‌افزار تخصصی نوبت‌دهی و مدیریت مشتریان ناخن",
+    serviceType: "نرم افزار تخصصی نوبت دهی و مدیریت مشتریان کاشت و ترمیم ناخن",
     provider: {
       "@type": "Organization",
       name: "آنتایم",
@@ -153,18 +156,19 @@ export default function NailArtistLanding() {
     areaServed: "IR",
     audience: {
       "@type": "Audience",
-      name: "ناخن‌کاران و متخصصین کاشت و ترمیم ناخن",
+      name: "ناخن‌کاران و متخصصین کاشت، ترمیم و ژلیش ناخن",
     },
     description:
-      "راهکار جامع دیجیتال برای ناخن‌کاران جهت مدیریت نوبت‌های کاشت، ترمیم، ژلیش و ارسال پیامک خودکار یادآوری به مشتریان.",
+      "راهکار جامع دیجیتال برای ناخن‌کاران جهت مدیریت نوبت‌های کاشت، ترمیم، ژلیش و ارسال پیامک خودکار یادآوری به مشتریان با ۲ هفته استفاده رایگان.",
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: "امکانات تخصصی ناخن",
       itemListElement: [
-        { "@type": "Offer", itemOffered: { "@type": "Service", name: "یادآوری خودکار نوبت ترمیم" } },
-        { "@type": "Offer", itemOffered: { "@type": "Service", name: "پنل اختصاصی سوابق کلاینت ناخن" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "پیامک یادآوری خودکار نوبت ترمیم" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "پرونده تخصصی سوابق کاشت و رنگ مشتری" } },
         { "@type": "Offer", itemOffered: { "@type": "Service", name: "لیست سیاه مشتریان بدقول" } },
-        { "@type": "Offer", itemOffered: { "@type": "Service", name: "تفکیک خدمات (کاشت، ترمیم، ژلیش، لمینت)" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "تفکیک خدمات کاشت، ترمیم، ژلیش و طراحی" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "لینک اختصاصی مدیریت نوبت بدون نیاز به نصب" } },
       ],
     },
   };
@@ -177,7 +181,7 @@ export default function NailArtistLanding() {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "خانه", item: baseUrl },
       { "@type": "ListItem", position: 2, name: "صنایع", item: `${baseUrl}/#industries` },
-      { "@type": "ListItem", position: 3, name: "ناخن‌کار و خدمات کاشت ناخن", item: `${baseUrl}/industries/nail-artist` },
+      { "@type": "ListItem", position: 3, name: "نرم افزار نوبت دهی ناخن کار و کاشت ناخن", item: `${baseUrl}/industries/nail-artist` },
     ],
   };
 
@@ -185,23 +189,34 @@ export default function NailArtistLanding() {
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: "اپلیکیشن نوبت دهی ناخن آنتایم",
-    description: "نرم‌افزار حرفه‌ای مدیریت نوبت و مشتری ویژه ناخن‌کاران",
+    name: "نرم افزار نوبت دهی ناخن کار آنتایم",
+    description: "نرم افزار حرفه‌ای مدیریت نوبت کاشت، ترمیم و ژلیش ویژه ناخن‌کاران",
     brand: { "@type": "Brand", name: "آنتایم" },
     offers: {
       "@type": "Offer",
       price: "0",
       priceCurrency: "IRR",
       availability: "https://schema.org/InStock",
+      description: "۲ هفته استفاده رایگان",
     },
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: "4.9",
-      reviewCount: "1240",
+      reviewCount: "850",
     },
   };
 
-  // 7. FAQPage Schema (در کامپوننت NailFAQ موجود است - همانجا اضافه شده)
+  // 7. LocalBusiness Schema (برای ناخن‌کاران هدف)
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: "سیستم نوبت دهی تخصصی کاشت و ترمیم ناخن آنتایم",
+    description: "راهکار مدیریت هوشمند نوبت کاشت، ترمیم و ژلیش برای ناخن‌کاران و سالن‌های تخصصی ناخن",
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "IR",
+    },
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-white" dir="rtl">
@@ -242,11 +257,17 @@ export default function NailArtistLanding() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
         strategy="afterInteractive"
       />
+      <Script
+        id="localbusiness-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        strategy="afterInteractive"
+      />
 
       <NailNavigation />
 
       <main>
-        {/* ========== Breadcrumb بصری (اضافه شده) ========== */}
+        {/* ========== Breadcrumb بصری ========== */}
         <div className="max-w-7xl mx-auto px-6 pt-28 lg:pt-32">
           <nav className="flex items-center gap-2 text-gray-500 text-[10px] sm:text-xs mb-6 overflow-x-auto whitespace-nowrap pb-2">
             <Link
@@ -264,8 +285,8 @@ export default function NailArtistLanding() {
               صنایع
             </Link>
             <ChevronLeft className="w-3.5 h-3.5 text-gray-300" />
-            <span className="text-rose-600 font-bold line-clamp-1 max-w-[150px] sm:max-w-[200px]">
-              ناخن‌کار و خدمات کاشت ناخن
+            <span className="text-rose-600 font-bold line-clamp-1 max-w-[200px] sm:max-w-[280px]">
+              نرم افزار نوبت دهی ناخن کار و کاشت ناخن
             </span>
           </nav>
         </div>
@@ -273,18 +294,19 @@ export default function NailArtistLanding() {
         <NailArtistHero />
         <NailStats />
         <NailFeatures />
+        
+        {/* گالری با تم ناخن کار */}
         <BeautyGallery
           accentColor="rose"
+          industry="nail"
           title={
             <>
-              میز ناخن هوشمند با{" "}
-              <span className="text-rose-500 text-shadow-sm">
-                پنل مدیریت نوبت و ترمیم
-              </span>
+              نمای داخلی <span className="text-rose-500">نرم افزار نوبت دهی ناخن کار</span>
             </>
           }
-          description="دفتـر نوبت‌دهی را کنار بگذارید؛ آنتایم تمامِ جزییات کاشت، ژلیش و زمان دقیق ترمیم مشتریان را برای شما سازماندهی می‌کند."
+          description="طراحی ساده و حرفه‌ای برای مدیریت هوشمند نوبت کاشت، ترمیم و ژلیش. تمام آنچه یک ناخن‌کار حرفه‌ای نیاز دارد."
         />
+        
         <NailStepFlow />
         <NailComparison />
         <NailSmsNotify />

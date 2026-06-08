@@ -11,7 +11,9 @@ import {
   ArrowLeft,
   Book,
   Scissors,
-  Briefcase
+  Briefcase,
+  CalendarCheck,
+  MessageSquare
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,14 +38,12 @@ export default function NailNavigation(): React.JSX.Element {
   }, [isOpen]);
 
   const menuItems = [
-    { href: "#features", label: "مدیریت میز ناخن", icon: <Sparkles size={18} /> },
-    { href: "#sms", label: "اطلاع‌رسانی ترمیم", icon: <Smartphone size={18} /> },
-    { href: "#pricing", label: "اشتراک‌ها", icon: <CreditCard size={18} /> },
-    { href: "#faq", label: "سوالات ناخن‌کاران", icon: <HelpCircle size={18} /> },
+    { href: "#features", label: "مدیریت نوبت کاشت و ترمیم", icon: <Sparkles size={18} /> },
+    { href: "#sms", label: "پیامک یادآوری ترمیم", icon: <MessageSquare size={18} /> },
+    { href: "#pricing", label: "تعرفه", icon: <CreditCard size={18} /> },
+    { href: "#faq", label: "سوالات ناخن‌ کاران", icon: <HelpCircle size={18} /> },
     { href: "../blog", label: "مجله تخصصی", icon: <Book size={18} /> },
     { href: "../businesses", label: "کسب و کارها", icon: <Briefcase size={18} /> },
-  
-
   ];
 
   return (
@@ -63,7 +63,7 @@ export default function NailNavigation(): React.JSX.Element {
               src="/icons/icon-192.png"
               width={48}
               height={48}
-            alt="لوگو اپلیکیشن نوبت دهی ناخن آنتایم" 
+              alt="لوگو نرم افزار نوبت دهی ناخن کار و کاشت ناخن آنتایم"
               className="object-cover rounded-2xl"
             />
           </div>
@@ -72,7 +72,7 @@ export default function NailNavigation(): React.JSX.Element {
               آنتایم
             </span>
             <span className="text-[10px] text-rose-600 font-black mt-1 uppercase tracking-[0.1em]">
-              Nail Expert Edition
+              Nail Expert Edition - سیستم نوبت دهی کاشت ناخن
             </span>
           </div>
         </Link>
@@ -98,14 +98,14 @@ export default function NailNavigation(): React.JSX.Element {
             href="/clientdashboard"
             className="hidden sm:flex bg-slate-900 text-white px-7 py-3.5 rounded-2xl font-black text-sm hover:bg-rose-600 transition-all items-center gap-3 group shadow-xl shadow-slate-200"
           >
-          شروع {freetime.plan} رایگان
+            شروع {freetime.plan} هفته رایگان
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform text-rose-400" />
           </Link>
 
           <button
             className="lg:hidden p-3 text-slate-900 bg-white border border-slate-200 shadow-sm rounded-2xl active:scale-95"
             onClick={() => setIsOpen(true)}
-            aria-label="Open Navigation"
+            aria-label="منوی اصلی"
           >
             <Menu size={24} />
           </button>
@@ -121,14 +121,15 @@ export default function NailNavigation(): React.JSX.Element {
       >
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
-                <Scissors size={20} />
-             </div>
-             <span className="font-black text-slate-900">منوی مدیریت هوشمند</span>
+            <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+              <Scissors size={20} />
+            </div>
+            <span className="font-black text-slate-900">منوی مدیریت هوشمند نوبت ناخن</span>
           </div>
           <button 
             onClick={() => setIsOpen(false)}
             className="p-3 bg-slate-50 text-slate-900 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors"
+            aria-label="بستن منو"
           >
             <X size={24} />
           </button>
@@ -157,8 +158,11 @@ export default function NailNavigation(): React.JSX.Element {
             onClick={() => setIsOpen(false)}
             className="w-full bg-rose-600 text-white p-6 rounded-3xl font-black text-xl text-center shadow-2xl shadow-rose-200 flex items-center justify-center gap-3"
           >
-            شروع رایگان (۲ ماه)
+            شروع {freetime.plan} هفته رایگان
           </Link>
+          <p className="text-center text-[10px] text-slate-400 font-bold">
+            ★ بدون نیاز به کارت بانکی ★
+          </p>
         </div>
       </div>
     </nav>

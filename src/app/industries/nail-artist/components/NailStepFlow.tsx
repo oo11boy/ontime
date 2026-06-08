@@ -1,21 +1,24 @@
 "use client";
 
-import { UserPlus, Settings2, CalendarRange, MousePointerClick } from "lucide-react";
+import { UserPlus, Settings2, CalendarRange, MousePointerClick, Zap, Sparkles } from "lucide-react";
 
 const nailSteps = [
   { 
-    title: "ورود به پنل ناخن‌کار", 
-    desc: "با شماره همراه خود ثبت‌نام کنید و نام لاین زیبایی یا سالن خود را وارد کنید.", 
+    title: "ثبت‌نام اختصاصی ناخن‌کاران", 
+    desc: "با شماره همراه خود ثبت‌نام کنید و نام لاین زیبایی یا سالن تخصصی کاشت ناخن خود را وارد کنید.", 
+    seoDesc: "فعال سازی پنل مدیریت نوبت کاشت و ترمیم ناخن در کمتر از ۲ دقیقه",
     icon: <UserPlus size={32} /> 
   },
   { 
-    title: "تنظیم خدمات و شیفت", 
-    desc: "زمان لازم برای ترمیم و کاشت را تعیین کرده و ساعت حضور خود در سالن را مشخص کنید.", 
+    title: "تنظیم خدمات کاشت، ترمیم و ژلیش", 
+    desc: "زمان دقیق برای ترمیم (مثلاً ۱.۵ ساعت) و کاشت (مثلاً ۳ ساعت) را تعیین کرده و شیفت کاری خود در سالن را مشخص کنید.", 
+    seoDesc: "ثبت تخصصی خدمات کاشت ناخن، ترمیم، ژلیش و طراحی با زمان‌بندی دقیق",
     icon: <Settings2 size={32} /> 
   },
   { 
-    title: "ثبت نوبت و ارسال پیامک", 
-    desc: "نوبت مشتری را در تقویم ثبت کنید؛ پیامک تایید و یادآوری خودکار برای او ارسال می‌شود.", 
+    title: "ثبت نوبت و ارسال پیامک یادآوری ترمیم", 
+    desc: "نوبت مشتری را در تقویم تخصصی ناخن ثبت کنید؛ پیامک تایید و یادآوری خودکار نوبت ترمیم برای او ارسال می‌شود.", 
+    seoDesc: "ارسال خودکار پیامک یادآوری نوبت ترمیم و کاهش ۸۰ درصدی کنسلی",
     icon: <CalendarRange size={32} /> 
   }
 ];
@@ -26,16 +29,23 @@ export default function NailStepFlow() {
       {/* دکوراسیون پس‌زمینه با تم صورتی/بنفش ملایم برای لاین ناخن */}
       <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
         <div className="absolute top-[20%] -right-[5%] w-[35%] h-[35%] bg-rose-600 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-[20%] -left-[5%] w-[30%] h-[30%] bg-pink-600 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-[20%] -left-[5%] w-[30%] h-[30%] bg-rose-500 blur-[120px] rounded-full"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-20">
+          {/* H2 بهینه شده برای سئو - کاملاً متفاوت از صفحه آرایشگاه */}
           <h2 className="text-3xl lg:text-5xl font-black mb-6 leading-tight">
-            چگونه <span className="text-rose-500">میز ناخن</span> خود را هوشمند کنیم؟
+            شروع کار با <span className="text-rose-500">نرم افزار نوبت دهی ناخن کار آنتایم</span> چقدر ساده است؟
           </h2>
           <p className="text-slate-400 font-medium max-w-2xl mx-auto">
-            آنتایم به گونه‌ای طراحی شده که حتی بدون دانش فنی، بتوانید در کمتر از ۳ دقیقه تمام نوبت‌های خود را به صورت دیجیتال مدیریت کنید.
+            آنتایم به گونه‌ای طراحی شده که حتی بدون دانش فنی، بتوانید در کمتر از ۲ دقیقه تمام نوبت‌های <strong className="text-white">کاشت، ترمیم و ژلیش</strong> خود را به صورت دیجیتال مدیریت کنید.
+            <br />
+            <span className="text-rose-400 text-sm block mt-2">★ ۲ هفته رایگان ★ بدون نیاز به کارت بانکی ★</span>
+          </p>
+          {/* کلمات کلیدی مخفی برای سئو */}
+          <p className="text-slate-600 text-xs mt-4 hidden md:block">
+            ★ راه اندازی سریع سیستم نوبت دهی تخصصی کاشت ناخن ★ مدیریت نوبت ترمیم ★ پیامک یادآوری خودکار ★
           </p>
         </div>
 
@@ -44,7 +54,7 @@ export default function NailStepFlow() {
             <div key={i} className="group text-center relative z-10">
               {/* نشانگر مرحله */}
               <div className="inline-block bg-slate-800 text-rose-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-slate-700 mb-6 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300">
-                گام { (i + 1).toLocaleString('fa-IR') }
+                مرحله { (i + 1).toLocaleString('fa-IR') }
               </div>
               
               <div className="w-24 h-24 bg-slate-900 border-2 border-slate-800 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl group-hover:border-rose-500/50 group-hover:shadow-rose-500/20 transition-all duration-500 group-hover:-rotate-6">
@@ -59,14 +69,16 @@ export default function NailStepFlow() {
               <p className="text-slate-400 text-sm leading-relaxed font-medium px-4">
                 {step.desc}
               </p>
+              {/* توضیحات مخفی برای سئو */}
+              <p className="text-slate-600 text-xs mt-3 hidden md:block">
+                {step.seoDesc}
+              </p>
             </div>
           ))}
 
           {/* خط پیوند دهنده در دسکتاپ - بهینه شده برای سئو بصری */}
           <div className="hidden md:block absolute top-[45%] left-[15%] right-[15%] h-[1px] bg-gradient-to-r from-transparent via-slate-700 to-transparent -z-0"></div>
         </div>
-
-
       </div>
     </section>
   );

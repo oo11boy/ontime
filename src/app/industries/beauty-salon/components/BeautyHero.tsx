@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Smartphone, Zap } from "lucide-react";
+import { Smartphone, Zap } from "lucide-react";
 
 export default function BeautyHero() {
   return (
@@ -12,34 +12,36 @@ export default function BeautyHero() {
 
       <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
         <div className="text-right">
-          <h1 className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-slate-900 text-white font-bold text-xs mb-8">
-            <Zap size={14} className="text-yellow-400" />
-            تخصصی‌ترین اپلیکیشن مدیریت نوبت و مشتری ویژه آرایشگران
+          {/* H1 اصلی - تغییر کرد */}
+          <h1 className="text-4xl lg:text-6xl font-black text-slate-900 leading-[1.3] mb-6">
+            نرم افزار نوبت دهی آرایشگاه و سالن زیبایی
           </h1>
 
-          <h2 className="text-4xl lg:text-6xl font-black text-slate-900 leading-[1.3] mb-8">
-            نظمِ حرفه‌ای با <br />
-            <span className="text-pink-600 ">
-              اپلیکیشن نوبت‌دهی آرایشگاه
-            </span>{" "}
-            آنتایم
+          {/* H2 فرعی - برای توضیح بیشتر */}
+          <h2 className="text-xl lg:text-2xl font-bold text-pink-600 mb-6">
+            مدیریت هوشمند نوبت و مشتریان ویژه آرایشگران حرفه‌ای
           </h2>
 
-          <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-xl font-medium">
+          <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-xl">
             تمام نوبت‌ها، خدمات و قیمت‌های سالن شما در یک{" "}
             <strong>پنل مدیریت هوشمند</strong>. با نرم‌افزار آنتایم، لیست
             مشتریان را در جیب خود داشته باشید و اجازه دهید سیستم، نوبت‌ها را
             هماهنگ کند.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-12">
+          {/* بلیط امتیاز ویژه (جایگزین h1 قبلی) */}
+          <div className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-pink-100 text-pink-700 font-bold text-sm mb-6">
+            <Zap size={14} className="text-pink-500" />
+            ★ ۲ هفته رایگان + ۵۰ پیامک هدیه ★
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <Link
               href="/clientdashboard"
               className="px-10 py-5 bg-pink-600 text-white rounded-2xl font-black text-xl hover:bg-pink-700 transition-all shadow-xl shadow-pink-200 text-center"
             >
-              شروع کار با اپلیکیشن
+              شروع رایگان ۲ هفته‌ای
             </Link>
-         
           </div>
 
           <div className="space-y-4 border-r-2 border-pink-100 pr-6">
@@ -52,20 +54,21 @@ export default function BeautyHero() {
             <div className="text-sm font-bold text-slate-700">
               ✓ ارسال پیامک یادآوری بدون دخالت شما
             </div>
+            <div className="text-sm font-bold text-pink-600">
+              ✓ ۲ هفته استفاده رایگان - بدون نیاز به کارت بانکی
+            </div>
           </div>
         </div>
 
         <div className="relative flex justify-center lg:justify-end">
-          {/* تصویر گوشی که محیط اپلیکیشن (پنل مدیریت) را نشان می‌دهد */}
           <div className="relative w-[300px] lg:w-[350px] aspect-[10/19] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] overflow-hidden">
             <Image
               src="/images/screens/newmain.jpg"
               fill
-              alt="اپلیکیشن مدیریت آرایشگاه آنتایم"
-              className=""
+              alt="نمایش پنل مدیریت نرم افزار نوبت دهی آرایشگاه آنتایم"
+        
             />
           </div>
-    
         </div>
       </div>
     </section>
