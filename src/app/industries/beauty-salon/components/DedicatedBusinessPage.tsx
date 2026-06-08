@@ -38,12 +38,12 @@ export default function BusinessProfileShowcase(): React.JSX.Element {
             <span>⚡ دو قابلیت قدرتمند در یک اپلیکیشن</span>
           </div>
 
-          <h1 className="text-3xl lg:text-5xl font-black mb-6 text-slate-900 leading-tight">
+          <h2 className="text-3xl lg:text-5xl font-black mb-6 text-slate-900 leading-tight">
             <span className="text-blue-600">مدیریت داخلی</span> +{" "}
             <span className="text-emerald-600">صفحه اختصاصی رزرو</span>
             <br />
             هر آنچه برای نوبت‌دهی نیاز دارید
-          </h1>
+          </h2>
 
           <p className="text-xl text-slate-600 font-medium leading-relaxed max-w-3xl mx-auto">
             آنتایم هم <strong>پنل مدیریت حرفه‌ای</strong> برای ثبت نوبت و ارسال پیامک به شما می‌دهد،

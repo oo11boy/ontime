@@ -19,9 +19,9 @@ export default function Namad() {
             <span>خرید امن و تضمین شده</span>
           </div>
           
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">
              مجوزها و <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-700">اعتبار قانونی</span>
-          </h1>
+          </h2>
           
           <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
             تمامی فعالیت‌های مجموعه آنتایم تحت نظارت مراجع قانونی بوده و دارای تاییدیه‌های لازم از مرکز توسعه تجارت الکترونیک می‌باشد.
