@@ -42,18 +42,18 @@ export default function Namad() {
             
             {/* باکس نماد */}
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 hover:bg-white hover:shadow-md transition-all">
-              <a 
-                referrerPolicy='origin' 
+              <Link
+          
                 target='_blank' 
-                href='https://trustseal.enamad.ir/?id=692390&Code=rKMbNLS4S05oNoTOInpac4yxj74C90sr'
+                href='../namad'
                 className="block"
               >
                 <img 
-                  src='https://trustseal.enamad.ir/logo.aspx?id=692390&Code=rKMbNLS4S05oNoTOInpac4yxj74C90sr' 
+                  src="../images/namad.png" 
                   alt='اینماد آنتایم' 
                   className="w-32 h-32 object-contain mx-auto"
                 />
-              </a>
+              </Link>
             </div>
 
             <a 
