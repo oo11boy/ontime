@@ -12,7 +12,6 @@ import {
 import Image from "next/image";
 import { freetime } from "@/lib/freetime";
 
-
 export default function HeroSection() {
   return (
     <article>
@@ -20,8 +19,6 @@ export default function HeroSection() {
         className="relative py-12 lg:py-24 overflow-hidden bg-white"
         dir="rtl"
       >
-
-
         <div className="absolute inset-0 bg-linear-to-br from-blue-50/50 via-white to-cyan-50/50 -z-10"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
 
@@ -44,9 +41,9 @@ export default function HeroSection() {
             </div>
 
             <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl font-medium">
-              با اپلیکیشن نوبت دهی آنتایم، مدیریت رزروها را
-              خودکار کنید. ارسال خودکار <strong>پیامک یادآوری نوبت</strong>،
-              کاهش کنسلی‌ها و صفحه رزرو اختصاصی مشتری.
+              با اپلیکیشن نوبت دهی آنتایم، مدیریت رزروها را خودکار کنید. ارسال
+              خودکار <strong>پیامک یادآوری نوبت</strong>، کاهش کنسلی‌ها و صفحه
+              رزرو اختصاصی مشتری.
             </p>
 
             <div className="flex flex-wrap gap-5">
@@ -57,7 +54,7 @@ export default function HeroSection() {
                 title="ثبت نام در سامانه نوبت دهی آنلاین آنتایم"
                 className="px-10 py-5 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-3xl font-black text-xl hover:shadow-2xl transition-all hover:scale-105 flex items-center gap-4 shadow-xl shadow-blue-200"
               >
-               {freetime.plan} رایگان شروع کنید
+                {freetime.plan} رایگان شروع کنید
                 <ArrowLeft size={24} />
               </Link>
             </div>
@@ -88,13 +85,21 @@ export default function HeroSection() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
                   <Calendar className="text-blue-600 mb-2" size={20} />
-                  <p className="text-[10px] text-blue-700 font-bold uppercase">Active Slots</p>
-                  <p className="text-lg font-black text-slate-800">۱۸ رزرو فعال</p>
+                  <p className="text-[10px] text-blue-700 font-bold uppercase">
+                    Active Slots
+                  </p>
+                  <p className="text-lg font-black text-slate-800">
+                    ۱۸ رزرو فعال
+                  </p>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
                   <MessageSquare className="text-purple-600 mb-2" size={20} />
-                  <p className="text-[10px] text-purple-700 font-bold uppercase">SMS Reminder</p>
-                  <p className="text-lg font-black text-slate-800">ارسال خودکار</p>
+                  <p className="text-[10px] text-purple-700 font-bold uppercase">
+                    SMS Reminder
+                  </p>
+                  <p className="text-lg font-black text-slate-800">
+                    ارسال خودکار
+                  </p>
                 </div>
               </div>
 
@@ -102,7 +107,8 @@ export default function HeroSection() {
                 {/* ۴. بهینه‌سازی تصویر برای نمره ۱۰۰ عملکرد */}
                 <Image
                   src="/images/app.jpg"
-                  fill // استفاده از fill برای کنترل بهتر در کانتینر ریسپانسیو
+                  width={600} // ✅ عرض دقیق
+                  height={422}
                   sizes="(max-width: 768px) 100vw, 600px"
                   alt="پنل مدیریت سامانه نوبت دهی آنلاین آنتایم ویژه کسب و کارهای خدماتی"
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -118,8 +124,12 @@ export default function HeroSection() {
                   <Smartphone className="text-white" size={24} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-500 leading-none mb-1 text-right">تجربه مشتری</p>
-                  <p className="text-sm font-black text-slate-800 text-right">رزرو بدون نیاز به نصب</p>
+                  <p className="text-[10px] font-bold text-slate-500 leading-none mb-1 text-right">
+                    تجربه مشتری
+                  </p>
+                  <p className="text-sm font-black text-slate-800 text-right">
+                    رزرو بدون نیاز به نصب
+                  </p>
                 </div>
               </div>
             </div>
@@ -134,7 +144,10 @@ function FeatureItem({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-3 group">
       <div className="bg-green-100 p-1 rounded-full group-hover:bg-green-500 transition-colors">
-        <CheckCircle className="text-green-600 group-hover:text-white transition-colors" size={18} />
+        <CheckCircle
+          className="text-green-600 group-hover:text-white transition-colors"
+          size={18}
+        />
       </div>
       <h3 className="text-sm font-bold text-slate-700">{title}</h3>
     </div>

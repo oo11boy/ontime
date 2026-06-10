@@ -1,6 +1,6 @@
 import { CheckCircle, ExternalLink, ShieldAlert, ShieldCheck } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
 
 export default function Namad() {
   return (
@@ -48,11 +48,13 @@ export default function Namad() {
                 href='../namad'
                 className="block"
               >
-                <img 
-                  src="../images/namad.png" 
+                <Image
+                width={150}
+                height={150}
+                  src="/images/namad.png" 
                   alt='اینماد آنتایم' 
                   className="w-32 h-32 object-contain mx-auto"
-                />
+                ></Image>
               </Link>
             </div>
 

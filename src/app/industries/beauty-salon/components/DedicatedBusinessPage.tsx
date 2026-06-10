@@ -317,20 +317,34 @@ export default function BusinessProfileShowcase(): React.JSX.Element {
               </ul>
             </div>
             
-            <div className="bg-white rounded-xl p-5 w-full max-w-xs shadow-lg">
-              <p className="font-bold text-sm mb-2">❌ لغو نوبت</p>
-              <p className="text-xs text-slate-400 mb-3">شنبه ۲۵ اسفند - ۱۷:۰۰</p>
-              <p className="text-xs font-bold mb-2">دلیل لغو:</p>
-              <select className="w-full p-2 border rounded-lg text-xs mb-3">
-                <option>تغییر برنامه شخصی</option>
-                <option>هزینه خدمات بالا</option>
-                <option>کیفیت خدمات رضایت‌بخش نبود</option>
-                <option>پیدا کردن خدمات بهتر</option>
-              </select>
-              <button className="w-full bg-rose-600 text-white py-2 rounded-lg text-sm font-bold">
-                تایید لغو نوبت
-              </button>
-            </div>
+       <div className="bg-white rounded-xl p-5 w-full max-w-xs shadow-lg">
+  <p className="font-bold text-sm mb-2">❌ لغو نوبت</p>
+  <p className="text-xs text-slate-400 mb-3">شنبه ۲۵ اسفند - ۱۷:۰۰</p>
+  
+  <label 
+    htmlFor="cancel-reason" 
+    className="text-xs font-bold mb-2 block text-slate-700"
+  >
+    دلیل لغو:
+  </label>
+  <select 
+    id="cancel-reason"
+    className="w-full p-2 border border-slate-200 rounded-lg text-xs mb-3 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition-all"
+  >
+    <option value="">لطفاً انتخاب کنید...</option>
+    <option>تغییر برنامه شخصی</option>
+    <option>هزینه خدمات بالا</option>
+    <option>کیفیت خدمات رضایت‌بخش نبود</option>
+    <option>پیدا کردن خدمات بهتر</option>
+  </select>
+  
+  <button 
+    className="w-full bg-rose-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-rose-700 transition-colors active:scale-95"
+    aria-label="تایید لغو نوبت"
+  >
+    تایید لغو نوبت
+  </button>
+</div>
           </div>
         </div>
 

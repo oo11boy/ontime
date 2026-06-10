@@ -241,7 +241,8 @@ export default function BeautyGallery({
                     key={activeImage.id + activeImage.src}
                     src={activeImage.src}
                     alt={activeImage.alt}
-                    fill
+                    width={400}
+                    height={282} // 400 ÷ 1.42 ≈ 282
                     className="w-full h-full animate-in fade-in zoom-in-95 duration-500 object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

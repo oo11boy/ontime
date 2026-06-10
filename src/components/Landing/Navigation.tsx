@@ -126,6 +126,7 @@ const menuItems = [
           </div>
           <button 
             onClick={() => setIsOpen(false)}
+              aria-label="بستن منو"   
             className="p-3 bg-slate-100 text-slate-900 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-colors"
           >
             <X size={24} />
