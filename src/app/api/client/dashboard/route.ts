@@ -124,37 +124,38 @@ const handler = withAuth(async (req: NextRequest, context) => {
         );
       }
     }
-
-    const mainSql = `
-      SELECT 
-        u.name, 
-        u.phone, 
-        u.has_used_free_trial,
-        j.persian_name AS job_title,
-        u.sms_balance,
-        u.purchased_sms_credit,
-        u.sms_monthly_quota,
-        p.title AS plan_title,
-        p.price_per_100_sms,
-        u.plan_key,
-        u.quota_ends_at,
-        u.started_at,
-        u.ended_at,
-        COALESCE(SUM(CASE 
-          WHEN sp.type = 'one_time_sms' 
-            AND sp.status = 'active'
-            AND (sp.expires_at IS NULL OR sp.expires_at >= CURDATE())
-          THEN sp.sms_amount 
-          ELSE 0 
-        END), 0) AS purchased_packages_total
-      FROM users u
-      LEFT JOIN jobs j ON u.job_id = j.id
-      LEFT JOIN plans p ON u.plan_key = p.plan_key
-      LEFT JOIN smspurchase sp ON sp.user_id = u.id
-      WHERE u.id = ?
-      GROUP BY u.id
-      LIMIT 1
-    `;
+const mainSql = `
+  SELECT 
+    u.name, 
+    u.phone, 
+    u.has_used_free_trial,
+    j.persian_name AS job_title,
+    u.sms_balance,
+    u.purchased_sms_credit,
+    u.sms_monthly_quota,
+    p.title AS plan_title,
+    p.price_per_100_sms,
+    u.plan_key,
+    u.quota_ends_at,
+    u.started_at,
+    u.ended_at,
+    (
+      SELECT COALESCE(SUM(CASE 
+        WHEN sp.type = 'one_time_sms' 
+          AND sp.status = 'active'
+          AND (sp.expires_at IS NULL OR sp.expires_at >= CURDATE())
+        THEN sp.sms_amount 
+        ELSE 0 
+      END), 0)
+      FROM smspurchase sp
+      WHERE sp.user_id = u.id
+    ) AS purchased_packages_total
+  FROM users u
+  LEFT JOIN jobs j ON u.job_id = j.id
+  LEFT JOIN plans p ON u.plan_key = p.plan_key
+  WHERE u.id = ?
+  LIMIT 1
+`;
 
     const mainResult = await query<any>(mainSql, [userId]);
 

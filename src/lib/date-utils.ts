@@ -36,25 +36,22 @@ export const persianWeekDays = [
 
 // تبدیل هر نوع تاریخ ورودی به فرمت YYYY-MM-DD (فقط تاریخ، بدون زمان)
 export const normalizeToDateOnly = (dateStr: string): string => {
-  console.log("normalizeToDateOnly - ورودی:", dateStr);
-  
+
   try {
     // اگر تاریخ به فرمت ISO (با T) بود
     if (dateStr.includes("T")) {
       // فقط قسمت تاریخ را بگیر
       const normalized = dateStr.split("T")[0];
-      console.log("normalizeToDateOnly - خروجی (ISO):", normalized);
+   
       return normalized;
     }
     
     // اگر تاریخ به فرمت YYYY-MM-DD بود
     if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      console.log("normalizeToDateOnly - خروجی (YYYY-MM-DD):", dateStr);
+  
       return dateStr;
     }
     
-    // سایر فرمت‌ها
-    console.log("normalizeToDateOnly - خروجی (سایر):", dateStr);
     return dateStr;
   } catch {
     return dateStr;
@@ -157,7 +154,7 @@ export const gregorianToPersian = (
 -------------------------------------------------- */
 
 export const formatPersianDate = (dateString: string): string => {
-  console.log("formatPersianDate - ورودی:", dateString);
+
   
   try {
     const m = safeMomentFromGregorian(dateString);
@@ -167,7 +164,7 @@ export const formatPersianDate = (dateString: string): string => {
     }
     
     const result = `${m.jDate()} ${persianMonths[m.jMonth()]} ${m.jYear()}`;
-    console.log("formatPersianDate - خروجی:", result);
+
     
     return result;
   } catch (error) {
