@@ -16,6 +16,7 @@ import {
   MessageSquare,
   FileText,
   CalendarClock,
+  ChartBar,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -119,6 +120,16 @@ const DashboardQuickActions: React.FC<DashboardQuickActionsProps> = ({
       label: "تغییرات نوبت",
       icon: CalendarClock,
       href: "/clientdashboard/booking-changes",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-500/10",
+      hoverBg: "group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20",
+    },
+
+        {
+      id: "booking-changes",
+      label: "گزارش گیری",
+      icon: ChartBar,
+      href: "/clientdashboard/reports",
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-500/10",
       hoverBg: "group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20",

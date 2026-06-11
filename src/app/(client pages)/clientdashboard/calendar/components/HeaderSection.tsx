@@ -3,15 +3,14 @@ import React, { useMemo, useState } from "react";
 import {
   Calendar,
   RefreshCw,
-  MessageSquare,
   Plus,
   Filter,
   X,
+  BarChart3,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface HeaderSectionProps {
-  userSmsBalance: number;
-  isLoadingBalance: boolean;
   isLoading: boolean;
   selectedService: string;
   filteredAppointments: any[];
@@ -22,8 +21,6 @@ interface HeaderSectionProps {
 }
 
 const HeaderSection: React.FC<HeaderSectionProps> = ({
-  userSmsBalance,
-  isLoadingBalance,
   isLoading,
   selectedService,
   filteredAppointments,
@@ -32,6 +29,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   onAddAppointment,
   onClearFilter,
 }) => {
+  const router = useRouter();
   const [isForcingSpin, setIsForcingSpin] = useState(false);
 
   const isFilterActive = selectedService !== "all";
@@ -47,6 +45,10 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
     setTimeout(() => setIsForcingSpin(false), 1000);
   };
 
+  const handleReportsClick = () => {
+    router.push("/clientdashboard/reports");
+  };
+
   return (
     <div className="sticky top-0 z-50 bg-gradient-to-b from-white/90 to-transparent dark:from-[#1a1e26]/90 dark:to-transparent backdrop-blur-xl border-b border-slate-200 dark:border-emerald-500/30 text-slate-800 dark:text-white transition-colors">
       <div className="max-w-2xl mx-auto p-4">
@@ -57,10 +59,13 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
           </h1>
 
           <div className="flex items-center gap-2">
-            <div className="text-xs text-slate-600 dark:text-gray-400 bg-slate-100 dark:bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2">
-              <MessageSquare className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-              موجودی: {isLoadingBalance ? "..." : `${userSmsBalance} پیامک`}
-            </div>
+            <button
+              onClick={handleReportsClick}
+              className="px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-500/20 hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-all flex items-center gap-2 text-purple-700 dark:text-purple-400 text-xs font-medium"
+            >
+              <BarChart3 className="w-4 h-4" />
+              گزارش گیری
+            </button>
             <button
               onClick={handleRefreshClick}
               disabled={isLoading || isForcingSpin}

@@ -44,9 +44,10 @@
     "react-dom": "^19.2.3",
     "react-hot-toast": "^2.6.0",
     "react-mobile-picker": "^1.2.0",
-    "recharts": "^3.6.0",
+    "recharts": "^3.8.1",
     "swiper": "^12.0.3",
-    "tls": "^0.0.1"
+    "tls": "^0.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

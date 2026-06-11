@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatPersianDate } from "@/lib/date-utils";
+import { gregorianToPersian } from "@/lib/date-utils";
 import {
   formatTimeDisplay,
   getStatusColor,
@@ -43,6 +43,27 @@ interface AppointmentDetailModalProps {
   onClose: () => void;
   onCancel: () => void;
 }
+
+// تابع صحیح تبدیل تاریخ به شمسی
+const formatPersianDateCorrect = (dateString: string) => {
+  if (!dateString) return "نامشخص";
+  
+  // ایجاد تاریخ به صورت UTC برای جلوگیری از مشکل منطقه زمانی
+  const date = new Date(dateString);
+  
+  // اصلاح منطقه زمانی - اضافه کردن ساعت 12 برای جلوگیری از جابه‌جایی روز
+  const utcDate = new Date(Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    12,  // ساعت 12 ظهر برای جلوگیری از مشکل منطقه زمانی
+    0,
+    0
+  ));
+  
+  const persian = gregorianToPersian(utcDate);
+  return `${persian.weekDay} ${persian.day} ${persian.monthName} ${persian.year}`;
+};
 
 const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   appointment,
@@ -161,7 +182,7 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
                   <p className="text-xs text-slate-500 dark:text-gray-400 mb-1">تاریخ</p>
                   <p className="text-slate-800 dark:text-white font-bold">
-                    {formatPersianDate(appointment.booking_date)}
+                    {formatPersianDateCorrect(appointment.booking_date)}
                   </p>
                 </div>
                 <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-4">
