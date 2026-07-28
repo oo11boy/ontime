@@ -10,6 +10,7 @@ async function getBusinessData(slug: string) {
       cache: "no-store",
     });
     
+    
     if (!res.ok) return null;
     const data = await res.json();
     return data.success ? data.data : null;

@@ -22,6 +22,7 @@ import {
   HelpCircle,
   FileText,
   Play,
+  CalendarDays,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -79,7 +80,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 const menuItems = [
   // ========== اصلی و پیشخوان ==========
   { href: "/admindashboard", icon: LayoutDashboard, label: "پیشخوان" },
-
+{ href: "/admindashboard/user-management", icon: CalendarDays, label: "پشتیبانی" },
+ 
   // ========== مدیریت محتوا ==========
   { title: "مدیریت محتوا" },
   { href: "/admindashboard/blog", icon: Layers, label: "نوشته‌ها" },
@@ -90,8 +92,7 @@ const menuItems = [
   { title: "مدیریت کاربران" },
   { href: "/admindashboard/clients", icon: Users, label: "کاربران" },
   { href: "/admindashboard/jobs", icon: Briefcase, label: "دسته‌بندی مشاغل" },
-
-  // ========== مدیریت پیامک ==========
+ // ========== مدیریت پیامک ==========
   { title: "مدیریت پیامک" },
   { href: "/admindashboard/smstemplates", icon: MessageCircle, label: "پترن‌های پیامکی" },
   { href: "/admindashboard/sms-suggestions", icon: FileText, label: "پیشنهادات متن پیامک", badge: suggestionsBadge },

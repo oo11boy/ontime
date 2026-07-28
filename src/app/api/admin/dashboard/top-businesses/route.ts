@@ -70,6 +70,7 @@ async function getTopBusinesses(limit: number) {
     limit = Number(limit) || 10;
 
     /* ========= 1. Main Fast Query ========= */
+    // نکته مهم: تمام ستون‌های غیرتجمیعی (non-aggregated) باید در GROUP BY باشند.
     const businesses = await query<any>(`
       SELECT
         u.id,
@@ -100,7 +101,7 @@ async function getTopBusinesses(limit: number) {
       LEFT JOIN plans p ON p.plan_key = u.plan_key
 
       WHERE u.name IS NOT NULL AND u.name != ''
-      GROUP BY u.id
+      GROUP BY u.id, u.name, u.phone, j.persian_name, p.title, u.sms_balance
       ORDER BY bookings_count DESC
       LIMIT ${limit}
     `);
